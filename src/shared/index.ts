@@ -5,6 +5,7 @@ export * from './ui/empty';
 export * from './ui/modal';
 export * from './ui/input';
 export * from './ui/button';
+export * from './ui/search-button';
 
 // ./api
 export * from './api';
