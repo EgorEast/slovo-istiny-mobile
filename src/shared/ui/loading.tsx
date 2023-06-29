@@ -7,10 +7,8 @@ const styles = StyleSheet.create({
   },
 });
 
-export const Loading = () => {
-  return (
-    <View style={styles.loading}>
-      <ActivityIndicator size='large' />
-    </View>
-  );
-};
+export const Loading = () => (
+  <View style={styles.loading}>
+    <ActivityIndicator size='large' />
+  </View>
+);

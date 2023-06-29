@@ -1,16 +1,18 @@
 import type {
   NativeStackNavigationProp,
   NativeStackScreenProps,
-} from "@react-navigation/native-stack";
+} from '@react-navigation/native-stack';
 
 export type RootStackParamList = {
-  Tasks: undefined;
-  Task: { id: number };
-  AddTask: undefined;
+  Home: undefined;
 };
 
-export type ScreenProps<Screen extends keyof RootStackParamList> =
-  NativeStackScreenProps<RootStackParamList, Screen>;
+export type ScreenProps<Screen extends keyof RootStackParamList> = NativeStackScreenProps<
+  RootStackParamList,
+  Screen
+>;
 
-export type NavProp<Screen extends keyof RootStackParamList> =
-  NativeStackNavigationProp<RootStackParamList, Screen>;
+export type NavProp<Screen extends keyof RootStackParamList> = NativeStackNavigationProp<
+  RootStackParamList,
+  Screen
+>;

@@ -1,6 +1,6 @@
-import { API_URL } from "shared/config";
+import { API_URL } from 'shared/config';
 
-const BASE_URL = "/todos";
+const BASE_URL = '/todos';
 
 export type Task = {
   id: number;

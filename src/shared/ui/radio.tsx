@@ -1,7 +1,7 @@
 import { FC, PropsWithChildren } from 'react';
 import { Text, TouchableOpacity, View } from 'react-native';
 
-type RadioButtonGroupProps = PropsWithChildren<{}>;
+type RadioButtonGroupProps = PropsWithChildren<object>;
 
 type RadioButtonProps = {
   selected: boolean;

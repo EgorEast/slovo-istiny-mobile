@@ -4,10 +4,8 @@ type Props = {
   desc: string;
 };
 
-export const Empty = ({ desc }: Props) => {
-  return (
-    <View>
-      <Text>{desc}</Text>
-    </View>
-  );
-};
+export const Empty = ({ desc }: Props) => (
+  <View>
+    <Text>{desc}</Text>
+  </View>
+);
