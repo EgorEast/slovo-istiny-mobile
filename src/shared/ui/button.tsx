@@ -1,5 +1,15 @@
 import { ButtonProps, StyleSheet, Text, TouchableOpacity } from 'react-native';
 
+export const Button = ({ title, color, disabled, ...rest }: ButtonProps) => (
+  <TouchableOpacity
+    style={disabled ? { ...styles.button, backgroundColor: 'gray' } : styles.button}
+    disabled={disabled}
+    {...rest}
+  >
+    <Text style={{ ...styles.text, color }}>{title}</Text>
+  </TouchableOpacity>
+);
+
 const styles = StyleSheet.create({
   button: {
     height: 10,
@@ -12,13 +22,3 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 });
-
-export const Button = ({ title, color, disabled, ...rest }: ButtonProps) => (
-  <TouchableOpacity
-    style={disabled ? { ...styles.button, backgroundColor: 'gray' } : styles.button}
-    disabled={disabled}
-    {...rest}
-  >
-    <Text style={{ ...styles.text, color }}>{title}</Text>
-  </TouchableOpacity>
-);

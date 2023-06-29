@@ -1,5 +1,17 @@
 import { ButtonProps, StyleSheet, Image, TouchableOpacity } from 'react-native';
-import { SEARCH_ICON } from 'shared/config';
+import { COLORS, SEARCH_ICON } from 'shared/config';
+
+export type SearchButtonProps = Omit<ButtonProps, 'title' | 'color'>;
+
+export const SearchButton = ({ disabled, ...rest }: SearchButtonProps) => (
+  <TouchableOpacity
+    style={disabled ? { ...styles.button, backgroundColor: 'gray' } : styles.button}
+    disabled={disabled}
+    {...rest}
+  >
+    <Image source={{ uri: SEARCH_ICON }} style={styles.image} />
+  </TouchableOpacity>
+);
 
 const styles = StyleSheet.create({
   button: {
@@ -7,7 +19,7 @@ const styles = StyleSheet.create({
     height: '100%',
     borderTopRightRadius: 15,
     borderBottomRightRadius: 15,
-    backgroundColor: '#ff602a',
+    backgroundColor: COLORS.Primary,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -17,17 +29,3 @@ const styles = StyleSheet.create({
     resizeMode: 'contain',
   },
 });
-
-export const SearchButton = ({ disabled, ...rest }: SearchButtonProps) => (
-  <TouchableOpacity
-    style={disabled ? { ...styles.button, backgroundColor: 'gray' } : styles.button}
-    disabled={disabled}
-    {...rest}
-  >
-    <Image source={{ uri: SEARCH_ICON }} style={styles.image} />
-    {/* <Text style={{ ...styles.text, color }}>{title}</Text> */}
-  </TouchableOpacity>
-);
-
-// Types
-export type SearchButtonProps = Omit<ButtonProps, 'title' | 'color'>;
