@@ -1,0 +1,62 @@
+{
+  "folders": [
+    {
+      "name": "root",
+      "path": "."
+    },
+    {
+      "name": "app",
+      "path": "src/app"
+    },
+    {
+      "name": "processes",
+      "path": "src/processes"
+    },
+    {
+      "name": "pages",
+      "path": "src/pages"
+    },
+    {
+      "name": "widgets",
+      "path": "src/widgets"
+    },
+    {
+      "name": "features",
+      "path": "src/features"
+    },
+    {
+      "name": "entities",
+      "path": "src/entities"
+    },
+    {
+      "name": "shared",
+      "path": "src/shared"
+    }
+  ],
+  "settings": {},
+  "extensions": {
+    "recommendations": [
+      "dbaeumer.vscode-eslint",
+      "esbenp.prettier-vscode",
+      "formulahendry.auto-rename-tag",
+      "wmaurer.change-case",
+      "streetsidesoftware.code-spell-checker",
+      "streetsidesoftware.code-spell-checker-russian",
+      "dsznajder.es7-react-js-snippets",
+      "expo.vscode-expo-tools",
+      "mhutchie.git-graph",
+      "bradgashler.htmltagwrap",
+      "wix.vscode-import-cost",
+      "xabikos.JavaScriptSnippets",
+      "ms-vscode.vscode-typescript-next",
+      "ms-vsliveshare.vsliveshare",
+      "DavidAnson.vscode-markdownlint",
+      "quicktype.quicktype",
+      "christian-kohler.path-intellisense",
+      "yoavbls.pretty-ts-errors",
+      "Gruntfuggly.todo-tree",
+      "BriteSnow.vscode-toggle-quotes",
+      "pflannery.vscode-versionlens"
+    ]
+  }
+}
