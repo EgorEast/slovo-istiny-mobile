@@ -9,10 +9,6 @@
       "path": "src/app"
     },
     {
-      "name": "processes",
-      "path": "src/processes"
-    },
-    {
       "name": "pages",
       "path": "src/pages"
     },

@@ -1,5 +1,5 @@
-import { Routing } from './routes';
+import { RootTabs } from './root-tabs';
 
-const App = () => <Routing />;
+const App = () => <RootTabs />;
 
 export default App;

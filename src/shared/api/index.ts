@@ -1,7 +1,7 @@
-import { tasks } from './tasks';
+import { sermons } from './sermons';
 
-export * from './tasks';
+export * from './sermons';
 
 export const API = {
-  tasks,
+  sermons,
 };

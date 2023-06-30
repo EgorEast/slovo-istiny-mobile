@@ -1,11 +1,11 @@
 import { useNavigation } from '@react-navigation/native';
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity } from 'react-native';
-import { NavProp } from 'shared';
-import { COLORS } from 'shared/config';
+import { MainStackNavProp } from 'shared';
+import { COLORS, SIZES } from 'shared/config';
 
 export const TextLinkToHome = () => {
-  const { navigate } = useNavigation<NavProp<'Home'>>();
+  const { navigate } = useNavigation<MainStackNavProp<'Home'>>();
 
   const goToHome = () => {
     navigate('Home');
@@ -30,7 +30,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   textSecond: {
-    fontSize: 24,
+    fontSize: SIZES.h1,
     textTransform: 'uppercase',
     color: COLORS.OnPrimary,
     textAlign: 'center',
