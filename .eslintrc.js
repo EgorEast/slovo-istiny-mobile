@@ -28,6 +28,8 @@ module.exports = {
           'features/*',
           'entities/*',
           'shared/*',
+          'zustand/*',
+          'zustand/**',
         ],
       },
     ],

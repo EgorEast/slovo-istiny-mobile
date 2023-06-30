@@ -6,7 +6,7 @@ interface SermonsState {
   addSermon: (newSermon: Sermon) => void;
 }
 
-export const useSermons = create<SermonsState>((set, get) => ({
+export const useSermonsStore = create<SermonsState>((set) => ({
   sermons: [
     { id: 1, title: 'Проповедь 1', url: 'http://placeholder.com' },
     { id: 2, title: 'Проповедь 2', url: 'http://placeholder.com' },
@@ -18,9 +18,6 @@ export const useSermons = create<SermonsState>((set, get) => ({
     { id: 8, title: 'Проповедь 8', url: 'http://placeholder.com' },
     { id: 9, title: 'Проповедь 9', url: 'http://placeholder.com' },
   ],
-  addSermon: (newSermon: Sermon) => {
-    const currentSermons = get().sermons;
 
-    set({ sermons: [...currentSermons, newSermon] });
-  },
+  addSermon: (newSermon: Sermon) => set((state) => ({ sermons: [...state.sermons, newSermon] })),
 }));
