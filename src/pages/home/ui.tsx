@@ -1,4 +1,4 @@
-import { FC, useMemo, useState } from 'react';
+import { FC, useState } from 'react';
 import { Animated, StatusBar, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NavigationState, SceneRendererProps, TabView } from 'react-native-tab-view';
@@ -9,13 +9,10 @@ import { renderScene } from './scene';
 export const HomeScreen: FC<MainStackScreenProps<'Home'>> = () => {
   const [index, setIndex] = useState(0);
 
-  const routes = useMemo(
-    () => [
-      { key: 'first', title: 'Проповеди' },
-      { key: 'second', title: 'Другое' },
-    ],
-    [],
-  );
+  const routes = [
+    { key: 'first', title: 'Проповеди' },
+    { key: 'second', title: 'Другое' },
+  ];
 
   const renderTabBar: (
     props: SceneRendererProps & {
