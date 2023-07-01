@@ -33,7 +33,11 @@ export const HomeScreen: FC<MainStackScreenProps<'Home'>> = () => {
           });
 
           return (
-            <TouchableOpacity style={styles.tabItem} onPress={() => setIndex(i)}>
+            <TouchableOpacity
+              key={`tab-bar-item-${route.key}`}
+              style={styles.tabItem}
+              onPress={() => setIndex(i)}
+            >
               <Animated.Text style={{ opacity }}>{route.title}</Animated.Text>
             </TouchableOpacity>
           );
