@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { StyleSheet, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { TabView } from 'react-native-tab-view';
-import { InfoStackScreenProps } from 'shared';
+import { InfoStackScreenProps } from 'routing';
 import { renderScene } from './scene';
 
 export const Info: React.FC<InfoStackScreenProps<'Home'>> = () => {
