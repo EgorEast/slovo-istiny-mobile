@@ -1,0 +1,9 @@
+{
+  "platforms": ["ios", "android", "web"],
+  "ios": {
+    "modules": ["PlayerInNotificationBarModule"]
+  },
+  "android": {
+    "modules": ["expo.modules.playerinnotificationbar.PlayerInNotificationBarModule"]
+  }
+}

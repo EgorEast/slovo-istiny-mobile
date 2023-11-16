@@ -7,6 +7,7 @@ module.exports = function (api) {
         'module-resolver',
         {
           alias: {
+            '@modules': './modules',
             app: './src/app',
             entities: './src/entities',
             features: './src/features',
@@ -14,6 +15,7 @@ module.exports = function (api) {
             shared: './src/shared',
             widgets: './src/widgets',
           },
+          extensions: ['.js', '.jsx', '.ts', '.tsx'],
           root: ['./src/'],
         },
       ],

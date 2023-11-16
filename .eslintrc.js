@@ -37,6 +37,7 @@ module.exports = {
           'zustand/**',
           '@testing-library/**',
           '@react-native-async-storage/**',
+          '@modules/**',
         ],
       },
     ],
