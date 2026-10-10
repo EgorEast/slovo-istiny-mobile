@@ -5,12 +5,15 @@ import { type TestInstance } from 'test-renderer'
 import { type PlaylistData } from 'entities/playlist'
 import {
   dynamicSectionsAtom,
+  fetchAllSections,
   isLoadingSectionsAtom,
   type SectionData,
   sectionDataSourceAtom,
 } from 'entities/section'
 import { renderWithProviders } from 'shared/mocks'
 import { DynamicSectionsSlider } from './DynamicSectionsSlider'
+
+const mockFetchAllSections = fetchAllSections as unknown as jest.Mock
 
 const mockNavigateToPlaylist = jest.fn()
 const mockNavigateToPlaylistList = jest.fn()
@@ -258,5 +261,28 @@ describe('<DynamicSectionsSlider>', () => {
     if (!sectionColumn) throw new Error('Expected a column around the first section')
     // В stacked-режиме у секции нет ни minWidth, ни flex — она идёт на всю ширину под кнопкой.
     expect(StyleSheet.flatten(sectionColumn.props.style).minWidth).toBeUndefined()
+  })
+
+  test('fetches sections on first mount when they were never loaded', async () => {
+    const ctx = createCtx()
+    dynamicSectionsAtom(ctx, [])
+    isLoadingSectionsAtom(ctx, true)
+    sectionDataSourceAtom(ctx, 'unknown')
+
+    await renderWithProviders(<DynamicSectionsSlider />, { ctx })
+
+    expect(mockFetchAllSections).toHaveBeenCalledTimes(1)
+  })
+
+  test('does not refetch on remount once sections are already loaded', async () => {
+    const ctx = createCtx()
+    dynamicSectionsAtom(ctx, [makeSection('a')])
+    isLoadingSectionsAtom(ctx, false)
+    sectionDataSourceAtom(ctx, 'network')
+
+    const { rerender } = await renderWithProviders(<DynamicSectionsSlider key='first' />, { ctx })
+    await rerender(<DynamicSectionsSlider key='second' />)
+
+    expect(mockFetchAllSections).not.toHaveBeenCalled()
   })
 })
