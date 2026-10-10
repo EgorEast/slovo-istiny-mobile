@@ -30,6 +30,7 @@ export const PlaylistMembershipList = ({
           title={item.playlist.title}
           playlistId={item.playlist.id}
           isContained={item.isContained}
+          sermonCount={item.playlist.sermonIds.length}
         />
       )}
     />

@@ -5,6 +5,7 @@ import { togglePlaylistSermon } from './localPlaylistMembership'
 import {
   FAVORITES_PLAYLIST,
   type LocalPlaylistData,
+  MAX_CUSTOM_PLAYLIST_SERMONS,
   myPlaylistsArraySchema,
 } from './localPlaylists'
 import { myPlaylistsAtom } from './model'
@@ -113,6 +114,48 @@ describe('togglePlaylistSermon', () => {
 
     expect(ctx.get(myPlaylistsAtom).find(p => p.id === 'a')?.sermonIds).toEqual([])
     expect(await AsyncStorage.getItem(MY_PLAYLISTS_KEY)).toBeNull()
+  })
+
+  test('refuses to add past the maximum and leaves the playlist untouched', async () => {
+    const ctx = createCtx()
+    const full = playlist(
+      'a',
+      Array.from({ length: MAX_CUSTOM_PLAYLIST_SERMONS }, (_, index) => sermon(`s-${index}`)),
+    )
+    myPlaylistsAtom(ctx, [FAVORITES_PLAYLIST, full])
+
+    const outcome = await togglePlaylistSermon(ctx, 'a', sermon('extra'), true)
+
+    expect(outcome).toBe('limit-reached')
+    const stored = ctx.get(myPlaylistsAtom).find(p => p.id === 'a')
+    expect(stored?.sermonIds).toHaveLength(MAX_CUSTOM_PLAYLIST_SERMONS)
+    expect(stored?.sermonIds).not.toContain('extra')
+    expect(await AsyncStorage.getItem(MY_PLAYLISTS_KEY)).toBeNull()
+  })
+
+  test('still removes a sermon when the playlist is at the maximum', async () => {
+    const ctx = createCtx()
+    const full = playlist(
+      'a',
+      Array.from({ length: MAX_CUSTOM_PLAYLIST_SERMONS }, (_, index) => sermon(`s-${index}`)),
+    )
+    myPlaylistsAtom(ctx, [FAVORITES_PLAYLIST, full])
+
+    const outcome = await togglePlaylistSermon(ctx, 'a', sermon('s-0'), false)
+
+    expect(outcome).toBe('removed')
+    expect(ctx.get(myPlaylistsAtom).find(p => p.id === 'a')?.sermonIds).toHaveLength(
+      MAX_CUSTOM_PLAYLIST_SERMONS - 1,
+    )
+  })
+
+  test('reports added/removed/noop outcomes for the ordinary toggles', async () => {
+    const ctx = createCtx()
+    myPlaylistsAtom(ctx, [FAVORITES_PLAYLIST, playlist('a')])
+
+    await expect(togglePlaylistSermon(ctx, 'a', sermon('sermon-1'), true)).resolves.toBe('added')
+    await expect(togglePlaylistSermon(ctx, 'a', sermon('sermon-1'), true)).resolves.toBe('noop')
+    await expect(togglePlaylistSermon(ctx, 'a', sermon('sermon-1'), false)).resolves.toBe('removed')
   })
 
   test('commits the atom even when persisting fails', async () => {
