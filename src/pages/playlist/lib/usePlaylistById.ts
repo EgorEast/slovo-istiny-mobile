@@ -1,12 +1,9 @@
 import { useAtom } from '@reatom/npm-react'
 import { useEffect, useMemo, useState } from 'react'
-import {
-  FAVORITES_PLAYLIST,
-  type LocalPlaylistData,
-  myPlaylistsAtom,
-  type PlaylistData,
-} from 'entities/playlist'
+import { myPlaylistsAtom, type PlaylistData } from 'entities/playlist'
 import { dynamicSectionsAtom } from 'entities/section'
+import { buildLocalPlaylist } from './buildLocalPlaylist'
+import { buildSermonIndex } from './buildSermonIndex'
 import { resolvePlaylistFromApi } from './resolvePlaylistFromApi'
 import { resolvePlaylistFromCache } from './resolvePlaylistFromCache'
 
@@ -18,30 +15,16 @@ interface PlaylistResolution {
 
 type ResolvedTier = 'api' | 'cache' | 'sections' | null
 
-// Tier 0: локальный «Избранные» резолвится сразу, без сети и кэша. Пустой
-// снапшот-лист падает в `FAVORITES_PLAYLIST_DATA` (пустой плейлист-заглушка).
-const FAVORITES_PLAYLIST_DATA: PlaylistData = {
-  artwork: null,
-  description: '',
-  id: FAVORITES_PLAYLIST.id,
-  sermons: [],
-  title: FAVORITES_PLAYLIST.title,
-}
-
-const buildFavoritesPlaylist = (local: LocalPlaylistData | undefined): PlaylistData => {
-  const sermons = local?.sermons ?? []
-  if (sermons.length === 0) return FAVORITES_PLAYLIST_DATA
-  return {
-    artwork: null,
-    description: '',
-    id: FAVORITES_PLAYLIST.id,
-    sermons,
-    title: FAVORITES_PLAYLIST.title,
-  }
-}
-
+/**
+ * Resolves a playlist id to a renderable playlist, trying local storage first.
+ *
+ * Tier 0 — a local playlist (favorites or user-owned) is built synchronously from
+ * `myPlaylistsAtom`; id-only playlists resolve their ids against locally available
+ * sermons. Otherwise sections, the offline cache and finally the API are tried.
+ * @param playlistId - Playlist id from the route param.
+ * @returns Loading/not-found flags and the resolved playlist, if any.
+ */
 export const usePlaylistById = (playlistId: string) => {
-  const isFavorites = playlistId === FAVORITES_PLAYLIST.id
   const [sections] = useAtom(dynamicSectionsAtom)
   const [localPlaylists] = useAtom(myPlaylistsAtom)
   const [resolution, setResolution] = useState<PlaylistResolution>({
@@ -50,21 +33,27 @@ export const usePlaylistById = (playlistId: string) => {
     tier: null,
   })
 
-  const favorites = useMemo(
-    () =>
-      isFavorites
-        ? buildFavoritesPlaylist(localPlaylists.find(p => p.id === FAVORITES_PLAYLIST.id))
-        : undefined,
-    [isFavorites, localPlaylists],
+  const localPlaylist = useMemo(
+    () => localPlaylists.find(playlist => playlist.id === playlistId),
+    [localPlaylists, playlistId],
+  )
+  const isLocal = localPlaylist !== undefined
+  const sermonIndex = useMemo(
+    () => buildSermonIndex(sections, localPlaylists),
+    [sections, localPlaylists],
+  )
+  const localBuilt = useMemo(
+    () => (localPlaylist ? buildLocalPlaylist(localPlaylist, sermonIndex) : undefined),
+    [localPlaylist, sermonIndex],
   )
 
   const playlistFromSections = useMemo(
-    () => sections.flatMap(s => s.playlists ?? []).find(p => p.id === playlistId),
+    () => sections.flatMap(section => section.playlists ?? []).find(p => p.id === playlistId),
     [sections, playlistId],
   )
 
   useEffect(() => {
-    if (!playlistId || playlistFromSections || isFavorites) return
+    if (!playlistId || isLocal || playlistFromSections) return
     let cancelled = false
 
     void (async () => {
@@ -83,9 +72,9 @@ export const usePlaylistById = (playlistId: string) => {
     return () => {
       cancelled = true
     }
-  }, [isFavorites, playlistFromSections, playlistId])
+  }, [isLocal, playlistFromSections, playlistId])
 
-  if (isFavorites) return { isLoading: false, notFound: false, playlist: favorites }
+  if (isLocal) return { isLoading: false, notFound: false, playlist: localBuilt }
 
   const currentResolution = resolution.playlistId === playlistId ? resolution : null
   const playlist = playlistFromSections ?? currentResolution?.playlist

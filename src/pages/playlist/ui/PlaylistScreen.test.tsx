@@ -18,6 +18,7 @@ const mockResolvePlaylistFromCache = jest.fn()
 jest.mock('expo-router', () => ({
   useLocalSearchParams: () => mockParams,
   useNavigation: () => ({ setOptions: mockSetOptions }),
+  useRouter: () => ({ replace: jest.fn(), setParams: jest.fn() }),
 }))
 
 jest.mock('expo-router/react-navigation', () => ({

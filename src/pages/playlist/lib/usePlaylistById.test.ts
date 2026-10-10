@@ -237,4 +237,60 @@ describe('usePlaylistById', () => {
     expect(result.current.playlist?.title).toBe(FAVORITES_PLAYLIST.title)
     expect(mockResolvePlaylistFromCache).not.toHaveBeenCalled()
   })
+
+  test('resolves a non-favorites local playlist without touching cache or network', async () => {
+    const ctx = createCtx()
+    myPlaylistsAtom(ctx, [
+      { id: FAVORITES_PLAYLIST.id, sermonIds: [], sermons: [], title: FAVORITES_PLAYLIST.title },
+      { id: 'local-1', sermonIds: [], sermons: [], title: 'Локальный' },
+    ])
+
+    const { result } = await renderHookWithProviders(() => usePlaylistById('local-1'), { ctx })
+
+    expect(result.current.playlist?.title).toBe('Локальный')
+    expect(result.current.isLoading).toBe(false)
+    expect(result.current.notFound).toBe(false)
+    expect(mockResolvePlaylistFromCache).not.toHaveBeenCalled()
+    expect(mockResolvePlaylistFromApi).not.toHaveBeenCalled()
+  })
+
+  test('resolves local playlist sermon ids against section sermons', async () => {
+    const ctx = createCtx()
+    const sermon = {
+      artist: 'Pastor',
+      artwork: null,
+      audioUrl: 'https://cdn/s1.mp3',
+      id: 's1',
+      title: 'S1',
+    }
+    const section: SectionData = {
+      id: 'sec',
+      itemsSize: 'small',
+      playlists: [{ artwork: null, id: 'pl-x', sermons: [sermon], title: 'P' }],
+      transform: 'short',
+    }
+    dynamicSectionsAtom(ctx, [section])
+    myPlaylistsAtom(ctx, [
+      { id: FAVORITES_PLAYLIST.id, sermonIds: [], sermons: [], title: FAVORITES_PLAYLIST.title },
+      { id: 'local-1', sermonIds: ['s1'], sermons: [], title: 'Локальный' },
+    ])
+
+    const { result } = await renderHookWithProviders(() => usePlaylistById('local-1'), { ctx })
+
+    expect(result.current.playlist?.sermons).toHaveLength(1)
+    expect(result.current.playlist?.sermons[0].id).toBe('s1')
+  })
+
+  test('skips local playlist sermon ids that are not available locally', async () => {
+    const ctx = createCtx()
+    myPlaylistsAtom(ctx, [
+      { id: FAVORITES_PLAYLIST.id, sermonIds: [], sermons: [], title: FAVORITES_PLAYLIST.title },
+      { id: 'local-1', sermonIds: ['ghost'], sermons: [], title: 'Локальный' },
+    ])
+
+    const { result } = await renderHookWithProviders(() => usePlaylistById('local-1'), { ctx })
+
+    expect(result.current.playlist?.sermons).toEqual([])
+    expect(result.current.notFound).toBe(false)
+  })
 })

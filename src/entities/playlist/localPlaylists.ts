@@ -6,6 +6,17 @@ import { localSermonSchema } from './lib/localSermonSchema'
 export const MY_PLAYLISTS = 'myPlaylists'
 
 /**
+ * Максимум проповедей в пользовательском (локальном) плейлисте.
+ *
+ * Ограничение продиктовано бюджетом URL: плейлист целиком уезжает в ссылку
+ * `?sermons=<base64url>` (16 байт на UUID → 22 символа), и 200 проповедей — это
+ * ~4.4 КБ query-строки, комфортно укладывающиеся в лимиты браузеров/мессенджеров
+ * (практический предел URL — ~8 КБ). Заодно защищает `myPlaylists` от
+ * бесконтрольного роста одной записи.
+ */
+export const MAX_CUSTOM_PLAYLIST_SERMONS = 200
+
+/**
  * Черновик локального плейлиста на границе хранилища.
  *
  * `sermons`/`sermonIds` необязательны: старые записи содержали только
@@ -38,9 +49,11 @@ export interface LocalPlaylistData {
 /**
  * Приводит прочитанные (недоверенные) данные плейлиста к каноническому виду.
  *
- * Снапшоты выигрывают у legacy `sermonIds`: если `sermons` есть, ids выводятся
- * из них, а unmatched legacy ids молча отбрасываются. Если снапшотов нет (старая
- * запись), плейлист остаётся пустым — рендерить по одним id нечем.
+ * Снапшоты выигрывают у `sermonIds`: если `sermons` есть, ids выводятся из них,
+ * а unmatched ids молча отбрасываются. Если снапшотов нет (legacy-запись или
+ * плейлист, созданный из ссылки «только по id»), `sermonIds` сохраняются как
+ * есть — иначе на перезагрузке терялась бы связь с проповедями, которые UI
+ * резолвит из каталога по этим id.
  * @param playlist - Сырые данные из схемы (untrusted).
  * @returns Плейлист с гарантированными `sermons` и производными `sermonIds`.
  */
@@ -50,7 +63,7 @@ export const normalizeLocalPlaylist = (
   const sermons = playlist.sermons ?? []
   return {
     id: playlist.id,
-    sermonIds: sermons.map(sermon => sermon.id),
+    sermonIds: sermons.length > 0 ? sermons.map(sermon => sermon.id) : (playlist.sermonIds ?? []),
     sermons,
     title: playlist.title,
   }

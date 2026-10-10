@@ -26,7 +26,7 @@ describe('loadMyPlaylists legacy data', () => {
     await AsyncStorage.clear()
   })
 
-  test('loads a legacy sermonIds-only playlist without crashing and empty sermons', async () => {
+  test('loads a legacy sermonIds-only playlist without crashing, keeping its ids', async () => {
     await AsyncStorage.setItem(
       MY_PLAYLISTS,
       JSON.stringify([
@@ -40,7 +40,7 @@ describe('loadMyPlaylists legacy data', () => {
 
     const legacy = ctx.get(myPlaylistsAtom).find(p => p.id === 'legacy')
     expect(legacy?.sermons).toEqual([])
-    expect(legacy?.sermonIds).toEqual([])
+    expect(legacy?.sermonIds).toEqual(['sermon-1', 'sermon-2'])
   })
 
   test('drops legacy ids silently when snapshot sermons exist', async () => {
