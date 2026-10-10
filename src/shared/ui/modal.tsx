@@ -57,18 +57,22 @@ export const Modal = ({
       >
         {/* Backdrop is deliberately a role-less Pressable: it is not a button, and a
             button role would wrap the whole dialog in <button> on web (nested buttons,
-            screen readers announce the dialog as one button). */}
+            screen readers announce the dialog as one button).
+
+            It is an absolute-fill SIBLING of the content, not its parent. As a parent
+            it received the bubbling press from every click inside the dialog — on
+            react-native-web that closed the modal as soon as a TextInput was focused.
+            As a sibling it only sees presses that land on the backdrop itself. */}
         <Pressable
           tabIndex={-1}
           onPressIn={hapticLight}
           onPress={onBackdropPress}
           testID={BACKDROP_TEST_ID}
           style={styles.backdropPressable}
-        >
-          <View style={[styles.contentContainer, { backgroundColor: currentTheme.surface }]}>
-            {children}
-          </View>
-        </Pressable>
+        />
+        <View style={[styles.contentContainer, { backgroundColor: currentTheme.surface }]}>
+          {children}
+        </View>
       </View>
     </RNModal>
   )
@@ -81,8 +85,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: INDENTS.high,
   },
   backdropPressable: {
-    flex: 1,
-    justifyContent: 'center',
+    bottom: 0,
+    left: 0,
+    position: 'absolute',
+    right: 0,
+    top: 0,
   },
   contentContainer: {
     // Desktop-web: cap the dialog to the same centered column as the rest of
