@@ -1,0 +1,59 @@
+import { useAction } from '@reatom/npm-react'
+import { useRouter } from 'expo-router'
+import { useCallback, useState } from 'react'
+import {
+  type LocalPlaylistData,
+  renameLocalPlaylist,
+  reorderLocalPlaylistSermons,
+} from 'entities/playlist'
+import { hasOrderChanged } from 'shared/lib/utils/hasOrderChanged'
+import { type SermonShape } from 'shared/model'
+
+/**
+ * Состояние экрана редактирования локального плейлиста.
+ *
+ * Держит локальные копии названия и порядка проповедей, инициализированные из
+ * плейлиста. «Сохранить» доступно, только когда название непустое и изменено
+ * название **или** порядок. Сохранение вызывает переименование и/или reorder
+ * (только изменившиеся части), затем `router.back()`. Экран монтируется лишь
+ * когда плейлист найден, поэтому локальные копии не рассинхронизируются с
+ * асинхронной гидратацией атома.
+ * @param playlist - Редактируемый локальный плейлист.
+ * @returns Значение/сеттер названия, порядок и его сеттер, доступность и обработчик сохранения.
+ */
+export const usePlaylistEditForm = (playlist: LocalPlaylistData) => {
+  const router = useRouter()
+  const rename = useAction(renameLocalPlaylist)
+  const reorder = useAction(reorderLocalPlaylistSermons)
+  const [title, setTitle] = useState(playlist.title)
+  const [orderedSermons, setOrderedSermons] = useState<SermonShape[]>(playlist.sermons)
+
+  const trimmedTitle = title.trim()
+  const isTitleChanged = trimmedTitle !== playlist.title.trim()
+  const isOrderChanged = hasOrderChanged(playlist.sermons, orderedSermons)
+  const canSave = trimmedTitle.length > 0 && (isTitleChanged || isOrderChanged)
+
+  const save = useCallback(async () => {
+    if (!canSave) return
+
+    if (isTitleChanged) await rename(playlist.id, trimmedTitle)
+    if (isOrderChanged)
+      await reorder(
+        playlist.id,
+        orderedSermons.map(sermon => sermon.id),
+      )
+    router.back()
+  }, [
+    canSave,
+    isOrderChanged,
+    isTitleChanged,
+    orderedSermons,
+    playlist.id,
+    rename,
+    reorder,
+    router,
+    trimmedTitle,
+  ])
+
+  return { canSave, orderedSermons, save, setOrderedSermons, setTitle, title }
+}

@@ -37,6 +37,7 @@ const ListenStackLayout = () => {
           title: '',
         }}
       />
+      <Stack.Screen name='playlist-edit' options={{ title: 'Редактировать плейлист' }} />
     </Stack>
   )
 }

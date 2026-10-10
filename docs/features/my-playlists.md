@@ -18,8 +18,10 @@
 - `src/entities/playlist/lib/sanitizeLocalPlaylistSermon.ts` — санитизация снапшота проповеди
 - `src/entities/playlist/lib/customPlaylistShare.ts` — `buildCustomPlaylistSearchParams`/`parseCustomPlaylistParams` (обе формы `sermons`: packed и csv)
 - `src/entities/playlist/lib/sermonIdPacking.ts` — `packSermonIds`/`unpackSermonIds` (base64url-упаковка UUID, 16 байт на id)
-- `src/entities/playlist/index.ts` — публичный API (`FAVORITES_PLAYLIST`, `myPlaylistsAtom`, `loadMyPlaylists`, `createLocalPlaylist`, `renameLocalPlaylist`, `deleteLocalPlaylist`, `reorderMyPlaylists`, `togglePlaylistSermon`, `sectionSettingsAtom`, `loadSectionSettings`, `updateSectionSettings`, `persistSectionSettings`, `LocalSectionSettings`)
-- `src/features/local-playlist-form/` — модалки создания (`CreateLocalPlaylistModal`) и редактирования (`EditLocalPlaylistModal`) локального плейлиста
+- `src/entities/playlist/index.ts` — публичный API (`FAVORITES_PLAYLIST`, `myPlaylistsAtom`, `loadMyPlaylists`, `createLocalPlaylist`, `renameLocalPlaylist`, `deleteLocalPlaylist`, `reorderMyPlaylists`, `reorderLocalPlaylistSermons`, `togglePlaylistSermon`, `sectionSettingsAtom`, `loadSectionSettings`, `updateSectionSettings`, `persistSectionSettings`, `LocalSectionSettings`)
+- `src/entities/playlist/reorderLocalPlaylistSermons.ts` — перестановка проповедей внутри локального плейлиста (снапшоты `sermons` + производные `sermonIds`)
+- `src/features/local-playlist-form/` — модалка создания (`CreateLocalPlaylistModal`), диалог удаления (`LocalPlaylistDeleteDialog`) и хук `useLocalPlaylistDelete`
+- `src/pages/playlist-edit/` — экран редактирования локального плейлиста (переименование + порядок проповедей + удаление)
 - `src/entities/section/lib/mapItemsSize.ts`, `mapTransform.ts`, `mapWhereIsTitleLocated.ts` — мапперы полей оформления секции в `SliderItemSize`/`SliderItemTransform`/`WhereIsSlideTitleLocated` (перенесены из `pages/listen/lib`, чтобы их переиспользовали и слайдер, и экран «Мои плейлисты»); реэкспорт через `entities/section`
 - `src/pages/listen/ui/MyPlaylistsSlider.tsx` — секция «Мои плейлисты» на «Слушать»: рендерится через общий `Slider` с параметрами из `sectionSettingsAtom`, завершающая карточка «Создать»
 - `src/pages/my-playlists/ui/MyPlaylistsScreen.tsx` — экран «Мои плейлисты» — владелец режима редактирования и модалки создания
@@ -272,35 +274,36 @@ read-modify-write по id с тем же путём персиста. **«Изб
 (при `on` — оверлеем). API обратной совместимости: обычные слайдеры без `artworkIcon` не
 затрагиваются.
 
-## Формы создания/редактирования и кнопка редактирования
+## Формы создания и экран редактирования
 
-Фича `src/features/local-playlist-form/` держит обе модалки (паттерн — общий
+Фича `src/features/local-playlist-form/` держит модалку создания (паттерн — общий
 `shared/ui/modal`, как у «Добавить в плейлист»):
 
 - `CreateLocalPlaylistModal` — поле «Название» (`FormField`) + кнопка «Создать»,
-  недоступная, пока название пустое/пробельное. По отправке:
+  недоступная, пока название пустое/пробельное. По отправке (кнопка или Enter в поле):
   `createLocalPlaylist({ title: trimmed, sermonIds: [] })`, закрытие и переход на
   созданный плейлист (`/listen/playlist?playlist=<id>`). Модалка открывается и из
   завершающей карточки секции «Слушать», и из строки «Создать плейлист» на экране
   «Мои плейлисты» (`MyPlaylistsCreateRow`, `ListItemBase` с плюсом, футером под
   списком плейлистов).
-- `EditLocalPlaylistModal` — поле «Название» (предзаполнено текущим) + «Сохранить»
-  (доступна при непустом и **изменённом** названии; `renameLocalPlaylist`) и
-  «Удалить» с подтверждением `ConfirmDialog` (`deleteLocalPlaylist`; после удаления
-  открытого плейлиста — `router.back()`). «Избранные» этой формой не редактируются:
-  экшен защищает инвариант, а кнопка показывается только для локального
-  не-избранного плейлиста.
 
-Формы монтируются только при `visible`, поэтому их состояние (название) сбрасывается
-между открытиями.
+**Редактирование — отдельный экран** `/listen/playlist-edit?playlist=<id>`
+(`src/pages/playlist-edit/`, см. [screens/playlist-edit.md](../screens/playlist-edit.md)),
+а не модалка. Экран держит поле «Название» (предзаполнено текущим; «Сохранить» доступна
+при непустом и **изменённом** названии либо изменённом порядке) и drag-список проповедей
+**только для перестановки** (drag-ручка всегда видна, перестановка стартует только с ручки).
+Сохранение вызывает `renameLocalPlaylist` и/или `reorderLocalPlaylistSermons` и `router.back()`.
+«Избранные» этой формой не редактируются: экшены защищают инвариант, а кнопка показывается
+только для локального не-избранного плейлиста. Модалка создания монтируется только при
+`visible`, поэтому её состояние (название) сбрасывается между открытиями.
 
 **Удаление локального плейлиста — три точки входа, одна логика.** Подтверждение и вызов
 `deleteLocalPlaylist` общие: `LocalPlaylistDeleteDialog` (`ConfirmDialog`) + хук
 `useLocalPlaylistDelete` (`src/features/local-playlist-form/lib/useLocalPlaylistDelete.ts`),
 который хранит id-кандидат и вызывает удаление только после подтверждения.
 
-1. **Шторка редактирования** (`EditLocalPlaylistForm`): кнопка «Удалить»; после удаления —
-   `onClose()` и `router.back()`.
+1. **Экран редактирования** (`src/pages/playlist-edit/`, кнопка «Удалить плейлист» в футере списка):
+   после удаления — `router.back()`.
 2. **Меню шапки экрана плейлиста** (`PlaylistHeaderMenu`): пункт «Удалить плейлист» (только для
    локального не-избранного плейлиста и только на экране — `isEditEnabled`; в шторке плеера нет);
    после подтверждения — закрытие меню и `router.back()`.
@@ -315,9 +318,8 @@ read-modify-write по id с тем же путём персиста. **«Изб
 `PlaylistHeaderActions`): карандаш (`Ionicons 'create-outline'`) слева от меню-кнопки,
 виден **только** для локальных не-избранных плейлистов **и только когда вызывающий
 включил `isEditEnabled`** (это делает шапка экрана плейлиста; шторка плеера
-`PlaylistSheetMenu` его не включает, чтобы правка не уводила из шторки). Открывает
-`EditLocalPlaylistModal`. `PlaylistHeaderActions` владеет состоянием открытия формы,
-чтобы `PlaylistHeaderMenu` оставался про выпадающее меню.
+`PlaylistSheetMenu` его не включает, чтобы правка не уводила из шторки). Тап
+**навигирует** на экран редактирования (`router.push('/listen/playlist-edit?playlist=<id>')`).
 
 ## Резолв на экране плейлиста (tier 0)
 

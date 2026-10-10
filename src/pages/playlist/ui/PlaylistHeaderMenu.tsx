@@ -64,7 +64,6 @@ export const PlaylistHeaderMenu = ({
         iconColor={iconColor}
         playlistId={playlist.id}
         onOpenMenu={handleOpenMenu}
-        playlistTitle={playlistTitle}
         accessibilityLabel={accessibilityLabel}
         isEditable={isEditEnabled && isLocalPlaylist}
       />

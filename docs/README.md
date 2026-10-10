@@ -53,6 +53,7 @@
 | [`features/book-reader.md`](./features/book-reader.md)                 | Чтение FB2-книг (в разработке)                                              |
 | [`screens/listen.md`](./screens/listen.md)                             | Таб «Слушать» и его экраны                                                  |
 | [`screens/playlist.md`](./screens/playlist.md)                         | Экран плейлиста                                                             |
+| [`screens/playlist-edit.md`](./screens/playlist-edit.md)               | Экран редактирования локального плейлиста                                   |
 | [`screens/playlist-list.md`](./screens/playlist-list.md)               | Экран списка плейлистов                                                     |
 | [`screens/my-playlists.md`](./screens/my-playlists.md)                 | Экран «Мои плейлисты» (редактирование порядка)                              |
 | [`screens/search-results.md`](./screens/search-results.md)             | Экран «Результаты поиска» (полные списки групп)                             |

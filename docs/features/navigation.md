@@ -68,15 +68,17 @@
 - `search-results` — нативная шапка (`headerShown: true`, `title: ''`), заголовок **динамический**: экран ставит его через `useHeaderTitle` + `buildSearchResultsTitle` («Проповеди "<q>"» / «Плейлисты "<q>"» / «Проповедники "<q>"» по параметру `type`); кнопка «Назад» — общий `HeaderBackButton` с фолбэком `/listen` (см. [../screens/search-results.md](../screens/search-results.md));
 - `my-playlists` — нативная шапка с заголовком «Мои плейлисты» и `headerRight` (действия редактирования порядка);
 - `playlist-list` — прозрачная шапка (`headerTransparent: true`, `title: ''`);
-- `playlist` — прозрачная шапка.
+- `playlist` — прозрачная шапка;
+- `playlist-edit` — нативная шапка с заголовком «Редактировать плейлист» (экран редактирования локального плейлиста, см. [../screens/playlist-edit.md](../screens/playlist-edit.md)).
 
-Экраны реэкспортируются из `src/pages/` (`app/(tabs)/listen/index.tsx` → `ListenScreen`, `search-results.tsx` → `SearchResultsScreen`, `my-playlists.tsx` → `MyPlaylistsScreen`, `playlist.tsx` → `PlaylistScreen`, `playlist-list.tsx` → `PlaylistListScreen`).
+Экраны реэкспортируются из `src/pages/` (`app/(tabs)/listen/index.tsx` → `ListenScreen`, `search-results.tsx` → `SearchResultsScreen`, `my-playlists.tsx` → `MyPlaylistsScreen`, `playlist.tsx` → `PlaylistScreen`, `playlist-edit.tsx` → `PlaylistEditScreen`, `playlist-list.tsx` → `PlaylistListScreen`).
 
 ## Передача параметров
 
 Параметры передаются **строками** через `router.push({ pathname, params })` (не JSON — полный объект экран резолвит сам):
 
 - `/listen/playlist?playlist=<UUID>` — `navigateToPlaylist` передаёт только `playlist.id`, полный `PlaylistData` экран достаёт через `usePlaylistById` (секции → кэш → API, см. [../screens/playlist.md](../screens/playlist.md));
+- `/listen/playlist-edit?playlist=<UUID>` — карандаш в шапке экрана плейлиста (`PlaylistHeaderActions`) передаёт `playlist.id`; экран редактирования берёт плейлист из `myPlaylistsAtom` (см. [../screens/playlist-edit.md](../screens/playlist-edit.md));
 - `/listen/playlist-list?sectionId=<строка>` — `navigateToPlaylistList` (параметр `title` в URL не передаётся, заголовок берётся из резолвнутого раздела);
 - `/listen/my-playlists` — `navigateToMyPlaylists` (без параметров) — экран редактирования порядка локальных плейлистов;
 - `/listen/search-results?type=<sermons|playlists|preachers>&query=<строка>` — `useListenSearchNavigation` (`src/pages/listen/lib/`): `onShowAllGroup` передаёт `type` и `query` группы из компактной выдачи поиска, `onPreacherPress` — `type=sermons` с именем проповедника. Экран сам оборонительно валидирует параметры (`parseSearchResultsParams`) и рендерит пусто при невалидных (см. [../screens/search-results.md](../screens/search-results.md)).

@@ -19,6 +19,7 @@
 | ------------------------ | -------------------------------------- | ------------ |
 | «Слушать» (главный)      | [listen.md](./listen.md)               | готов        |
 | Плейлист                 | [playlist.md](./playlist.md)           | готов        |
+| Редактирование плейлиста | [playlist-edit.md](./playlist-edit.md) | готов        |
 | Список плейлистов секции | [playlist-list.md](./playlist-list.md) | готов        |
 | «Мои плейлисты»          | [my-playlists.md](./my-playlists.md)   | готов        |
 | Результаты поиска        | [search-results.md](./search-results.md) | готов      |

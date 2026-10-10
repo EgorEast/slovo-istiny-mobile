@@ -45,9 +45,10 @@ const mockRemoveSermonsFromHistoryAction = jest.fn()
 const mockUseHistoryProgressMap = jest.fn(() => new Map<string, number>())
 const mockUseHistorySermonIds = jest.fn(() => new Set<string>())
 const mockBack = jest.fn()
+const mockPush = jest.fn()
 
 jest.mock('expo-router', () => ({
-  useRouter: () => ({ back: mockBack, push: jest.fn() }),
+  useRouter: () => ({ back: mockBack, push: mockPush }),
 }))
 
 jest.mock('entities/listening-history', () => ({
@@ -269,7 +270,7 @@ describe('<PlaylistHeaderMenu>', () => {
     expect(queryByLabelText(EDIT_LABEL)).toBeNull()
   })
 
-  test('shows the edit button for a local playlist and opens the edit form', async () => {
+  test('shows the edit button for a local playlist and navigates to the edit screen', async () => {
     const ctx = createCtx()
     myPlaylistsAtom(ctx, [
       FAVORITES_PLAYLIST,
@@ -289,7 +290,10 @@ describe('<PlaylistHeaderMenu>', () => {
       fireEvent.press(getByLabelText(EDIT_LABEL))
     })
 
-    expect(getByLabelText('Название')).toBeTruthy()
+    expect(mockPush).toHaveBeenCalledWith({
+      params: { playlist: PLAYLIST.id },
+      pathname: '/listen/playlist-edit',
+    })
   })
 
   test('deletes a local playlist from the header menu after confirmation', async () => {

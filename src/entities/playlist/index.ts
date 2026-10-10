@@ -34,6 +34,7 @@ export {
   reorderMyPlaylists,
 } from './model'
 export { renameLocalPlaylist } from './renameLocalPlaylist'
+export { reorderLocalPlaylistSermons } from './reorderLocalPlaylistSermons'
 export {
   loadSectionSettings,
   persistSectionSettings,
