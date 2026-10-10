@@ -1,6 +1,7 @@
 import { Asset } from 'expo-asset'
 import { openURL } from 'expo-linking'
-import { Image, ScrollView, StyleSheet, Text, View } from 'react-native'
+import { Image, Platform, ScrollView, StyleSheet, Text, View } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import {
   APP_NAME,
   APP_VERSION,
@@ -13,6 +14,11 @@ import {
 import { FONT_SIZES, INDENTS, useTheme } from 'shared/ui/theme'
 import { LinkButton } from './LinkButton'
 
+const SCROLL_TEST_ID = 'about-scroll'
+// Extra room under the last line: on web there is no system navigation-bar
+// inset, so a constant keeps the copyright clear of the viewport edge.
+const BOTTOM_PADDING = Platform.OS === 'web' ? INDENTS.highest : INDENTS.high
+
 // eslint-disable-next-line @typescript-eslint/no-require-imports -- Metro bundler requires require() for static assets
 const appIconAsset = Asset.fromModule(require('../../../../assets/icon.png'))
 
@@ -20,11 +26,16 @@ export const AboutScreen = () => {
   const handleOpenSourceLink = () => void openURL(PROJECT_URL)
   const handleOpenLicenseLink = () => void openURL(LICENSE_URL)
   const { currentTheme } = useTheme()
+  const insets = useSafeAreaInsets()
 
   return (
     <ScrollView
-      contentContainerStyle={styles.scrollContent}
+      testID={SCROLL_TEST_ID}
       style={[styles.container, { backgroundColor: currentTheme.background }]}
+      contentContainerStyle={[
+        styles.scrollContent,
+        { paddingBottom: insets.bottom + BOTTOM_PADDING },
+      ]}
     >
       <View style={styles.content}>
         <View style={styles.section}>
