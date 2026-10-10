@@ -6,6 +6,7 @@ import { ActivityIndicator, StyleSheet, Text, View } from 'react-native'
 import Animated from 'react-native-reanimated'
 import { type PlaylistData } from 'entities/playlist'
 import { dynamicSectionsAtom, type SectionData } from 'entities/section'
+import { useNavigationGuard } from 'shared/routing'
 import { useCollapsingNavbarDriver } from 'shared/ui/collapsing-navbar-driver'
 import { tabBarHeightAtom } from 'shared/ui/layout'
 import { FONT_SIZES, INDENTS, PLAYER_SIZES, useTheme } from 'shared/ui/theme'
@@ -26,6 +27,7 @@ export const PlaylistListScreen = () => {
   const [tabBarHeight] = useAtom(tabBarHeightAtom)
   const [cachedSection, setCachedSection] = useState<SectionData | undefined>(undefined)
   const [cacheResolved, setCacheResolved] = useState(false)
+  const runGuarded = useNavigationGuard()
 
   const section = sections.find(s => s.id === sectionId) ?? cachedSection
   const title = section?.title ?? ''
@@ -52,9 +54,11 @@ export const PlaylistListScreen = () => {
 
   const handlePlaylistPress = useCallback(
     (playlist: PlaylistData) => {
-      router.push({ params: { playlist: playlist.id }, pathname: '/listen/playlist' })
+      runGuarded(() => {
+        router.push({ params: { playlist: playlist.id }, pathname: '/listen/playlist' })
+      })
     },
-    [router],
+    [router, runGuarded],
   )
 
   const statusBarStyle: StatusBarStyle = isLight ? 'dark' : 'light'

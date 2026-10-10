@@ -52,4 +52,13 @@ describe('useListenNavigation', () => {
     expect(calledWith.params.sectionId).toBe('section-42')
     expect(calledWith.params.title).toBeUndefined()
   })
+
+  test('ignores a rapid second playlist navigation (double-tap)', async () => {
+    const { result } = await renderHook(() => useListenNavigation())
+
+    result.current.navigateToPlaylist(mockPlaylist)
+    result.current.navigateToPlaylist(mockPlaylist)
+
+    expect(mockPush).toHaveBeenCalledTimes(1)
+  })
 })
