@@ -1,43 +1,26 @@
-import { MaterialCommunityIcons } from '@expo/vector-icons'
-import { type ColorValue, View } from 'react-native'
-import { type PlaylistData } from 'entities/playlist'
 import { ErrorModal } from 'shared/ui/error-modal'
-import { IconButton } from 'shared/ui/icon-button'
-import { useTheme } from 'shared/ui/theme'
-import { type TrackToCache } from '../lib/PlaylistOfflineService'
+import { useLocalPlaylistPublish } from '../lib/useLocalPlaylistPublish'
 import { usePlaylistCacheError } from '../lib/usePlaylistCacheError'
+import { usePlaylistDeleteMenu } from '../lib/usePlaylistDeleteMenu'
 import { usePlaylistHistoryMenu } from '../lib/usePlaylistHistoryMenu'
 import { usePlaylistOfflineMenu } from '../lib/usePlaylistOfflineMenu'
 import { usePlaylistShare } from '../lib/usePlaylistShare'
+import { PlaylistHeaderActions } from './PlaylistHeaderActions'
+import { type PlaylistHeaderMenuProps } from './PlaylistHeaderMenu.types'
 import { PlaylistHeaderMenuDropdown } from './PlaylistHeaderMenuDropdown'
 import { PlaylistHistoryDialogs } from './PlaylistHistoryDialogs'
 import { PlaylistOfflineDialogs } from './PlaylistOfflineDialogs'
-import { headerMenuButtonStyles } from './styles'
 
-const ICON_SIZE = 24
 const DEFAULT_MENU_LABEL = 'Меню плейлиста'
-
-export interface PlaylistHeaderMenuProps {
-  /**
-   * Screen-reader name of the trigger: callers that show a second menu button
-   *  on the same screen (the player sheet) pass a contextual label.
-   */
-  accessibilityLabel?: string
-  iconColor?: ColorValue
-  playlist: PlaylistData
-  playlistTitle: string
-  tracksData: TrackToCache[]
-}
 
 export const PlaylistHeaderMenu = ({
   accessibilityLabel = DEFAULT_MENU_LABEL,
   iconColor,
+  isEditEnabled = false,
   playlist,
   playlistTitle,
   tracksData,
 }: PlaylistHeaderMenuProps) => {
-  const { currentTheme } = useTheme()
-
   const {
     allCached,
     buttonRef,
@@ -65,37 +48,43 @@ export const PlaylistHeaderMenu = ({
   const historyMenu = usePlaylistHistoryMenu(playlist, closeMenu)
   const { error, handleErrorClose } = usePlaylistCacheError(cacheDialogVisible)
   const { canShare, handleShare } = usePlaylistShare(playlist, closeMenu)
+  const { canPublish, handlePublish, isLocalPlaylist } = useLocalPlaylistPublish(
+    playlist,
+    closeMenu,
+  )
+  const { canDelete, renderDialog, requestDelete } = usePlaylistDeleteMenu(
+    isEditEnabled && isLocalPlaylist,
+    closeMenu,
+  )
 
   return (
     <>
-      <View ref={buttonRef} collapsable={false}>
-        <IconButton
-          onPress={handleOpenMenu}
-          style={headerMenuButtonStyles.button}
-          accessibilityLabel={accessibilityLabel}
-          accessibilityHint='Нажмите чтобы открыть меню'
-          Icon={
-            <MaterialCommunityIcons
-              size={ICON_SIZE}
-              name='dots-vertical'
-              color={iconColor ?? currentTheme.text}
-            />
-          }
-        />
-      </View>
+      <PlaylistHeaderActions
+        buttonRef={buttonRef}
+        iconColor={iconColor}
+        playlistId={playlist.id}
+        onOpenMenu={handleOpenMenu}
+        playlistTitle={playlistTitle}
+        accessibilityLabel={accessibilityLabel}
+        isEditable={isEditEnabled && isLocalPlaylist}
+      />
 
       <PlaylistHeaderMenuDropdown
         anchor={menuAnchor}
         onClose={closeMenu}
         anchorRef={buttonRef}
         visible={menuVisible}
+        canDelete={canDelete}
         allCached={allCached}
         isCaching={isCaching}
         onShare={handleShare}
+        canPublish={canPublish}
+        onPublish={handlePublish}
         isShareDisabled={!canShare}
         onStopCaching={handleStopCaching}
         canMarkAll={historyMenu.canMarkAll}
         onClearCache={handleClearCacheOption}
+        onDelete={() => requestDelete(playlist.id)}
         onMarkAll={historyMenu.handleMarkAllOption}
         isClearCacheDisabled={isClearCacheDisabled}
         isOfflineItemsVisible={isOfflineItemsVisible}
@@ -124,7 +113,10 @@ export const PlaylistHeaderMenu = ({
         onMarkCancel={() => historyMenu.setMarkDialogVisible(false)}
         onRemoveCancel={() => historyMenu.setRemoveDialogVisible(false)}
       />
+
       <ErrorModal error={error} visible={error !== null} onClose={handleErrorClose} />
+
+      {renderDialog()}
     </>
   )
 }

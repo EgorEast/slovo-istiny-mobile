@@ -51,11 +51,15 @@ const CLEAR_CACHE_TEXT = 'Удалить из офлайн все'
 const MARK_ALL_TEXT = 'Пометить все прослушанными'
 const REMOVE_TEXT = 'Удалить проповеди из истории'
 const SHARE_TEXT = 'Поделиться плейлистом'
+const PUBLISH_TEXT = 'Добавить в глобальные'
+const DELETE_TEXT = 'Удалить плейлист'
 
 const defaultProps = {
   allCached: false,
   anchor: ANCHOR,
+  canDelete: false,
   canMarkAll: false,
+  canPublish: false,
   canRemoveFromHistory: false,
   isAddAllToOfflineDisabled: false,
   isCaching: false,
@@ -64,7 +68,9 @@ const defaultProps = {
   onAddAllToOffline: jest.fn(),
   onClearCache: jest.fn(),
   onClose: jest.fn(),
+  onDelete: jest.fn(),
   onMarkAll: jest.fn(),
+  onPublish: jest.fn(),
   onRemoveFromHistory: jest.fn(),
   onShare: jest.fn(),
   onStopCaching: jest.fn(),
@@ -197,6 +203,23 @@ describe('<PlaylistHeaderMenuDropdown>', () => {
     expect(onShare).not.toHaveBeenCalled()
   })
 
+  test('hides the publish item for a non-local playlist', async () => {
+    await renderDropdown()
+
+    expect(screen.queryByText(PUBLISH_TEXT)).toBeNull()
+  })
+
+  test('shows the publish item for a publishable playlist and fires onPublish when pressed', async () => {
+    const onPublish = jest.fn()
+    await renderDropdown({ canPublish: true, onPublish })
+
+    expect(screen.getByText(PUBLISH_TEXT)).toBeTruthy()
+
+    fireEvent.press(screen.getByText(PUBLISH_TEXT))
+
+    expect(onPublish).toHaveBeenCalledTimes(1)
+  })
+
   test('hides history items when both flags are false', async () => {
     await renderDropdown()
 
@@ -231,6 +254,23 @@ describe('<PlaylistHeaderMenuDropdown>', () => {
 
     expect(screen.getByText(MARK_ALL_TEXT)).toBeTruthy()
     expect(screen.getByText(REMOVE_TEXT)).toBeTruthy()
+  })
+
+  test('hides the delete item when canDelete is false', async () => {
+    await renderDropdown()
+
+    expect(screen.queryByText(DELETE_TEXT)).toBeNull()
+  })
+
+  test('shows the delete item and fires onDelete when canDelete', async () => {
+    const onDelete = jest.fn()
+    await renderDropdown({ canDelete: true, onDelete })
+
+    expect(screen.getByText(DELETE_TEXT)).toBeTruthy()
+
+    fireEvent.press(screen.getByText(DELETE_TEXT))
+
+    expect(onDelete).toHaveBeenCalledTimes(1)
   })
 })
 

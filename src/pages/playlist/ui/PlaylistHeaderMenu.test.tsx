@@ -1,6 +1,7 @@
 import { createCtx } from '@reatom/framework'
 import { act, fireEvent, screen, waitFor } from '@testing-library/react-native'
 import { View } from 'react-native'
+import { FAVORITES_PLAYLIST, myPlaylistsAtom } from 'entities/playlist'
 import { renderWithProviders } from 'shared/mocks/renderWithProviders'
 import { isCachingPlaylistAtom } from '../model'
 import { PlaylistHeaderMenu } from './PlaylistHeaderMenu'
@@ -43,6 +44,11 @@ const mockMarkSermonsListenedAction = jest.fn()
 const mockRemoveSermonsFromHistoryAction = jest.fn()
 const mockUseHistoryProgressMap = jest.fn(() => new Map<string, number>())
 const mockUseHistorySermonIds = jest.fn(() => new Set<string>())
+const mockBack = jest.fn()
+
+jest.mock('expo-router', () => ({
+  useRouter: () => ({ back: mockBack, push: jest.fn() }),
+}))
 
 jest.mock('entities/listening-history', () => ({
   markSermonsListenedAction: (...args: unknown[]) => mockMarkSermonsListenedAction(...args),
@@ -84,6 +90,10 @@ const MARK_ALL_TEXT = 'Пометить все прослушанными'
 const REMOVE_TEXT = 'Удалить проповеди из истории'
 const MARK_CONFIRM_TEXT = 'Пометить'
 const REMOVE_CONFIRM_TEXT = 'Удалить'
+const EDIT_LABEL = 'Редактировать плейлист'
+const DELETE_MENU_TEXT = 'Удалить плейлист'
+const DELETE_DIALOG_TITLE = 'Удалить плейлист?'
+const DELETE_CONFIRM_TEXT = 'Удалить'
 
 const renderMenu = async () => {
   const ctx = createCtx()
@@ -228,5 +238,127 @@ describe('<PlaylistHeaderMenu>', () => {
 
     expect(screen.queryByText(MARK_ALL_TEXT)).toBeNull()
     expect(screen.queryByText(REMOVE_TEXT)).toBeNull()
+  })
+
+  test('hides the edit button for a non-local playlist', async () => {
+    const ctx = createCtx()
+    const { queryByLabelText } = await renderWithProviders(
+      <PlaylistHeaderMenu
+        isEditEnabled
+        tracksData={TRACKS}
+        playlist={PLAYLIST}
+        playlistTitle={PLAYLIST_TITLE}
+      />,
+      { ctx },
+    )
+
+    expect(queryByLabelText(EDIT_LABEL)).toBeNull()
+  })
+
+  test('hides the edit button when editing is not enabled (player sheet)', async () => {
+    const ctx = createCtx()
+    myPlaylistsAtom(ctx, [
+      FAVORITES_PLAYLIST,
+      { id: 'pl-1', sermonIds: [], sermons: [], title: PLAYLIST_TITLE },
+    ])
+    const { queryByLabelText } = await renderWithProviders(
+      <PlaylistHeaderMenu tracksData={TRACKS} playlist={PLAYLIST} playlistTitle={PLAYLIST_TITLE} />,
+      { ctx },
+    )
+
+    expect(queryByLabelText(EDIT_LABEL)).toBeNull()
+  })
+
+  test('shows the edit button for a local playlist and opens the edit form', async () => {
+    const ctx = createCtx()
+    myPlaylistsAtom(ctx, [
+      FAVORITES_PLAYLIST,
+      { id: 'pl-1', sermonIds: [], sermons: [], title: PLAYLIST_TITLE },
+    ])
+    const { getByLabelText } = await renderWithProviders(
+      <PlaylistHeaderMenu
+        isEditEnabled
+        tracksData={TRACKS}
+        playlist={PLAYLIST}
+        playlistTitle={PLAYLIST_TITLE}
+      />,
+      { ctx },
+    )
+
+    await act(async () => {
+      fireEvent.press(getByLabelText(EDIT_LABEL))
+    })
+
+    expect(getByLabelText('Название')).toBeTruthy()
+  })
+
+  test('deletes a local playlist from the header menu after confirmation', async () => {
+    const ctx = createCtx()
+    myPlaylistsAtom(ctx, [
+      FAVORITES_PLAYLIST,
+      { id: 'pl-1', sermonIds: [], sermons: [], title: PLAYLIST_TITLE },
+    ])
+    await renderWithProviders(
+      <PlaylistHeaderMenu
+        isEditEnabled
+        tracksData={TRACKS}
+        playlist={PLAYLIST}
+        playlistTitle={PLAYLIST_TITLE}
+      />,
+      { ctx },
+    )
+    await act(async () => {
+      fireEvent.press(screen.getByRole('button', { name: MENU_BUTTON_LABEL }))
+    })
+
+    fireEvent.press(await waitFor(() => screen.getByText(DELETE_MENU_TEXT)))
+    await waitFor(() => expect(screen.getByText(DELETE_DIALOG_TITLE)).toBeTruthy())
+
+    await act(async () => {
+      fireEvent.press(screen.getByText(DELETE_CONFIRM_TEXT))
+    })
+
+    await waitFor(() =>
+      expect(ctx.get(myPlaylistsAtom).map(playlist => playlist.id)).toEqual([
+        FAVORITES_PLAYLIST.id,
+      ]),
+    )
+    expect(mockBack).toHaveBeenCalledTimes(1)
+  })
+
+  test('hides the delete item for the favorites playlist', async () => {
+    const ctx = createCtx()
+    myPlaylistsAtom(ctx, [FAVORITES_PLAYLIST])
+    await renderWithProviders(
+      <PlaylistHeaderMenu
+        isEditEnabled
+        tracksData={TRACKS}
+        playlistTitle={FAVORITES_PLAYLIST.title}
+        playlist={{ ...PLAYLIST, id: FAVORITES_PLAYLIST.id }}
+      />,
+      { ctx },
+    )
+    await act(async () => {
+      fireEvent.press(screen.getByRole('button', { name: MENU_BUTTON_LABEL }))
+    })
+
+    expect(screen.queryByText(DELETE_MENU_TEXT)).toBeNull()
+  })
+
+  test('hides the delete item when editing is not enabled (player sheet)', async () => {
+    const ctx = createCtx()
+    myPlaylistsAtom(ctx, [
+      FAVORITES_PLAYLIST,
+      { id: 'pl-1', sermonIds: [], sermons: [], title: PLAYLIST_TITLE },
+    ])
+    await renderWithProviders(
+      <PlaylistHeaderMenu tracksData={TRACKS} playlist={PLAYLIST} playlistTitle={PLAYLIST_TITLE} />,
+      { ctx },
+    )
+    await act(async () => {
+      fireEvent.press(screen.getByRole('button', { name: MENU_BUTTON_LABEL }))
+    })
+
+    expect(screen.queryByText(DELETE_MENU_TEXT)).toBeNull()
   })
 })

@@ -1,6 +1,6 @@
 import { useAtom } from '@reatom/npm-react'
 import { type ReactElement } from 'react'
-import { StyleSheet, View } from 'react-native'
+import { StyleSheet } from 'react-native'
 import DraggableFlatList, { type RenderItemParams } from 'react-native-draggable-flatlist'
 import { type LocalPlaylistData } from 'entities/playlist'
 import { tabBarHeightAtom } from 'shared/ui/layout'
@@ -10,7 +10,8 @@ import { MyPlaylistsRow } from './MyPlaylistsRow'
 // Вертикальный список локальных плейлистов с drag-to-reorder. Вне режима
 // редактирования drag выключен и тап навигирует; в режиме редактирования
 // long-press тянет строку целиком, `onDragEnd` отдаёт итоговый порядок id наверх.
-// `listHeader`/`listEmpty` — слоты для формы оформления и пустого состояния.
+// `listHeader`/`listEmpty`/`listFooter` — слоты для формы оформления, пустого
+// состояния и завершающей строки «Создать плейлист».
 // Нижний отступ резервирует место под мини-плеер и таб-бар (как `PlaylistTrackList`),
 // чтобы последние строки не прятались за плавающим плеером — и в обычном режиме,
 // и в режиме редактирования.
@@ -18,14 +19,18 @@ export const MyPlaylistsDragList = ({
   isDraggingEnabled,
   items,
   listEmpty,
+  listFooter,
   listHeader,
+  onDeleteItem,
   onDragEnd,
   onPressItem,
 }: {
   isDraggingEnabled: boolean
   items: LocalPlaylistData[]
   listEmpty?: ReactElement
+  listFooter?: ReactElement
   listHeader?: ReactElement
+  onDeleteItem?: (playlistId: string) => void
   onDragEnd: (orderedIds: string[]) => void
   onPressItem: (playlist: LocalPlaylistData) => void
 }) => {
@@ -35,6 +40,7 @@ export const MyPlaylistsDragList = ({
     <DraggableFlatList
       data={items}
       ListEmptyComponent={listEmpty}
+      ListFooterComponent={listFooter}
       ListHeaderComponent={listHeader}
       containerStyle={styles.listContainer}
       keyExtractor={playlist => playlist.id}
@@ -43,15 +49,14 @@ export const MyPlaylistsDragList = ({
         paddingBottom: tabBarHeight + PLAYER_SIZES.miniPlayerHeight + INDENTS.low,
       }}
       renderItem={({ drag, isActive, item }: RenderItemParams<LocalPlaylistData>) => (
-        <View style={styles.row}>
-          <MyPlaylistsRow
-            drag={drag}
-            item={item}
-            isActive={isActive}
-            onPress={() => onPressItem(item)}
-            isDraggingEnabled={isDraggingEnabled}
-          />
-        </View>
+        <MyPlaylistsRow
+          drag={drag}
+          item={item}
+          isActive={isActive}
+          onPress={() => onPressItem(item)}
+          isDraggingEnabled={isDraggingEnabled}
+          onDelete={onDeleteItem ? () => onDeleteItem(item.id) : undefined}
+        />
       )}
     />
   )
@@ -64,5 +69,4 @@ const styles = StyleSheet.create({
   listContainer: {
     flex: 1,
   },
-  row: { marginBottom: INDENTS.middle },
 })
