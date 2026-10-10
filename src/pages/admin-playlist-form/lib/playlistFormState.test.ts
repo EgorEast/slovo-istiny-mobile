@@ -3,6 +3,7 @@ import {
   buildCreatePlaylistDto,
   buildUpdatePlaylistDto,
   initialFormValues,
+  parsePublishSermonsParam,
   type PlaylistFormValues,
 } from './playlistFormState'
 
@@ -83,6 +84,33 @@ describe('playlistFormState', () => {
 
       expect(dto.sermonsIds).toEqual(['m2', 'm1'])
       expect(dto.sectionsIds).toEqual(['s2', 's1'])
+    })
+  })
+
+  describe('parsePublishSermonsParam', () => {
+    test('extracts ids and renderable snapshots from the JSON payload', () => {
+      const raw = JSON.stringify([
+        { artist: 'A1', artwork: null, id: 's1', title: 'S1' },
+        { id: 's2' },
+      ])
+
+      const parsed = parsePublishSermonsParam(raw)
+
+      expect(parsed.ids).toEqual(['s1', 's2'])
+      expect(parsed.sermons).toEqual([{ artist: 'A1', artwork: null, id: 's1', title: 'S1' }])
+    })
+
+    test('uses the first value when the parameter is an array', () => {
+      const raw = JSON.stringify([{ artist: 'A', artwork: null, id: 's1', title: 'S' }])
+
+      const parsed = parsePublishSermonsParam([raw, 'ignored'])
+
+      expect(parsed.ids).toEqual(['s1'])
+    })
+
+    test('degrades to an empty result for malformed JSON', () => {
+      expect(parsePublishSermonsParam('not-json')).toEqual({ ids: [], sermons: [] })
+      expect(parsePublishSermonsParam(undefined)).toEqual({ ids: [], sermons: [] })
     })
   })
 })
