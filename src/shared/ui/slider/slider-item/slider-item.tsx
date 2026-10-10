@@ -111,6 +111,8 @@ const styles = StyleSheet.create({
   iconBackground: {
     alignItems: 'center',
     justifyContent: 'center',
+    // Clips a full-bleed artwork icon to the card's rounded corners.
+    overflow: 'hidden',
     width: '100%',
   },
   imageBackground: { justifyContent: 'flex-end', width: '100%' },

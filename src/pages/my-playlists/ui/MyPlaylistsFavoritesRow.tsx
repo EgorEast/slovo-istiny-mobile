@@ -1,12 +1,15 @@
 import { Ionicons } from '@expo/vector-icons'
-import { ListItemBase } from 'entities/list-item'
+import { ListItemBase, SURFACE_ARTWORK_SIZE } from 'entities/list-item'
 import { type LocalPlaylistData } from 'entities/playlist'
 import { useTheme } from 'shared/ui/theme'
+import { MyPlaylistsMarkerAvatar } from './MyPlaylistsMarkerAvatar'
 
-const FAVORITES_ICON_SIZE = 24
+const HEART_ICON = 'heart'
 
-// Строка «Избранные»: закреплена первой, не перетаскивается. Сердце —
-// тот же визуальный маркер, что у карточки на экране «Слушать».
+// Строка «Избранные»: первая в списке (не закреплена — скроллится вместе с
+// остальными), не перетаскивается. Сердце — тот же визуальный маркер, что у
+// карточки на экране «Слушать»; оно лежит в слоте обложки `surface`-строки,
+// поэтому строка совпадает по геометрии со строками плейлистов и админки.
 export const MyPlaylistsFavoritesRow = ({
   onPress,
   playlist,
@@ -18,10 +21,17 @@ export const MyPlaylistsFavoritesRow = ({
 
   return (
     <ListItemBase
-      artwork={null}
       onPress={onPress}
+      variant='surface'
       title={playlist.title}
-      right={<Ionicons name='heart' size={FAVORITES_ICON_SIZE} color={currentTheme.primary} />}
+      artworkNode={
+        <MyPlaylistsMarkerAvatar
+          size={SURFACE_ARTWORK_SIZE}
+          renderIcon={iconSize => (
+            <Ionicons size={iconSize} name={HEART_ICON} color={currentTheme.primary} />
+          )}
+        />
+      }
     />
   )
 }
