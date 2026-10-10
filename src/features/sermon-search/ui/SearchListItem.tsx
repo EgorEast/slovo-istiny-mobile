@@ -1,3 +1,4 @@
+import { type ReactNode } from 'react'
 import { StyleSheet, Text, View } from 'react-native'
 import { TRACK_LIST_ITEM_SIZES } from 'entities/track-list'
 import { CoverImage } from 'shared/ui/cover-image'
@@ -11,17 +12,20 @@ import { FONT_SIZES, INDENTS, RADIUSES, useTheme } from 'shared/ui/theme'
  * row's cache badge and dots menu, which do not apply to playlists/preachers.
  * @param root0 - Row props.
  * @param root0.artwork - Cover URI; omitted rows (preachers) keep the track row height via a min-height text column.
+ * @param root0.artworkNode - Custom artwork node (e.g. A letter tile) rendered in the artwork slot.
  * @param root0.onPress - Row press handler.
  * @param root0.subtitle - Optional playlist-style secondary line.
  * @param root0.title - Primary row label.
  */
 export const SearchListItem = ({
   artwork,
+  artworkNode,
   onPress,
   subtitle,
   title,
 }: {
   artwork?: null | string
+  artworkNode?: ReactNode
   onPress: () => void
   subtitle?: string
   title: string
@@ -30,7 +34,11 @@ export const SearchListItem = ({
 
   return (
     <PressableButton onPress={onPress} style={[styles.row, { backgroundColor: currentTheme.card }]}>
-      {artwork == null ? null : <CoverImage uri={artwork} style={styles.artwork} />}
+      {artworkNode ? (
+        <View style={styles.artworkSpacer}>{artworkNode}</View>
+      ) : artwork == null ? null : (
+        <CoverImage uri={artwork} style={styles.artwork} />
+      )}
       <View style={styles.texts}>
         <Text numberOfLines={1} style={[styles.title, { color: currentTheme.text }]}>
           {title}
@@ -51,6 +59,9 @@ const styles = StyleSheet.create({
     height: TRACK_LIST_ITEM_SIZES.albumArtSize,
     marginRight: INDENTS.middle,
     width: TRACK_LIST_ITEM_SIZES.albumArtSize,
+  },
+  artworkSpacer: {
+    marginRight: INDENTS.middle,
   },
   row: {
     alignItems: 'center',

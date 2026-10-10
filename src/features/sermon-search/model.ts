@@ -1,7 +1,8 @@
 import { action, atom } from '@reatom/framework'
-import { type PlaylistData } from 'entities/playlist'
+import { myPlaylistsAtom, type PlaylistData } from 'entities/playlist'
 import { type SermonData } from 'entities/sermon'
 import { collectMatchingPreachers } from './lib/composeSearchResults'
+import { mergePlaylistMatches, selectLocalPlaylistMatches } from './lib/localPlaylistSearch'
 import {
   fetchPlaylistTitleMatches,
   fetchSermonResults,
@@ -88,10 +89,12 @@ export const fetchSearchResults = action(async (ctx, rawQuery: string) => {
     if (!isCurrentRequest(requestId)) return
 
     persistSearchResults(query, sermonResult, playlistResult)
+    const localMatches = selectLocalPlaylistMatches(ctx.get(myPlaylistsAtom), query)
+    const mergedPlaylists = mergePlaylistMatches(localMatches, playlistResult.data)
 
     await ctx.schedule(() => {
       searchResultsAtom(ctx, sermonResult.data)
-      searchPlaylistsAtom(ctx, playlistResult.data)
+      searchPlaylistsAtom(ctx, mergedPlaylists)
       searchPreachersAtom(ctx, collectMatchingPreachers(sermonResult.data, query))
     })
   } finally {

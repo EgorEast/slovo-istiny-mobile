@@ -8,6 +8,7 @@ import {
 } from 'features/sermon-search'
 import { useHistoryProgressMap } from 'entities/listening-history'
 import { type PlaylistData } from 'entities/playlist'
+import { useNavigationGuard } from 'shared/routing'
 import { useHeaderTitle } from 'shared/routing/useHeaderTitle'
 import { parseSearchResultsParams } from '../lib/parseSearchResultsParams'
 import { buildSearchResultsTitle } from '../lib/searchResultsTitle'
@@ -22,6 +23,7 @@ export const SearchResultsScreen = () => {
   const parsed = parseSearchResultsParams(params)
   const setHeaderTitle = useHeaderTitle()
   const router = useRouter()
+  const runGuarded = useNavigationGuard()
   const { modal, onSermonPress } = useSermonPlayback()
   const progressMap = useHistoryProgressMap()
 
@@ -39,19 +41,23 @@ export const SearchResultsScreen = () => {
 
   const handlePlaylistPress = useCallback(
     (playlist: PlaylistData) => {
-      router.push({ params: { playlist: playlist.id }, pathname: '/listen/playlist' })
+      runGuarded(() => {
+        router.push({ params: { playlist: playlist.id }, pathname: '/listen/playlist' })
+      })
     },
-    [router],
+    [router, runGuarded],
   )
 
   const handlePreacherPress = useCallback(
     (artist: string) => {
-      router.push({
-        params: { query: artist, type: 'sermons' },
-        pathname: '/listen/search-results',
+      runGuarded(() => {
+        router.push({
+          params: { query: artist, type: 'sermons' },
+          pathname: '/listen/search-results',
+        })
       })
     },
-    [router],
+    [router, runGuarded],
   )
 
   if (!parsedType) return null

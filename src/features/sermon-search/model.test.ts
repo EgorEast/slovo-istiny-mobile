@@ -29,7 +29,11 @@ jest.mock('./lib/playlistSearchCache', () => ({
 }))
 
 import { createCtx } from '@reatom/framework'
-import { mapPlaylistEntityToPlaylistData } from 'entities/playlist'
+import {
+  FAVORITES_PLAYLIST,
+  mapPlaylistEntityToPlaylistData,
+  myPlaylistsAtom,
+} from 'entities/playlist'
 import { mapAllSermonsResponse } from 'entities/sermon'
 import { playlistsMocks, sermonsMocks } from 'shared/api/generated'
 import {
@@ -358,5 +362,33 @@ describe('sermon-search model', () => {
 
     expect(mockGetCachedPlaylistSearch).toHaveBeenCalledWith('вера')
     expect(ctx.get(searchPlaylistsAtom).map(playlist => playlist.id)).toEqual(['cached-playlist'])
+  })
+
+  test('fetchSearchResults prepends matching local playlists and dedupes by id', async () => {
+    const globalPlaylist = playlistsMocks.getPlaylistControllerCreateResponseMock({
+      id: 'shared-1',
+      title: 'Вера',
+    })
+    const sharedWithLocalId = playlistsMocks.getPlaylistControllerCreateResponseMock({
+      id: 'local-dup',
+      title: 'Вера',
+    })
+    mockSermonControllerFindAll.mockResolvedValue(buildSermonsResponse([]))
+    mockPlaylistControllerFindAll.mockResolvedValue(
+      buildPlaylistsResponse([globalPlaylist, sharedWithLocalId]),
+    )
+    const ctx = createCtx()
+    myPlaylistsAtom(ctx, [
+      { id: FAVORITES_PLAYLIST.id, sermonIds: [], sermons: [], title: FAVORITES_PLAYLIST.title },
+      { id: 'local-dup', sermonIds: [], sermons: [], title: 'Вера моя' },
+      { id: 'local-other', sermonIds: [], sermons: [], title: 'Другое' },
+    ])
+
+    await fetchSearchResults(ctx, 'вера')
+
+    expect(ctx.get(searchPlaylistsAtom).map(playlist => playlist.id)).toEqual([
+      'local-dup',
+      'shared-1',
+    ])
   })
 })

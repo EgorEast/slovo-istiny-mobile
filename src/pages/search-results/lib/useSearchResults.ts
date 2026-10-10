@@ -1,12 +1,15 @@
+import { useAtom } from '@reatom/npm-react'
 import { useEffect, useState } from 'react'
 import {
   collectMatchingPreachers,
   fetchPlaylistTitleMatches,
   fetchSermonResults,
+  mergePlaylistMatches,
   persistPlaylistSearchResults,
   persistSermonSearchResults,
+  selectLocalPlaylistMatches,
 } from 'features/sermon-search'
-import { type PlaylistData } from 'entities/playlist'
+import { myPlaylistsAtom, type PlaylistData } from 'entities/playlist'
 import { type SermonData } from 'entities/sermon'
 import { type SearchResultsType } from './parseSearchResultsParams'
 
@@ -21,6 +24,7 @@ const FULL_PLAYLISTS_LIMIT = 100
  * @param query - Search query (already validated/trimmed).
  */
 export const useSearchResults = (type: SearchResultsType, query: string) => {
+  const [myPlaylists] = useAtom(myPlaylistsAtom)
   const [sermons, setSermons] = useState<SermonData[]>([])
   const [playlists, setPlaylists] = useState<PlaylistData[]>([])
   const [preachers, setPreachers] = useState<string[]>([])
@@ -39,7 +43,9 @@ export const useSearchResults = (type: SearchResultsType, query: string) => {
         const result = await fetchPlaylistTitleMatches(query, FULL_PLAYLISTS_LIMIT)
         if (cancelled) return
         persistPlaylistSearchResults(query, result)
-        setPlaylists(result.data)
+        setPlaylists(
+          mergePlaylistMatches(selectLocalPlaylistMatches(myPlaylists, query), result.data),
+        )
         return
       }
 
@@ -57,7 +63,7 @@ export const useSearchResults = (type: SearchResultsType, query: string) => {
     return () => {
       cancelled = true
     }
-  }, [query, type])
+  }, [query, type, myPlaylists])
 
   return { isLoading, playlists, preachers, sermons }
 }
