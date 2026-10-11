@@ -1,0 +1,10 @@
+Unify no-artwork slider cards and on-card letter
+Add a header save button
+Idempotent custom imports, server-matching rows
+Treat stored sermonIds as authoritative on load
+Polish search refetch, edit list and hydration guards
+Keep imported members when toggling a sermon
+Edit a local playlist on a dedicated screen
+Keep content scrollable above the system navigation bar
+
+Full changelog: https://git.lightnode.ru/Slovo_Propovedi/slovo-propovedi-mobile/src/branch/main/CHANGELOG.md

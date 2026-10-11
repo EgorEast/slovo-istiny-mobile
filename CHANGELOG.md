@@ -5,6 +5,85 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.27.0] - 2026-10-11
+
+### Added
+
+- Add a header save button
+- Idempotent custom imports, server-matching rows
+- Edit a local playlist on a dedicated screen
+- Guard against double-tap opening a screen twice
+- Enforce the custom-playlist sermon limit
+- Publish a local playlist to the admin create form
+- Include local playlists in search results
+- Delete playlists and reorder via the drag handle
+- Add create/edit forms, slider plus-card and edit button
+- Refresh layout and custom playlist card visuals
+- Add local playlist domain, share and import
+- Refetch feature flags after sign-in and sign-out
+- Replace override buttons with a single effective-state toggle
+- Fetch feature flags for anonymous users too
+- Show existing overrides in admin flag detail
+- Refetch feature flags on app foreground
+- Admin UI for feature flags management
+- Gate read/study tabs behind feature flags
+- Autofocus username field
+- Rename backup section and offer folder pick on export
+- Add link icon to server URL settings
+- Choose backup file on folder import
+- Resolve autosync conflict with existing auto backup
+- Settings backup export/import
+- Sync search query with URL on web
+- Listening progress on full results screen
+- Switch playlist context when re-playing same sermon
+- Offer favorites in sermon playlist picker; quiet web playback noise
+- Name-only matches and playlist picker on sermon play
+- Grouped results for sermons, playlists and preachers
+- Toast rejected file format in system picker
+- Drop overlay, upload toasts, admin shell skeleton
+- Drag-and-drop image upload on admin media page
+- Distribute dropped files to sermon form media fields
+
+### Changed
+
+- Drop dead state exports in admin flag hooks
+
+### Fixed
+
+- Unify no-artwork slider cards and on-card letter
+- Treat stored sermonIds as authoritative on load
+- Polish search refetch, edit list and hydration guards
+- Keep imported members when toggling a sermon
+- Keep content scrollable above the system navigation bar
+- Keep modal content a sibling of the backdrop on web
+- Avoid refetching sections on slider remount
+- Show toast instead of global error modal on feature-flags fetch failure
+- Sequence overrides refetch and keep list on error
+- Remount credential fields to restore Android autofill
+- Enable Android system autofill for credential fields
+- Guard unmounted state update in forked useLinking
+- Apply safe-area top inset via style on shifting screens
+- Correct anchored dropdown position in Safari viewports
+- Provide initial safe area metrics to SafeAreaProvider
+- Respect safe area in AdminShellSkeleton
+- Resolve existing SAF document for backup read
+- Create SAF backup document with explicit mime
+- Add expo-sharing for iOS backup export
+- Avoid duplicate fetch on url seed and progress reset on context switch
+- Keep committed downloads on commit failure
+- Resolve playlist artwork when sermon artwork is empty
+- Refresh artwork and metadata on playlist context switch
+- Delete partial files on web via web storage
+- Include content-matched playlists in playlists group screen
+- Pin @react-native/jest-preset to match react-native 0.86.3
+- Harden search caches and review fixes
+- Single webkitGetAsEntry call and fb2 mime prediction
+- Predict dropped fb2 files by extension via webkitGetAsEntry
+- Predict fb2 files as text in drop overlay
+- Disallow txt attachments for sermon text file
+- Drop overlay performance and toast timing
+- Harden sermon form file drop handling
+
 ## [0.26.1] - 2026-10-07
 
 ### Added
@@ -1066,6 +1145,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add AGENTS.md
 - Remove old packages and notifications for correct app running
 
+[0.27.0]: https://git.lightnode.ru/Slovo_Propovedi/slovo-propovedi-mobile/src/tag/v0.27.0
 [0.26.1]: https://git.lightnode.ru/Slovo_Propovedi/slovo-propovedi-mobile/src/tag/v0.26.1
 [0.26.0]: https://git.lightnode.ru/Slovo_Propovedi/slovo-propovedi-mobile/src/tag/v0.26.0
 [0.25.1]: https://git.lightnode.ru/Slovo_Propovedi/slovo-propovedi-mobile/src/tag/v0.25.1
