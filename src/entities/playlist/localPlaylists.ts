@@ -6,6 +6,17 @@ import { localSermonSchema } from './lib/localSermonSchema'
 export const MY_PLAYLISTS = 'myPlaylists'
 
 /**
+ * Максимум проповедей в пользовательском (локальном) плейлисте.
+ *
+ * Ограничение продиктовано бюджетом URL: плейлист целиком уезжает в ссылку
+ * `?sermons=<base64url>` (16 байт на UUID → 22 символа), и 200 проповедей — это
+ * ~4.4 КБ query-строки, комфортно укладывающиеся в лимиты браузеров/мессенджеров
+ * (практический предел URL — ~8 КБ). Заодно защищает `myPlaylists` от
+ * бесконтрольного роста одной записи.
+ */
+export const MAX_CUSTOM_PLAYLIST_SERMONS = 200
+
+/**
  * Черновик локального плейлиста на границе хранилища.
  *
  * `sermons`/`sermonIds` необязательны: старые записи содержали только
@@ -26,7 +37,8 @@ export const myPlaylistsArraySchema = z.array(localPlaylistDraftSchema)
  *
  * Хранит снапшоты проповедей (`sermons`), а не только id: снапшот делает
  * плейлист рендерящимся и проигрываемым офлайн, без обращения к каталогу.
- * `sermonIds` — производное от `sermons` (durable для совместимости чтения).
+ * `sermonIds` — авторитетный список id-участников (ведётся напрямую; у
+ * импортированного из ссылки плейлиста может содержать id без снапшота).
  */
 export interface LocalPlaylistData {
   id: string
@@ -35,23 +47,36 @@ export interface LocalPlaylistData {
   title: string
 }
 
+// Недоверенный список участников может нести дубликаты и пустые строки.
+const toUniqueSermonIds = (ids: string[]): string[] => [...new Set(ids.filter(id => id.length > 0))]
+
 /**
  * Приводит прочитанные (недоверенные) данные плейлиста к каноническому виду.
  *
- * Снапшоты выигрывают у legacy `sermonIds`: если `sermons` есть, ids выводятся
- * из них, а unmatched legacy ids молча отбрасываются. Если снапшотов нет (старая
- * запись), плейлист остаётся пустым — рендерить по одним id нечем.
+ * `sermonIds` — авторитетный список участников: он берётся как есть
+ * (дедуплицированный, без пустых строк), а `sermons` — снапшот-подмножество,
+ * из которого отбрасываются снапшоты для id, которых больше нет среди
+ * участников. Так id-only участники импортированного из ссылки плейлиста
+ * переживают перезагрузку. Список участников выводится из снапшотов только у
+ * legacy-записи без `sermonIds` (самые ранние хранили одни `sermons`).
  * @param playlist - Сырые данные из схемы (untrusted).
- * @returns Плейлист с гарантированными `sermons` и производными `sermonIds`.
+ * @returns Плейлист с авторитетными `sermonIds` и согласованными `sermons`.
  */
 export const normalizeLocalPlaylist = (
   playlist: z.infer<typeof localPlaylistDraftSchema>,
 ): LocalPlaylistData => {
   const sermons = playlist.sermons ?? []
+  const storedSermonIds = toUniqueSermonIds(playlist.sermonIds ?? [])
+  const sermonIds =
+    storedSermonIds.length > 0
+      ? storedSermonIds
+      : toUniqueSermonIds(sermons.map(sermon => sermon.id))
+  const memberIds = new Set(sermonIds)
+
   return {
     id: playlist.id,
-    sermonIds: sermons.map(sermon => sermon.id),
-    sermons,
+    sermonIds,
+    sermons: sermons.filter(sermon => memberIds.has(sermon.id)),
     title: playlist.title,
   }
 }

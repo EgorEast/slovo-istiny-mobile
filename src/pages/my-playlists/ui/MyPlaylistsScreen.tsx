@@ -1,33 +1,34 @@
 import { useAction, useAtom } from '@reatom/npm-react'
-import { Stack, useFocusEffect, useRouter } from 'expo-router'
+import { Stack, useFocusEffect } from 'expo-router'
 import { useCallback, useEffect, useState } from 'react'
 import { StyleSheet } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import {
+  CreateLocalPlaylistModal,
+  LocalPlaylistDeleteDialog,
+  useLocalPlaylistDelete,
+} from 'features/local-playlist-form'
+import {
   FAVORITES_PLAYLIST,
   loadMyPlaylists,
   loadSectionSettings,
-  type LocalPlaylistData,
   type LocalSectionSettings,
   myPlaylistsAtom,
   sectionSettingsAtom,
   updateSectionSettings,
 } from 'entities/playlist'
-import { EmptyState } from 'shared/ui'
 import { useTheme } from 'shared/ui/theme'
 import { sortByLocalOrder } from '../lib/sortByLocalOrder'
 import { useMyPlaylistsHeader } from '../lib/useMyPlaylistsHeader'
+import { useMyPlaylistsNavigation } from '../lib/useMyPlaylistsNavigation'
 import { useReorderMyPlaylists } from '../lib/useReorderMyPlaylists'
-import { MyPlaylistsDragList } from './MyPlaylistsDragList'
-import { MyPlaylistsEditHeader } from './MyPlaylistsEditHeader'
+import { MyPlaylistsEditView } from './MyPlaylistsEditView'
 import { MyPlaylistsNormalView } from './MyPlaylistsNormalView'
 
 const FAVORITES_INDEX = 0
-const EMPTY_MESSAGE = 'Своих плейлистов пока нет'
 
 export const MyPlaylistsScreen = () => {
   const { currentTheme } = useTheme()
-  const router = useRouter()
   const [playlists] = useAtom(myPlaylistsAtom)
   const [settings] = useAtom(sectionSettingsAtom)
   const loadPlaylists = useAction(loadMyPlaylists)
@@ -38,6 +39,7 @@ export const MyPlaylistsScreen = () => {
   // null — обычный режим; массив id — открытый режим редактирования с локальным
   // порядком (атом не трогается до «Сохранить»).
   const [localOrderIds, setLocalOrderIds] = useState<null | string[]>(null)
+  const [isCreateVisible, setCreateVisible] = useState(false)
 
   useEffect(() => {
     void loadPlaylists()
@@ -54,6 +56,7 @@ export const MyPlaylistsScreen = () => {
 
   const handleSave = useCallback(() => {
     if (!localOrderIds) return
+
     reorderPlaylists([FAVORITES_PLAYLIST.id, ...localOrderIds])
     setLocalOrderIds(null)
   }, [localOrderIds, reorderPlaylists])
@@ -67,18 +70,17 @@ export const MyPlaylistsScreen = () => {
   // Уход с экрана сбрасывает незакоммиченный локальный порядок.
   useFocusEffect(useCallback(() => () => setLocalOrderIds(null), []))
 
-  const onPressPlaylist = (playlist: LocalPlaylistData) =>
-    router.push({ params: { playlist: playlist.id }, pathname: '/listen/playlist' })
-
-  // В режиме редактирования тап по «Избранным» — no-op: навигация ушла бы с
-  // экрана, а blur отбросил бы незакоммиченный локальный порядок.
-  const onPressFavorites = () => {
-    if (isEditing || !favorites) return
-    onPressPlaylist(favorites)
-  }
+  const { onPressFavorites, onPressPlaylist } = useMyPlaylistsNavigation(isEditing, favorites)
 
   const handleAppearanceChange = (patch: Partial<LocalSectionSettings>) =>
     void updateSettings(patch)
+
+  // Удалённый плейлист убирается из локальной копии порядка.
+  const handleDeleted = useCallback((playlistId: string) => {
+    setLocalOrderIds(current => (current ? current.filter(id => id !== playlistId) : current))
+  }, [])
+  const { cancelDelete, confirmDelete, isDeleteOpen, requestDelete } =
+    useLocalPlaylistDelete(handleDeleted)
 
   const orderedRest = isEditing ? sortByLocalOrder(restPlaylists, localOrderIds) : restPlaylists
 
@@ -89,22 +91,15 @@ export const MyPlaylistsScreen = () => {
     >
       <Stack.Screen options={headerOptions} />
       {isEditing ? (
-        <MyPlaylistsDragList
-          isDraggingEnabled
-          items={orderedRest}
+        <MyPlaylistsEditView
+          settings={settings}
+          favorites={favorites}
+          orderedRest={orderedRest}
           onDragEnd={setLocalOrderIds}
-          onPressItem={onPressPlaylist}
-          listEmpty={<EmptyState message={EMPTY_MESSAGE} />}
-          listHeader={
-            favorites ? (
-              <MyPlaylistsEditHeader
-                settings={settings}
-                favorites={favorites}
-                onPressFavorites={onPressFavorites}
-                onAppearanceChange={handleAppearanceChange}
-              />
-            ) : undefined
-          }
+          onDeletePlaylist={requestDelete}
+          onPressPlaylist={onPressPlaylist}
+          onPressFavorites={onPressFavorites}
+          onAppearanceChange={handleAppearanceChange}
         />
       ) : (
         <MyPlaylistsNormalView
@@ -112,8 +107,15 @@ export const MyPlaylistsScreen = () => {
           orderedRest={orderedRest}
           onPressPlaylist={onPressPlaylist}
           onPressFavorites={onPressFavorites}
+          onPressCreate={() => setCreateVisible(true)}
         />
       )}
+      <CreateLocalPlaylistModal visible={isCreateVisible} onClose={() => setCreateVisible(false)} />
+      <LocalPlaylistDeleteDialog
+        visible={isDeleteOpen}
+        onCancel={cancelDelete}
+        onConfirm={() => void confirmDelete()}
+      />
     </SafeAreaView>
   )
 }

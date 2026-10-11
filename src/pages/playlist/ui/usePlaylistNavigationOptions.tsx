@@ -37,6 +37,7 @@ export const usePlaylistNavigationOptions = ({
     navigation.setOptions({
       headerRight: () => (
         <PlaylistHeaderMenu
+          isEditEnabled
           playlist={playlist}
           playlistTitle={title}
           tracksData={tracksListData}

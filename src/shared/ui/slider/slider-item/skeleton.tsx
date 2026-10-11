@@ -1,12 +1,15 @@
 import { StyleSheet, TouchableOpacity, View } from 'react-native'
 import Animated from 'react-native-reanimated'
-import { match } from 'ts-pattern'
 import { useSkeletonPulse } from '../../skeleton/useSkeletonPulse'
 import { useTheme } from '../../theme/ThemeContext/useTheme'
 import { INDENTS, RADIUSES } from '../../theme/themed'
 import { SliderItemText } from '../slider-item-text/slider-item-text'
-import { getSliderItemWidth } from './slider-item.lib'
-import { SliderItemSize, SliderItemTransform, WhereIsSlideTitleLocated } from './slider-item.types'
+import { getSliderItemImageHeight, getSliderItemWidth } from './slider-item.lib'
+import {
+  SliderItemSize,
+  type SliderItemTransform,
+  WhereIsSlideTitleLocated,
+} from './slider-item.types'
 
 export const SliderItemSkeleton = ({
   borderRadius,
@@ -26,12 +29,7 @@ export const SliderItemSkeleton = ({
 
   const itemWidth = getSliderItemWidth(size)
   const radius = (borderRadius ?? true) ? RADIUSES.large : 0
-
-  const imageHeight = match(transform)
-    .with(SliderItemTransform.High, () => itemWidth * 1.3)
-    .with(SliderItemTransform.Short, () => itemWidth / 2)
-    .with(undefined, () => itemWidth)
-    .exhaustive()
+  const imageHeight = getSliderItemImageHeight(itemWidth, transform)
 
   const isTitleOnCard = whereIsSlideTitleLocated === WhereIsSlideTitleLocated.On
 

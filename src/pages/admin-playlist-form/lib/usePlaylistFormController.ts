@@ -37,19 +37,24 @@ const REQUIRED_FIELDS = ['title'] as const
  * @param mode.id - Идентификатор плейлиста (только для edit).
  * @param mode.initial - Исходная сущность для edit (стабильные пропсы).
  * @param mode.mode - Создание или редактирование.
+ * @param mode.presetValues - Готовые начальные значения (переопределяют `initial`).
  */
 export const usePlaylistFormController = ({
   id = '',
   initial,
   mode,
+  presetValues,
 }: {
   id?: string
   initial?: APITypes.PlaylistEntity
   mode: 'create' | 'edit'
+  presetValues?: PlaylistFormValues
 }): PlaylistFormController => {
   const router = useRouter()
   const showToastAction = useAction(showToast)
-  const [initialValues] = useState<PlaylistFormValues>(() => initialFormValues(initial))
+  const [initialValues] = useState<PlaylistFormValues>(
+    () => presetValues ?? initialFormValues(initial),
+  )
   const [values, setValues] = useState<PlaylistFormValues>(initialValues)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<null | string>(null)

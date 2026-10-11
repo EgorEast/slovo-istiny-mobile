@@ -1,5 +1,6 @@
 export { collectMatchingPreachers } from './lib/composeSearchResults'
 export { SEARCH_HEADER_HEIGHT } from './lib/constants'
+export { mergePlaylistMatches, selectLocalPlaylistMatches } from './lib/localPlaylistSearch'
 export {
   fetchPlaylistTitleMatches,
   fetchSermonResults,

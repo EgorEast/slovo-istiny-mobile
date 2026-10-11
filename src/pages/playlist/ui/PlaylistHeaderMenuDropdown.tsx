@@ -1,16 +1,20 @@
 import { type RefObject } from 'react'
 import { StyleSheet, View } from 'react-native'
 import { AnchoredDropdown, type AnchorRect } from 'shared/ui/menu'
-import { COLORS, INDENTS, RADIUSES, useTheme } from 'shared/ui/theme'
+import { INDENTS, RADIUSES, useTheme } from 'shared/ui/theme'
+import { PlaylistDeleteMenuItem } from './PlaylistDeleteMenuItem'
 import { PlaylistHistoryMenuItem } from './PlaylistHistoryMenuItem'
-import { PlaylistOfflineMenuItem } from './PlaylistOfflineMenuItem'
+import { PlaylistOfflineMenuItems } from './PlaylistOfflineMenuItems'
+import { PlaylistPublishMenuItem, PUBLISH_TEXT } from './PlaylistPublishMenuItem'
 import { PlaylistShareMenuItem, SHARE_TEXT } from './PlaylistShareMenuItem'
 
 export interface PlaylistHeaderMenuDropdownProps {
   allCached: boolean
   anchor: AnchorRect | null
   anchorRef?: RefObject<null | View>
+  canDelete: boolean
   canMarkAll: boolean
+  canPublish: boolean
   canRemoveFromHistory: boolean
   isAddAllToOfflineDisabled: boolean
   isCaching: boolean
@@ -20,7 +24,9 @@ export interface PlaylistHeaderMenuDropdownProps {
   onAddAllToOffline: () => void
   onClearCache: () => void
   onClose: () => void
+  onDelete: () => void
   onMarkAll: () => void
+  onPublish: () => void
   onRemoveFromHistory: () => void
   onShare: () => void
   onStopCaching: () => void
@@ -31,7 +37,9 @@ export const PlaylistHeaderMenuDropdown = ({
   allCached,
   anchor,
   anchorRef,
+  canDelete,
   canMarkAll,
+  canPublish,
   canRemoveFromHistory,
   isAddAllToOfflineDisabled,
   isCaching,
@@ -41,7 +49,9 @@ export const PlaylistHeaderMenuDropdown = ({
   onAddAllToOffline,
   onClearCache,
   onClose,
+  onDelete,
   onMarkAll,
+  onPublish,
   onRemoveFromHistory,
   onShare,
   onStopCaching,
@@ -60,36 +70,18 @@ export const PlaylistHeaderMenuDropdown = ({
     >
       <PlaylistShareMenuItem onPress={onShare} text={SHARE_TEXT} isDisabled={isShareDisabled} />
 
+      {canPublish && <PlaylistPublishMenuItem onPress={onPublish} text={PUBLISH_TEXT} />}
+
       {isOfflineItemsVisible && (
-        <>
-          <View style={[styles.dropdownDivider, { backgroundColor: currentTheme.textMuted }]} />
-
-          {isCaching ? (
-            <PlaylistOfflineMenuItem
-              onPress={onStopCaching}
-              icon='stop-circle-outline'
-              text='Остановить добавление в офлайн'
-            />
-          ) : (
-            <PlaylistOfflineMenuItem
-              onPress={onAddAllToOffline}
-              isDisabled={isAddAllToOfflineDisabled}
-              icon={allCached ? 'check-circle-outline' : 'cloud-download'}
-              text={allCached ? 'Плейлист в офлайне' : 'Добавить все в офлайн'}
-            />
-          )}
-
-          <View style={[styles.dropdownDivider, { backgroundColor: currentTheme.textMuted }]} />
-
-          <PlaylistOfflineMenuItem
-            onPress={onClearCache}
-            icon='cloud-off-outline'
-            text='Удалить из офлайн все'
-            isDisabled={isClearCacheDisabled}
-            textColor={isClearCacheDisabled ? COLORS.disabled : undefined}
-            iconColor={isClearCacheDisabled ? COLORS.disabled : currentTheme.text}
-          />
-        </>
+        <PlaylistOfflineMenuItems
+          allCached={allCached}
+          isCaching={isCaching}
+          onClearCache={onClearCache}
+          onStopCaching={onStopCaching}
+          onAddAllToOffline={onAddAllToOffline}
+          isClearCacheDisabled={isClearCacheDisabled}
+          isAddAllToOfflineDisabled={isAddAllToOfflineDisabled}
+        />
       )}
 
       {showHistoryItems && (
@@ -108,6 +100,13 @@ export const PlaylistHeaderMenuDropdown = ({
           onPress={onRemoveFromHistory}
           text='Удалить проповеди из истории'
         />
+      )}
+
+      {canDelete && (
+        <>
+          <View style={[styles.dropdownDivider, { backgroundColor: currentTheme.textMuted }]} />
+          <PlaylistDeleteMenuItem onPress={onDelete} />
+        </>
       )}
     </AnchoredDropdown>
   )

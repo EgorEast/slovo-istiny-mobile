@@ -1,12 +1,19 @@
 import { Ionicons } from '@expo/vector-icons'
-import { ListItemBase } from 'entities/list-item'
+import { LIST_ITEM_CARD_ARTWORK_SIZE, ListItemBase } from 'entities/list-item'
 import { type LocalPlaylistData } from 'entities/playlist'
-import { useTheme } from 'shared/ui/theme'
+import { INDENTS, useTheme } from 'shared/ui/theme'
+import { MyPlaylistsMarkerAvatar } from './MyPlaylistsMarkerAvatar'
 
-const FAVORITES_ICON_SIZE = 24
+const HEART_ICON = 'heart'
+// Card rows carry no own bottom margin (the server list spaces them with a
+// separator); this list has none, so the row keeps the previous rhythm.
+const ROW_STYLE = { marginBottom: INDENTS.medium }
 
-// Строка «Избранные»: закреплена первой, не перетаскивается. Сердце —
-// тот же визуальный маркер, что у карточки на экране «Слушать».
+// Строка «Избранные»: первая в списке (не закреплена — скроллится вместе с
+// остальными), не перетаскивается. Сердце — тот же визуальный маркер, что у
+// карточки на экране «Слушать»; оно лежит в слоте обложки `card`-строки
+// серверного списка плейлистов (`PlaylistListItem`), поэтому строка совпадает
+// по геометрии с карточными строками плейлистов.
 export const MyPlaylistsFavoritesRow = ({
   onPress,
   playlist,
@@ -18,10 +25,17 @@ export const MyPlaylistsFavoritesRow = ({
 
   return (
     <ListItemBase
-      artwork={null}
       onPress={onPress}
+      style={ROW_STYLE}
       title={playlist.title}
-      right={<Ionicons name='heart' size={FAVORITES_ICON_SIZE} color={currentTheme.primary} />}
+      artworkNode={
+        <MyPlaylistsMarkerAvatar
+          size={LIST_ITEM_CARD_ARTWORK_SIZE}
+          renderIcon={iconSize => (
+            <Ionicons size={iconSize} name={HEART_ICON} color={currentTheme.primary} />
+          )}
+        />
+      }
     />
   )
 }

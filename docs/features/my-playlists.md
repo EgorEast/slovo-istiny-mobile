@@ -6,20 +6,29 @@
 
 - `src/entities/playlist/model.ts` — тип, схема, атом, гидратация, reorder
 - `src/entities/playlist/localPlaylists.ts` — `LocalPlaylistData`, zod-схема, `FAVORITES_PLAYLIST`
-- `src/entities/playlist/localPlaylistMembership.ts` — `togglePlaylistSermon` (снапшоты)
+- `src/entities/playlist/localPlaylistMembership.ts` — `togglePlaylistSermon` (снапшоты, лимит `MAX_CUSTOM_PLAYLIST_SERMONS`)
+- `src/entities/playlist/createLocalPlaylist.ts` — создание локального плейлиста (id-only, пинится после «Избранных»)
+- `src/entities/playlist/renameLocalPlaylist.ts` — переименование (read-modify-write по id)
+- `src/entities/playlist/deleteLocalPlaylist.ts` — удаление («Избранные» защищены)
 - `src/entities/playlist/localSectionSettings.ts` — `LocalSectionSettings`, zod-черновик, дефолт, `normalizeSectionSettings`, ключ `MY_PLAYLISTS_SECTION_SETTINGS`
 - `src/entities/playlist/localSectionSettingsStorage.ts` — единственный путь записи настроек оформления
 - `src/entities/playlist/sectionSettingsModel.ts` — атом `sectionSettingsAtom`, `loadSectionSettings`, `updateSectionSettings` (коммит атома), `persistSectionSettings` (запись в хранилище)
 - `src/entities/playlist/lib/readStoredMyPlaylists.ts` — чтение/гидратация плейлистов из AsyncStorage
 - `src/entities/playlist/lib/readStoredSectionSettings.ts` — чтение/гидратация настроек оформления
 - `src/entities/playlist/lib/sanitizeLocalPlaylistSermon.ts` — санитизация снапшота проповеди
-- `src/entities/playlist/index.ts` — публичный API (`FAVORITES_PLAYLIST`, `myPlaylistsAtom`, `loadMyPlaylists`, `reorderMyPlaylists`, `togglePlaylistSermon`, `sectionSettingsAtom`, `loadSectionSettings`, `updateSectionSettings`, `persistSectionSettings`, `LocalSectionSettings`)
+- `src/entities/playlist/lib/customPlaylistShare.ts` — `buildCustomPlaylistSearchParams`/`parseCustomPlaylistParams` (обе формы `sermons`: packed и csv) + `deriveCustomPlaylistId` (детерминированный `custom-<16 hex>` id из title и упорядоченных `sermonIds`)
+- `src/entities/playlist/lib/sermonIdPacking.ts` — `packSermonIds`/`unpackSermonIds` (base64url-упаковка UUID, 16 байт на id)
+- `src/entities/playlist/index.ts` — публичный API (`FAVORITES_PLAYLIST`, `myPlaylistsAtom`, `loadMyPlaylists`, `createLocalPlaylist`, `renameLocalPlaylist`, `deleteLocalPlaylist`, `reorderMyPlaylists`, `reorderLocalPlaylistSermons`, `togglePlaylistSermon`, `sectionSettingsAtom`, `loadSectionSettings`, `updateSectionSettings`, `persistSectionSettings`, `LocalSectionSettings`)
+- `src/entities/playlist/reorderLocalPlaylistSermons.ts` — перестановка проповедей внутри локального плейлиста (снапшоты `sermons` + авторитетные `sermonIds`)
+- `src/features/local-playlist-form/` — модалка создания (`CreateLocalPlaylistModal`), диалог удаления (`LocalPlaylistDeleteDialog`) и хук `useLocalPlaylistDelete`
+- `src/pages/playlist-edit/` — экран редактирования локального плейлиста (переименование + порядок проповедей + удаление)
 - `src/entities/section/lib/mapItemsSize.ts`, `mapTransform.ts`, `mapWhereIsTitleLocated.ts` — мапперы полей оформления секции в `SliderItemSize`/`SliderItemTransform`/`WhereIsSlideTitleLocated` (перенесены из `pages/listen/lib`, чтобы их переиспользовали и слайдер, и экран «Мои плейлисты»); реэкспорт через `entities/section`
-- `src/pages/listen/ui/MyPlaylistsSlider.tsx` — секция «Мои плейлисты» на «Слушать»: рендерится через общий `Slider` с параметрами из `sectionSettingsAtom`
-- `src/pages/my-playlists/ui/MyPlaylistsScreen.tsx` — экран «Мои плейлисты» — владелец режима редактирования
+- `src/pages/listen/ui/MyPlaylistsSlider.tsx` — секция «Мои плейлисты» на «Слушать»: рендерится через общий `Slider` с параметрами из `sectionSettingsAtom`, завершающая карточка «Создать»
+- `src/pages/my-playlists/ui/MyPlaylistsScreen.tsx` — экран «Мои плейлисты» — владелец режима редактирования и модалки создания
 - `src/pages/my-playlists/ui/MyPlaylistsAppearanceForm.tsx` — блок «Оформление» режима редактирования (instant-apply)
 - `src/pages/my-playlists/ui/MyPlaylistsEditHeader.tsx` — шапка режима редактирования: «Оформление» + «Плейлисты раздела»
-- `src/pages/my-playlists/ui/MyPlaylistsNormalView.tsx` — просмотровый режим экрана (без изменений в поведении)
+- `src/pages/my-playlists/ui/MyPlaylistsNormalView.tsx` — просмотровый режим экрана (строка «Избранные» сверху, «Создать плейлист» — футером под списком)
+- `src/pages/my-playlists/ui/MyPlaylistsCreateRow.tsx` — завершающая строка «Создать плейлист» (футер списка)
 - `src/pages/my-playlists/ui/MyPlaylistsHeaderActions.tsx` — действия шапки экрана: «Изменить порядок» / «Сохранить»
 - `src/pages/my-playlists/ui/MyPlaylistsDragList.tsx` — вертикальный `DraggableFlatList` строк с drag-to-reorder и слотами `listHeader`/`listEmpty`
 - `src/pages/my-playlists/lib/useReorderMyPlaylists.ts` — обёртка `reorderMyPlaylists` (no-op, если порядок не изменился)
@@ -37,9 +46,13 @@
   `src/entities/playlist/lib/sanitizeLocalPlaylistSermon.ts`): отбрасывается `playlists`
   (тяжёлые серверные навигационные данные, источник zod-падений), `artwork` нормализуется в
   `null | string` — снапшот обязан проходить схему при чтении.
-- `sermonIds` — **производное** от `sermons` (`sermons.map(s => s.id)`), остаётся в схеме как
-  поле для обратной совместимости чтения старых записей. При загрузке снапшоты выигрывают:
-  unmatched legacy ids молча отбрасываются (`normalizeLocalPlaylist`).
+- `sermonIds` — авторитетный список id-участников плейлиста. `togglePlaylistSermon` ведёт его
+  **напрямую** (дописывает id при добавлении, фильтрует при удалении) и **не** выводит заново из
+  `sermons`: у импортированного из ссылки плейлиста (`{ sermonIds: ['a','b','c'], sermons: [] }`)
+  снапшотов может не быть, и вывод из `sermons` терял бы таких участников. `sermons` — снапшот-подмножество
+  (для офлайн-рендера/проигрывания). При чтении `normalizeLocalPlaylist` берёт stored `sermonIds` как
+  авторитетные (дедуплицирует, отбрасывает пустые строки) и оставляет в `sermons` только снапшоты
+  участников; список выводится из снапшотов лишь у legacy-записи без `sermonIds`.
 - `FAVORITES_PLAYLIST.id = 'favorites'` — плоский id; серверные id — UUID, поэтому
   столкновение невозможно.
 - `FAVORITES_PLAYLIST` (`{ id: 'favorites', title: 'Избранные', sermonIds: [], sermons: [] }`) —
@@ -60,15 +73,16 @@
 (`src/entities/playlist/localPlaylists.ts`). Хранилище недоверенное: чтение — через
 `getCachedJsonResult` + zod-схему (`myPlaylistsArraySchema`), который различает отсутствие
 ключа (`empty`) и провал парсинга (`invalid`/`error`) (см.
-[contracts/storage.md](../contracts/storage.md)). Legacy-записи, хранившие только `sermonIds`
-(или вообще без проповедей), читаются без падения: снапшотов у них нет, поэтому `sermons`
-и `sermonIds` деградируют в `[]` — рендерить по одним id нечем.
+[contracts/storage.md](../contracts/storage.md)). Legacy-записи, хранившие только `sermonIds`,
+читаются без падения: `sermonIds` сохраняются как авторитетный список, `sermons` у них пустой —
+рендерить по одним id нечем (UI резолвит их из каталога).
 
 `loadMyPlaylists` (Reatom-экшен, вызывается из `MyPlaylistsSlider` и `MyPlaylistsScreen` при монтировании;
 чтение вынесено в `src/entities/playlist/lib/readStoredMyPlaylists.ts`):
 
 1. читает и валидирует `myPlaylists`, нормализует каждую запись (`normalizeLocalPlaylist` —
-   ids выводятся из `sermons`, legacy ids без снапшота отбрасываются);
+   stored `sermonIds` авторитетны, `sermons` — снапшот-подмножество; ids выводятся из снапшотов
+   только у legacy-записи без `sermonIds`);
 2. при **отсутствии** ключа (`empty`) — засеивает `[FAVORITES_PLAYLIST]` и персистит сид
    (внутренний `persistMyPlaylists` через `setCachedJson`);
 3. при **невалидном/битом JSON** (`invalid`/`error`) — только `console.warn` и сид
@@ -85,17 +99,43 @@
 (`console.error`) и трактуется так же, как невалидные данные — как отсутствие
 `myPlaylists`, атом получает засеянный `[FAVORITES_PLAYLIST]`, UI работает.
 
-Для текущей итерации список читается и переупорядочивается, а наполнение
-`sermons`/`sermonIds` добавлено точечно: мутирующий CRUD создания/удаления плейлистов
-по-прежнему отсутствует, но принадлежность проповеди переключается экшеном
-`togglePlaylistSermon` (см. [add-to-playlist.md](./add-to-playlist.md)). Экшен принимает
-**полный снапшот проповеди** (`SermonShape`), а не только id: при добавлении в плейлист
-кладётся санитизированный снапшот, при удалении — фильтруется по id. Прочие
-записи — сид «Избранного» при первом чтении, сохранение нового порядка при
-reorder и персист принадлежности при toggle.
+Для текущей итерации список читается, переупорядочивается и **полностью
+редактируется**: создание, переименование и удаление плейлистов — мутирующие
+экшены сущности (`createLocalPlaylist`, `renameLocalPlaylist`,
+`deleteLocalPlaylist`), а принадлежность проповеди переключается экшеном
+`togglePlaylistSermon` (см. [add-to-playlist.md](./add-to-playlist.md)). Экшен
+`togglePlaylistSermon` принимает **полный снапшот проповеди** (`SermonShape`), а не
+только id: при добавлении в плейлист дописывается id в `sermonIds` (с
+дедупликацией) и кладётся санитизированный снапшот в `sermons`, при удалении —
+фильтруются оба списка. `sermonIds` ведётся напрямую (не выводится из
+`sermons`), поэтому id-only участники импортированного плейлиста не теряются при
+добавлении/удалении. Добавление сверх `MAX_CUSTOM_PLAYLIST_SERMONS`
+(200, бюджет share-ссылки) — no-op с исходом `limit-reached`: атом и хранилище не
+трогаются, а строка модалки «Добавить в плейлист» показывает тост «В плейлисте
+максимум 200 проповедей». Удаление при заполненном плейлисте не блокируется.
+Прочие записи — сид «Избранного» при первом чтении, сохранение нового порядка при
+reorder, персист принадлежности при toggle и CRUD-мутации.
 
-`reorderMyPlaylists(ctx, orderedIds)` (Reatom-экшен, публичный API сущности) — локальное
-переупорядочивание drag-and-drop:
+### Создание, переименование, удаление
+
+`createLocalPlaylist(ctx, { id?, title, sermonIds })` создаёт плейлист и **пинит его
+сразу после «Избранных»** (`withFavoritesFirst`). Без `id` генерируется
+`generateUuid`; импорт из ссылки передаёт детерминированный
+`deriveCustomPlaylistId` (см. [deep-links.md](./deep-links.md)), поэтому повторное
+открытие той же ссылки находит плейлист по этому id и не дублирует его.
+Снапшоты проповедей не создаются: `sermons: []`, переданные `sermonIds` — id-only
+(импорт из ссылки несёт только id, снапшоты добавляются позже через
+`togglePlaylistSermon`). Порядок операций тот же, что у `reorderMyPlaylists`:
+чтение атома → `withFavoritesFirst` → коммит `myPlaylistsAtom` → `persistMyPlaylists`;
+отказ записи логируется, атом остаётся закоммиченным.
+
+`renameLocalPlaylist(ctx, playlistId, title)` и `deleteLocalPlaylist(ctx, playlistId)` —
+read-modify-write по id с тем же путём персиста. **«Избранные» защищены**: попытка
+переименовать или удалить `FAVORITES_PLAYLIST.id`, как и неизвестный id, — no-op
+(возврат текущего списка). Название нормализуется (trim) на границе формы, а не в
+экшене. `deleteLocalPlaylist` фильтрует запись и снова применяет `withFavoritesFirst`.
+
+### Переупорядочивание
 
 1. собирает текущий порядок из `myPlaylistsAtom` в map `id → LocalPlaylistData`;
 2. фильтрует `orderedIds`, отбрасывая неизвестные id;
@@ -154,32 +194,43 @@ reorder и персист принадлежности при toggle.
 общий `Slider` (`shared/ui`): карточки — `SliderItemsElement`, «Избранные» — первая карточка с
 `artworkIcon` (сердце `Ionicons 'heart'` цвета `currentTheme.primary`, размер из
 `getSliderItemWidth(itemsSize) * 0.4`), остальные локальные плейлисты — обычные карточки с
-`title = playlist.title`. Тап по карточке навигирует на `/listen/playlist?playlist=<id>`.
+`title = playlist.title` **без `artworkIcon`**: без обложки общий `SliderItem` сам рисует
+плитку-букву (`PlaylistLetterAvatar`) поверх блюра. Тап по карточке навигирует на
+`/listen/playlist?playlist=<id>`.
 Параметры отображения берутся из `sectionSettingsAtom` и прогоняются через мапперы
 `entities/section` (`mapItemsSize`/`mapTransform`/`mapWhereIsTitleLocated`):
 `itemsRows`/`itemsSize`/`transform`/`whereIsSlideTitleLocated`/`isDescriptionTitleOnSlideLarge`/
 `borderRadius` (`borderRadius` уходит в `Slider` пропом, а не в прозрачную обёртку).
 Редактирования порядка в секции **нет** — секция только читает `myPlaylistsAtom` и
 `sectionSettingsAtom` и гидратирует их (`loadMyPlaylists`, `loadSectionSettings`) при монтировании.
+**Завершающая карточка «Создать»** (та же геометрия, `artworkIcon` — плюс `Ionicons 'add'`)
+открывает модалку создания; остальные карточки навигируют. Элемент секции — размеченное
+объединение `MyPlaylistsItem` (`{ kind: 'create' } | { kind: 'playlist' }`), поэтому тап
+диспетчеризуется без sentinel-id.
 
 **`artworkIcon` и заголовок:** при заданном `artworkIcon` обложка не рендерится — карточка
 получает тематическую подложку (`currentTheme.surface`). Заголовок карточки следует настройке
 `whereIsSlideTitleLocated`: при `on` рендерится оверлеем по центру подложки, при `under` —
 подписью под карточкой. Описание плейлиста (`isDescriptionTitleOnSlideLarge`) на icon-карточках
-не показывается — у них нет обложки, к низу которой оно прижимается. Остальные карточки
-локальных плейлистов (`artworkIcon` не задан) следуют обеим настройкам; впрочем локальные
-плейлисты (`LocalPlaylistData`) описания не хранят, поэтому блок описания на карточке
+не показывается — у них нет обложки, к низу которой оно прижимается. Карточки локальных
+плейлистов (`artworkIcon` не задан) следуют обеим настройкам, а при `whereIsSlideTitleLocated === on`
+буква плитки скрывается (`showLetter={false}`) — иначе она перекрывала бы заголовок. Впрочем
+локальные плейлисты (`LocalPlaylistData`) описания не хранят, поэтому блок описания на карточке
 рендерится только у серверных плейлистов (`renderSection`).
 
 ### Экран «Мои плейлисты» (админ-подобная форма оформления + порядок)
 
 `MyPlaylistsScreen` (`src/pages/my-playlists/ui/MyPlaylistsScreen.tsx`) — владелец режима
 редактирования; подробнее — [screens/my-playlists.md](../screens/my-playlists.md). Обычный режим
-(`MyPlaylistsNormalView`): первой строкой закреплённые «Избранные» (`MyPlaylistsFavoritesRow`,
-сердечко, не перетаскивается), ниже — карточные строки локальных плейлистов (`MyPlaylistsDragList` +
-`MyPlaylistsRow` поверх `ListItemBase`). Список резервирует нижний отступ под плавающий мини-плеер и
+(`MyPlaylistsNormalView`): сверху «Избранные» (`MyPlaylistsFavoritesRow`, сердечко, не перетаскивается
+— той же геометрии, что строки серверного списка плейлистов), ниже — карточные строки локальных
+плейлистов (`MyPlaylistsDragList` + `MyPlaylistsRow` поверх `ListItemBase` card-варианта, плитка
+обложки `LIST_ITEM_CARD_ARTWORK_SIZE`, как у `PlaylistListItem`; у плейлиста без обложки — буква
+`PlaylistLetterAvatar`, у «Избранных»/«Создать» — маркер `MyPlaylistsMarkerAvatar` с иконкой
+`size * AVATAR_CONTENT_SIZE_RATIO`), а **завершающей строкой футера списка** — «Создать плейлист»
+(`MyPlaylistsCreateRow`, `listFooter`), то есть под плейлистами. Список резервирует нижний отступ под плавающий мини-плеер и
 таб-бар (`tabBarHeight + PLAYER_SIZES.miniPlayerHeight + INDENTS.low`, как в `PlaylistTrackList`),
-поэтому последние строки доступны для скролла и в режиме редактирования.
+поэтому последние строки (включая «Создать») доступны для скролла и в режиме редактирования.
 `DraggableFlatList` рендерит собственный контейнер без `flex` — на react-native-web он растягивается
 по контенту, и список не скроллится (низ обрезается `body { overflow: hidden }` из
 `public/index.html`); поэтому контейнеру задан `containerStyle={styles.listContainer}` с `flex: 1`
@@ -210,9 +261,12 @@ reorder и персист принадлежности при toggle.
   ниже — drag-список остальных плейлистов.
 
 - **Обычный режим:** drag выключен — `MyPlaylistsDragList` получает `isDraggingEnabled = false`,
-  поэтому `onLongPress`, активирующий `drag`, не прокидывается, а тап по строке навигирует.
-- **Режим редактирования:** drag включён всегда (long-press тянет строку целиком, native `drag` из
-  `renderItem`), тап по строкам (включая «Избранные») **не** навигирует. Перестановка меняет
+  поэтому drag-ручка не рендерится, а тап по строке навигирует.
+- **Режим редактирования:** строки получают drag-ручку (`ListItemDragHandle`,
+  `accessibilityLabel` «Переместить плейлист»), как строки админ-экранов раздела; перестановка
+  стартует **только с ручки** (native `drag` из `renderItem`), long-press по телу строки ничего не
+  делает, тап по строкам (включая «Избранные») **не** навигирует. Каждая строка несёт также кнопку
+  удаления (корзина, `accessibilityLabel` «Удалить плейлист») — см. ниже. Перестановка меняет
   **локальную копию** порядка (`localOrderIds`), атом `myPlaylistsAtom` не трогается. «Сохранить»
   один раз коммитит итог через `reorderMyPlaylists` (полный порядок: `favorites` + локальный порядок;
   сущность пинит «Избранные» первыми) и выходит из режима. Уход из режима без сохранения (повторный
@@ -233,8 +287,69 @@ reorder и персист принадлежности при toggle.
 `artworkIcon` — опциональный слот `SliderItemsElement` (`src/shared/ui/slider/slider-item/`):
 при наличии обложка не рендерится, вместо неё — нода поверх тематической подложки
 (`currentTheme.surface`). Заголовок и `whereIsSlideTitleLocated` работают и на icon-карточках
-(при `on` — оверлеем). API обратной совместимости: обычные слайдеры без `artworkIcon` не
-затрагиваются.
+(при `on` — оверлеем). Когда у карточки нет ни `artwork`, ни `artworkIcon`, `SliderItem` сам
+рисует плитку-букву `PlaylistLetterAvatar` (дефолтная обложка под блюром + тематическая вуаль),
+поэтому серверные секции и «Мои плейлисты» выглядят одинаково; при `whereIsSlideTitleLocated === on`
+буква скрывается (`showLetter={false}`), чтобы не перекрывать заголовок. API обратной
+совместимости: слайдеры с заданным `artwork`/`artworkIcon` не затрагиваются.
+
+## Формы создания и экран редактирования
+
+Фича `src/features/local-playlist-form/` держит модалку создания (паттерн — общий
+`shared/ui/modal`, как у «Добавить в плейлист»):
+
+- `CreateLocalPlaylistModal` — поле «Название» (`FormField`) + кнопка «Создать»,
+  недоступная, пока название пустое/пробельное. По отправке (кнопка или Enter в поле):
+  гидратация `myPlaylistsAtom` (`loadMyPlaylists`, если он ещё не загружен по
+  `myPlaylistsLoadedAtom`), затем `createLocalPlaylist({ title: trimmed, sermonIds: [] })`,
+  закрытие и переход на созданный плейлист (`/listen/playlist?playlist=<id>`). Гидратация
+  перед созданием нужна, чтобы read-modify-write не шёл по сиду «Избранного» и не был
+  перезаписан в полёте гидратации. Модалка открывается и из
+  завершающей карточки секции «Слушать», и из строки «Создать плейлист» на экране
+  «Мои плейлисты» (`MyPlaylistsCreateRow`, `ListItemBase` с плюсом, футером под
+  списком плейлистов).
+
+**Редактирование — отдельный экран** `/listen/playlist-edit?playlist=<id>`
+(`src/pages/playlist-edit/`, см. [screens/playlist-edit.md](../screens/playlist-edit.md)),
+а не модалка. Экран держит поле «Название» (предзаполнено текущим; «Сохранить» доступна
+при непустом и **изменённом** названии либо изменённом порядке) и drag-список проповедей
+**только для перестановки** (drag-ручка всегда видна, перестановка стартует только с ручки).
+Сохранение вызывает `renameLocalPlaylist` и/или `reorderLocalPlaylistSermons` и `router.back()`.
+Перед сохранением форма при необходимости гидратирует `myPlaylistsAtom`
+(`loadMyPlaylists`, гейт по `myPlaylistsLoadedAtom`), чтобы read-modify-write не шёл
+по негидратированному атому. Строки списка рендерит стабильный
+`usePlaylistEditItemRenderer` (`useCallback`), поэтому длинный список не
+перерисовывается на каждый символ в поле названия.
+«Избранные» этой формой не редактируются: экшены защищают инвариант, а кнопка показывается
+только для локального не-избранного плейлиста. Модалка создания монтируется только при
+`visible`, поэтому её состояние (название) сбрасывается между открытиями.
+
+**Удаление локального плейлиста — три точки входа, одна логика.** Подтверждение и вызов
+`deleteLocalPlaylist` общие: `LocalPlaylistDeleteDialog` (`ConfirmDialog`) + хук
+`useLocalPlaylistDelete` (`src/features/local-playlist-form/lib/useLocalPlaylistDelete.ts`),
+который хранит id-кандидат и вызывает удаление только после подтверждения. Перед
+удалением хук гидратирует `myPlaylistsAtom` (`loadMyPlaylists`), если он ещё не
+загружен (`myPlaylistsLoadedAtom`), — иначе read-modify-write шёл бы по сиду и
+мог быть перезаписан в полёте гидратации.
+
+1. **Экран редактирования** (`src/pages/playlist-edit/`, кнопка «Удалить плейлист» в футере списка):
+   после удаления — `router.back()`.
+2. **Меню шапки экрана плейлиста** (`PlaylistHeaderMenu`): пункт «Удалить плейлист» (только для
+   локального не-избранного плейлиста и только на экране — `isEditEnabled`; в шторке плеера нет);
+   после подтверждения — закрытие меню и `router.back()`.
+3. **Режим редактирования секции** (`MyPlaylistsScreen` + `MyPlaylistsRow`): кнопка удаления в
+   каждой строке; после подтверждения удалённый id убирается из локальной копии порядка,
+   с экрана не уходим.
+
+«Избранные» защищены на всех уровнях: экшен игнорирует `FAVORITES_PLAYLIST.id`, а UI не
+показывает удаление для «Избранного».
+
+**Кнопка редактирования в шапке экрана плейлиста** (`PlaylistEditButton`,
+`PlaylistHeaderActions`): карандаш (`Ionicons 'create-outline'`) слева от меню-кнопки,
+виден **только** для локальных не-избранных плейлистов **и только когда вызывающий
+включил `isEditEnabled`** (это делает шапка экрана плейлиста; шторка плеера
+`PlaylistSheetMenu` его не включает, чтобы правка не уводила из шторки). Тап
+**навигирует** на экран редактирования (`router.push('/listen/playlist-edit?playlist=<id>')`).
 
 ## Резолв на экране плейлиста (tier 0)
 
@@ -257,13 +372,14 @@ reorder и персист принадлежности при toggle.
 
 ## Roadmap (следующая итерация — запланированная фича, не долг)
 
-- **Создание локального плейлиста** (форма ввода названия).
-- **Удаление локальных плейлистов** (мутирующий CRUD поверх `persistMyPlaylists`; сейчас
-  приватный путь записи уже есть — reorder и `togglePlaylistSermon` используют его).
 - **Добавление/удаление проповедей** в локальные плейлисты — «Избранное»
   и наполнение из контекст-меню уже реализованы (`togglePlaylistSermon` со снапшотами +
   модалка мультивыбора, см. [add-to-playlist.md](./add-to-playlist.md)); в этом пункте остаётся
   удаление/управление из самого экрана плейлиста, если понадобится.
+- **Публикация локального плейлиста в глобальные** (админ-форма создания) — предзаполнение
+  названием, id и **снапшотами** проповедей уже реализовано
+  (`buildPublishSermonsParam` + `parsePublishSermonsParam`); пункт меню показывается только
+  при админ-сессии (`canAccessAdmin`).
 
 ## Связанные документы
 

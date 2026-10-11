@@ -1,5 +1,6 @@
 import { act, fireEvent, screen } from '@testing-library/react-native'
 import { Platform, StyleSheet, Text } from 'react-native'
+import { type TestInstance } from 'test-renderer'
 import { createKeyDownEvent } from '../lib/testing/createKeyEvent'
 import { installFakeDom } from '../lib/testing/installFakeDom'
 import { renderWithProviders } from '../mocks/renderWithProviders'
@@ -13,6 +14,17 @@ jest.mock('./layout/appMaxWidth', () => ({ APP_MAX_CONTENT_WIDTH: DESKTOP_COLUMN
 const BACKDROP_TEST_ID = 'modal-backdrop'
 const CHILDREN_TEXT = 'Modal Content'
 const onBackdropPressMock = jest.fn()
+
+const isDescendantOf = (element: TestInstance, ancestor: TestInstance): boolean => {
+  let current: null | TestInstance = element.parent
+
+  while (current !== null) {
+    if (current === ancestor) return true
+    current = current.parent
+  }
+
+  return false
+}
 
 describe('<Modal>', () => {
   beforeEach(() => {
@@ -53,6 +65,25 @@ describe('<Modal>', () => {
     )
 
     expect(screen.getByTestId(BACKDROP_TEST_ID).props.tabIndex).toBe(-1)
+  })
+
+  test('content is a sibling of the backdrop, so a press inside does not close the modal', async () => {
+    await renderWithProviders(
+      <Modal visible onBackdropPress={onBackdropPressMock}>
+        <Text>{CHILDREN_TEXT}</Text>
+      </Modal>,
+    )
+
+    const content = screen.getByText(CHILDREN_TEXT)
+    const backdrop = screen.getByTestId(BACKDROP_TEST_ID)
+
+    // The regression guard: as a child of the backdrop Pressable, every in-dialog
+    // press bubbled up and closed the modal (web TextInput focus).
+    expect(isDescendantOf(content, backdrop)).toBe(false)
+
+    fireEvent.press(content)
+
+    expect(onBackdropPressMock).not.toHaveBeenCalled()
   })
 
   test('does not render children when visible is false', async () => {

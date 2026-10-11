@@ -10,17 +10,28 @@ export const sectionSettingsAtom = atom<LocalSectionSettings>(
 )
 
 /**
+ * `true` после первой успешной гидратации `sectionSettingsAtom` из хранилища.
+ *
+ * Симметричен `myPlaylistsLoadedAtom`: секция «Мои плейлисты» на «Слушать»
+ * перечитывала бы настройки при каждом возврате из поиска. Флаг поднимает сам
+ * `loadSectionSettings`; pull-to-refresh вызывает экшен напрямую.
+ */
+export const sectionSettingsLoadedAtom = atom(false, 'sectionSettingsLoadedAtom')
+
+/**
  * Гидратация настроек оформления из AsyncStorage.
  *
  * Хранилище недоверенное: читается через zod (`sectionSettingsDraftSchema`),
  * невалидные данные трактуются как отсутствующие (дефолт). При первом чтении
  * (ключ отсутствует) дефолт персистится. Отказ хранилища логируется и
- * трактуется так же — как отсутствие данных.
+ * трактуется так же — как отсутствие данных. По завершении поднимает
+ * `sectionSettingsLoadedAtom`.
  */
 export const loadSectionSettings = action(async ctx => {
   const settings = await readStoredSectionSettings()
   await ctx.schedule(() => {
     sectionSettingsAtom(ctx, settings)
+    sectionSettingsLoadedAtom(ctx, true)
   })
   return settings
 }, 'loadSectionSettings')

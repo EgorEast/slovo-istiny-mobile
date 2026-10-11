@@ -5,6 +5,7 @@ import { togglePlaylistSermon } from './localPlaylistMembership'
 import {
   FAVORITES_PLAYLIST,
   type LocalPlaylistData,
+  MAX_CUSTOM_PLAYLIST_SERMONS,
   myPlaylistsArraySchema,
 } from './localPlaylists'
 import { myPlaylistsAtom } from './model'
@@ -47,7 +48,7 @@ describe('togglePlaylistSermon', () => {
     expect(stored?.sermonIds).toEqual(['sermon-1'])
   })
 
-  test('keeps sermonIds derived from sermons on add and remove', async () => {
+  test('keeps sermonIds in sync on add and remove', async () => {
     const ctx = createCtx()
     myPlaylistsAtom(ctx, [FAVORITES_PLAYLIST, playlist('a', [sermon('sermon-1')])])
 
@@ -61,6 +62,44 @@ describe('togglePlaylistSermon', () => {
     const afterRemove = ctx.get(myPlaylistsAtom).find(p => p.id === 'a')
     expect(afterRemove?.sermons).toEqual([sermon('sermon-2')])
     expect(afterRemove?.sermonIds).toEqual(['sermon-2'])
+  })
+
+  test('preserves id-only members of an imported playlist on add and remove', async () => {
+    const ctx = createCtx()
+    const imported: LocalPlaylistData = {
+      id: 'imported',
+      sermonIds: ['a', 'b', 'c'],
+      sermons: [],
+      title: 'Импорт',
+    }
+    myPlaylistsAtom(ctx, [FAVORITES_PLAYLIST, imported])
+
+    await togglePlaylistSermon(ctx, 'imported', sermon('new'), true)
+    const afterAdd = ctx.get(myPlaylistsAtom).find(p => p.id === 'imported')
+    expect(afterAdd?.sermonIds).toEqual(['a', 'b', 'c', 'new'])
+    expect(afterAdd?.sermons).toEqual([sermon('new')])
+
+    await togglePlaylistSermon(ctx, 'imported', sermon('b'), false)
+    const afterRemove = ctx.get(myPlaylistsAtom).find(p => p.id === 'imported')
+    expect(afterRemove?.sermonIds).toEqual(['a', 'c', 'new'])
+    expect(afterRemove?.sermons).toEqual([sermon('new')])
+  })
+
+  test('round-trips id-only members through storage without losing them', async () => {
+    const ctx = createCtx()
+    const imported: LocalPlaylistData = {
+      id: 'imported',
+      sermonIds: ['a', 'b', 'c'],
+      sermons: [],
+      title: 'Импорт',
+    }
+    myPlaylistsAtom(ctx, [FAVORITES_PLAYLIST, imported])
+
+    await togglePlaylistSermon(ctx, 'imported', sermon('new'), true)
+
+    const stored = await AsyncStorage.getItem(MY_PLAYLISTS_KEY)
+    const parsed = myPlaylistsArraySchema.parse(JSON.parse(stored ?? '[]'))
+    expect(parsed.find(p => p.id === 'imported')?.sermonIds).toEqual(['a', 'b', 'c', 'new'])
   })
 
   test('can add sermons to favorites', async () => {
@@ -113,6 +152,48 @@ describe('togglePlaylistSermon', () => {
 
     expect(ctx.get(myPlaylistsAtom).find(p => p.id === 'a')?.sermonIds).toEqual([])
     expect(await AsyncStorage.getItem(MY_PLAYLISTS_KEY)).toBeNull()
+  })
+
+  test('refuses to add past the maximum and leaves the playlist untouched', async () => {
+    const ctx = createCtx()
+    const full = playlist(
+      'a',
+      Array.from({ length: MAX_CUSTOM_PLAYLIST_SERMONS }, (_, index) => sermon(`s-${index}`)),
+    )
+    myPlaylistsAtom(ctx, [FAVORITES_PLAYLIST, full])
+
+    const outcome = await togglePlaylistSermon(ctx, 'a', sermon('extra'), true)
+
+    expect(outcome).toBe('limit-reached')
+    const stored = ctx.get(myPlaylistsAtom).find(p => p.id === 'a')
+    expect(stored?.sermonIds).toHaveLength(MAX_CUSTOM_PLAYLIST_SERMONS)
+    expect(stored?.sermonIds).not.toContain('extra')
+    expect(await AsyncStorage.getItem(MY_PLAYLISTS_KEY)).toBeNull()
+  })
+
+  test('still removes a sermon when the playlist is at the maximum', async () => {
+    const ctx = createCtx()
+    const full = playlist(
+      'a',
+      Array.from({ length: MAX_CUSTOM_PLAYLIST_SERMONS }, (_, index) => sermon(`s-${index}`)),
+    )
+    myPlaylistsAtom(ctx, [FAVORITES_PLAYLIST, full])
+
+    const outcome = await togglePlaylistSermon(ctx, 'a', sermon('s-0'), false)
+
+    expect(outcome).toBe('removed')
+    expect(ctx.get(myPlaylistsAtom).find(p => p.id === 'a')?.sermonIds).toHaveLength(
+      MAX_CUSTOM_PLAYLIST_SERMONS - 1,
+    )
+  })
+
+  test('reports added/removed/noop outcomes for the ordinary toggles', async () => {
+    const ctx = createCtx()
+    myPlaylistsAtom(ctx, [FAVORITES_PLAYLIST, playlist('a')])
+
+    await expect(togglePlaylistSermon(ctx, 'a', sermon('sermon-1'), true)).resolves.toBe('added')
+    await expect(togglePlaylistSermon(ctx, 'a', sermon('sermon-1'), true)).resolves.toBe('noop')
+    await expect(togglePlaylistSermon(ctx, 'a', sermon('sermon-1'), false)).resolves.toBe('removed')
   })
 
   test('commits the atom even when persisting fails', async () => {

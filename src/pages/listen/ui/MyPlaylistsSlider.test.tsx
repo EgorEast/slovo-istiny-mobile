@@ -1,5 +1,5 @@
 import { createCtx } from '@reatom/framework'
-import { fireEvent } from '@testing-library/react-native'
+import { act, fireEvent } from '@testing-library/react-native'
 import {
   DEFAULT_SECTION_SETTINGS,
   FAVORITES_PLAYLIST,
@@ -11,21 +11,33 @@ import { renderWithProviders } from 'shared/mocks'
 import { MyPlaylistsSlider } from './MyPlaylistsSlider'
 
 const mockPush = jest.fn()
+const mockLoadMyPlaylists = jest.fn()
+const mockLoadSectionSettings = jest.fn()
 
 jest.mock('expo-router', () => ({
   useRouter: () => ({ push: mockPush }),
 }))
 
 // The section fires loadMyPlaylists/loadSectionSettings on mount; a real storage
-// read would clobber the atom seeded per test. Replace them with no-op reatom
-// actions so tests own the atom.
+// read would clobber the atom seeded per test. Replace them with reatom actions
+// that record the call and raise the loaded flag, so tests own the atom while the
+// remount guard can be exercised.
 jest.mock('entities/playlist', () => {
   const { action } = jest.requireActual('@reatom/framework')
+  const actual = jest.requireActual('entities/playlist')
 
   return {
-    ...jest.requireActual('entities/playlist'),
-    loadMyPlaylists: action(() => Promise.resolve([]), 'loadMyPlaylistsMock'),
-    loadSectionSettings: action(() => Promise.resolve(), 'loadSectionSettingsMock'),
+    ...actual,
+    loadMyPlaylists: action((ctx: unknown) => {
+      mockLoadMyPlaylists()
+      actual.myPlaylistsLoadedAtom(ctx, true)
+      return Promise.resolve([])
+    }, 'loadMyPlaylistsMock'),
+    loadSectionSettings: action((ctx: unknown) => {
+      mockLoadSectionSettings()
+      actual.sectionSettingsLoadedAtom(ctx, true)
+      return Promise.resolve()
+    }, 'loadSectionSettingsMock'),
   }
 })
 
@@ -43,6 +55,7 @@ const PLAYLIST_B_TITLE = 'Плейлист B'
 const EDIT_LABEL = 'Изменить порядок'
 const SAVE_LABEL = 'Сохранить'
 const SECTION_TITLE = 'Мои плейлисты'
+const CREATE_TITLE = 'Создать'
 const FAVORITES_TITLE = FAVORITES_PLAYLIST.title
 const TITLE_ON_CARD_TEST_ID = 'slider-item-title-on-card'
 
@@ -169,5 +182,58 @@ describe('<MyPlaylistsSlider>', () => {
     })
 
     expect(getAllByTestId(TITLE_ON_CARD_TEST_ID).length).toBeGreaterThan(0)
+  })
+
+  test('reflects a title-location change made after mount', async () => {
+    const ctx = createCtx()
+    seedPlaylists(ctx)
+
+    const { queryAllByTestId } = await renderWithProviders(<MyPlaylistsSlider />, { ctx })
+
+    expect(queryAllByTestId(TITLE_ON_CARD_TEST_ID)).toHaveLength(0)
+
+    await act(async () => {
+      sectionSettingsAtom(ctx, { ...DEFAULT_SECTION_SETTINGS, whereIsSlideTitleLocated: 'on' })
+    })
+
+    expect(queryAllByTestId(TITLE_ON_CARD_TEST_ID).length).toBeGreaterThan(0)
+  })
+
+  test('renders a trailing create card that opens the create form on tap', async () => {
+    const ctx = createCtx()
+    seedPlaylists(ctx)
+
+    const { getAllByText, getByLabelText } = await renderWithProviders(<MyPlaylistsSlider />, {
+      ctx,
+    })
+
+    expect(getAllByText(CREATE_TITLE).length).toBeGreaterThan(0)
+
+    await act(async () => {
+      fireEvent.press(getAllByText(CREATE_TITLE)[0])
+    })
+
+    expect(getByLabelText('Название')).toBeTruthy()
+  })
+
+  test('loads playlists and settings once on first mount', async () => {
+    const ctx = createCtx()
+    seedPlaylists(ctx)
+
+    await renderWithProviders(<MyPlaylistsSlider />, { ctx })
+
+    expect(mockLoadMyPlaylists).toHaveBeenCalledTimes(1)
+    expect(mockLoadSectionSettings).toHaveBeenCalledTimes(1)
+  })
+
+  test('does not reload on remount after a successful load', async () => {
+    const ctx = createCtx()
+    seedPlaylists(ctx)
+
+    const { rerender } = await renderWithProviders(<MyPlaylistsSlider key='first' />, { ctx })
+    await rerender(<MyPlaylistsSlider key='second' />)
+
+    expect(mockLoadMyPlaylists).toHaveBeenCalledTimes(1)
+    expect(mockLoadSectionSettings).toHaveBeenCalledTimes(1)
   })
 })

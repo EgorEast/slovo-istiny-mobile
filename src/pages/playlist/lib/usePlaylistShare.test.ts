@@ -1,8 +1,14 @@
 import { createCtx } from '@reatom/framework'
 import { act } from '@testing-library/react-native'
-import { type PlaylistData } from 'entities/playlist'
+import {
+  FAVORITES_PLAYLIST,
+  type LocalPlaylistData,
+  myPlaylistsAtom,
+  type PlaylistData,
+} from 'entities/playlist'
 import { renderHookWithProviders } from 'shared/mocks'
 import { toastAtom } from 'shared/model'
+import { buildCustomPlaylistShareUrl } from './buildCustomPlaylistShareUrl'
 import { buildPlaylistShareUrl } from './buildPlaylistShareUrl'
 import { usePlaylistShare } from './usePlaylistShare'
 
@@ -26,8 +32,9 @@ const makePlaylist = (id: string): PlaylistData => ({
   title: PLAYLIST_TITLE,
 })
 
-const renderShare = async (id: string) => {
+const renderShare = async (id: string, playlists?: LocalPlaylistData[]) => {
   const ctx = createCtx()
+  if (playlists) myPlaylistsAtom(ctx, playlists)
   const onCloseMenu = jest.fn()
   const { result } = await renderHookWithProviders(
     () => usePlaylistShare(makePlaylist(id), onCloseMenu),
@@ -123,5 +130,60 @@ describe('usePlaylistShare', () => {
     })
 
     expect(ctx.get(toastAtom)).toBeNull()
+  })
+
+  test('canShare is true for a local playlist and shares the custom URL', async () => {
+    mockSharePlaylist.mockResolvedValue('shared')
+    const local: LocalPlaylistData = {
+      id: 'local-1',
+      sermonIds: ['s-1', 's-2'],
+      sermons: [],
+      title: PLAYLIST_TITLE,
+    }
+    const { result } = await renderShare('local-1', [FAVORITES_PLAYLIST, local])
+    const expectedUrl = buildCustomPlaylistShareUrl({
+      sermonIds: ['s-1', 's-2'],
+      title: PLAYLIST_TITLE,
+    })
+
+    expect(result.current.canShare).toBe(true)
+
+    await invokeHandleShare(result.current.handleShare)
+
+    expect(mockSharePlaylist).toHaveBeenCalledWith({
+      text: `${PLAYLIST_TITLE} — ${expectedUrl}`,
+      url: expectedUrl,
+    })
+  })
+
+  test('canShare is false for favorites even though it is local', async () => {
+    const { result } = await renderShare(FAVORITES_PLAYLIST.id, [FAVORITES_PLAYLIST])
+
+    expect(result.current.canShare).toBe(false)
+  })
+
+  test('shares the custom URL for a local playlist whose id is a UUID', async () => {
+    mockSharePlaylist.mockResolvedValue('shared')
+    const local: LocalPlaylistData = {
+      id: VALID_UUID,
+      sermonIds: ['s-1'],
+      sermons: [],
+      title: PLAYLIST_TITLE,
+    }
+    const { result } = await renderShare(VALID_UUID, [FAVORITES_PLAYLIST, local])
+    const expectedUrl = buildCustomPlaylistShareUrl({
+      sermonIds: ['s-1'],
+      title: PLAYLIST_TITLE,
+    })
+
+    expect(result.current.canShare).toBe(true)
+
+    await invokeHandleShare(result.current.handleShare)
+
+    expect(mockSharePlaylist).toHaveBeenCalledWith({
+      text: `${PLAYLIST_TITLE} — ${expectedUrl}`,
+      url: expectedUrl,
+    })
+    expect(expectedUrl).not.toBe(buildPlaylistShareUrl(VALID_UUID))
   })
 })

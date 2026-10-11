@@ -8,6 +8,7 @@ import { FAVORITES_PLAYLIST } from 'entities/playlist'
 import { createTracksListStyles } from 'entities/track-list'
 import { useTheme } from 'shared/ui/theme'
 import { useCollapsingHeader } from '../lib/useCollapsingHeader'
+import { useCustomPlaylistImport } from '../lib/useCustomPlaylistImport'
 import { usePlaylistActions } from '../lib/usePlaylistActions'
 import { usePlaylistById } from '../lib/usePlaylistById'
 import { usePlaylistHeader } from '../lib/usePlaylistHeader'
@@ -15,9 +16,9 @@ import { usePlaylistPlaybackTarget } from '../lib/usePlaylistPlaybackTarget'
 import { usePlaylistPlayerState } from '../lib/usePlaylistPlayerState'
 import { PlaylistHeader } from './PlaylistHeader'
 import { PlaylistStatusView } from './PlaylistStatusView'
-import { PlaylistTrackItem } from './PlaylistTrackItem'
 import { PlaylistTrackList } from './PlaylistTrackList'
 import { createStyles } from './styles'
+import { usePlaylistItemRenderer } from './usePlaylistItemRenderer'
 import { buildTracksListData, usePlaylistNavigationOptions } from './usePlaylistNavigationOptions'
 
 const EMPTY_PLAYLIST = { artwork: null, description: '', id: 'default', sermons: [], title: '' }
@@ -25,9 +26,18 @@ const FAVORITES_EMPTY_MESSAGE = 'В избранном пока пусто'
 
 export const PlaylistScreen = () => {
   const { currentTheme } = useTheme()
-  const params = useLocalSearchParams<{ playlist: string }>()
+  const params = useLocalSearchParams<{ custom?: string; playlist: string }>()
 
-  const { isLoading, notFound, playlist: resolvedPlaylist } = usePlaylistById(params.playlist ?? '')
+  useCustomPlaylistImport()
+
+  // A `custom` share link wins over any stale `playlist` param: the import
+  // resolves the target id itself and replaces the route. The flag is bare
+  // (`?custom&…`), so only its absence means there is no custom link. While the
+  // import is in flight the route has no usable playlist id yet — render the
+  // loading state instead of a premature not-found flash.
+  const isImportingCustomPlaylist = params.custom !== undefined
+  const playlistId = isImportingCustomPlaylist ? '' : (params.playlist ?? '')
+  const { isLoading, notFound, playlist: resolvedPlaylist } = usePlaylistById(playlistId)
   const playlist = resolvedPlaylist ?? EMPTY_PLAYLIST
 
   const { artwork, description, sermons: list = [], title } = playlist
@@ -58,25 +68,14 @@ export const PlaylistScreen = () => {
 
   const tracksListData = useMemo(() => buildTracksListData(list, artwork), [list, artwork])
 
-  const renderItem = useCallback(
-    ({ index, item }: { index: number; item: (typeof tracksListData)[number] }) => (
-      <PlaylistTrackItem
-        id={item.id}
-        index={index}
-        title={item.title}
-        isPlaying={isPlaying}
-        artwork={item.artwork}
-        audioUrl={item.audioUrl}
-        subtitle={item.subtitle}
-        onPress={handlePressItem}
-        cacheTrigger={cacheTrigger}
-        currentAudioId={currentAudio?.id}
-        menuActions={buildMenuActions(index)}
-        storedProgress={progressMap.get(item.id ?? '')}
-      />
-    ),
-    [buildMenuActions, cacheTrigger, currentAudio?.id, handlePressItem, isPlaying, progressMap],
-  )
+  const renderItem = usePlaylistItemRenderer({
+    buildMenuActions,
+    cacheTrigger,
+    currentAudioId: currentAudio?.id,
+    handlePressItem,
+    isPlaying,
+    progressMap,
+  })
 
   usePlaylistNavigationOptions({ headerIconColor, playlist, title, tracksListData })
 
@@ -89,13 +88,13 @@ export const PlaylistScreen = () => {
     [tracksListStyles],
   )
 
-  if (notFound || isLoading)
+  if (isImportingCustomPlaylist || isLoading || notFound)
     return (
       <PlaylistStatusView
         styles={styles}
-        notFound={notFound}
         theme={currentTheme}
         statusBarStyle={statusBarStyle}
+        notFound={!isImportingCustomPlaylist && notFound}
       />
     )
 

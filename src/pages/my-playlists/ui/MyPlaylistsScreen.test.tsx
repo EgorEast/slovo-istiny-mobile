@@ -1,5 +1,6 @@
 import { createCtx } from '@reatom/framework'
 import { act, fireEvent, userEvent, waitFor } from '@testing-library/react-native'
+import { LIST_ITEM_CARD_ARTWORK_SIZE } from 'entities/list-item'
 import {
   FAVORITES_PLAYLIST,
   type LocalPlaylistData,
@@ -79,6 +80,9 @@ const PLAYLIST_A_TITLE = 'Плейлист A'
 const PLAYLIST_B_TITLE = 'Плейлист B'
 const EDIT_LABEL = 'Изменить порядок'
 const SAVE_LABEL = 'Сохранить'
+const DELETE_LABEL = 'Удалить плейлист'
+const DELETE_DIALOG_TITLE = 'Удалить плейлист?'
+const DELETE_CONFIRM_TEXT = 'Удалить'
 const FAVORITES_TITLE = FAVORITES_PLAYLIST.title
 
 const PLAYLIST_A: LocalPlaylistData = {
@@ -112,11 +116,23 @@ describe('<MyPlaylistsScreen>', () => {
 
     const { getAllByText, getByText } = await renderWithProviders(<MyPlaylistsScreen />, { ctx })
 
-    // Favorites is pinned as its own row, never duplicated by the drag list.
+    // Favorites is the list header (scrolls with the list), rendered exactly once.
     expect(getByText('heart')).toBeTruthy()
     expect(getAllByText(FAVORITES_TITLE)).toHaveLength(1)
     expect(getByText(PLAYLIST_A_TITLE)).toBeTruthy()
     expect(getByText(PLAYLIST_B_TITLE)).toBeTruthy()
+  })
+
+  test('sizes the favorites and create markers like the server playlist artwork', async () => {
+    const ctx = createCtx()
+    seedPlaylists(ctx)
+
+    const { getByText } = await renderWithProviders(<MyPlaylistsScreen />, { ctx })
+
+    const avatarSize = { height: LIST_ITEM_CARD_ARTWORK_SIZE, width: LIST_ITEM_CARD_ARTWORK_SIZE }
+
+    expect(getByText('heart').parent).toHaveStyle(avatarSize)
+    expect(getByText('add').parent).toHaveStyle(avatarSize)
   })
 
   test('shows the edit toggle in the header and reveals save in edit mode', async () => {
@@ -252,5 +268,74 @@ describe('<MyPlaylistsScreen>', () => {
     fireEvent.press(getByText('Скруглённые углы карточек'))
 
     await waitFor(() => expect(ctx.get(sectionSettingsAtom).borderRadius).toBe(false))
+  })
+
+  test('renders a create row and opens the create form on tap', async () => {
+    const ctx = createCtx()
+    seedPlaylists(ctx)
+
+    const { getByLabelText, getByText } = await renderWithProviders(<MyPlaylistsScreen />, { ctx })
+
+    expect(getByText('Создать плейлист')).toBeTruthy()
+
+    await act(async () => {
+      fireEvent.press(getByText('Создать плейлист'))
+    })
+
+    expect(getByLabelText('Название')).toBeTruthy()
+  })
+
+  test('keeps the create row below the empty playlist list', async () => {
+    const ctx = createCtx()
+    myPlaylistsAtom(ctx, [FAVORITES_PLAYLIST])
+
+    const { getByText } = await renderWithProviders(<MyPlaylistsScreen />, { ctx })
+
+    expect(getByText('Своих плейлистов пока нет')).toBeTruthy()
+    expect(getByText('Создать плейлист')).toBeTruthy()
+  })
+
+  test('deletes a playlist from the edit mode after confirmation', async () => {
+    const ctx = createCtx()
+    seedPlaylists(ctx)
+
+    const { getAllByLabelText, getByLabelText, getByText } = await renderWithProviders(
+      <MyPlaylistsScreen />,
+      { ctx },
+    )
+    const user = userEvent.setup()
+
+    await user.press(getByLabelText(EDIT_LABEL))
+    fireEvent.press(getAllByLabelText(DELETE_LABEL)[0])
+
+    await waitFor(() => expect(getByText(DELETE_DIALOG_TITLE)).toBeTruthy())
+
+    await act(async () => {
+      fireEvent.press(getByText(DELETE_CONFIRM_TEXT))
+    })
+
+    await waitFor(() => expect(orderedIds(ctx)).toEqual(['favorites', 'b']))
+  })
+
+  test('cancels a deletion without removing the playlist', async () => {
+    const ctx = createCtx()
+    seedPlaylists(ctx)
+
+    const { getAllByLabelText, getByLabelText, getByText } = await renderWithProviders(
+      <MyPlaylistsScreen />,
+      { ctx },
+    )
+    const user = userEvent.setup()
+
+    await user.press(getByLabelText(EDIT_LABEL))
+    fireEvent.press(getAllByLabelText(DELETE_LABEL)[0])
+
+    await waitFor(() => expect(getByText('Отмена')).toBeTruthy())
+
+    await act(async () => {
+      fireEvent.press(getByText('Отмена'))
+    })
+
+    expect(orderedIds(ctx)).toEqual(['favorites', 'a', 'b'])
   })
 })

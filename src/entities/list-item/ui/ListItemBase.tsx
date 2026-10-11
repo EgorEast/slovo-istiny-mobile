@@ -19,6 +19,7 @@ const DRAGGABLE_ROW_ROLE = Platform.OS === 'web' ? 'link' : 'button'
 
 const ListItemBaseComponent = ({
   artwork,
+  artworkNode,
   badges,
   drag,
   dragLabel = DEFAULT_DRAG_LABEL,
@@ -33,6 +34,7 @@ const ListItemBaseComponent = ({
   variant = 'card',
 }: {
   artwork?: null | string
+  artworkNode?: ReactNode
   badges?: ReactNode
   drag?: () => void
   dragLabel?: string
@@ -55,7 +57,8 @@ const ListItemBaseComponent = ({
   const content = (
     <View style={isSurface ? styles.body : styles.cardBody}>
       <View style={styles.header}>
-        {artwork == null ? null : <ListItemArtwork uri={artwork} variant={variant} />}
+        {artworkNode ??
+          (artwork == null ? null : <ListItemArtwork uri={artwork} variant={variant} />)}
         <View style={styles.texts}>
           {movingTitle ? (
             <MovingText text={title} style={titleStyle} />

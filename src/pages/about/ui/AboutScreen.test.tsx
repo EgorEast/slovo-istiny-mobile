@@ -1,5 +1,6 @@
 import { fireEvent } from '@testing-library/react-native'
 import { openURL } from 'expo-linking'
+import { StyleSheet } from 'react-native'
 import { renderWithProviders } from 'shared/mocks'
 import { AboutScreen } from './AboutScreen'
 
@@ -66,6 +67,15 @@ describe('<AboutScreen>', () => {
   test('renders the copyright footer', async () => {
     const { getByText } = await renderWithProviders(<AboutScreen />)
     expect(getByText('© 2026 Test Holder')).toBeTruthy()
+  })
+
+  test('keeps the content scrollable with bottom padding', async () => {
+    const { getByTestId } = await renderWithProviders(<AboutScreen />)
+
+    const scroll = getByTestId('about-scroll')
+    const { paddingBottom } = StyleSheet.flatten(scroll.props.contentContainerStyle)
+
+    expect(paddingBottom).toBeGreaterThan(0)
   })
 
   test('source code link opens the project URL', async () => {

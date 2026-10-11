@@ -23,9 +23,14 @@ export const DynamicSectionsSlider = ({ leadingElement }: { leadingElement?: Rea
   const [dataSource] = useAtom(sectionDataSourceAtom)
   const fetchSections = useAction(fetchAllSections)
 
+  // `'unknown'` means sections were never fetched (neither cache nor network).
+  // On a remount — the sliders unmount while the search is active — the already
+  // loaded sections must not trigger another network revalidation. Pull-to-refresh
+  // calls the action directly, so it still forces a reload.
   useEffect(() => {
+    if (dataSource !== 'unknown') return
     void fetchSections()
-  }, [fetchSections])
+  }, [dataSource, fetchSections])
 
   useOfflineRetry({
     fetchFn: fetchSections,

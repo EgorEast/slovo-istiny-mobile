@@ -1,7 +1,7 @@
 import { match } from 'ts-pattern'
 import { SIZE_OF_MINIMUM_SIDE_OF_SCREEN } from '../../../config/screen-dimensions'
 import { FONT_SIZES, INDENTS } from '../../theme/themed'
-import { SliderItemSize } from './slider-item.types'
+import { SliderItemSize, SliderItemTransform } from './slider-item.types'
 
 export const getSliderItemWidth = (size: SliderItemSize): number =>
   match(size)
@@ -9,6 +9,19 @@ export const getSliderItemWidth = (size: SliderItemSize): number =>
     .with(SliderItemSize.Middle, () => SIZE_OF_MINIMUM_SIDE_OF_SCREEN * 0.44)
     .with(SliderItemSize.Small, () => SIZE_OF_MINIMUM_SIDE_OF_SCREEN * 0.285)
     .with(SliderItemSize.XLarge, () => SIZE_OF_MINIMUM_SIDE_OF_SCREEN * 0.9)
+    .exhaustive()
+
+// Height of the card's artwork area for a given item width: `high` stretches
+// the cover, `short` crops it, `undefined` keeps the square. Shared by the real
+// item and its skeleton so the placeholder never drifts from the card.
+export const getSliderItemImageHeight = (
+  itemWidth: number,
+  transform?: SliderItemTransform,
+): number =>
+  match(transform)
+    .with(SliderItemTransform.High, () => itemWidth * 1.3)
+    .with(SliderItemTransform.Short, () => itemWidth / 2)
+    .with(undefined, () => itemWidth)
     .exhaustive()
 
 // Full horizontal step between two neighbouring items: the item width plus the

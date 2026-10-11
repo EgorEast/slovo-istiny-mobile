@@ -1,25 +1,33 @@
 import { useRouter } from 'expo-router'
 import { type PlaylistData } from 'entities/playlist'
+import { useNavigationGuard } from 'shared/routing'
 
 export const useListenNavigation = () => {
   const router = useRouter()
+  const runGuarded = useNavigationGuard()
 
   const navigateToPlaylist = (playlist: PlaylistData) => {
-    router.push({
-      params: { playlist: playlist.id },
-      pathname: '/listen/playlist',
+    runGuarded(() => {
+      router.push({
+        params: { playlist: playlist.id },
+        pathname: '/listen/playlist',
+      })
     })
   }
 
   const navigateToPlaylistList = (sectionId: string) => {
-    router.push({
-      params: { sectionId },
-      pathname: '/listen/playlist-list',
+    runGuarded(() => {
+      router.push({
+        params: { sectionId },
+        pathname: '/listen/playlist-list',
+      })
     })
   }
 
   const navigateToMyPlaylists = () => {
-    router.push({ pathname: '/listen/my-playlists' })
+    runGuarded(() => {
+      router.push({ pathname: '/listen/my-playlists' })
+    })
   }
 
   return {

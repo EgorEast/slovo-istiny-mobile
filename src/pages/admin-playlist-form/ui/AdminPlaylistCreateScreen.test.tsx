@@ -19,6 +19,7 @@ jest.mock('shared/api', () => ({
 
 jest.mock('expo-router', () => ({
   Stack: { Screen: () => null },
+  useLocalSearchParams: () => ({}),
   useRouter: () => ({ back: jest.fn(), push: jest.fn() }),
 }))
 

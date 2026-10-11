@@ -68,6 +68,26 @@ describe('<SliderItem/>', () => {
     expect(getSourceUri()).toEqual(IMAGE_PLACEHOLDER)
   })
 
+  test('renders the blurred letter tile over the default cover when artwork is missing', async () => {
+    await renderWithProviders(<SliderItem title='Hello' artwork={null} />)
+
+    expect(screen.getByText('H')).toBeTruthy()
+    expect(getSourceUri()).toEqual(IMAGE_PLACEHOLDER)
+  })
+
+  test('hides the letter tile when the title is located on the card', async () => {
+    await renderWithProviders(
+      <SliderItem
+        title='Hello'
+        artwork={null}
+        whereIsSlideTitleLocated={WhereIsSlideTitleLocated.On}
+      />,
+    )
+
+    expect(screen.queryByText('H')).toBeNull()
+    expect(screen.getByTestId(TITLE_ON_CARD_TEST_ID)).toBeTruthy()
+  })
+
   test('title visible under the card by default', async () => {
     await renderWithProviders(<SliderItem title={propsStub.title} artwork={propsStub.artwork} />)
 

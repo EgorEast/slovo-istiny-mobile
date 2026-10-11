@@ -26,6 +26,7 @@
   - `playlists`: только `fetchPlaylistTitleMatches(query, 100)` (`playlistsApi…playlistControllerFindAll({ limit: 100, search: query })`) — поиск по названию/описанию; per-query кэш `cachedPlaylistSearch:q:<query>`; фолбэк при сети — `getCachedPlaylistSearch(query)`.
   - `preachers`: производные **клиент-сайд** от тех же 100 проповедей — `collectMatchingPreachers(result.data, query)` (`src/features/sermon-search/lib/composeSearchResults.ts`): уникальные `artist` найденных проповедей, чьё имя содержит запрос (case-insensitive), в порядке первого появления. Отдельного сетевого запроса нет.
 - Загруженный результат пишется обратно в общий per-query кэш (`persistSermonSearchResults` / `persistPlaylistSearchResults`) — только если данные пришли из сети (`fromNetwork`), fire-and-forget.
+- Локальные пользовательские плейлисты подмешиваются к серверной выдаче **на рендере** (`selectLocalPlaylistMatches` + `mergePlaylistMatches` по `myPlaylistsAtom`), а не внутри `useEffect`: `myPlaylistsAtom` отдаёт новый массив на каждую гидратацию/тоггл, и зависимость от него в эффекте дублировала бы сетевой запрос.
 
 ## Заголовок и кнопка «Назад»
 

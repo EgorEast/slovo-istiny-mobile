@@ -55,17 +55,29 @@ export const playlistsArraySchema = z.array(playlistDataSchema)
 export const myPlaylistsAtom = atom<LocalPlaylistData[]>([FAVORITES_PLAYLIST], 'myPlaylistsAtom')
 
 /**
+ * `true` после первой успешной гидратации `myPlaylistsAtom` из хранилища.
+ *
+ * Экран «Слушать» размонтирует слайдеры, пока активен поиск; без этого флага
+ * каждый возврат к секциям перечитывал бы AsyncStorage. Флаг поднимает сам
+ * `loadMyPlaylists` (единственный путь гидратации), а pull-to-refresh вызывает
+ * экшен напрямую и потому по-прежнему форсирует чтение.
+ */
+export const myPlaylistsLoadedAtom = atom(false, 'myPlaylistsLoadedAtom')
+
+/**
  * Гидратация локальных плейлистов из AsyncStorage.
  *
  * Хранилище недоверенное: читается через zod (`myPlaylistsArraySchema`),
  * невалидные данные трактуются как отсутствующие. При первом чтении
  * (ключ отсутствует) засеивается `FAVORITES_PLAYLIST`. Отказ самого
  * хранилища (reject) логируется и трактуется так же — как отсутствие данных.
+ * По завершении поднимает `myPlaylistsLoadedAtom`.
  */
 export const loadMyPlaylists = action(async ctx => {
   const playlists = await readStoredMyPlaylists()
   await ctx.schedule(() => {
     myPlaylistsAtom(ctx, playlists)
+    myPlaylistsLoadedAtom(ctx, true)
   })
   return playlists
 }, 'loadMyPlaylists')

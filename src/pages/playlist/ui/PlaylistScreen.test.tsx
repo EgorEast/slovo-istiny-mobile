@@ -11,13 +11,14 @@ import { PlaylistScreen } from './PlaylistScreen'
 
 /* ── Mocks ─────────────────────────────────────────────────────────── */
 
-const mockParams: { playlist?: string } = { playlist: 'pl-1' }
+const mockParams: { custom?: string; playlist?: string } = { playlist: 'pl-1' }
 const mockSetOptions = jest.fn()
 const mockResolvePlaylistFromCache = jest.fn()
 
 jest.mock('expo-router', () => ({
   useLocalSearchParams: () => mockParams,
   useNavigation: () => ({ setOptions: mockSetOptions }),
+  useRouter: () => ({ replace: jest.fn(), setParams: jest.fn() }),
 }))
 
 jest.mock('expo-router/react-navigation', () => ({
@@ -244,6 +245,7 @@ describe('<PlaylistScreen>', () => {
   beforeEach(() => {
     jest.clearAllMocks()
     mockParams.playlist = PLAYLIST_ID
+    delete mockParams.custom
   })
 
   test('renders the playlist title and its tracks', async () => {
@@ -293,6 +295,16 @@ describe('<PlaylistScreen>', () => {
     })
 
     expect(queryByText(PLAYLIST_TITLE)).toBeTruthy()
+  })
+
+  test('keeps the loading state instead of not-found while a custom link imports', async () => {
+    mockParams.playlist = undefined
+    mockParams.custom = ''
+
+    const { container, queryByText } = await renderScreen()
+    const spinner = container.queryAll(node => node.type === 'ActivityIndicator')
+    expect(spinner).toHaveLength(1)
+    expect(queryByText(NOT_FOUND_TEXT)).toBeNull()
   })
 
   test('renders the playlist resolved from cache', async () => {
@@ -403,6 +415,7 @@ describe('<PlaylistScreen> header menu integration', () => {
   beforeEach(() => {
     jest.clearAllMocks()
     mockParams.playlist = PLAYLIST_ID
+    delete mockParams.custom
     jest.spyOn(RNView.prototype, 'measureInWindow').mockImplementation(cb => {
       cb(300, 100, 44, 44)
       return undefined
