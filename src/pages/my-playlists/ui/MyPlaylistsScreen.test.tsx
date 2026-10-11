@@ -101,6 +101,11 @@ const DELETE_DIALOG_TITLE = 'Удалить плейлист?'
 const DELETE_CONFIRM_TEXT = 'Удалить'
 const CREATE_ROW_TEXT = 'Создать плейлист'
 const FAVORITES_TITLE = FAVORITES_PLAYLIST.title
+const DIVIDER_HEIGHT = 1
+
+// Разделитель списка (`PlaylistListSeparator`) — декоративный `View` высотой 1px
+// без текста и роли; рендерер не отдаёт композитные узлы, поэтому считаем его по
+// высоте host-элемента (как в `TracksListSkeleton.test.tsx`).
 
 const PLAYLIST_A: LocalPlaylistData = {
   id: 'a',
@@ -310,6 +315,29 @@ describe('<MyPlaylistsScreen>', () => {
 
     expect(getByText('Нет плейлистов')).toBeTruthy()
     expect(getByText(CREATE_ROW_TEXT)).toBeTruthy()
+  })
+
+  test('renders a divider before the create row when playlists are present', async () => {
+    const ctx = createCtx()
+    seedPlaylists(ctx)
+
+    const { container, getByText } = await renderWithProviders(<MyPlaylistsScreen />, { ctx })
+
+    // FlatList emits no separator after the last row, so the footer adds one above
+    // the create row: 2 dividers between the 3 rows + 1 before «Создать плейлист».
+    const dividers = container.queryAll(node => node.props.style?.height === DIVIDER_HEIGHT)
+
+    expect(dividers).toHaveLength(3)
+    expect(getByText(CREATE_ROW_TEXT)).toBeTruthy()
+  })
+
+  test('does not render a divider when the playlists list is empty', async () => {
+    const ctx = createCtx()
+    myPlaylistsAtom(ctx, [])
+
+    const { container } = await renderWithProviders(<MyPlaylistsScreen />, { ctx })
+
+    expect(container.queryAll(node => node.props.style?.height === DIVIDER_HEIGHT)).toHaveLength(0)
   })
 
   test('deletes a playlist from the edit mode after confirmation', async () => {

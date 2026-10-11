@@ -1,6 +1,10 @@
 import { Ionicons } from '@expo/vector-icons'
 import { StyleSheet, View } from 'react-native'
-import { PlaylistList, type PlaylistListItemData } from 'widgets/playlist-list'
+import {
+  PlaylistList,
+  type PlaylistListItemData,
+  PlaylistListSeparator,
+} from 'widgets/playlist-list'
 import { LIST_ITEM_CARD_ARTWORK_SIZE } from 'entities/list-item'
 import { type LocalPlaylistData } from 'entities/playlist'
 import { INDENTS, useTheme } from 'shared/ui/theme'
@@ -14,7 +18,8 @@ const SECTION_TITLE = 'Мои плейлисты'
 // списка секции (`PlaylistList` — схлопывающийся заголовок, карточные строки и
 // разделители). Строка «Избранные» идёт первым элементом списка — её обложку
 // подменяет маркер-сердце; ниже — локальные плейлисты; завершающей строкой
-// футера — «Создать плейлист», то есть под плейлистами.
+// футера — «Создать плейлист», то есть под плейлистами. Между списком и строкой
+// создания — тот же разделитель (`PlaylistListSeparator`), что и между строками.
 export const MyPlaylistsNormalView = ({
   favorites,
   onPressCreate,
@@ -53,6 +58,7 @@ export const MyPlaylistsNormalView = ({
       onPressPlaylist={onPressPlaylist}
       listFooter={
         <View style={styles.create}>
+          {items.length > 0 && <PlaylistListSeparator />}
           <MyPlaylistsCreateRow onPress={onPressCreate} />
         </View>
       }
