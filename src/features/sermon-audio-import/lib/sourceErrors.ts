@@ -10,6 +10,7 @@ const IMPORT_ERROR_MESSAGES: Record<ImportErrorCode, string> = {
   'no-audio': 'Аудиодорожка не найдена',
   parse: 'Некорректная ссылка YouTube',
   'service-unavailable': 'Сервис недоступен',
+  unauthorized: 'Сессия администратора истекла — войдите заново',
   'upload-failed': 'Не удалось загрузить файл на сервер',
   'video-unavailable': 'Видео недоступно',
 }

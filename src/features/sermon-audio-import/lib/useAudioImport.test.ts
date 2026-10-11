@@ -37,8 +37,8 @@ const IMPORTED: ImportedSermonData = { ...METADATA, audioUrl: 'https://cdn.test/
 
 const VIDEO_URL = 'https://www.youtube.com/watch?v=lV6YkF7ytxs'
 
-// Известные причины, которые пользователь решает сам (сменить ссылку/инстанс):
-// им достаточно короткого toast'а, а не диалога с копируемыми деталями.
+// Известные причины, которые пользователь решает сам (сменить ссылку/инстанс,
+// войти заново): им достаточно короткого toast'а, а не диалога с деталями.
 const ACTIONABLE_CODES = [
   'parse',
   'video-unavailable',
@@ -46,6 +46,7 @@ const ACTIONABLE_CODES = [
   'live',
   'no-audio',
   'service-unavailable',
+  'unauthorized',
 ] as const
 
 // Импорт, который не завершается сам: сигнал отмены даёт тест сам, дёрнув abort

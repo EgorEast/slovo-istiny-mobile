@@ -2,6 +2,7 @@ import { Platform } from 'react-native'
 import { buildAudioFileName } from './audioFileName'
 import { downloadAudio } from './downloadAudio'
 import { type DownloadedAudio } from './downloadAudio/types'
+import { assertAuthenticated, isAuthRejection } from './importAuth'
 import {
   type ImportedSermonData,
   type ImportedSermonMetadata,
@@ -66,6 +67,7 @@ const uploadDownloadedAudio = async (
     // Сеть/авторизация/формат на стороне сервера — для пользователя это одна
     // понятная ошибка вместо технического текста axios.
     if (error instanceof ImportSourceError) throw error
+    if (isAuthRejection(error)) throw new ImportSourceError('unauthorized', error)
 
     // Причина уходит и в лог, и в toast: без неё «upload-failed» неотличим от
     // любой другой причины (например, multipart без boundary на web).
@@ -105,6 +107,7 @@ export const importAudio = async ({
 }): Promise<ImportedSermonData> => {
   const videoId = parseVideoId(url)
   if (videoId === null) throw new ImportSourceError('parse')
+  await assertAuthenticated()
 
   const resolved = await resolveAudio(settings, videoId)
   onMetadata?.({ description: resolved.description, title: resolved.title })

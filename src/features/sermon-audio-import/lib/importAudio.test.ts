@@ -1,3 +1,4 @@
+import { AxiosError, type AxiosResponse } from 'axios'
 import { Platform } from 'react-native'
 import { importAudio } from './importAudio'
 import { type ImportPhaseProgress, type ImportSettings } from './importTypes'
@@ -8,6 +9,8 @@ const mockUploadSermonFile = jest.fn()
 const mockDownloadAsync = jest.fn()
 const mockCreateDownloadTask = jest.fn()
 const mockDeleteFile = jest.fn()
+const mockGetAccessToken = jest.fn()
+const mockGetRefreshToken = jest.fn()
 
 jest.mock('./invidiousSource', () => ({
   resolveInvidiousAudio: (...args: unknown[]) => mockResolveInvidiousAudio(...args),
@@ -18,6 +21,10 @@ jest.mock('./youtubeSource', () => ({
 }))
 
 jest.mock('shared/api', () => ({
+  secureTokenStorage: {
+    getAccessToken: (...args: unknown[]) => mockGetAccessToken(...args),
+    getRefreshToken: (...args: unknown[]) => mockGetRefreshToken(...args),
+  },
   uploadSermonFile: (...args: unknown[]) => mockUploadSermonFile(...args),
 }))
 
@@ -72,11 +79,23 @@ const mockSuccessfulDownload = () => {
   mockDownloadAsync.mockResolvedValue({ uri: 'file:///cache/audio.m4a' })
 }
 
+// Загрузка идёт через shared/api, который оборачивает axios-ошибку в Error с
+// cause: 401/403 из цепочки cause означает, что refresh-токен тоже отклонён.
+const createAxiosError = (status: number) =>
+  new AxiosError('Request failed', 'ERR_BAD_REQUEST', undefined, undefined, {
+    data: null,
+    headers: {},
+    status,
+    statusText: '',
+  } as unknown as AxiosResponse)
+
 describe('importAudio', () => {
   beforeEach(() => {
     jest.clearAllMocks()
     mockResolveInvidiousAudio.mockResolvedValue(RESOLVED)
     mockUploadSermonFile.mockResolvedValue({ fileName: 'audio.m4a', fileUrl: FILE_URL })
+    mockGetAccessToken.mockResolvedValue('access-token')
+    mockGetRefreshToken.mockResolvedValue('refresh-token')
     mockSuccessfulDownload()
   })
 
@@ -243,6 +262,42 @@ describe('importAudio', () => {
       code: 'service-unavailable',
     })
     expect(mockUploadSermonFile).not.toHaveBeenCalled()
+  })
+
+  test('rejects with an unauthorized code when the admin session is gone', async () => {
+    const { onPhase } = collectProgress()
+    mockGetAccessToken.mockResolvedValue(null)
+    mockGetRefreshToken.mockResolvedValue(null)
+
+    await expect(
+      importAudio({ onPhase, settings: SETTINGS, url: VIDEO_URL, withAudio: true }),
+    ).rejects.toMatchObject({ code: 'unauthorized' })
+    expect(mockCreateDownloadTask).not.toHaveBeenCalled()
+    expect(mockUploadSermonFile).not.toHaveBeenCalled()
+  })
+
+  test('rejects with an unauthorized code when only the refresh token is missing', async () => {
+    const { onPhase } = collectProgress()
+    mockGetRefreshToken.mockResolvedValue(null)
+
+    await expect(
+      importAudio({ onPhase, settings: SETTINGS, url: VIDEO_URL, withAudio: true }),
+    ).rejects.toMatchObject({ code: 'unauthorized' })
+    expect(mockCreateDownloadTask).not.toHaveBeenCalled()
+    expect(mockUploadSermonFile).not.toHaveBeenCalled()
+  })
+
+  test('maps an upload-time auth rejection to an unauthorized code', async () => {
+    const { onPhase } = collectProgress()
+    // Продовый shared/api оборачивает axios-ошибку в Error с cause, поэтому и
+    // мок повторяет ту же форму — тест проверяет обход цепочки cause.
+    mockUploadSermonFile.mockRejectedValue(
+      new Error('Request failed', { cause: createAxiosError(401) }),
+    )
+
+    await expect(
+      importAudio({ onPhase, settings: SETTINGS, url: VIDEO_URL, withAudio: true }),
+    ).rejects.toMatchObject({ code: 'unauthorized' })
   })
 
   test('deletes the temporary file after the import', async () => {

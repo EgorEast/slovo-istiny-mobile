@@ -13,7 +13,7 @@ const sleep = (ms: number): Promise<void> => new Promise(resolve => setTimeout(r
 
 // Загрузка идёт через shared/api, который оборачивает axios-ошибку в Error с
 // cause: исходный ответ/сеть доступны только по цепочке cause.
-const findAxiosError = (error: unknown): AxiosError | undefined => {
+export const findAxiosError = (error: unknown): AxiosError | undefined => {
   let current: unknown = error
 
   while (current instanceof Error) {

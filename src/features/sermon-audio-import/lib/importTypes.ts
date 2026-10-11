@@ -20,6 +20,7 @@ export type ImportErrorCode =
   | 'no-audio'
   | 'parse'
   | 'service-unavailable'
+  | 'unauthorized'
   | 'upload-failed'
   | 'video-unavailable'
 
