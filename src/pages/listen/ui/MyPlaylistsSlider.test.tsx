@@ -184,6 +184,21 @@ describe('<MyPlaylistsSlider>', () => {
     expect(getAllByTestId(TITLE_ON_CARD_TEST_ID).length).toBeGreaterThan(0)
   })
 
+  test('reflects a title-location change made after mount', async () => {
+    const ctx = createCtx()
+    seedPlaylists(ctx)
+
+    const { queryAllByTestId } = await renderWithProviders(<MyPlaylistsSlider />, { ctx })
+
+    expect(queryAllByTestId(TITLE_ON_CARD_TEST_ID)).toHaveLength(0)
+
+    await act(async () => {
+      sectionSettingsAtom(ctx, { ...DEFAULT_SECTION_SETTINGS, whereIsSlideTitleLocated: 'on' })
+    })
+
+    expect(queryAllByTestId(TITLE_ON_CARD_TEST_ID).length).toBeGreaterThan(0)
+  })
+
   test('renders a trailing create card that opens the create form on tap', async () => {
     const ctx = createCtx()
     seedPlaylists(ctx)

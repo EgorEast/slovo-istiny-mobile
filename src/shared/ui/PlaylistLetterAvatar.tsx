@@ -28,17 +28,22 @@ const BACKGROUND_TEST_ID = 'playlist-letter-avatar-background'
  * @param root0.borderRadius - Скругление плитки (по умолчанию `RADIUSES.low`).
  * @param root0.fill - `true` — плитка заполняет родителя абсолютно (карточка
  * слайдера); `false` — фиксированный квадрат `size`×`size` (строка списка).
+ * @param root0.showLetter - `false` — плитка остаётся, но буква не рендерится.
+ * Нужно карточкам слайдера с заголовком «на карточке»: буква перекрывала бы
+ * заголовок, поэтому она скрывается, а фон и вуаль остаются.
  * @param root0.size - Сторона квадрата в пикселях (база для размера буквы).
  * @param root0.title - Название плейлиста, из которого берётся буква.
  */
 export const PlaylistLetterAvatar = ({
   borderRadius = RADIUSES.low,
   fill = false,
+  showLetter = true,
   size,
   title,
 }: {
   borderRadius?: number
   fill?: boolean
+  showLetter?: boolean
   size: number
   title: string
 }) => {
@@ -65,14 +70,16 @@ export const PlaylistLetterAvatar = ({
         blurMethod='dimezisBlurViewSdk31Plus'
       />
       <View style={[StyleSheet.absoluteFill, { backgroundColor: scrimColor }]} />
-      <Text
-        style={[
-          styles.letter,
-          { color: currentTheme.text, fontSize: size * AVATAR_CONTENT_SIZE_RATIO },
-        ]}
-      >
-        {letter}
-      </Text>
+      {showLetter ? (
+        <Text
+          style={[
+            styles.letter,
+            { color: currentTheme.text, fontSize: size * AVATAR_CONTENT_SIZE_RATIO },
+          ]}
+        >
+          {letter}
+        </Text>
+      ) : null}
     </View>
   )
 }

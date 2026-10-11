@@ -28,4 +28,13 @@ describe('<PlaylistLetterAvatar>', () => {
 
     expect(getByTestId(BACKGROUND_TEST_ID).props.source).toEqual({ uri: IMAGE_PLACEHOLDER })
   })
+
+  test('keeps the tile background but omits the letter when showLetter is false', async () => {
+    const { getByTestId, queryByText } = await renderWithProviders(
+      <PlaylistLetterAvatar size={50} title='проповеди' showLetter={false} />,
+    )
+
+    expect(queryByText('П')).toBeNull()
+    expect(getByTestId(BACKGROUND_TEST_ID)).toBeTruthy()
+  })
 })

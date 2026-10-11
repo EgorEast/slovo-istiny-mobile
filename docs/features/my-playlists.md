@@ -194,7 +194,9 @@ read-modify-write по id с тем же путём персиста. **«Изб
 общий `Slider` (`shared/ui`): карточки — `SliderItemsElement`, «Избранные» — первая карточка с
 `artworkIcon` (сердце `Ionicons 'heart'` цвета `currentTheme.primary`, размер из
 `getSliderItemWidth(itemsSize) * 0.4`), остальные локальные плейлисты — обычные карточки с
-`title = playlist.title`. Тап по карточке навигирует на `/listen/playlist?playlist=<id>`.
+`title = playlist.title` **без `artworkIcon`**: без обложки общий `SliderItem` сам рисует
+плитку-букву (`PlaylistLetterAvatar`) поверх блюра. Тап по карточке навигирует на
+`/listen/playlist?playlist=<id>`.
 Параметры отображения берутся из `sectionSettingsAtom` и прогоняются через мапперы
 `entities/section` (`mapItemsSize`/`mapTransform`/`mapWhereIsTitleLocated`):
 `itemsRows`/`itemsSize`/`transform`/`whereIsSlideTitleLocated`/`isDescriptionTitleOnSlideLarge`/
@@ -210,9 +212,10 @@ read-modify-write по id с тем же путём персиста. **«Изб
 получает тематическую подложку (`currentTheme.surface`). Заголовок карточки следует настройке
 `whereIsSlideTitleLocated`: при `on` рендерится оверлеем по центру подложки, при `under` —
 подписью под карточкой. Описание плейлиста (`isDescriptionTitleOnSlideLarge`) на icon-карточках
-не показывается — у них нет обложки, к низу которой оно прижимается. Остальные карточки
-локальных плейлистов (`artworkIcon` не задан) следуют обеим настройкам; впрочем локальные
-плейлисты (`LocalPlaylistData`) описания не хранят, поэтому блок описания на карточке
+не показывается — у них нет обложки, к низу которой оно прижимается. Карточки локальных
+плейлистов (`artworkIcon` не задан) следуют обеим настройкам, а при `whereIsSlideTitleLocated === on`
+буква плитки скрывается (`showLetter={false}`) — иначе она перекрывала бы заголовок. Впрочем
+локальные плейлисты (`LocalPlaylistData`) описания не хранят, поэтому блок описания на карточке
 рендерится только у серверных плейлистов (`renderSection`).
 
 ### Экран «Мои плейлисты» (админ-подобная форма оформления + порядок)
@@ -284,8 +287,11 @@ read-modify-write по id с тем же путём персиста. **«Изб
 `artworkIcon` — опциональный слот `SliderItemsElement` (`src/shared/ui/slider/slider-item/`):
 при наличии обложка не рендерится, вместо неё — нода поверх тематической подложки
 (`currentTheme.surface`). Заголовок и `whereIsSlideTitleLocated` работают и на icon-карточках
-(при `on` — оверлеем). API обратной совместимости: обычные слайдеры без `artworkIcon` не
-затрагиваются.
+(при `on` — оверлеем). Когда у карточки нет ни `artwork`, ни `artworkIcon`, `SliderItem` сам
+рисует плитку-букву `PlaylistLetterAvatar` (дефолтная обложка под блюром + тематическая вуаль),
+поэтому серверные секции и «Мои плейлисты» выглядят одинаково; при `whereIsSlideTitleLocated === on`
+буква скрывается (`showLetter={false}`), чтобы не перекрывать заголовок. API обратной
+совместимости: слайдеры с заданным `artwork`/`artworkIcon` не затрагиваются.
 
 ## Формы создания и экран редактирования
 

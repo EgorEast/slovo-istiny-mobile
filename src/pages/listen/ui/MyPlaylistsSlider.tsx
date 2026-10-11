@@ -16,7 +16,6 @@ import { mapItemsSize, mapTransform, mapWhereIsTitleLocated } from 'entities/sec
 import {
   AVATAR_CONTENT_SIZE_RATIO,
   getSliderItemWidth,
-  PlaylistLetterAvatar,
   Slider,
   type SliderItemsElement,
 } from 'shared/ui'
@@ -95,12 +94,7 @@ export const MyPlaylistsSlider = () => {
 
   const items = [
     toPlaylistItem(favorites, heartIcon),
-    ...restPlaylists.map(playlist =>
-      toPlaylistItem(
-        playlist,
-        <PlaylistLetterAvatar fill size={cardWidth} title={playlist.title} />,
-      ),
-    ),
+    ...restPlaylists.map(playlist => toPlaylistItem(playlist)),
     toCreateItem(addIcon),
   ]
 
