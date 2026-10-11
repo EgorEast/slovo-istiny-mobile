@@ -1,9 +1,13 @@
 import { useAction } from '@reatom/npm-react'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { useEffect, useRef } from 'react'
-import { createLocalPlaylist, loadMyPlaylists, parseCustomPlaylistParams } from 'entities/playlist'
+import {
+  createLocalPlaylist,
+  deriveCustomPlaylistId,
+  loadMyPlaylists,
+  parseCustomPlaylistParams,
+} from 'entities/playlist'
 import { showToast } from 'shared/model'
-import { findDuplicateLocalPlaylist } from './findDuplicateLocalPlaylist'
 
 const INVALID_LINK_MESSAGE = 'Ссылка на плейлист недействительна'
 
@@ -15,10 +19,12 @@ const INVALID_LINK_MESSAGE = 'Ссылка на плейлист недейст�
  * `playlist` param. Params are parsed once per value: `loadMyPlaylists` is
  * awaited before the read-modify-write so `createLocalPlaylist` never runs
  * against the un-hydrated atom (which an in-flight hydration would overwrite).
- * An identical local playlist (same title and sermon-id set) is reused instead
- * of duplicated. Finally the route is replaced with the target playlist,
- * dropping the share params. An invalid link shows a toast and clears the
- * params. The ref guard makes the import idempotent across rerenders.
+ * The link's encoded payload is its stable identifier: `deriveCustomPlaylistId`
+ * maps the same `title`/`sermons` pair to the same id, so re-opening a link
+ * reuses the already-imported playlist instead of creating a second copy. Finally
+ * the route is replaced with the target playlist, dropping the share params. An
+ * invalid link shows a toast and clears the params. The ref guard makes the
+ * import idempotent across rerenders.
  */
 export const useCustomPlaylistImport = () => {
   const router = useRouter()
@@ -49,9 +55,11 @@ export const useCustomPlaylistImport = () => {
 
     void (async () => {
       const playlists = await loadPlaylists()
-      const duplicate = findDuplicateLocalPlaylist(playlists, payload)
+      const id = deriveCustomPlaylistId(payload)
+      const existing = playlists.find(playlist => playlist.id === id)
       const target =
-        duplicate ?? (await createPlaylist({ sermonIds: payload.sermonIds, title: payload.title }))
+        existing ??
+        (await createPlaylist({ id, sermonIds: payload.sermonIds, title: payload.title }))
       router.replace({ params: { playlist: target.id }, pathname: '/listen/playlist' })
     })()
   }, [

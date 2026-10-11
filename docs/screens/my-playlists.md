@@ -30,12 +30,14 @@
   `containerStyle={styles.listContainer}` с `flex: 1` (как у `DraggableFlatList` админки, см.
   [features/admin.md](../features/admin.md)).
 - **Обычный режим** (`MyPlaylistsNormalView`, `src/pages/my-playlists/ui/MyPlaylistsNormalView.tsx`):
-  сверху закреплённая строка «Избранные» (`MyPlaylistsFavoritesRow`: сердце `Ionicons 'heart'`
-  цвета `currentTheme.primary`, не перетаскивается, без бокового инсета — той же геометрии, что
-  карточные строки); ниже — карточные строки локальных плейлистов
-  (`MyPlaylistsDragList` + `MyPlaylistsRow`, `ListItemBase` card-вариант); **завершающей строкой
-  футера списка** — «Создать плейлист» (`MyPlaylistsCreateRow`: плюс `Ionicons 'add'`, открывает
-  модалку создания), то есть под плейлистами. Drag выключен, тап по строке навигирует.
+  сверху строка «Избранные» (`MyPlaylistsFavoritesRow`: сердце `Ionicons 'heart'` цвета
+  `currentTheme.primary`, не перетаскивается); ниже — карточные строки локальных плейлистов
+  (`MyPlaylistsDragList` + `MyPlaylistsRow`, `ListItemBase` card-вариант, плитка обложки
+  `LIST_ITEM_CARD_ARTWORK_SIZE` — та же геометрия, что у серверных строк `PlaylistListItem`; у
+  плейлиста без обложки — буква `PlaylistLetterAvatar`, у маркеров — иконка
+  `size * AVATAR_CONTENT_SIZE_RATIO`); **завершающей строкой футера списка** — «Создать плейлист»
+  (`MyPlaylistsCreateRow`: плюс `Ionicons 'add'`, открывает модалку создания), то есть под
+  плейлистами. Drag выключен, тап по строке навигирует.
 
 ### Режим редактирования
 

@@ -1,5 +1,9 @@
 import { MAX_CUSTOM_PLAYLIST_SERMONS } from '../localPlaylists'
-import { buildCustomPlaylistSearchParams, parseCustomPlaylistParams } from './customPlaylistShare'
+import {
+  buildCustomPlaylistSearchParams,
+  deriveCustomPlaylistId,
+  parseCustomPlaylistParams,
+} from './customPlaylistShare'
 import { packSermonIds, unpackSermonIds } from './sermonIdPacking'
 
 const CYRILLIC_TITLE = 'Избранные проповеди пастора'
@@ -85,6 +89,39 @@ describe('customPlaylistShare', () => {
     expect(parseCustomPlaylistParams({ sermons: undefined, title: 'Проповеди' })).toBeNull()
     expect(parseCustomPlaylistParams({ sermons: '', title: 'Проповеди' })).toBeNull()
     expect(parseCustomPlaylistParams({ sermons: ' , , ', title: 'Проповеди' })).toBeNull()
+  })
+})
+
+describe('deriveCustomPlaylistId', () => {
+  const PAYLOAD = { sermonIds: SERMON_IDS, title: CYRILLIC_TITLE }
+
+  test('is stable for the same payload', () => {
+    expect(deriveCustomPlaylistId(PAYLOAD)).toBe(deriveCustomPlaylistId(PAYLOAD))
+  })
+
+  test('formats as a custom- prefix followed by 16 hex chars', () => {
+    expect(deriveCustomPlaylistId(PAYLOAD)).toMatch(/^custom-[0-9a-f]{16}$/)
+  })
+
+  test('changes with the title', () => {
+    const other = deriveCustomPlaylistId({ sermonIds: SERMON_IDS, title: 'Другое название' })
+
+    expect(other).not.toBe(deriveCustomPlaylistId(PAYLOAD))
+  })
+
+  test('changes with the sermon-id order', () => {
+    const reversed = deriveCustomPlaylistId({ sermonIds: ['b', 'a'], title: 'Проповеди' })
+
+    expect(reversed).not.toBe(deriveCustomPlaylistId({ sermonIds: ['a', 'b'], title: 'Проповеди' }))
+  })
+
+  test('keeps distinct payloads collision-free', () => {
+    const ids = ['a', 'b', 'c'].flatMap(id => [
+      deriveCustomPlaylistId({ sermonIds: [id], title: 'Список' }),
+      deriveCustomPlaylistId({ sermonIds: ['a', 'b', 'c'], title: id }),
+    ])
+
+    expect(new Set(ids).size).toBe(ids.length)
   })
 })
 

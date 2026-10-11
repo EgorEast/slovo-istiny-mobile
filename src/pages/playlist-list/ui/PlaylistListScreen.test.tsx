@@ -47,6 +47,7 @@ jest.mock('shared/ui', () => {
 
   return {
     CoverImage: () => <View />,
+    PlaylistLetterAvatar: () => <View />,
   }
 })
 

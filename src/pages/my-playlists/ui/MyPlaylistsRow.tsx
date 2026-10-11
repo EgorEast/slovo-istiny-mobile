@@ -1,16 +1,21 @@
 import Ionicons from '@expo/vector-icons/Ionicons'
-import { ListItemBase, SURFACE_ARTWORK_SIZE } from 'entities/list-item'
+import { LIST_ITEM_CARD_ARTWORK_SIZE, ListItemBase } from 'entities/list-item'
 import { type LocalPlaylistData } from 'entities/playlist'
 import { PlaylistLetterAvatar } from 'shared/ui'
 import { IconButton } from 'shared/ui/icon-button'
-import { COLORS } from 'shared/ui/theme'
+import { COLORS, INDENTS } from 'shared/ui/theme'
 
 const DRAG_LABEL = 'Переместить плейлист'
 const DELETE_LABEL = 'Удалить плейлист'
 const DELETE_ICON_SIZE = 20
+// Card rows carry no own bottom margin (the server list spaces them with a
+// separator); this list has none, so the row keeps the previous rhythm.
+const ROW_STYLE = { marginBottom: INDENTS.medium }
 
-// Строка локального плейлиста в `surface`-варианте — той же геометрии, что
-// строки плейлистов в админ-экранах раздела. Вне редактирования тап
+// Строка локального плейлиста в `card`-варианте — той же геометрии, что
+// серверные строки плейлистов в списке раздела (`PlaylistListItem`): плитка
+// обложки `LIST_ITEM_CARD_ARTWORK_SIZE` (производная от размера экрана, не
+// хардкод), карточный фон и тот же вертикальный отступ. Вне редактирования тап
 // навигирует. В режиме редактирования строка получает drag-ручку (как строки
 // админки): перетаскивание стартует только с ручки, long-press по телу строки
 // ничего не делает; тап не навигирует. Кнопка удаления показывается только
@@ -31,13 +36,13 @@ export const MyPlaylistsRow = ({
   onPress: () => void
 }) => (
   <ListItemBase
-    variant='surface'
+    style={ROW_STYLE}
     title={item.title}
     isActive={isActive}
     dragLabel={DRAG_LABEL}
     drag={isDraggingEnabled ? drag : undefined}
     onPress={isDraggingEnabled ? () => undefined : onPress}
-    artworkNode={<PlaylistLetterAvatar title={item.title} size={SURFACE_ARTWORK_SIZE} />}
+    artworkNode={<PlaylistLetterAvatar title={item.title} size={LIST_ITEM_CARD_ARTWORK_SIZE} />}
     right={
       onDelete ? (
         <IconButton

@@ -6,9 +6,10 @@ import { COLORS, FONT_SIZES, INDENTS, RADIUSES, type ThemeColors } from 'shared/
 // offset on that screen is derived from this constant, so it must stay public.
 export const LIST_ITEM_CARD_ARTWORK_SIZE = SIZE_OF_MINIMUM_SIDE_OF_SCREEN * 0.25
 
-// Cover size of the `surface` rows used across the admin section screens. Kept
-// public so the user-facing "my playlists" section list can match their sizing.
-export const SURFACE_ARTWORK_SIZE = 56
+// Cover size of the `surface` rows used across the admin section screens. Only
+// `surfaceArtwork` below consumes it now: user-facing rows match the larger
+// `LIST_ITEM_CARD_ARTWORK_SIZE` instead.
+const SURFACE_ARTWORK_SIZE = 56
 
 export const createListItemBaseStyles = (theme: ThemeColors) =>
   StyleSheet.create({

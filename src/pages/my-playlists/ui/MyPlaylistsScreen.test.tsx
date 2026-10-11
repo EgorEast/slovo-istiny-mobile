@@ -1,5 +1,6 @@
 import { createCtx } from '@reatom/framework'
 import { act, fireEvent, userEvent, waitFor } from '@testing-library/react-native'
+import { LIST_ITEM_CARD_ARTWORK_SIZE } from 'entities/list-item'
 import {
   FAVORITES_PLAYLIST,
   type LocalPlaylistData,
@@ -120,6 +121,18 @@ describe('<MyPlaylistsScreen>', () => {
     expect(getAllByText(FAVORITES_TITLE)).toHaveLength(1)
     expect(getByText(PLAYLIST_A_TITLE)).toBeTruthy()
     expect(getByText(PLAYLIST_B_TITLE)).toBeTruthy()
+  })
+
+  test('sizes the favorites and create markers like the server playlist artwork', async () => {
+    const ctx = createCtx()
+    seedPlaylists(ctx)
+
+    const { getByText } = await renderWithProviders(<MyPlaylistsScreen />, { ctx })
+
+    const avatarSize = { height: LIST_ITEM_CARD_ARTWORK_SIZE, width: LIST_ITEM_CARD_ARTWORK_SIZE }
+
+    expect(getByText('heart').parent).toHaveStyle(avatarSize)
+    expect(getByText('add').parent).toHaveStyle(avatarSize)
   })
 
   test('shows the edit toggle in the header and reveals save in edit mode', async () => {

@@ -13,14 +13,16 @@ import { myPlaylistsAtom } from './model'
  * storage write, so a failed write logs but keeps the in-memory playlist (same
  * degradation policy as `reorderMyPlaylists`).
  * @param ctx - Reatom action context.
- * @param input - Playlist title and ordered sermon ids.
+ * @param input - Playlist title, ordered sermon ids and an optional explicit id.
+ * @param input.id - Id to use instead of a generated UUID (the deterministic
+ * `deriveCustomPlaylistId` of an imported share link).
  * @returns The freshly created playlist.
  */
 export const createLocalPlaylist = action(
-  async (ctx, input: { sermonIds: string[]; title: string }) => {
+  async (ctx, input: { id?: string; sermonIds: string[]; title: string }) => {
     const playlists = ctx.get(myPlaylistsAtom)
     const created: LocalPlaylistData = {
-      id: generateUuid(),
+      id: input.id ?? generateUuid(),
       sermonIds: input.sermonIds,
       sermons: [],
       title: input.title,

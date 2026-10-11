@@ -16,7 +16,7 @@
 - `src/entities/playlist/lib/readStoredMyPlaylists.ts` — чтение/гидратация плейлистов из AsyncStorage
 - `src/entities/playlist/lib/readStoredSectionSettings.ts` — чтение/гидратация настроек оформления
 - `src/entities/playlist/lib/sanitizeLocalPlaylistSermon.ts` — санитизация снапшота проповеди
-- `src/entities/playlist/lib/customPlaylistShare.ts` — `buildCustomPlaylistSearchParams`/`parseCustomPlaylistParams` (обе формы `sermons`: packed и csv)
+- `src/entities/playlist/lib/customPlaylistShare.ts` — `buildCustomPlaylistSearchParams`/`parseCustomPlaylistParams` (обе формы `sermons`: packed и csv) + `deriveCustomPlaylistId` (детерминированный `custom-<16 hex>` id из title и упорядоченных `sermonIds`)
 - `src/entities/playlist/lib/sermonIdPacking.ts` — `packSermonIds`/`unpackSermonIds` (base64url-упаковка UUID, 16 байт на id)
 - `src/entities/playlist/index.ts` — публичный API (`FAVORITES_PLAYLIST`, `myPlaylistsAtom`, `loadMyPlaylists`, `createLocalPlaylist`, `renameLocalPlaylist`, `deleteLocalPlaylist`, `reorderMyPlaylists`, `reorderLocalPlaylistSermons`, `togglePlaylistSermon`, `sectionSettingsAtom`, `loadSectionSettings`, `updateSectionSettings`, `persistSectionSettings`, `LocalSectionSettings`)
 - `src/entities/playlist/reorderLocalPlaylistSermons.ts` — перестановка проповедей внутри локального плейлиста (снапшоты `sermons` + авторитетные `sermonIds`)
@@ -118,8 +118,11 @@ reorder, персист принадлежности при toggle и CRUD-му�
 
 ### Создание, переименование, удаление
 
-`createLocalPlaylist(ctx, { title, sermonIds })` создаёт плейлист с новым
-`generateUuid` id и **пинит его сразу после «Избранных»** (`withFavoritesFirst`).
+`createLocalPlaylist(ctx, { id?, title, sermonIds })` создаёт плейлист и **пинит его
+сразу после «Избранных»** (`withFavoritesFirst`). Без `id` генерируется
+`generateUuid`; импорт из ссылки передаёт детерминированный
+`deriveCustomPlaylistId` (см. [deep-links.md](./deep-links.md)), поэтому повторное
+открытие той же ссылки находит плейлист по этому id и не дублирует его.
 Снапшоты проповедей не создаются: `sermons: []`, переданные `sermonIds` — id-only
 (импорт из ссылки несёт только id, снапшоты добавляются позже через
 `togglePlaylistSermon`). Порядок операций тот же, что у `reorderMyPlaylists`:
@@ -216,11 +219,13 @@ read-modify-write по id с тем же путём персиста. **«Изб
 
 `MyPlaylistsScreen` (`src/pages/my-playlists/ui/MyPlaylistsScreen.tsx`) — владелец режима
 редактирования; подробнее — [screens/my-playlists.md](../screens/my-playlists.md). Обычный режим
-(`MyPlaylistsNormalView`): сверху закреплённые «Избранные» (`MyPlaylistsFavoritesRow`,
-сердечко, не перетаскивается, без бокового инсета — той же геометрии, что карточные строки), ниже —
-карточные строки локальных плейлистов (`MyPlaylistsDragList` + `MyPlaylistsRow` поверх `ListItemBase`),
-а **завершающей строкой футера списка** — «Создать плейлист» (`MyPlaylistsCreateRow`, `listFooter`),
-то есть под плейлистами. Список резервирует нижний отступ под плавающий мини-плеер и
+(`MyPlaylistsNormalView`): сверху «Избранные» (`MyPlaylistsFavoritesRow`, сердечко, не перетаскивается
+— той же геометрии, что строки серверного списка плейлистов), ниже — карточные строки локальных
+плейлистов (`MyPlaylistsDragList` + `MyPlaylistsRow` поверх `ListItemBase` card-варианта, плитка
+обложки `LIST_ITEM_CARD_ARTWORK_SIZE`, как у `PlaylistListItem`; у плейлиста без обложки — буква
+`PlaylistLetterAvatar`, у «Избранных»/«Создать» — маркер `MyPlaylistsMarkerAvatar` с иконкой
+`size * AVATAR_CONTENT_SIZE_RATIO`), а **завершающей строкой футера списка** — «Создать плейлист»
+(`MyPlaylistsCreateRow`, `listFooter`), то есть под плейлистами. Список резервирует нижний отступ под плавающий мини-плеер и
 таб-бар (`tabBarHeight + PLAYER_SIZES.miniPlayerHeight + INDENTS.low`, как в `PlaylistTrackList`),
 поэтому последние строки (включая «Создать») доступны для скролла и в режиме редактирования.
 `DraggableFlatList` рендерит собственный контейнер без `flex` — на react-native-web он растягивается

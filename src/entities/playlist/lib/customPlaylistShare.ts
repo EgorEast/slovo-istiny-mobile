@@ -23,6 +23,45 @@ const customPlaylistPayloadSchema = z.object({
 const firstValue = (value: string | string[] | undefined): string | undefined =>
   Array.isArray(value) ? value[0] : value
 
+// Dependency-free stable hash: Hermes ships no crypto, so the derived id must be
+// reproducible from the payload alone. FNV-1a is applied twice with different
+// seeds and the two 32-bit digests are concatenated into 16 hex chars, which
+// keeps the id short while making accidental collisions negligible for a URL.
+const FNV_PRIME = 0x01000193
+const FNV_OFFSET_BASIS = 0x811c9dc5
+const FNV_OFFSET_BASIS_ALTERNATE = 0x1000193
+
+const fnv1a32 = (input: string, seed: number): number => {
+  let hash = seed >>> 0
+  for (let index = 0; index < input.length; index += 1)
+    hash = Math.imul(hash ^ input.charCodeAt(index), FNV_PRIME) >>> 0
+
+  return hash
+}
+
+const toHex8 = (value: number): string => value.toString(16).padStart(8, '0')
+
+/**
+ * Derives the stable id of a custom local playlist from its share payload.
+ *
+ * The encoded part of a `?custom&title=…&sermons=…` link plays the role of a
+ * server playlist UUID: the same link always maps to the same `custom-<hex>` id,
+ * so re-opening it finds the already-imported playlist instead of duplicating it.
+ * The canonical payload is the title plus the *ordered* sermon ids (`JSON`
+ * stringifies both unambiguously) — a different title or a different id order
+ * yields a different id.
+ * @param payload - Decoded share payload (title + ordered sermon ids).
+ * @param payload.sermonIds - Ordered sermon ids carried by the link.
+ * @param payload.title - Playlist title carried by the link.
+ * @returns The deterministic `custom-<16 hex chars>` id.
+ */
+export const deriveCustomPlaylistId = ({ sermonIds, title }: CustomPlaylistPayload): string => {
+  const canonical = JSON.stringify([title, sermonIds])
+  const primary = fnv1a32(canonical, FNV_OFFSET_BASIS)
+  const alternate = fnv1a32(canonical, FNV_OFFSET_BASIS_ALTERNATE)
+  return `custom-${toHex8(primary)}${toHex8(alternate)}`
+}
+
 // `sermons` is either a packed base64url string (canonical UUIDs) or a
 // comma-separated list (legacy links and non-UUID ids). Packed wins when it
 // decodes to whole UUIDs; anything else is read as csv, so both forms round-trip.

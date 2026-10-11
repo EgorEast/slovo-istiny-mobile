@@ -27,6 +27,23 @@ describe('createLocalPlaylist', () => {
     ])
   })
 
+  test('creates a playlist with an explicit id when given one', async () => {
+    const ctx = createCtx()
+    myPlaylistsAtom(ctx, [FAVORITES_PLAYLIST])
+
+    const created = await createLocalPlaylist(ctx, {
+      id: 'custom-0123456789abcdef',
+      sermonIds: ['s-1'],
+      title: 'Импорт',
+    })
+
+    expect(created.id).toBe('custom-0123456789abcdef')
+    expect(ctx.get(myPlaylistsAtom).map(playlist => playlist.id)).toEqual([
+      FAVORITES_PLAYLIST.id,
+      'custom-0123456789abcdef',
+    ])
+  })
+
   test('persists the new playlist after favorites', async () => {
     const ctx = createCtx()
     myPlaylistsAtom(ctx, [FAVORITES_PLAYLIST])

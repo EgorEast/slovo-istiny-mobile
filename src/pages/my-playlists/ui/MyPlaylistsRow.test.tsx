@@ -1,6 +1,8 @@
 import { fireEvent } from '@testing-library/react-native'
+import { LIST_ITEM_CARD_ARTWORK_SIZE } from 'entities/list-item'
 import { type LocalPlaylistData } from 'entities/playlist'
 import { renderWithProviders } from 'shared/mocks'
+import { AVATAR_CONTENT_SIZE_RATIO } from 'shared/ui'
 import { MyPlaylistsRow } from './MyPlaylistsRow'
 
 const ITEM: LocalPlaylistData = { id: 'a', sermonIds: [], sermons: [], title: 'Плейлист A' }
@@ -61,6 +63,15 @@ describe('<MyPlaylistsRow>', () => {
     fireEvent.press(getByText(ITEM.title))
 
     expect(onPress).not.toHaveBeenCalled()
+  })
+
+  test('renders the letter tile at the server playlist artwork size', async () => {
+    const { utils } = renderRow()
+    const { getByText } = await utils
+
+    expect(getByText('П')).toHaveStyle({
+      fontSize: LIST_ITEM_CARD_ARTWORK_SIZE * AVATAR_CONTENT_SIZE_RATIO,
+    })
   })
 
   test('shows the delete action only when provided and calls it', async () => {

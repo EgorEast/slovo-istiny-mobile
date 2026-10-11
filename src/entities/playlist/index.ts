@@ -3,6 +3,7 @@ export { deleteLocalPlaylist } from './deleteLocalPlaylist'
 export {
   buildCustomPlaylistSearchParams,
   type CustomPlaylistPayload,
+  deriveCustomPlaylistId,
   parseCustomPlaylistParams,
 } from './lib/customPlaylistShare'
 export { mapPlaylistEntityToPlaylistData } from './lib/mappers/mapPlaylistEntityToPlaylistData'
