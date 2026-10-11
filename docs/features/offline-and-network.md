@@ -61,6 +61,8 @@ isInternetReachable ?? isConnected
 
 При старте приложения `hydrateCachedSections` (`src/entities/section/lib/hydrateCachedSections.ts`, вызывается в `app/_layout.tsx` рядом с `loadHistoryAction`) читает кэш и коммитит его в атомы, если он непустой — таб «Слушать» не мигает скелетоном на тёплом старте. Коммит атомарен (read+write в одном `ctx.schedule`) и не затирает более свежий источник.
 
+Тем же приёмом стартует кэш фича-флагов: `hydrateCachedFeatureFlags` (`src/entities/feature-flags/lib/hydrateCachedFlags.ts`) читает `cachedFeatureFlags` и коммитит карту в `featureFlagsAtom` до сетевого рефетча — гейтед-табы не мигают закрытыми на тёплом старте (см. [feature-flags.md](./feature-flags.md) → «Офлайн-режим и кеш»).
+
 Источник фиксируется в `sectionDataSourceAtom` (`'cache' | 'network' | 'unknown'`). На главном экране `useOfflineRetry` (в `src/pages/listen/`) перезапрашивает, если последний ответ был не из сети.
 
 ### Механизм `useOfflineRetry`
@@ -164,5 +166,5 @@ Guard проверяет `isOnlineAtom` (NetInfo) и `audioCacheService.isCached
 
 - [state.md](./state.md) — атомы сети (`isOnlineAtom`, `serverUnreachableAtom`)
 - [audio-cache.md](./audio-cache.md) — кэш аудио
-- [storage.md](../contracts/storage.md) — ключи `cachedSections` и `cachedSermonSearch:q:*`
+- [storage.md](../contracts/storage.md) — ключи `cachedSections`, `cachedFeatureFlags` и `cachedSermonSearch:q:*`
 - [../screens/listen.md](../screens/listen.md) — офлайн-состояние главного экрана

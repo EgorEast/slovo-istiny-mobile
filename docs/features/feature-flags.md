@@ -14,8 +14,10 @@
 | `model.ts`                                  | `featureFlagsAtom`, `fetchMyFeatureFlags`                                     | состояние и загрузка флагов                                  |
 | `lib/useFeatureFlag.ts`                     | `useFeatureFlag(key)`                                                         | доступ к значению флага                                      |
 | `lib/useFeatureFlagsRefetchOnForeground.ts` | `useFeatureFlagsRefetchOnForeground()`                                        | рефетч флагов при возврате в foreground                      |
+| `lib/flagsCache/*`                          | `getCachedFlags`, `setCachedFlags`, `CACHED_FEATURE_FLAGS`                    | офлайн-кэш карты флагов                                      |
+| `lib/hydrateCachedFlags.ts`                 | `hydrateCachedFeatureFlags`                                                   | стартовая гидрация кэша                                      |
 | `@x/auth.ts`                                | `fetchMyFeatureFlags`                                                         | кросс-импорт для `entities/auth` (рефетч после входа/выхода) |
-| `index.ts`                                  | `fetchMyFeatureFlags`, `useFeatureFlag`, `useFeatureFlagsRefetchOnForeground` | публичный API среза                                          |
+| `index.ts`                                  | `fetchMyFeatureFlags`, `hydrateCachedFeatureFlags`, `useFeatureFlag`, `useFeatureFlagsRefetchOnForeground` | публичный API среза                                          |
 
 ### `featureFlagsAtom`
 
@@ -58,12 +60,21 @@ return flags?.[key] ?? false
 
 Флаги загружаются в четырёх точках:
 
-1. **Старт приложения** — `void fetchMyFeatureFlags(ctx)` модульно в `app/_layout.tsx` рядом с прочими стартовыми экшенами (`initServerUrlAction`, `loadHistoryAction`, …). Публичного пользовательского логина в приложении пока нет, поэтому флаг грузится на старте всегда: аноним получает глобальное состояние, а если access-токен уже есть — персональные флаги (заголовок подставляет axios-интерцептор).
+1. **Старт приложения** — `void hydrateCachedFeatureFlags(ctx).then(() => fetchMyFeatureFlags(ctx))` модульно в `app/_layout.tsx` рядом с прочими стартовыми экшенами (`initServerUrlAction`, `loadHistoryAction`, …). Сначала кэш (см. «Офлайн-режим и кеш»), затем сетевой запрос. Публичного пользовательского логина в приложении пока нет, поэтому флаг грузится на старте всегда: аноним получает глобальное состояние, а если access-токен уже есть — персональные флаги (заголовок подставляет axios-интерцептор).
 2. **Возврат в foreground** — хук `useFeatureFlagsRefetchOnForeground` (`entities/feature-flags/lib`), смонтированный в `app/_RootLayout.tsx`. Повторяет запрос при `AppState → 'active'`, закрывая транзиентные сетевые сбои, изменения глобального состояния и появление токена после старта.
 3. **Успешный вход** — `signIn` (`entities/auth/lib/signIn.ts`) после сохранения токенов вызывает `void fetchMyFeatureFlags(ctx)` (через `@x/auth`-точку среза). Axios-интерцептор тут же подставляет свежий access-токен, поэтому атом сразу получает **персональный** срез — без ожидания foreground.
 4. **Выход** — `signOut` (`entities/auth/lib/signOut.ts`) после очистки токенов так же рефетчит флаги: запрос уходит анонимно, и атом возвращается к **глобальному** срезу, а не сохраняет персональные флаги вышедшего пользователя.
 
 Вход/выход и рефетч флагов связаны в одном экшене намеренно: `signIn`/`signOut` — единственная точка смены токена, поэтому все call-sites (`AdminLoginScreen`, `SettingsHeaderMenu`, `AdminQuickActions`) получают актуальные флаги автоматически. Связь оформлена кросс-импортом `entities/feature-flags/@x/auth` (FSD `@x` для связей одного слоя, см. [architecture.md](../architecture.md) → «@x cross-import»), а не через публичный barrel `feature-flags`.
+
+## Офлайн-режим и кеш
+
+Стартовая загрузка offline-first: `hydrateCachedFeatureFlags` (`src/entities/feature-flags/lib/hydrateCachedFlags.ts`) сначала читает карту флагов из AsyncStorage (`cachedFeatureFlags`, `getCachedFlags`) и коммитит её в `featureFlagsAtom`, если атом ещё `null`, — гейтед-табы открываются мгновенно. Сразу за гидрацией идёт сетевой `fetchMyFeatureFlags`: при успехе он перезаписывает атом и обновляет кэш (`setCachedFlags`, fire-and-forget — сбой записи не мешает коммиту атома).
+
+- **Кэш первичен, сеть уточняет**: гидрация не затирает более свежее значение атома (`if (atom != null) return`); пустая карта `{}` пропускается как отсутствие кэша.
+- **Тихий сбой при наличии кэша**: тост `Не удалось загрузить фича-флаги` показывается только когда `featureFlagsAtom === null` (кэша не было и сеть упала). Если кэш уже отдан, ошибка логируется в `console.error`, но пользователя не тревожит — данные на экране есть.
+- **Битый кэш безопасен**: невалидный JSON/карта трактуется как отсутствие кэша (zod-валидация через `getCachedJson`), атом остаётся `null`.
+- **В резервную копию не входит**: флаги — серверные данные (персональные/глобальные), тот же случай, что `cachedSections`; в [settings-backup.md](./settings-backup.md) кэш не добавляется.
 
 ## Гейтинг табов
 
@@ -97,7 +108,7 @@ return flags?.[key] ?? false
 
 - `src/entities/feature-flags/lib/useFeatureFlag.test.tsx` — null → false, загруженные `true`/`false`, отсутствующий ключ.
 - `src/entities/feature-flags/lib/useFeatureFlagsRefetchOnForeground.test.tsx` — рефетч на `AppState → 'active'` (в том числе без токена) и отсутствие запроса на неактивных состояниях.
-- `src/entities/feature-flags/model.test.ts` — запрос без токена (глобальные флаги), преобразование списка, обработка ошибки (тост вместо глобальной модалки, без `reportError`), дедупликация тоста при повторных падениях и повторный тост после восстановления.
+- `src/entities/feature-flags/model.test.ts` — запрос без токена (глобальные флаги), преобразование списка, запись кэша при успехе, обработка ошибки (тост только без кэша, вместо глобальной модалки, без `reportError`), дедупликация тоста при повторных падениях и молчание при падении после успешной загрузки (есть фолбэк); `hydrateCachedFeatureFlags` — коммит кэша в пустой атом, отказ затирать свежее значение, битый JSON и пустой `{}` → атом остаётся `null`.
 - `src/entities/auth/lib/signIn.test.ts` — рефетч флагов после успешного входа и его отсутствие при отказе в доступе/ошибке запроса.
 - `src/entities/auth/lib/signOut.test.ts` — рефетч флагов после выхода, в том числе когда серверная ревокация падает.
 - `src/widgets/tab-bar/ui/useTabPress.test.ts` — таб открывается по флагу, заблокирован без флага.

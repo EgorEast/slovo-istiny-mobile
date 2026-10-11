@@ -1,6 +1,7 @@
 import { action, atom } from '@reatom/framework'
 import { featureFlagsApi } from 'shared/api'
 import { showToast } from 'shared/model'
+import { setCachedFlags } from './lib/flagsCache/setCachedFlags'
 
 const FEATURE_FLAGS_LOAD_ERROR_MESSAGE = 'Не удалось загрузить фича-флаги'
 
@@ -25,6 +26,10 @@ export const fetchMyFeatureFlags = action(async ctx => {
       flags.map(({ enabled, key }): [string, boolean] => [key, enabled]),
     )
 
+    await setCachedFlags(flagsByKey).catch((error: unknown) =>
+      console.error('[feature-flags] cache write failed:', error),
+    )
+
     await ctx.schedule(() => {
       flagsFetchFailedAtom(ctx, false)
       featureFlagsAtom(ctx, flagsByKey)
@@ -36,7 +41,8 @@ export const fetchMyFeatureFlags = action(async ctx => {
       if (ctx.get(flagsFetchFailedAtom)) return
 
       flagsFetchFailedAtom(ctx, true)
-      showToast(ctx, FEATURE_FLAGS_LOAD_ERROR_MESSAGE)
+
+      if (ctx.get(featureFlagsAtom) == null) showToast(ctx, FEATURE_FLAGS_LOAD_ERROR_MESSAGE)
     })
   }
 }, 'fetchMyFeatureFlags')

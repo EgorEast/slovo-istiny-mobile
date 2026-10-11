@@ -1,8 +1,11 @@
+import AsyncStorage from '@react-native-async-storage/async-storage'
 import { createCtx } from '@reatom/framework'
 import { featureFlagsApi } from 'shared/api'
 import { featureFlagsMocks } from 'shared/api/generated'
 import { showToast } from 'shared/model'
 import { reportError } from 'shared/model/error-dialog'
+import { CACHED_FEATURE_FLAGS } from './lib/flagsCache/cacheKey'
+import { hydrateCachedFeatureFlags } from './lib/hydrateCachedFlags'
 import { featureFlagsAtom, fetchMyFeatureFlags } from './model'
 
 jest.mock('shared/api', () => ({
@@ -23,6 +26,8 @@ const setFlagsResponse = (flags: Array<{ enabled: boolean; key: string }>) =>
   mockedGetEffectiveForMe.mockResolvedValue(
     featureFlagsMocks.getFeatureFlagsControllerGetEffectiveForMeResponseMock({ flags }),
   )
+
+beforeEach(() => AsyncStorage.clear())
 
 describe('fetchMyFeatureFlags', () => {
   beforeEach(() => {
@@ -80,7 +85,7 @@ describe('fetchMyFeatureFlags', () => {
     consoleErrorSpy.mockRestore()
   })
 
-  test('shows a toast again when a new failure follows a recovery', async () => {
+  test('stays silent when a failure follows a recovery (cached fallback present)', async () => {
     mockedGetEffectiveForMe.mockRejectedValue(NETWORK_ERROR)
     const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {})
     const ctx = createCtx()
@@ -91,7 +96,84 @@ describe('fetchMyFeatureFlags', () => {
     mockedGetEffectiveForMe.mockRejectedValue(NETWORK_ERROR)
     await fetchMyFeatureFlags(ctx)
 
-    expect(mockedShowToast).toHaveBeenCalledTimes(2)
+    expect(ctx.get(featureFlagsAtom)).toEqual({ read: true })
+    expect(mockedShowToast).toHaveBeenCalledTimes(1)
     consoleErrorSpy.mockRestore()
+  })
+
+  test('caches the flags map on a successful fetch', async () => {
+    setFlagsResponse([{ enabled: true, key: 'read' }])
+    const ctx = createCtx()
+
+    await fetchMyFeatureFlags(ctx)
+
+    expect(ctx.get(featureFlagsAtom)).toEqual({ read: true })
+    expect(await AsyncStorage.getItem(CACHED_FEATURE_FLAGS)).toBe(JSON.stringify({ read: true }))
+  })
+
+  test('shows the fallback message when the fetch fails without cached flags', async () => {
+    mockedGetEffectiveForMe.mockRejectedValue(NETWORK_ERROR)
+    const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {})
+    const ctx = createCtx()
+
+    await fetchMyFeatureFlags(ctx)
+
+    expect(ctx.get(featureFlagsAtom)).toBeNull()
+    expect(mockedShowToast).toHaveBeenCalledWith(
+      expect.anything(),
+      'Не удалось загрузить фича-флаги',
+    )
+    consoleErrorSpy.mockRestore()
+  })
+
+  test('does not show a toast when a cached fallback is already present', async () => {
+    mockedGetEffectiveForMe.mockRejectedValue(NETWORK_ERROR)
+    const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {})
+    const ctx = createCtx()
+    featureFlagsAtom(ctx, { read: true })
+
+    await fetchMyFeatureFlags(ctx)
+
+    expect(mockedShowToast).not.toHaveBeenCalled()
+    consoleErrorSpy.mockRestore()
+  })
+})
+
+describe('hydrateCachedFeatureFlags', () => {
+  test('commits the cached map into an empty atom', async () => {
+    const ctx = createCtx()
+    await AsyncStorage.setItem(CACHED_FEATURE_FLAGS, JSON.stringify({ read: true, study: false }))
+
+    await hydrateCachedFeatureFlags(ctx)
+
+    expect(ctx.get(featureFlagsAtom)).toEqual({ read: true, study: false })
+  })
+
+  test('does not clobber a fresher flag map', async () => {
+    const ctx = createCtx()
+    await AsyncStorage.setItem(CACHED_FEATURE_FLAGS, JSON.stringify({ read: true }))
+    featureFlagsAtom(ctx, { study: true })
+
+    await hydrateCachedFeatureFlags(ctx)
+
+    expect(ctx.get(featureFlagsAtom)).toEqual({ study: true })
+  })
+
+  test('keeps the atom null when the cached JSON is corrupt', async () => {
+    const ctx = createCtx()
+    await AsyncStorage.setItem(CACHED_FEATURE_FLAGS, '{not json')
+
+    await expect(hydrateCachedFeatureFlags(ctx)).resolves.toBeUndefined()
+
+    expect(ctx.get(featureFlagsAtom)).toBeNull()
+  })
+
+  test('skips an empty cached map', async () => {
+    const ctx = createCtx()
+    await AsyncStorage.setItem(CACHED_FEATURE_FLAGS, '{}')
+
+    await hydrateCachedFeatureFlags(ctx)
+
+    expect(ctx.get(featureFlagsAtom)).toBeNull()
   })
 })
