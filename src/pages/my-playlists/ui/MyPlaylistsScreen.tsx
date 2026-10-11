@@ -106,7 +106,6 @@ export const MyPlaylistsScreen = () => {
           favorites={favorites}
           orderedRest={orderedRest}
           onPressPlaylist={onPressPlaylist}
-          onPressFavorites={onPressFavorites}
           onPressCreate={() => setCreateVisible(true)}
         />
       )}

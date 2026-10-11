@@ -1,6 +1,5 @@
 import { createCtx } from '@reatom/framework'
-import { act, fireEvent } from '@testing-library/react-native'
-import { type PlaylistData } from 'entities/playlist'
+import { act } from '@testing-library/react-native'
 import { dynamicSectionsAtom, type SectionData } from 'entities/section'
 import { renderWithProviders } from 'shared/mocks'
 import { PlaylistListScreen } from './PlaylistListScreen'
@@ -22,55 +21,31 @@ jest.mock('entities/section', () => {
   }
 })
 
-jest.mock('shared/ui/collapsing-navbar-driver', () => ({
-  useCollapsingNavbarDriver: jest.fn(() => ({ headerBgOpacity: 0 })),
-}))
-
-jest.mock('../lib/useCollapsingHeader', () => ({
-  TITLE_TOP_GAP: 80,
-  useCollapsingHeader: () => ({
-    darkenStart: { value: 0 },
-    headerHeight: 100,
-    onTitleLayout: jest.fn(),
-    scrollHandler: jest.fn(),
-    scrollY: { value: 0 },
-    titleAppearThreshold: { value: Number.MAX_SAFE_INTEGER },
-  }),
-}))
-
 jest.mock('../lib/resolveSectionFromCache', () => ({
   resolveSectionFromCache: (...args: unknown[]) => mockResolveSectionFromCache(...args),
 }))
 
-jest.mock('shared/ui', () => {
-  const { View } = jest.requireActual('react-native')
+// The list body (collapsing header, rows, separators, empty text) is covered by
+// the widget's own test; here we stub it to the resolved title so the page test
+// stays focused on section-resolution states.
+jest.mock('widgets/playlist-list', () => {
+  const { Text } = jest.requireActual('react-native')
 
   return {
-    CoverImage: () => <View />,
-    PlaylistLetterAvatar: () => <View />,
+    PlaylistList: ({ title }: { title: string }) => <Text>{title}</Text>,
   }
 })
 
 const SECTION_ID = 'section-1'
 const SECTION_TITLE = 'Раздел проповедей'
-const PLAYLIST_ID = 'playlist-1'
-const PLAYLIST_TITLE = 'Плейлист о вере'
 const CACHED_SECTION_ID = 'cached-section'
 const CACHED_SECTION_TITLE = 'Кэшированный раздел'
 const SECTION_NOT_FOUND_TEXT = 'Секция не найдена'
-const EMPTY_PLAYLISTS_TEXT = 'Нет плейлистов'
-
-const makePlaylist = (id: string, title: string): PlaylistData => ({
-  artwork: null,
-  id,
-  sermons: [],
-  title,
-})
 
 const makeSection = (overrides: Partial<SectionData> = {}): SectionData => ({
   id: SECTION_ID,
   itemsSize: 'small',
-  playlists: [makePlaylist(PLAYLIST_ID, PLAYLIST_TITLE)],
+  playlists: [],
   title: SECTION_TITLE,
   transform: 'short',
   ...overrides,
@@ -80,39 +55,6 @@ describe('<PlaylistListScreen>', () => {
   beforeEach(() => {
     jest.clearAllMocks()
     mockParams.sectionId = SECTION_ID
-  })
-
-  test('renders the section title and its playlists', async () => {
-    const ctx = createCtx()
-    dynamicSectionsAtom(ctx, [makeSection()])
-
-    const { getByText } = await renderWithProviders(<PlaylistListScreen />, { ctx })
-
-    expect(getByText(SECTION_TITLE)).toBeTruthy()
-    expect(getByText(PLAYLIST_TITLE)).toBeTruthy()
-  })
-
-  test('navigates to the playlist screen with the playlist id on press', async () => {
-    const ctx = createCtx()
-    dynamicSectionsAtom(ctx, [makeSection()])
-
-    const { getByText } = await renderWithProviders(<PlaylistListScreen />, { ctx })
-
-    await fireEvent.press(getByText(PLAYLIST_TITLE))
-
-    expect(mockPush).toHaveBeenCalledWith({
-      params: { playlist: PLAYLIST_ID },
-      pathname: '/listen/playlist',
-    })
-  })
-
-  test('shows the empty state when the section has no playlists', async () => {
-    const ctx = createCtx()
-    dynamicSectionsAtom(ctx, [makeSection({ playlists: [] })])
-
-    const { getByText } = await renderWithProviders(<PlaylistListScreen />, { ctx })
-
-    expect(getByText(EMPTY_PLAYLISTS_TEXT)).toBeTruthy()
   })
 
   test('shows the not-found state when the section is missing after cache resolution', async () => {
@@ -155,5 +97,15 @@ describe('<PlaylistListScreen>', () => {
     const { findByText } = await renderWithProviders(<PlaylistListScreen />)
 
     expect(await findByText(CACHED_SECTION_TITLE)).toBeTruthy()
+  })
+
+  test('renders the section from the atom without a cache read', async () => {
+    const ctx = createCtx()
+    dynamicSectionsAtom(ctx, [makeSection()])
+
+    const { findByText } = await renderWithProviders(<PlaylistListScreen />, { ctx })
+
+    expect(await findByText(SECTION_TITLE)).toBeTruthy()
+    expect(mockResolveSectionFromCache).not.toHaveBeenCalled()
   })
 })

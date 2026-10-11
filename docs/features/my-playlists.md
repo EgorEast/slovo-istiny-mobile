@@ -27,7 +27,8 @@
 - `src/pages/my-playlists/ui/MyPlaylistsScreen.tsx` — экран «Мои плейлисты» — владелец режима редактирования и модалки создания
 - `src/pages/my-playlists/ui/MyPlaylistsAppearanceForm.tsx` — блок «Оформление» режима редактирования (instant-apply)
 - `src/pages/my-playlists/ui/MyPlaylistsEditHeader.tsx` — шапка режима редактирования: «Оформление» + «Плейлисты раздела»
-- `src/pages/my-playlists/ui/MyPlaylistsNormalView.tsx` — просмотровый режим экрана (строка «Избранные» сверху, «Создать плейлист» — футером под списком)
+- `src/pages/my-playlists/ui/MyPlaylistsNormalView.tsx` — просмотровый режим экрана (общий виджет `PlaylistList`: строка «Избранные» первым элементом, «Создать плейлист» — футером под списком)
+- `src/widgets/playlist-list/` — тело списка плейлистов, общее для серверного списка секции и просмотрового режима «Мои плейлисты» (`PlaylistList`, `PlaylistListItem`, `PlaylistListSeparator`, `PlaylistListItemData`)
 - `src/pages/my-playlists/ui/MyPlaylistsCreateRow.tsx` — завершающая строка «Создать плейлист» (футер списка)
 - `src/pages/my-playlists/ui/MyPlaylistsHeaderActions.tsx` — действия шапки экрана: «Изменить порядок» / «Сохранить»
 - `src/pages/my-playlists/ui/MyPlaylistsDragList.tsx` — вертикальный `DraggableFlatList` строк с drag-to-reorder и слотами `listHeader`/`listEmpty`
@@ -221,18 +222,24 @@ read-modify-write по id с тем же путём персиста. **«Изб
 ### Экран «Мои плейлисты» (админ-подобная форма оформления + порядок)
 
 `MyPlaylistsScreen` (`src/pages/my-playlists/ui/MyPlaylistsScreen.tsx`) — владелец режима
-редактирования; подробнее — [screens/my-playlists.md](../screens/my-playlists.md). Обычный режим
-(`MyPlaylistsNormalView`): сверху «Избранные» (`MyPlaylistsFavoritesRow`, сердечко, не перетаскивается
-— той же геометрии, что строки серверного списка плейлистов), ниже — карточные строки локальных
-плейлистов (`MyPlaylistsDragList` + `MyPlaylistsRow` поверх `ListItemBase` card-варианта, плитка
-обложки `LIST_ITEM_CARD_ARTWORK_SIZE`, как у `PlaylistListItem`; у плейлиста без обложки — буква
-`PlaylistLetterAvatar`, у «Избранных»/«Создать» — маркер `MyPlaylistsMarkerAvatar` с иконкой
-`size * AVATAR_CONTENT_SIZE_RATIO`), а **завершающей строкой футера списка** — «Создать плейлист»
-(`MyPlaylistsCreateRow`, `listFooter`), то есть под плейлистами. Список резервирует нижний отступ под плавающий мини-плеер и
-таб-бар (`tabBarHeight + PLAYER_SIZES.miniPlayerHeight + INDENTS.low`, как в `PlaylistTrackList`),
-поэтому последние строки (включая «Создать») доступны для скролла и в режиме редактирования.
-`DraggableFlatList` рендерит собственный контейнер без `flex` — на react-native-web он растягивается
-по контенту, и список не скроллится (низ обрезается `body { overflow: hidden }` из
+редактирования; подробнее — [screens/my-playlists.md](../screens/my-playlists.md). **Обычный
+режим** (`MyPlaylistsNormalView`) теперь переиспользует то же тело списка, что серверный список
+секции — общий виджет `PlaylistList` (`src/widgets/playlist-list/`): схлопывающийся контентный
+заголовок, карточные строки (`ListItemBase` card-вариант, плитка обложки
+`LIST_ITEM_CARD_ARTWORK_SIZE`) и разделители. Первым элементом списка идёт «Избранные» — её
+обложку подменяет маркер-сердце `MyPlaylistsMarkerAvatar` (`Ionicons 'heart'`, размер
+`size * AVATAR_CONTENT_SIZE_RATIO`); ниже — локальные плейлисты; **завершающей строкой футера
+списка** — «Создать плейлист» (`MyPlaylistsCreateRow`, `listFooter`), то есть под плейлистами.
+Нативная шапка в обычном режиме прозрачна (большой заголовок рисует список), а карандаш остаётся
+в `headerRight`. Список резервирует нижний отступ под плавающий мини-плеер и таб-бар
+(`tabBarHeight + PLAYER_SIZES.miniPlayerHeight + INDENTS.low`, как в `PlaylistTrackList`).
+
+**Режим редактирования намеренно НЕ унифицирован с серверным списком.** На время правки он
+остаётся админ-подобной формой (`MyPlaylistsEditHeader` + `MyPlaylistsAppearanceForm`) поверх
+`MyPlaylistsDragList` — вертикального `DraggableFlatList` без заголовка-схлопывания: там нужны
+drag-to-reorder, кнопки удаления и живые настройки оформления, которых у серверного списка нет.
+`DraggableFlatList` рендерит собственный контейнер без `flex` — на react-native-web он
+растягивается по контенту, и список не скроллится (низ обрезается `body { overflow: hidden }` из
 `public/index.html`); поэтому контейнеру задан `containerStyle={styles.listContainer}` с `flex: 1`
 (как у `DraggableFlatList` админки, см. [admin.md](./admin.md)).
 

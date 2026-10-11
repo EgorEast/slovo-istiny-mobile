@@ -16,10 +16,10 @@ export const useMyPlaylistsNavigation = (isEditing: boolean, favorites?: LocalPl
   const router = useRouter()
   const runGuarded = useNavigationGuard()
 
-  const onPressPlaylist = (playlist: LocalPlaylistData) =>
-    runGuarded(() =>
-      router.push({ params: { playlist: playlist.id }, pathname: '/listen/playlist' }),
-    )
+  // Принимает любую строку с id: и `LocalPlaylistData`, и `PlaylistListItemData`
+  // из общего виджета списка структурно ей удовлетворяют.
+  const onPressPlaylist = ({ id }: { id: string }) =>
+    runGuarded(() => router.push({ params: { playlist: id }, pathname: '/listen/playlist' }))
 
   const onPressFavorites = () => {
     if (isEditing || !favorites) return

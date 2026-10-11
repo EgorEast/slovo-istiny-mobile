@@ -3,19 +3,19 @@ import { useLocalSearchParams, useRouter } from 'expo-router'
 import { StatusBar, type StatusBarStyle } from 'expo-status-bar'
 import { useCallback, useEffect, useState } from 'react'
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native'
-import Animated from 'react-native-reanimated'
+import { PlaylistList, type PlaylistListItemData } from 'widgets/playlist-list'
 import { type PlaylistData } from 'entities/playlist'
 import { dynamicSectionsAtom, type SectionData } from 'entities/section'
 import { useNavigationGuard } from 'shared/routing'
-import { useCollapsingNavbarDriver } from 'shared/ui/collapsing-navbar-driver'
-import { tabBarHeightAtom } from 'shared/ui/layout'
-import { FONT_SIZES, INDENTS, PLAYER_SIZES, useTheme } from 'shared/ui/theme'
+import { FONT_SIZES, INDENTS, useTheme } from 'shared/ui/theme'
 import { resolveSectionFromCache } from '../lib/resolveSectionFromCache'
-import { TITLE_TOP_GAP, useCollapsingHeader } from '../lib/useCollapsingHeader'
-import { PlaylistListItem } from './PlaylistListItem'
-import { PlaylistListSeparator } from './PlaylistListSeparator'
 
-const INITIAL_NUM_TO_RENDER = 12
+const toPlaylistListItem = (playlist: PlaylistData): PlaylistListItemData => ({
+  artwork: playlist.artwork,
+  id: playlist.id,
+  subtitle: playlist.description,
+  title: playlist.title,
+})
 
 export const PlaylistListScreen = () => {
   const { currentTheme, isLight } = useTheme()
@@ -24,13 +24,11 @@ export const PlaylistListScreen = () => {
   const sectionId = params.sectionId ?? ''
 
   const [sections] = useAtom(dynamicSectionsAtom)
-  const [tabBarHeight] = useAtom(tabBarHeightAtom)
   const [cachedSection, setCachedSection] = useState<SectionData | undefined>(undefined)
   const [cacheResolved, setCacheResolved] = useState(false)
   const runGuarded = useNavigationGuard()
 
   const section = sections.find(s => s.id === sectionId) ?? cachedSection
-  const title = section?.title ?? ''
 
   useEffect(() => {
     if (section || !sectionId) return
@@ -46,16 +44,10 @@ export const PlaylistListScreen = () => {
     }
   }, [section, sectionId])
 
-  const playlists = section?.playlists ?? []
-  const { darkenStart, headerHeight, onTitleLayout, scrollHandler, scrollY, titleAppearThreshold } =
-    useCollapsingHeader()
-
-  useCollapsingNavbarDriver({ darkenStart, scrollY, threshold: titleAppearThreshold, title })
-
   const handlePlaylistPress = useCallback(
-    (playlist: PlaylistData) => {
+    (item: PlaylistListItemData) => {
       runGuarded(() => {
-        router.push({ params: { playlist: playlist.id }, pathname: '/listen/playlist' })
+        router.push({ params: { playlist: item.id }, pathname: '/listen/playlist' })
       })
     },
     [router, runGuarded],
@@ -81,45 +73,15 @@ export const PlaylistListScreen = () => {
     )
 
   return (
-    <View style={[styles.container, bgColor]}>
-      <StatusBar style={statusBarStyle} />
-      <Animated.FlatList
-        data={playlists}
-        onScroll={scrollHandler}
-        scrollEventThrottle={16}
-        keyExtractor={item => item.id}
-        initialNumToRender={INITIAL_NUM_TO_RENDER}
-        ItemSeparatorComponent={PlaylistListSeparator}
-        renderItem={({ item }) => (
-          <PlaylistListItem playlist={item} onPress={() => handlePlaylistPress(item)} />
-        )}
-        ListEmptyComponent={
-          <Text style={[styles.emptyText, { color: currentTheme.textMuted }]}>Нет плейлистов</Text>
-        }
-        ListHeaderComponent={
-          <View onLayout={onTitleLayout} style={styles.titleContainer}>
-            <Text style={[styles.title, { color: currentTheme.text }]}>{title}</Text>
-          </View>
-        }
-        contentContainerStyle={[
-          styles.listContent,
-          {
-            paddingBottom: tabBarHeight + PLAYER_SIZES.miniPlayerHeight + INDENTS.low,
-            paddingTop: headerHeight + TITLE_TOP_GAP,
-          },
-        ]}
-      />
-    </View>
+    <PlaylistList
+      title={section.title ?? ''}
+      onPressPlaylist={handlePlaylistPress}
+      playlists={(section.playlists ?? []).map(toPlaylistListItem)}
+    />
   )
 }
 
 const styles = StyleSheet.create({
   centered: { alignItems: 'center', flex: 1, justifyContent: 'center' },
-  container: { flex: 1 },
   emptyText: { fontSize: FONT_SIZES.md, marginHorizontal: 'auto', marginTop: INDENTS.high },
-  listContent: {
-    paddingHorizontal: INDENTS.medium,
-  },
-  title: { fontSize: FONT_SIZES.h1 },
-  titleContainer: { alignItems: 'center', paddingBottom: INDENTS.high },
 })

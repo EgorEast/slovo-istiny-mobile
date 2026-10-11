@@ -1,8 +1,8 @@
 import { View } from 'react-native'
+import { LIST_ITEM_CARD_ARTWORK_SIZE } from 'entities/list-item'
 import { INDENTS, useTheme } from 'shared/ui/theme'
-import { ALBUM_ART_SIZE } from './PlaylistListItem'
 
-const DIVIDER_LEFT_OFFSET = ALBUM_ART_SIZE + INDENTS.medium + INDENTS.medium
+const DIVIDER_LEFT_OFFSET = LIST_ITEM_CARD_ARTWORK_SIZE + INDENTS.medium + INDENTS.medium
 
 export const PlaylistListSeparator = () => {
   const { currentTheme } = useTheme()

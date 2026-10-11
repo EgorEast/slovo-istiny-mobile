@@ -66,7 +66,7 @@
 
 - `index` — без шапки (`headerShown: false`);
 - `search-results` — нативная шапка (`headerShown: true`, `title: ''`), заголовок **динамический**: экран ставит его через `useHeaderTitle` + `buildSearchResultsTitle` («Проповеди "<q>"» / «Плейлисты "<q>"» / «Проповедники "<q>"» по параметру `type`); кнопка «Назад» — общий `HeaderBackButton` с фолбэком `/listen` (см. [../screens/search-results.md](../screens/search-results.md));
-- `my-playlists` — нативная шапка с заголовком «Мои плейлисты» и `headerRight` (действия редактирования порядка);
+- `my-playlists` — шапка **динамическая**: в обычном режиме прозрачная (`headerTransparent: true`, `title: ''`, большой заголовок «Мои плейлисты» рисует сам список) с `headerRight` (карандаш «Изменить порядок»); в режиме редактирования снова непрозрачная (`headerStyle.backgroundColor = currentTheme.background`), заголовок «Мои плейлисты» и `headerRight` (галочка «Сохранить»). Опции собирает `useMyPlaylistsHeader` (см. [../screens/my-playlists.md](../screens/my-playlists.md));
 - `playlist-list` — прозрачная шапка (`headerTransparent: true`, `title: ''`);
 - `playlist` — прозрачная шапка;
 - `playlist-edit` — нативная шапка с заголовком «Редактировать плейлист» (экран редактирования локального плейлиста, см. [../screens/playlist-edit.md](../screens/playlist-edit.md)).

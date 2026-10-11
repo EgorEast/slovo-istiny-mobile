@@ -1,49 +1,64 @@
+import { Ionicons } from '@expo/vector-icons'
 import { StyleSheet, View } from 'react-native'
+import { PlaylistList, type PlaylistListItemData } from 'widgets/playlist-list'
+import { LIST_ITEM_CARD_ARTWORK_SIZE } from 'entities/list-item'
 import { type LocalPlaylistData } from 'entities/playlist'
-import { EmptyState } from 'shared/ui'
-import { INDENTS } from 'shared/ui/theme'
+import { INDENTS, useTheme } from 'shared/ui/theme'
 import { MyPlaylistsCreateRow } from './MyPlaylistsCreateRow'
-import { MyPlaylistsDragList } from './MyPlaylistsDragList'
-import { MyPlaylistsFavoritesRow } from './MyPlaylistsFavoritesRow'
+import { MyPlaylistsMarkerAvatar } from './MyPlaylistsMarkerAvatar'
 
-const EMPTY_MESSAGE = 'Своих плейлистов пока нет'
+const HEART_ICON = 'heart'
+const SECTION_TITLE = 'Мои плейлисты'
 
-// Обычный (просмотровый) режим экрана «Мои плейлисты»: строка «Избранные» идёт
-// первой в самом списке (шапкой скролла, а не закреплённой над ним — нижний
-// отступ `surface`-строки отделяет её от плейлистов), вертикальный список
-// остальных плейлистов без drag и завершающая строка «Создать плейлист» в
-// футере списка, то есть под плейлистами.
+// Просмотровый режим экрана «Мои плейлисты»: то же тело списка, что у серверного
+// списка секции (`PlaylistList` — схлопывающийся заголовок, карточные строки и
+// разделители). Строка «Избранные» идёт первым элементом списка — её обложку
+// подменяет маркер-сердце; ниже — локальные плейлисты; завершающей строкой
+// футера — «Создать плейлист», то есть под плейлистами.
 export const MyPlaylistsNormalView = ({
   favorites,
   onPressCreate,
-  onPressFavorites,
   onPressPlaylist,
   orderedRest,
 }: {
   favorites?: LocalPlaylistData
   onPressCreate: () => void
-  onPressFavorites: () => void
-  onPressPlaylist: (playlist: LocalPlaylistData) => void
+  onPressPlaylist: (item: PlaylistListItemData) => void
   orderedRest: LocalPlaylistData[]
-}) => (
-  <MyPlaylistsDragList
-    items={orderedRest}
-    isDraggingEnabled={false}
-    onDragEnd={() => undefined}
-    onPressItem={onPressPlaylist}
-    listEmpty={<EmptyState message={EMPTY_MESSAGE} />}
-    listFooter={
-      <View style={styles.create}>
-        <MyPlaylistsCreateRow onPress={onPressCreate} />
-      </View>
-    }
-    listHeader={
-      favorites ? (
-        <MyPlaylistsFavoritesRow playlist={favorites} onPress={onPressFavorites} />
-      ) : undefined
-    }
-  />
-)
+}) => {
+  const { currentTheme } = useTheme()
+
+  const favoritesItem: PlaylistListItemData | undefined = favorites
+    ? {
+        ...favorites,
+        artworkNode: (
+          <MyPlaylistsMarkerAvatar
+            size={LIST_ITEM_CARD_ARTWORK_SIZE}
+            renderIcon={iconSize => (
+              <Ionicons size={iconSize} name={HEART_ICON} color={currentTheme.primary} />
+            )}
+          />
+        ),
+      }
+    : undefined
+
+  const items: PlaylistListItemData[] = favoritesItem
+    ? [favoritesItem, ...orderedRest]
+    : orderedRest
+
+  return (
+    <PlaylistList
+      playlists={items}
+      title={SECTION_TITLE}
+      onPressPlaylist={onPressPlaylist}
+      listFooter={
+        <View style={styles.create}>
+          <MyPlaylistsCreateRow onPress={onPressCreate} />
+        </View>
+      }
+    />
+  )
+}
 
 const styles = StyleSheet.create({
   create: { marginBottom: INDENTS.middle },

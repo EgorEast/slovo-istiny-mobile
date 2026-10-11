@@ -76,6 +76,22 @@ jest.mock('react-native-draggable-flatlist', () => {
   }
 })
 
+jest.mock('shared/ui/collapsing-navbar-driver', () => ({
+  useCollapsingNavbarDriver: jest.fn(() => ({ headerBgOpacity: 0 })),
+}))
+
+jest.mock('widgets/playlist-list/lib/useCollapsingHeader', () => ({
+  TITLE_TOP_GAP: 80,
+  useCollapsingHeader: () => ({
+    darkenStart: { value: 0 },
+    headerHeight: 100,
+    onTitleLayout: jest.fn(),
+    scrollHandler: jest.fn(),
+    scrollY: { value: 0 },
+    titleAppearThreshold: { value: Number.MAX_SAFE_INTEGER },
+  }),
+}))
+
 const PLAYLIST_A_TITLE = 'Плейлист A'
 const PLAYLIST_B_TITLE = 'Плейлист B'
 const EDIT_LABEL = 'Изменить порядок'
@@ -83,6 +99,7 @@ const SAVE_LABEL = 'Сохранить'
 const DELETE_LABEL = 'Удалить плейлист'
 const DELETE_DIALOG_TITLE = 'Удалить плейлист?'
 const DELETE_CONFIRM_TEXT = 'Удалить'
+const CREATE_ROW_TEXT = 'Создать плейлист'
 const FAVORITES_TITLE = FAVORITES_PLAYLIST.title
 
 const PLAYLIST_A: LocalPlaylistData = {
@@ -276,10 +293,10 @@ describe('<MyPlaylistsScreen>', () => {
 
     const { getByLabelText, getByText } = await renderWithProviders(<MyPlaylistsScreen />, { ctx })
 
-    expect(getByText('Создать плейлист')).toBeTruthy()
+    expect(getByText(CREATE_ROW_TEXT)).toBeTruthy()
 
     await act(async () => {
-      fireEvent.press(getByText('Создать плейлист'))
+      fireEvent.press(getByText(CREATE_ROW_TEXT))
     })
 
     expect(getByLabelText('Название')).toBeTruthy()
@@ -287,12 +304,12 @@ describe('<MyPlaylistsScreen>', () => {
 
   test('keeps the create row below the empty playlist list', async () => {
     const ctx = createCtx()
-    myPlaylistsAtom(ctx, [FAVORITES_PLAYLIST])
+    myPlaylistsAtom(ctx, [])
 
     const { getByText } = await renderWithProviders(<MyPlaylistsScreen />, { ctx })
 
-    expect(getByText('Своих плейлистов пока нет')).toBeTruthy()
-    expect(getByText('Создать плейлист')).toBeTruthy()
+    expect(getByText('Нет плейлистов')).toBeTruthy()
+    expect(getByText(CREATE_ROW_TEXT)).toBeTruthy()
   })
 
   test('deletes a playlist from the edit mode after confirmation', async () => {

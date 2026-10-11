@@ -1,7 +1,7 @@
 # Экран «Список плейлистов секции»
 
 **Маршрут:** `/listen/playlist-list?sectionId=<строка>`
-**Файлы:** `app/(tabs)/listen/playlist-list.tsx` → `export { PlaylistListScreen as default }` из `pages/playlist-list`
+**Файлы:** `app/(tabs)/listen/playlist-list.tsx` → `export { PlaylistListScreen as default }` из `pages/playlist-list` (тело списка — в виджете `widgets/playlist-list`)
 **Статус:** готов
 
 ## Что делает
@@ -10,8 +10,8 @@
 
 ## Что показывается
 
-- Схлопывающаяся шапка с заголовком секции (`useCollapsingHeader` из `src/pages/playlist-list/lib/useCollapsingHeader.ts` + `useCollapsingNavbarDriver` из `shared/ui/collapsing-navbar-driver`). Заголовок навбара появляется и фон достигает полной непрозрачности, когда ЦЕНТР контентного заголовка достигает низа навбара — тот же момент передачи, что на экране плейлиста (≈ верхний отступ 80px + половина высоты заголовка); до последних 80px перед порогом фон остаётся полностью прозрачным (как на экране плейлиста). Порог вычисляется детерминированно (верхний отступ + половина высоты заголовка), а не из layout y.
-- Вертикальный список плейлистов — `PlaylistListItem` (`src/pages/playlist-list/ui/PlaylistListItem.tsx`): обложка через `CoverImage` (при отсутствии artwork — плитка-буква `PlaylistLetterAvatar` стандартного размера `ALBUM_ART_SIZE = LIST_ITEM_CARD_ARTWORK_SIZE`, то есть слот обложки обязателен и высота строки не схлопывается), название — многострочное (`Text` без `numberOfLines`), видно целиком; описание — одна строка с обрезанием.
+- Схлопывающаяся шапка с заголовком секции (`useCollapsingHeader` из `src/widgets/playlist-list/lib/useCollapsingHeader.ts` + `useCollapsingNavbarDriver` из `shared/ui/collapsing-navbar-driver`). Заголовок навбара появляется и фон достигает полной непрозрачности, когда ЦЕНТР контентного заголовка достигает низа навбара — тот же момент передачи, что на экране плейлиста (≈ верхний отступ 80px + половина высоты заголовка); до последних 80px перед порогом фон остаётся полностью прозрачным (как на экране плейлиста). Порог вычисляется детерминированно (верхний отступ + половина высоты заголовка), а не из layout y.
+- Вертикальный список плейлистов — общий виджет `PlaylistList` (`src/widgets/playlist-list/ui/PlaylistList.tsx`), строки рендерит `PlaylistListItem` (`src/widgets/playlist-list/ui/PlaylistListItem.tsx`): обложка через `CoverImage` (при отсутствии artwork — плитка-буква `PlaylistLetterAvatar` стандартного размера `LIST_ITEM_CARD_ARTWORK_SIZE`, то есть слот обложки обязателен и высота строки не схлопывается), название — многострочное (`Text` без `numberOfLines`), видно целиком; описание — одна строка с обрезанием. Тело списка вынесено в виджет, чтобы его переиспользовал просмотровый режим «Мои плейлисты» (см. [my-playlists.md](./my-playlists.md)); страница оставила только резолвинг секции и её состояния.
 
 ## Откуда данные
 
