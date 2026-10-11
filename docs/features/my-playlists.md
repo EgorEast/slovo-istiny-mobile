@@ -78,7 +78,9 @@
 читаются без падения: `sermonIds` сохраняются как авторитетный список, `sermons` у них пустой —
 рендерить по одним id нечем (UI резолвит их из каталога).
 
-`loadMyPlaylists` (Reatom-экшен, вызывается из `MyPlaylistsSlider` и `MyPlaylistsScreen` при монтировании;
+`loadMyPlaylists` (Reatom-экшен, вызывается из `MyPlaylistsSlider` и `MyPlaylistsScreen` при монтировании,
+а также экраном плейлиста `PlaylistScreen` при монтировании — чтобы reload/холодный старт по
+`?playlist=custom-…` нашёл локальный плейлист, пока `notFound` гейтится `myPlaylistsLoadedAtom`;
 чтение вынесено в `src/entities/playlist/lib/readStoredMyPlaylists.ts`):
 
 1. читает и валидирует `myPlaylists`, нормализует каждую запись (`normalizeLocalPlaylist` —
@@ -122,8 +124,13 @@ reorder, персист принадлежности при toggle и CRUD-му�
 `createLocalPlaylist(ctx, { id?, title, sermonIds })` создаёт плейлист и **пинит его
 сразу после «Избранных»** (`withFavoritesFirst`). Без `id` генерируется
 `generateUuid`; импорт из ссылки передаёт детерминированный
-`deriveCustomPlaylistId` (см. [deep-links.md](./deep-links.md)), поэтому повторное
-открытие той же ссылки находит плейлист по этому id и не дублирует его.
+`deriveCustomPlaylistId` (см. [deep-links.md](./deep-links.md)). Дедуп импорта идёт
+**по содержимому**, а не по производному id: `useCustomPlaylistImport` переиспользует
+локальный плейлист только при совпадении `title` и **порядка** `sermonIds`
+(неизменённая ссылка → тот же плейлист), а переименованный/изменённый не перехватывает
+повторный клик — создаётся новый. Если производный id уже занят другим плейлистом
+(переименованная/изменённая копия держит исходный content-id), `id` не передаётся —
+`createLocalPlaylist` сгенерирует uuid, поэтому два плейлиста с одним id не появятся.
 Снапшоты проповедей не создаются: `sermons: []`, переданные `sermonIds` — id-only
 (импорт из ссылки несёт только id, снапшоты добавляются позже через
 `togglePlaylistSermon`). Порядок операций тот же, что у `reorderMyPlaylists`:

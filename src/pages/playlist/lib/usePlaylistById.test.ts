@@ -18,9 +18,20 @@ jest.mock('entities/section', () => {
   return { dynamicSectionsAtom: atom([], 'testDynamicSectionsAtom') }
 })
 
-const { FAVORITES_PLAYLIST, myPlaylistsAtom } = jest.requireActual('entities/playlist') as {
+const { FAVORITES_PLAYLIST, myPlaylistsAtom, myPlaylistsLoadedAtom } = jest.requireActual(
+  'entities/playlist',
+) as {
   FAVORITES_PLAYLIST: { id: string; title: string }
   myPlaylistsAtom: (ctx: unknown, value: unknown) => void
+  myPlaylistsLoadedAtom: (ctx: unknown, value: boolean) => void
+}
+
+// The resolver suppresses notFound until `myPlaylistsAtom` is hydrated, so every
+// test that expects a final resolution must mark the atom as loaded.
+const createLoadedCtx = () => {
+  const ctx = createCtx()
+  myPlaylistsLoadedAtom(ctx, true)
+  return ctx
 }
 
 jest.mock('./resolvePlaylistFromCache', () => ({
@@ -70,7 +81,7 @@ describe('usePlaylistById', () => {
     mockResolvePlaylistFromCache.mockResolvedValue(undefined)
     mockResolvePlaylistFromApi.mockResolvedValue(PLAYLIST_1)
 
-    await renderHookWithProviders(() => usePlaylistById('pl-1'))
+    await renderHookWithProviders(() => usePlaylistById('pl-1'), { ctx: createLoadedCtx() })
     await act(async () => {})
 
     expect(mockResolvePlaylistFromCache).toHaveBeenCalledTimes(1)
@@ -84,7 +95,9 @@ describe('usePlaylistById', () => {
     mockResolvePlaylistFromCache.mockResolvedValue(undefined)
     mockResolvePlaylistFromApi.mockResolvedValue(PLAYLIST_1)
 
-    const { result } = await renderHookWithProviders(() => usePlaylistById('pl-1'))
+    const { result } = await renderHookWithProviders(() => usePlaylistById('pl-1'), {
+      ctx: createLoadedCtx(),
+    })
     await act(async () => {})
 
     expect(result.current.isLoading).toBe(false)
@@ -96,7 +109,9 @@ describe('usePlaylistById', () => {
     mockResolvePlaylistFromCache.mockResolvedValue(undefined)
     mockResolvePlaylistFromApi.mockResolvedValue(undefined)
 
-    const { result } = await renderHookWithProviders(() => usePlaylistById('pl-1'))
+    const { result } = await renderHookWithProviders(() => usePlaylistById('pl-1'), {
+      ctx: createLoadedCtx(),
+    })
     await act(async () => {})
 
     expect(result.current.isLoading).toBe(false)
@@ -105,7 +120,7 @@ describe('usePlaylistById', () => {
   })
 
   test('does not call cache or network when the sections atom has the playlist', async () => {
-    const ctx = createCtx()
+    const ctx = createLoadedCtx()
     dynamicSectionsAtom(ctx, [makeSection([PLAYLIST_1])])
 
     const { result } = await renderHookWithProviders(() => usePlaylistById('pl-1'), { ctx })
@@ -120,7 +135,9 @@ describe('usePlaylistById', () => {
   test('resolves straight from cache when the sections atom misses', async () => {
     mockResolvePlaylistFromCache.mockResolvedValue(PLAYLIST_1)
 
-    const { result } = await renderHookWithProviders(() => usePlaylistById('pl-1'))
+    const { result } = await renderHookWithProviders(() => usePlaylistById('pl-1'), {
+      ctx: createLoadedCtx(),
+    })
     await act(async () => {})
 
     expect(result.current.playlist).toBe(PLAYLIST_1)
@@ -139,7 +156,7 @@ describe('usePlaylistById', () => {
 
     const { rerender, result } = await renderHookWithProviders(
       ({ id }: { id: string }) => usePlaylistById(id),
-      { initialProps: { id: 'pl-1' } },
+      { ctx: createLoadedCtx(), initialProps: { id: 'pl-1' } },
     )
     await act(async () => {})
     expect(result.current.playlist).toBe(PLAYLIST_1)
@@ -162,7 +179,7 @@ describe('usePlaylistById', () => {
   })
 
   test('surfaces a late sections hit over an already resolved cache tier', async () => {
-    const ctx = createCtx()
+    const ctx = createLoadedCtx()
     mockResolvePlaylistFromCache.mockResolvedValue(PLAYLIST_1)
 
     const { result } = await renderHookWithProviders(() => usePlaylistById('pl-1'), { ctx })
@@ -180,7 +197,7 @@ describe('usePlaylistById', () => {
   })
 
   test('surfaces a late sections hit over an already resolved api tier without refetching', async () => {
-    const ctx = createCtx()
+    const ctx = createLoadedCtx()
     mockResolvePlaylistFromCache.mockResolvedValue(undefined)
     mockResolvePlaylistFromApi.mockResolvedValue(PLAYLIST_1)
 
@@ -200,7 +217,7 @@ describe('usePlaylistById', () => {
   })
 
   test('resolves favorites from local playlist sermons without touching cache or network', async () => {
-    const ctx = createCtx()
+    const ctx = createLoadedCtx()
     myPlaylistsAtom(ctx, [
       {
         id: FAVORITES_PLAYLIST.id,
@@ -224,7 +241,7 @@ describe('usePlaylistById', () => {
   })
 
   test('falls back to the empty favorites stub when local playlist has no sermons', async () => {
-    const ctx = createCtx()
+    const ctx = createLoadedCtx()
     myPlaylistsAtom(ctx, [
       { id: FAVORITES_PLAYLIST.id, sermonIds: [], sermons: [], title: FAVORITES_PLAYLIST.title },
     ])
@@ -239,7 +256,7 @@ describe('usePlaylistById', () => {
   })
 
   test('resolves a non-favorites local playlist without touching cache or network', async () => {
-    const ctx = createCtx()
+    const ctx = createLoadedCtx()
     myPlaylistsAtom(ctx, [
       { id: FAVORITES_PLAYLIST.id, sermonIds: [], sermons: [], title: FAVORITES_PLAYLIST.title },
       { id: 'local-1', sermonIds: [], sermons: [], title: 'Локальный' },
@@ -255,7 +272,7 @@ describe('usePlaylistById', () => {
   })
 
   test('resolves local playlist sermon ids against section sermons', async () => {
-    const ctx = createCtx()
+    const ctx = createLoadedCtx()
     const sermon = {
       artist: 'Pastor',
       artwork: null,
@@ -282,7 +299,7 @@ describe('usePlaylistById', () => {
   })
 
   test('skips local playlist sermon ids that are not available locally', async () => {
-    const ctx = createCtx()
+    const ctx = createLoadedCtx()
     myPlaylistsAtom(ctx, [
       { id: FAVORITES_PLAYLIST.id, sermonIds: [], sermons: [], title: FAVORITES_PLAYLIST.title },
       { id: 'local-1', sermonIds: ['ghost'], sermons: [], title: 'Локальный' },
@@ -292,5 +309,49 @@ describe('usePlaylistById', () => {
 
     expect(result.current.playlist?.sermons).toEqual([])
     expect(result.current.notFound).toBe(false)
+  })
+
+  test('suppresses notFound for a custom id until my playlists are hydrated', async () => {
+    mockResolvePlaylistFromCache.mockResolvedValue(undefined)
+    mockResolvePlaylistFromApi.mockResolvedValue(undefined)
+
+    const { result } = await renderHookWithProviders(() => usePlaylistById('custom-abcdef012345'))
+    await act(async () => {})
+
+    expect(result.current.playlist).toBeUndefined()
+    expect(result.current.isLoading).toBe(true)
+    expect(result.current.notFound).toBe(false)
+  })
+
+  test('resolves a hydrated custom playlist from tier 0 preserving its id', async () => {
+    const ctx = createLoadedCtx()
+    myPlaylistsAtom(ctx, [
+      { id: FAVORITES_PLAYLIST.id, sermonIds: [], sermons: [], title: FAVORITES_PLAYLIST.title },
+      { id: 'custom-abcdef012345', sermonIds: ['s1'], sermons: [], title: 'Импортированный' },
+    ])
+
+    const { result } = await renderHookWithProviders(() => usePlaylistById('custom-abcdef012345'), {
+      ctx,
+    })
+
+    expect(result.current.playlist?.id).toBe('custom-abcdef012345')
+    expect(result.current.isLoading).toBe(false)
+    expect(result.current.notFound).toBe(false)
+    expect(mockResolvePlaylistFromCache).not.toHaveBeenCalled()
+  })
+
+  test('shows notFound for an unknown UUID once my playlists are hydrated and the API misses', async () => {
+    mockResolvePlaylistFromCache.mockResolvedValue(undefined)
+    mockResolvePlaylistFromApi.mockResolvedValue(undefined)
+
+    const { result } = await renderHookWithProviders(
+      () => usePlaylistById('11111111-2222-4333-8444-555555555555'),
+      { ctx: createLoadedCtx() },
+    )
+    await act(async () => {})
+
+    expect(result.current.isLoading).toBe(false)
+    expect(result.current.notFound).toBe(true)
+    expect(result.current.playlist).toBeUndefined()
   })
 })

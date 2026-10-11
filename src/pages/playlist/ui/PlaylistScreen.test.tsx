@@ -2,7 +2,12 @@ import { createCtx } from '@reatom/framework'
 import { act, fireEvent, waitFor } from '@testing-library/react-native'
 import { type ComponentType } from 'react'
 import { View as RNView } from 'react-native'
-import { type PlaylistData } from 'entities/playlist'
+import {
+  FAVORITES_PLAYLIST,
+  myPlaylistsAtom,
+  myPlaylistsLoadedAtom,
+  type PlaylistData,
+} from 'entities/playlist'
 import { dynamicSectionsAtom, type SectionData } from 'entities/section'
 import { type AudioPlayerData, toAudioPlayerData } from 'entities/sermon'
 import { renderWithProviders } from 'shared/mocks'
@@ -11,8 +16,14 @@ import { PlaylistScreen } from './PlaylistScreen'
 
 /* ── Mocks ─────────────────────────────────────────────────────────── */
 
-const mockParams: { custom?: string; playlist?: string } = { playlist: 'pl-1' }
+const mockParams: {
+  custom?: string
+  playlist?: string
+  sermons?: string
+  title?: string
+} = { playlist: 'pl-1' }
 const mockSetOptions = jest.fn()
+const mockReplace = jest.fn()
 const mockResolvePlaylistFromCache = jest.fn()
 const mockTogglePlaylistSermon = jest.fn()
 const mockUseIsLocalPlaylist = jest.fn()
@@ -20,7 +31,7 @@ const mockUseIsLocalPlaylist = jest.fn()
 jest.mock('expo-router', () => ({
   useLocalSearchParams: () => mockParams,
   useNavigation: () => ({ setOptions: mockSetOptions }),
-  useRouter: () => ({ replace: jest.fn(), setParams: jest.fn() }),
+  useRouter: () => ({ replace: mockReplace, setParams: jest.fn() }),
 }))
 
 jest.mock('expo-router/react-navigation', () => ({
@@ -52,9 +63,13 @@ jest.mock('entities/listening-history', () => {
 })
 
 jest.mock('entities/playlist', () => {
+  const { action } = jest.requireActual('@reatom/framework')
   const actual = jest.requireActual('entities/playlist')
   return {
     ...actual,
+    // The screen hydrates myPlaylistsAtom on mount; a no-op keeps the seeded atom
+    // intact so reload tests can craft the stored state explicitly.
+    loadMyPlaylists: action(() => Promise.resolve([]), 'loadMyPlaylistsMock'),
     togglePlaylistSermon: (...args: unknown[]) => mockTogglePlaylistSermon(...args),
     useIsLocalPlaylist: (id: string) => mockUseIsLocalPlaylist(id),
   }
@@ -244,6 +259,9 @@ const makeSection = (overrides: Partial<SectionData> = {}): SectionData => ({
 
 const renderScreen = async (ctx?: ReturnType<typeof createCtx>) => {
   const c = ctx ?? createCtx()
+  // The resolver suppresses notFound until myPlaylistsAtom is hydrated; the
+  // screen's mount hydration is mocked to a no-op, so mark it loaded here.
+  myPlaylistsLoadedAtom(c, true)
   return renderWithProviders(<PlaylistScreen />, { ctx: c })
 }
 
@@ -267,6 +285,8 @@ describe('<PlaylistScreen>', () => {
     jest.clearAllMocks()
     mockParams.playlist = PLAYLIST_ID
     delete mockParams.custom
+    delete mockParams.sermons
+    delete mockParams.title
   })
 
   test('renders the playlist title and its tracks', async () => {
@@ -570,5 +590,44 @@ describe('<PlaylistScreen> remove-from-playlist flow', () => {
 
     expect(mockTogglePlaylistSermon).not.toHaveBeenCalled()
     await waitFor(() => expect(queryByText(REMOVE_DIALOG_TITLE)).toBeNull())
+  })
+})
+
+describe('<PlaylistScreen> custom share link and reload', () => {
+  const CUSTOM_TITLE = 'Импортированный плейлист'
+  const CUSTOM_ID = 'custom-abcdef0123456789'
+
+  beforeEach(() => {
+    jest.clearAllMocks()
+    delete mockParams.custom
+    delete mockParams.sermons
+    delete mockParams.title
+  })
+
+  test('imports a custom link, renders it, and never rewrites the route', async () => {
+    mockParams.playlist = undefined
+    mockParams.custom = ''
+    mockParams.sermons = SERMON_1.id
+    mockParams.title = CUSTOM_TITLE
+
+    const { findByText } = await renderScreen()
+
+    expect(await findByText(CUSTOM_TITLE)).toBeTruthy()
+    expect(mockReplace).not.toHaveBeenCalled()
+  })
+
+  test('renders a stored custom playlist on reload without not-found', async () => {
+    mockParams.playlist = CUSTOM_ID
+    const ctx = createCtx()
+    myPlaylistsAtom(ctx, [
+      { id: FAVORITES_PLAYLIST.id, sermonIds: [], sermons: [], title: FAVORITES_PLAYLIST.title },
+      { id: CUSTOM_ID, sermonIds: [SERMON_1.id], sermons: [SERMON_1], title: CUSTOM_TITLE },
+    ])
+
+    const { findByText, queryByText } = await renderScreen(ctx)
+
+    expect(await findByText(CUSTOM_TITLE)).toBeTruthy()
+    expect(queryByText(NOT_FOUND_TEXT)).toBeNull()
+    expect(mockReplace).not.toHaveBeenCalled()
   })
 })

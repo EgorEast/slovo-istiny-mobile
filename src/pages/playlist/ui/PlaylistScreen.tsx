@@ -9,6 +9,7 @@ import { createTracksListStyles } from 'entities/track-list'
 import { useTheme } from 'shared/ui/theme'
 import { useCollapsingHeader } from '../lib/useCollapsingHeader'
 import { useCustomPlaylistImport } from '../lib/useCustomPlaylistImport'
+import { useHydrateMyPlaylists } from '../lib/useHydrateMyPlaylists'
 import { usePlaylistById } from '../lib/usePlaylistById'
 import { usePlaylistHeader } from '../lib/usePlaylistHeader'
 import { usePlaylistPlaybackTarget } from '../lib/usePlaylistPlaybackTarget'
@@ -28,15 +29,19 @@ export const PlaylistScreen = () => {
   const { currentTheme } = useTheme()
   const params = useLocalSearchParams<{ custom?: string; playlist: string }>()
 
-  useCustomPlaylistImport()
+  useHydrateMyPlaylists()
+
+  const { importedPlaylistId } = useCustomPlaylistImport()
 
   // A `custom` share link wins over any stale `playlist` param: the import
-  // resolves the target id itself and replaces the route. The flag is bare
-  // (`?custom&…`), so only its absence means there is no custom link. While the
-  // import is in flight the route has no usable playlist id yet — render the
-  // loading state instead of a premature not-found flash.
-  const isImportingCustomPlaylist = params.custom !== undefined
-  const playlistId = isImportingCustomPlaylist ? '' : (params.playlist ?? '')
+  // resolves the target id itself and leaves the share params in place (the
+  // address bar keeps the shareable link). While it is in flight there is no
+  // usable id yet — render the loading state instead of a premature not-found.
+  // Once resolved, the id points at the local playlist, which tier 0 builds from
+  // the hydrated atom.
+  const isImportingCustomPlaylist = params.custom !== undefined && importedPlaylistId === null
+  const playlistId =
+    importedPlaylistId ?? (isImportingCustomPlaylist ? '' : (params.playlist ?? ''))
   const { isLoading, notFound, playlist: resolvedPlaylist } = usePlaylistById(playlistId)
   const playlist = resolvedPlaylist ?? EMPTY_PLAYLIST
 
