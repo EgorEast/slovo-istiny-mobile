@@ -1,8 +1,10 @@
+import { useAtom, useCtx } from '@reatom/npm-react'
 import { useState } from 'react'
 import { Pressable, View } from 'react-native'
 import Animated from 'react-native-reanimated'
 import { type TrackCacheVisualState } from 'entities/offline-cache'
-import { type PlaybackRate, usePlaybackRate } from 'entities/player'
+import { currentPlaylistAtom, type PlaybackRate, usePlaybackRate } from 'entities/player'
+import { isLocalPlaylistId, togglePlaylistSermon } from 'entities/playlist'
 import { type AudioPlayerData } from 'entities/sermon'
 import { hapticLight } from 'shared/lib/haptics'
 import { reportError } from 'shared/model/error-dialog'
@@ -32,9 +34,18 @@ export const PlayerMenu = ({
   visualState: TrackCacheVisualState
 }) => {
   const { currentTheme } = useTheme()
+  const ctx = useCtx()
   const { rate, setPlaybackRate } = usePlaybackRate()
+  const [playlist] = useAtom(currentPlaylistAtom)
   const [view, setView] = useState<'main' | 'speed'>('main')
   const { backdropStyle, handleLayout, wrapperStyle } = useMenuRevealAnimation()
+
+  // The item is meaningful only when the current playlist is a local one that
+  // actually contains the playing sermon.
+  const canRemoveFromPlaylist =
+    playlist !== null &&
+    isLocalPlaylistId(playlist.id) &&
+    playlist.sermons.some(sermon => sermon.id === audio.id)
 
   const handleDetailsPress = () => {
     onShowDetails()
@@ -53,6 +64,12 @@ export const PlayerMenu = ({
 
   const handleAddToPlaylistPress = () => {
     onAddToPlaylist?.(audio)
+    onClose()
+  }
+
+  const handleRemoveFromPlaylistPress = () => {
+    if (playlist === null) return
+    void togglePlaylistSermon(ctx, playlist.id, audio, false)
     onClose()
   }
 
@@ -86,6 +103,9 @@ export const PlayerMenu = ({
               onShowSpeed={() => setView('speed')}
               onOpenSoundSettings={handleSoundSettingsPress}
               onAddToPlaylist={onAddToPlaylist ? handleAddToPlaylistPress : undefined}
+              onRemoveFromPlaylist={
+                canRemoveFromPlaylist ? handleRemoveFromPlaylistPress : undefined
+              }
             />
           ) : (
             <PlayerSpeedMenu

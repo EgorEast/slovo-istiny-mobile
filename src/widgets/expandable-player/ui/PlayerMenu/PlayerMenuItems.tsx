@@ -33,6 +33,7 @@ export const PlayerMenuItems = ({
   onAddToPlaylist,
   onDetails,
   onOpenSoundSettings,
+  onRemoveFromPlaylist,
   onShowSpeed,
   onToggleCache,
   rate,
@@ -42,6 +43,7 @@ export const PlayerMenuItems = ({
   onAddToPlaylist?: () => void
   onDetails: () => void
   onOpenSoundSettings: () => void
+  onRemoveFromPlaylist?: () => void
   onShowSpeed: () => void
   onToggleCache: () => void
   rate: PlaybackRate
@@ -101,6 +103,13 @@ export const PlayerMenuItems = ({
             {ADD_TO_PLAYLIST_TEXT}
           </Text>
         </Pressable>
+      )}
+      {onRemoveFromPlaylist && (
+        <PressableButton style={styles.menuItem} onPress={onRemoveFromPlaylist}>
+          <Text style={[styles.menuItemText, { color: currentTheme.text }]}>
+            Удалить из текущего плейлиста
+          </Text>
+        </PressableButton>
       )}
       <PressableButton
         style={styles.menuItemRow}
