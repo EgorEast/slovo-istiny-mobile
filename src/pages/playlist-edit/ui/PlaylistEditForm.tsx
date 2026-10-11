@@ -11,6 +11,7 @@ import { FormField, FormSubmitContext } from 'shared/ui/form'
 import { PressableButton } from 'shared/ui/pressable-button'
 import { COLORS, useTheme } from 'shared/ui/theme'
 import { usePlaylistEditForm } from '../lib/usePlaylistEditForm'
+import { usePlaylistEditHeader } from '../lib/usePlaylistEditHeader'
 import { styles } from './styles'
 import { usePlaylistEditItemRenderer } from './usePlaylistEditItemRenderer'
 
@@ -32,6 +33,8 @@ export const PlaylistEditForm = ({ playlist }: { playlist: LocalPlaylistData }) 
   const router = useRouter()
   const { canSave, orderedSermons, save, setOrderedSermons, setTitle, title } =
     usePlaylistEditForm(playlist)
+  const handleSave = useCallback(() => void save(), [save])
+  usePlaylistEditHeader({ canSave, onSave: handleSave })
   const handleDeleted = useCallback(() => router.back(), [router])
   const { cancelDelete, confirmDelete, isDeleteOpen, requestDelete } =
     useLocalPlaylistDelete(handleDeleted)
@@ -76,7 +79,7 @@ export const PlaylistEditForm = ({ playlist }: { playlist: LocalPlaylistData }) 
       <View style={[styles.footer, { borderTopColor: currentTheme.skeleton }]}>
         <PressableButton
           disabled={!canSave}
-          onPress={() => void save()}
+          onPress={handleSave}
           style={[styles.save, !canSave && styles.saveDisabled]}
         >
           <Text style={[styles.saveText, { color: currentTheme.primary }]}>{SAVE_LABEL}</Text>

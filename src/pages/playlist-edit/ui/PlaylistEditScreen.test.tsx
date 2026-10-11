@@ -16,9 +16,11 @@ const mockPush = jest.fn()
 const mockRename = jest.fn()
 const mockReorder = jest.fn()
 const mockDrag = jest.fn()
+const mockSetOptions = jest.fn()
 
 jest.mock('expo-router', () => ({
   useLocalSearchParams: () => ({ playlist: 'local-1' }),
+  useNavigation: () => ({ setOptions: mockSetOptions }),
   useRouter: () => ({ back: mockBack, push: mockPush }),
 }))
 
@@ -84,6 +86,7 @@ jest.mock('react-native-draggable-flatlist', () => {
 
 const NAME_LABEL = 'Название'
 const SAVE_LABEL = 'Сохранить'
+const HEADER_SAVE_LABEL = 'Сохранить изменения'
 const DELETE_LABEL = 'Удалить плейлист'
 const DRAG_LABEL = 'Переместить проповедь'
 const DELETE_DIALOG_TITLE = 'Удалить плейлист?'
@@ -105,6 +108,26 @@ const renderScreen = async () => {
   myPlaylistsLoadedAtom(ctx, true)
 
   return renderWithProviders(<PlaylistEditScreen />, { ctx })
+}
+
+type HeaderRight = () => ReactElement
+
+// The header save action is installed through `navigation.setOptions`; render the
+// captured `headerRight` so its enabled state and onPress can be exercised.
+const getHeaderRight = (): HeaderRight | undefined => {
+  const calls = mockSetOptions.mock.calls
+  for (let index = calls.length - 1; index >= 0; index -= 1) {
+    const [options] = calls[index] as [{ headerRight?: HeaderRight }]
+    if (options?.headerRight) return options.headerRight
+  }
+  return undefined
+}
+
+const renderHeader = async (ctx: ReturnType<typeof createCtx>) => {
+  const headerRight = getHeaderRight()
+  if (!headerRight) throw new Error('headerRight was never set')
+
+  return renderWithProviders(<>{headerRight()}</>, { ctx })
 }
 
 describe('<PlaylistEditScreen>', () => {
@@ -167,6 +190,31 @@ describe('<PlaylistEditScreen>', () => {
     expect(mockRename).not.toHaveBeenCalled()
     expect(mockReorder).not.toHaveBeenCalled()
     expect(mockBack).not.toHaveBeenCalled()
+  })
+
+  test('shows a header save button that does nothing while unchanged', async () => {
+    const screen = await renderScreen()
+    const header = await renderHeader(screen.ctx)
+
+    fireEvent.press(header.getByLabelText(HEADER_SAVE_LABEL))
+
+    expect(mockRename).not.toHaveBeenCalled()
+    expect(mockBack).not.toHaveBeenCalled()
+  })
+
+  test('saves the rename from the header save button', async () => {
+    const screen = await renderScreen()
+
+    await act(async () => {
+      fireEvent.changeText(screen.getByLabelText(NAME_LABEL), 'Новое')
+    })
+    const header = await renderHeader(screen.ctx)
+
+    fireEvent.press(header.getByLabelText(HEADER_SAVE_LABEL))
+
+    await waitFor(() => expect(mockRename).toHaveBeenCalledWith('local-1', 'Новое'))
+    expect(mockReorder).not.toHaveBeenCalled()
+    expect(mockBack).toHaveBeenCalledTimes(1)
   })
 
   test('deletes the playlist after confirmation and goes back', async () => {

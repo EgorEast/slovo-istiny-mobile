@@ -17,6 +17,11 @@
 - Нативная шапка стека «Слушать» с заголовком **«Редактировать плейлист»** и кнопкой «Назад»
   (общий `HeaderBackButton` с фолбэком `/listen`; маршрут зарегистрирован в
   `app/(tabs)/listen/_layout.tsx`).
+- **Галочка «Сохранить изменения»** (`IconButton`, `Ionicons 'checkmark'`,
+  `accessibilityLabel` «Сохранить изменения») в правой части шапки — основная видимая кнопка
+  сохранения. Ставится хуком `usePlaylistEditHeader` через `navigation.setOptions` (паттерн
+  `usePlaylistNavigationOptions`), недоступна, пока нет изменений (та же `canSave`, что у нижней
+  панели), и очищается на размонтировании.
 - Поле «Название» (`FormField`) в шапке списка — предзаполнено текущим названием.
 - Заголовок «Проповеди (N)» и drag-список проповедей (`DraggableFlatList`). Каждая строка
   (`PlaylistEditSermonRow`, `ListItemBase` `surface`-варианта) несёт **всегда видимую drag-ручку**
@@ -38,11 +43,13 @@
 - Состояние формы — `usePlaylistEditForm` (`src/pages/playlist-edit/lib/`): локальные копии
   названия и порядка, инициализированные из плейлиста. Сохранение вызывает только изменившиеся
   части: переименование `renameLocalPlaylist` и/или перестановку `reorderLocalPlaylistSermons`
-  (`entities/playlist`), затем `router.back()`. Перед сохранением форма при необходимости
-  гидратирует `myPlaylistsAtom` (`loadMyPlaylists`, гейт по `myPlaylistsLoadedAtom`), чтобы
-  read-modify-write не шёл по негидратированному атому. Экшен reorder переставляет и снапшоты
-  `sermons`, и `sermonIds`, пишет `myPlaylists` через `persistMyPlaylists` и пинит «Избранные»
-  первыми (`withFavoritesFirst`); «Избранные»/неизвестный id — no-op.
+  (`entities/playlist`), затем `router.back()`. Та же `save` подключена к галочке в шапке
+  (`usePlaylistEditHeader`, `src/pages/playlist-edit/lib/`) и к нижней панели. Перед сохранением
+  форма при необходимости гидратирует `myPlaylistsAtom` (`loadMyPlaylists`, гейт по
+  `myPlaylistsLoadedAtom`), чтобы read-modify-write не шёл по негидратированному атому. Экшен
+  reorder переставляет и снапшоты `sermons`, и `sermonIds`, пишет `myPlaylists` через
+  `persistMyPlaylists` и пинит «Избранные» первыми (`withFavoritesFirst`); «Избранные»/неизвестный
+  id — no-op.
 - Строки drag-списка рендерит стабильный `usePlaylistEditItemRenderer`
   (`src/pages/playlist-edit/ui/usePlaylistEditItemRenderer.tsx`, `useCallback`), поэтому список
   не перерисовывается на каждый символ в поле названия.
