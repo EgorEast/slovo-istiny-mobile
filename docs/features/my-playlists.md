@@ -241,7 +241,10 @@ drag-to-reorder, кнопки удаления и живые настройки 
 `DraggableFlatList` рендерит собственный контейнер без `flex` — на react-native-web он
 растягивается по контенту, и список не скроллится (низ обрезается `body { overflow: hidden }` из
 `public/index.html`); поэтому контейнеру задан `containerStyle={styles.listContainer}` с `flex: 1`
-(как у `DraggableFlatList` админки, см. [admin.md](./admin.md)).
+(как у `DraggableFlatList` админки, см. [admin.md](./admin.md)). Горизонтальный отступ контента
+(`contentContainerStyle.paddingHorizontal = INDENTS.medium`) задан на самом списке и покрывает и
+шапку с «Избранными», и drag-строки — карточки выровнены по одной вертикали с «Избранными»
+(раньше инсет несла только шапка `MyPlaylistsEditHeader`, а строки `renderItem` шли без отступа).
 
 **Режим редактирования.** Перестановка строк включается **явно** — двумя состояниями, обычным и
 редактирования, управляет локальный state `localOrderIds` (`null` — обычный режим; массив id —
