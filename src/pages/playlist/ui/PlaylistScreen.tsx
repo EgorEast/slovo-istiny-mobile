@@ -9,11 +9,11 @@ import { createTracksListStyles } from 'entities/track-list'
 import { useTheme } from 'shared/ui/theme'
 import { useCollapsingHeader } from '../lib/useCollapsingHeader'
 import { useCustomPlaylistImport } from '../lib/useCustomPlaylistImport'
-import { usePlaylistActions } from '../lib/usePlaylistActions'
 import { usePlaylistById } from '../lib/usePlaylistById'
 import { usePlaylistHeader } from '../lib/usePlaylistHeader'
 import { usePlaylistPlaybackTarget } from '../lib/usePlaylistPlaybackTarget'
 import { usePlaylistPlayerState } from '../lib/usePlaylistPlayerState'
+import { usePlaylistTrackActions } from '../lib/usePlaylistTrackActions'
 import { PlaylistHeader } from './PlaylistHeader'
 import { PlaylistStatusView } from './PlaylistStatusView'
 import { PlaylistTrackList } from './PlaylistTrackList'
@@ -45,13 +45,8 @@ export const PlaylistScreen = () => {
   const progressMap = useHistoryProgressMap()
   const historySermonIds = useHistorySermonIds()
   const { modal, openAddToPlaylist } = useAddToPlaylistModal()
-  const { buildMenuActions, handlePressItem, handlePressPlayAll } = usePlaylistActions(
-    list,
-    playlist,
-    historySermonIds,
-    progressMap,
-    openAddToPlaylist,
-  )
+  const { buildMenuActions, handlePressItem, handlePressPlayAll, renderDialog } =
+    usePlaylistTrackActions(list, playlist, historySermonIds, progressMap, openAddToPlaylist)
 
   const { cacheTrigger, currentAudio, isPlaying } = usePlaylistPlayerState()
 
@@ -123,6 +118,7 @@ export const PlaylistScreen = () => {
         }
       />
       {modal}
+      {renderDialog()}
     </View>
   )
 }

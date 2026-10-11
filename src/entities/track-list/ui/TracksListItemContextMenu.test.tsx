@@ -10,12 +10,17 @@ const STOP_CACHING_TEXT = 'Остановить добавление в офла
 const REMOVE_FROM_QUEUE_TEXT = 'Убрать из очереди'
 
 const mockIoniconsSpy = jest.fn()
+const mockMaterialCommunityIconsSpy = jest.fn()
 
 jest.mock('@expo/vector-icons', () => {
   const { Text } = jest.requireActual('react-native')
   return {
     Ionicons: (props: { name: string }) => {
       mockIoniconsSpy(props)
+      return <Text>{props.name}</Text>
+    },
+    MaterialCommunityIcons: (props: { name: string }) => {
+      mockMaterialCommunityIconsSpy(props)
       return <Text>{props.name}</Text>
     },
   }
@@ -161,6 +166,29 @@ describe('<TracksListItemContextMenu>', () => {
 
     expect(screen.getByText('Share')).toBeTruthy()
     expect(mockIoniconsSpy).toHaveBeenCalledWith(expect.objectContaining({ name: 'share-outline' }))
+  })
+
+  test('renders a MaterialCommunityIcons glyph when the menuAction sets iconFamily', async () => {
+    const customActions = [
+      {
+        icon: 'playlist-remove' as const,
+        iconFamily: 'material-community' as const,
+        onPress: jest.fn(),
+        text: 'Удалить из плейлиста',
+      },
+    ]
+
+    await renderWithProviders(
+      <TracksListItemContextMenu {...baseProps} menuActions={customActions} />,
+    )
+
+    expect(screen.getByText('Удалить из плейлиста')).toBeTruthy()
+    expect(mockMaterialCommunityIconsSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ name: 'playlist-remove' }),
+    )
+    expect(mockIoniconsSpy).not.toHaveBeenCalledWith(
+      expect.objectContaining({ name: 'playlist-remove' }),
+    )
   })
 
   test('renders cache item when menuActions is absent', async () => {

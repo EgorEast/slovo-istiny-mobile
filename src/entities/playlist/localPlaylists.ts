@@ -92,6 +92,19 @@ export const FAVORITES_PLAYLIST: LocalPlaylistData = {
   title: 'Избранные',
 }
 
+// Пользовательские плейлисты создаются/импортируются с префиксом `custom-`
+// (`deriveCustomPlaylistId`); серверные id — UUID.
+const CUSTOM_PLAYLIST_ID_PREFIX = 'custom-'
+
+/**
+ * Локальный (не серверный) плейлист: «Избранные» либо пользовательский с id
+ * `custom-…`. Серверные плейлисты идентифицируются UUID и сюда не попадают.
+ * @param id - Идентификатор плейлиста.
+ * @returns `true`, если плейлист локальный.
+ */
+export const isLocalPlaylistId = (id: string): boolean =>
+  id === FAVORITES_PLAYLIST_ID || id.startsWith(CUSTOM_PLAYLIST_ID_PREFIX)
+
 // Приводит список к инварианту «Избранные всегда первые».
 //
 // Первое stored-«Избранное» сохраняется как есть (его снапшоты не теряются при

@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons'
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons'
 import { type ComponentProps, type RefObject } from 'react'
 import { StyleSheet, Text, type View } from 'react-native'
 import { PressableButton } from '../pressable-button/PressableButton'
@@ -6,9 +6,22 @@ import { useTheme } from '../theme/ThemeContext/useTheme'
 import { FONT_SIZES, INDENTS, RADIUSES } from '../theme/themed'
 import { AnchoredDropdown, type AnchorRect } from './AnchoredDropdown'
 
-export interface MenuItem {
-  disabled?: boolean
+export type MenuItem = IoniconMenuItem | MaterialMenuItem
+
+// Family-discriminated so a Material Community glyph name never leaks into the
+// Ionicons branch (and vice versa).
+interface IoniconMenuItem extends MenuItemBase {
   icon?: ComponentProps<typeof Ionicons>['name']
+  iconFamily?: 'ionicons'
+}
+
+interface MaterialMenuItem extends MenuItemBase {
+  icon: ComponentProps<typeof MaterialCommunityIcons>['name']
+  iconFamily: 'material-community'
+}
+
+interface MenuItemBase {
+  disabled?: boolean
   onPress: () => void
   text: string
 }
@@ -56,14 +69,22 @@ export const MenuDropdown = ({
                 }
           }
         >
-          {item.icon && (
-            <Ionicons
-              size={ICON_SIZE}
-              name={item.icon}
-              style={styles.itemIcon}
-              color={currentTheme.text}
-            />
-          )}
+          {item.icon &&
+            (item.iconFamily === 'material-community' ? (
+              <MaterialCommunityIcons
+                size={ICON_SIZE}
+                name={item.icon}
+                style={styles.itemIcon}
+                color={currentTheme.text}
+              />
+            ) : (
+              <Ionicons
+                size={ICON_SIZE}
+                name={item.icon}
+                style={styles.itemIcon}
+                color={currentTheme.text}
+              />
+            ))}
           <Text style={[styles.itemText, { color: currentTheme.text }]}>{item.text}</Text>
         </PressableButton>
       ))}

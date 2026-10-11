@@ -1,5 +1,5 @@
 import { createCtx } from '@reatom/framework'
-import { act, fireEvent } from '@testing-library/react-native'
+import { act, fireEvent, waitFor } from '@testing-library/react-native'
 import { type ComponentType } from 'react'
 import { View as RNView } from 'react-native'
 import { type PlaylistData } from 'entities/playlist'
@@ -14,6 +14,7 @@ import { PlaylistScreen } from './PlaylistScreen'
 const mockParams: { custom?: string; playlist?: string } = { playlist: 'pl-1' }
 const mockSetOptions = jest.fn()
 const mockResolvePlaylistFromCache = jest.fn()
+const mockTogglePlaylistSermon = jest.fn()
 
 jest.mock('expo-router', () => ({
   useLocalSearchParams: () => mockParams,
@@ -46,6 +47,14 @@ jest.mock('entities/listening-history', () => {
     buildHistoryMenuActions: jest.fn(() => []),
     useHistoryProgressMap: jest.fn(() => new Map()),
     useHistorySermonIds: jest.fn(() => new Set()),
+  }
+})
+
+jest.mock('entities/playlist', () => {
+  const actual = jest.requireActual('entities/playlist')
+  return {
+    ...actual,
+    togglePlaylistSermon: (...args: unknown[]) => mockTogglePlaylistSermon(...args),
   }
 })
 
@@ -119,12 +128,18 @@ jest.mock('entities/track-list', () => {
     TracksListItem: (props: {
       audioUrl?: null | string
       isAudioPlaying?: boolean
+      menuActions?: Array<{ onPress: () => void; text: string }>
       onPress?: () => void
       title: string
     }) => (
       <Pressable onPress={props.onPress} testID='tracks-list-item'>
         <View>
           <Text>{props.title}</Text>
+          {props.menuActions?.map(action => (
+            <Pressable key={action.text} onPress={action.onPress}>
+              <Text>{action.text}</Text>
+            </Pressable>
+          ))}
           {props.isAudioPlaying && <Text testID={`playing-indicator-${props.title}`}>playing</Text>}
         </View>
       </Pressable>
@@ -490,5 +505,63 @@ describe('<PlaylistScreen> header menu integration', () => {
       }),
     ])
     expect(title).toBe(PLAYLIST_TITLE)
+  })
+})
+
+describe('<PlaylistScreen> remove-from-playlist flow', () => {
+  const CUSTOM_PLAYLIST_ID = 'custom-abcdef0123456789'
+  const REMOVE_MENU_TEXT = 'Удалить из плейлиста'
+  const REMOVE_DIALOG_TITLE = 'Удалить из плейлиста?'
+  const CONFIRM_TEXT = 'Удалить'
+  const CANCEL_TEXT = 'Отмена'
+
+  beforeEach(() => {
+    jest.clearAllMocks()
+    mockParams.playlist = CUSTOM_PLAYLIST_ID
+    delete mockParams.custom
+  })
+
+  const renderLocalPlaylist = async () => {
+    const ctx = createCtx()
+    dynamicSectionsAtom(ctx, [
+      makeSection({ playlists: [{ ...PLAYLIST, id: CUSTOM_PLAYLIST_ID }] }),
+    ])
+    const utils = await renderScreen(ctx)
+    return { ...utils, ctx }
+  }
+
+  test('removes the sermon after confirmation via togglePlaylistSermon', async () => {
+    const { ctx, getAllByText, getByText, queryByText } = await renderLocalPlaylist()
+
+    fireEvent.press(getAllByText(REMOVE_MENU_TEXT)[0])
+
+    await waitFor(() => expect(getByText(REMOVE_DIALOG_TITLE)).toBeTruthy())
+
+    await act(async () => {
+      fireEvent.press(getByText(CONFIRM_TEXT))
+    })
+
+    expect(mockTogglePlaylistSermon).toHaveBeenCalledWith(
+      ctx,
+      CUSTOM_PLAYLIST_ID,
+      expect.objectContaining({ id: SERMON_1.id }),
+      false,
+    )
+    await waitFor(() => expect(queryByText(REMOVE_DIALOG_TITLE)).toBeNull())
+  })
+
+  test('does not remove the sermon when the confirmation is cancelled', async () => {
+    const { getAllByText, getByText, queryByText } = await renderLocalPlaylist()
+
+    fireEvent.press(getAllByText(REMOVE_MENU_TEXT)[0])
+
+    await waitFor(() => expect(getByText(REMOVE_DIALOG_TITLE)).toBeTruthy())
+
+    await act(async () => {
+      fireEvent.press(getByText(CANCEL_TEXT))
+    })
+
+    expect(mockTogglePlaylistSermon).not.toHaveBeenCalled()
+    await waitFor(() => expect(queryByText(REMOVE_DIALOG_TITLE)).toBeNull())
   })
 })

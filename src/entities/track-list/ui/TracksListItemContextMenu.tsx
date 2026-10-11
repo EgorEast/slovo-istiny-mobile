@@ -15,7 +15,7 @@ export interface TracksListItemContextMenuProps {
 }
 
 interface CacheActionItem {
-  icon?: MenuItem['icon']
+  icon?: Extract<MenuItem, { iconFamily?: 'ionicons' }>['icon']
   text: string
 }
 

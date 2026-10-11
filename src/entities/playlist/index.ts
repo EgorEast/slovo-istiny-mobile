@@ -13,6 +13,7 @@ export { packSermonIds } from './lib/sermonIdPacking'
 export { togglePlaylistSermon } from './localPlaylistMembership'
 export {
   FAVORITES_PLAYLIST,
+  isLocalPlaylistId,
   type LocalPlaylistData,
   MAX_CUSTOM_PLAYLIST_SERMONS,
   myPlaylistsArraySchema,

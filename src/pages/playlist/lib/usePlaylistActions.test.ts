@@ -5,6 +5,7 @@ import { usePlaylistActions } from './usePlaylistActions'
 
 jest.mock('entities/listening-history', () => ({
   buildHistoryMenuActions: jest.fn(() => [
+    { icon: 'add-circle', onPress: jest.fn(), text: 'Добавить в плейлист' },
     { icon: 'checkmark-done', onPress: jest.fn(), text: 'Пометить прослушанной' },
   ]),
 }))
@@ -36,6 +37,11 @@ const PLAYLIST = {
   sermons: [SERMON_1, SERMON_2],
   title: 'Плейлист',
 }
+
+const ADD_TO_PLAYLIST_TEXT = 'Добавить в плейлист'
+const REMOVE_FROM_PLAYLIST_TEXT = 'Удалить из плейлиста'
+const CUSTOM_PLAYLIST_ID = 'custom-abcdef0123456789'
+const SERVER_PLAYLIST_ID = '123e4567-e89b-42d3-a456-426614174000'
 
 describe('usePlaylistActions', () => {
   beforeEach(() => {
@@ -156,5 +162,88 @@ describe('usePlaylistActions', () => {
     await result.current.handlePressPlayAll(SERMON_2)
 
     expect(playNewSermonMock).toHaveBeenCalledWith({ playlist: PLAYLIST, sermon: SERMON_2 })
+  })
+
+  test('buildMenuActions adds the removal item right after add-to-playlist for a custom playlist', async () => {
+    const onRemoveRequest = jest.fn()
+    const playlist = { ...PLAYLIST, id: CUSTOM_PLAYLIST_ID }
+
+    const { result } = await renderHookWithProviders(
+      () =>
+        usePlaylistActions([SERMON_1], playlist, new Set(), new Map(), undefined, onRemoveRequest),
+      {},
+    )
+
+    const actions = result.current.buildMenuActions(0)
+
+    expect(actions?.map(action => action.text)).toEqual([
+      ADD_TO_PLAYLIST_TEXT,
+      REMOVE_FROM_PLAYLIST_TEXT,
+      'Пометить прослушанной',
+    ])
+  })
+
+  test('buildMenuActions adds the removal item for the favorites playlist', async () => {
+    const onRemoveRequest = jest.fn()
+    const playlist = { ...PLAYLIST, id: 'favorites' }
+
+    const { result } = await renderHookWithProviders(
+      () =>
+        usePlaylistActions([SERMON_1], playlist, new Set(), new Map(), undefined, onRemoveRequest),
+      {},
+    )
+
+    const actions = result.current.buildMenuActions(0)
+
+    expect(actions?.map(action => action.text)).toContain(REMOVE_FROM_PLAYLIST_TEXT)
+  })
+
+  test('buildMenuActions omits the removal item for a server playlist', async () => {
+    const onRemoveRequest = jest.fn()
+    const playlist = { ...PLAYLIST, id: SERVER_PLAYLIST_ID }
+
+    const { result } = await renderHookWithProviders(
+      () =>
+        usePlaylistActions([SERMON_1], playlist, new Set(), new Map(), undefined, onRemoveRequest),
+      {},
+    )
+
+    const actions = result.current.buildMenuActions(0)
+
+    expect(actions?.map(action => action.text)).not.toContain(REMOVE_FROM_PLAYLIST_TEXT)
+  })
+
+  test('buildMenuActions omits the removal item when no request handler is provided', async () => {
+    const playlist = { ...PLAYLIST, id: CUSTOM_PLAYLIST_ID }
+
+    const { result } = await renderHookWithProviders(
+      () => usePlaylistActions([SERMON_1], playlist, new Set(), new Map()),
+      {},
+    )
+
+    const actions = result.current.buildMenuActions(0)
+
+    expect(actions?.map(action => action.text)).not.toContain(REMOVE_FROM_PLAYLIST_TEXT)
+  })
+
+  test('removal item requests removal with the sermon instead of removing directly', async () => {
+    const onRemoveRequest = jest.fn()
+    const playlist = { ...PLAYLIST, id: CUSTOM_PLAYLIST_ID }
+
+    const { result } = await renderHookWithProviders(
+      () =>
+        usePlaylistActions([SERMON_1], playlist, new Set(), new Map(), undefined, onRemoveRequest),
+      {},
+    )
+
+    const removal = result.current
+      .buildMenuActions(0)
+      ?.find(action => action.text === REMOVE_FROM_PLAYLIST_TEXT)
+
+    expect(removal).toBeDefined()
+
+    removal?.onPress()
+
+    expect(onRemoveRequest).toHaveBeenCalledWith(expect.objectContaining({ id: 'sermon-1' }))
   })
 })
