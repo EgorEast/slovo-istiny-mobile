@@ -4,7 +4,7 @@ import { Pressable, View } from 'react-native'
 import Animated from 'react-native-reanimated'
 import { type TrackCacheVisualState } from 'entities/offline-cache'
 import { currentPlaylistAtom, type PlaybackRate, usePlaybackRate } from 'entities/player'
-import { isLocalPlaylistId, togglePlaylistSermon } from 'entities/playlist'
+import { togglePlaylistSermon, useIsLocalPlaylist } from 'entities/playlist'
 import { type AudioPlayerData } from 'entities/sermon'
 import { hapticLight } from 'shared/lib/haptics'
 import { reportError } from 'shared/model/error-dialog'
@@ -37,15 +37,15 @@ export const PlayerMenu = ({
   const ctx = useCtx()
   const { rate, setPlaybackRate } = usePlaybackRate()
   const [playlist] = useAtom(currentPlaylistAtom)
+  // Hooks stay unconditional; an absent playlist yields a non-local id.
+  const isLocalPlaylist = useIsLocalPlaylist(playlist?.id ?? '')
   const [view, setView] = useState<'main' | 'speed'>('main')
   const { backdropStyle, handleLayout, wrapperStyle } = useMenuRevealAnimation()
 
-  // The item is meaningful only when the current playlist is a local one that
-  // actually contains the playing sermon.
+  // The item is meaningful only when the current playlist is one of «Мои
+  // плейлисты» (`myPlaylistsAtom`) and actually contains the playing sermon.
   const canRemoveFromPlaylist =
-    playlist !== null &&
-    isLocalPlaylistId(playlist.id) &&
-    playlist.sermons.some(sermon => sermon.id === audio.id)
+    playlist !== null && isLocalPlaylist && playlist.sermons.some(sermon => sermon.id === audio.id)
 
   const handleDetailsPress = () => {
     onShowDetails()

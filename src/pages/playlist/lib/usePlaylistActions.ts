@@ -1,7 +1,7 @@
 import { useCallback } from 'react'
 import { buildHistoryMenuActions } from 'entities/listening-history'
 import { usePlayNewSermon } from 'entities/player'
-import { isLocalPlaylistId, type PlaylistData } from 'entities/playlist'
+import { type PlaylistData, useIsLocalPlaylist } from 'entities/playlist'
 import { type AudioPlayerData, type SermonData, toAudioPlayerData } from 'entities/sermon'
 import { type MenuItem } from 'shared/ui/menu'
 
@@ -35,6 +35,9 @@ export const usePlaylistActions = (
   onRemoveRequest?: (sermon: AudioPlayerData) => void,
 ) => {
   const playNewSermon = usePlayNewSermon()
+  // Removal targets playlists present in «Мои плейлисты» (`myPlaylistsAtom`):
+  // «Избранные», созданные вручную и импортированные — включая uuid-id.
+  const isLocalPlaylist = useIsLocalPlaylist(playlist.id)
 
   const handlePressItem = useCallback(
     async (index: number) => {
@@ -57,9 +60,7 @@ export const usePlaylistActions = (
         playlist,
         sermon: audio,
       })
-      // Removal targets local playlists only («Избранные» and `custom-…`);
-      // server playlists identify by UUID.
-      if (!onRemoveRequest || !isLocalPlaylistId(playlist.id)) return actions
+      if (!onRemoveRequest || !isLocalPlaylist) return actions
       return insertAfterAddToPlaylist(actions, {
         icon: 'playlist-remove',
         iconFamily: 'material-community',
@@ -67,7 +68,15 @@ export const usePlaylistActions = (
         text: REMOVE_FROM_PLAYLIST_TEXT,
       })
     },
-    [historySermonIds, list, onAddToPlaylist, onRemoveRequest, playlist, progressMap],
+    [
+      historySermonIds,
+      isLocalPlaylist,
+      list,
+      onAddToPlaylist,
+      onRemoveRequest,
+      playlist,
+      progressMap,
+    ],
   )
 
   const handlePressPlayAll = useCallback(

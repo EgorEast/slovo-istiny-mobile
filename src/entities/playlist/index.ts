@@ -10,10 +10,10 @@ export { mapPlaylistEntityToPlaylistData } from './lib/mappers/mapPlaylistEntity
 export { readStoredMyPlaylists } from './lib/readStoredMyPlaylists'
 export { readStoredSectionSettings } from './lib/readStoredSectionSettings'
 export { packSermonIds } from './lib/sermonIdPacking'
+export { useIsLocalPlaylist } from './lib/useIsLocalPlaylist'
 export { togglePlaylistSermon } from './localPlaylistMembership'
 export {
   FAVORITES_PLAYLIST,
-  isLocalPlaylistId,
   type LocalPlaylistData,
   MAX_CUSTOM_PLAYLIST_SERMONS,
   myPlaylistsArraySchema,

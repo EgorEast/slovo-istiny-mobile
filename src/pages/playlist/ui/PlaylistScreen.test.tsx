@@ -15,6 +15,7 @@ const mockParams: { custom?: string; playlist?: string } = { playlist: 'pl-1' }
 const mockSetOptions = jest.fn()
 const mockResolvePlaylistFromCache = jest.fn()
 const mockTogglePlaylistSermon = jest.fn()
+const mockUseIsLocalPlaylist = jest.fn()
 
 jest.mock('expo-router', () => ({
   useLocalSearchParams: () => mockParams,
@@ -55,6 +56,7 @@ jest.mock('entities/playlist', () => {
   return {
     ...actual,
     togglePlaylistSermon: (...args: unknown[]) => mockTogglePlaylistSermon(...args),
+    useIsLocalPlaylist: (id: string) => mockUseIsLocalPlaylist(id),
   }
 })
 
@@ -255,6 +257,10 @@ const renderHeaderMenu = async (ctx: ReturnType<typeof createCtx>) => {
 }
 
 /* ── Tests ─────────────────────────────────────────────────────────── */
+
+beforeEach(() => {
+  mockUseIsLocalPlaylist.mockReturnValue(false)
+})
 
 describe('<PlaylistScreen>', () => {
   beforeEach(() => {
@@ -517,6 +523,7 @@ describe('<PlaylistScreen> remove-from-playlist flow', () => {
 
   beforeEach(() => {
     jest.clearAllMocks()
+    mockUseIsLocalPlaylist.mockReturnValue(true)
     mockParams.playlist = CUSTOM_PLAYLIST_ID
     delete mockParams.custom
   })

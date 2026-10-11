@@ -40,10 +40,11 @@ jest.mock('entities/player', () => {
 })
 
 const mockTogglePlaylistSermon = jest.fn()
+const mockLocalPlaylistIds = new Set<string>()
 
 jest.mock('entities/playlist', () => ({
-  isLocalPlaylistId: jest.requireActual('entities/playlist').isLocalPlaylistId,
   togglePlaylistSermon: (...args: unknown[]) => mockTogglePlaylistSermon(...args),
+  useIsLocalPlaylist: (id: string) => mockLocalPlaylistIds.has(id),
 }))
 
 const SPEED_LABEL = 'Скорость воспроизведения'
@@ -51,6 +52,7 @@ const SOUND_SETTINGS_LABEL = 'Настройки звука'
 const ADD_TO_PLAYLIST_LABEL = 'Добавить в плейлист'
 const REMOVE_FROM_PLAYLIST_LABEL = 'Удалить из текущего плейлиста'
 const SERVER_PLAYLIST_ID = '123e4567-e89b-42d3-a456-426614174000'
+const LOCAL_UUID_ID = '3f2a1b4c-1111-4222-8333-444455556666'
 
 const LOCAL_PLAYLIST = {
   artwork: null,
@@ -60,9 +62,16 @@ const LOCAL_PLAYLIST = {
   title: 'Плейлист',
 }
 
-const renderMenuWithPlaylist = async (playlist: null | typeof LOCAL_PLAYLIST) => {
+const renderMenuWithPlaylist = async (
+  playlist: null | typeof LOCAL_PLAYLIST,
+  { local = true }: { local?: boolean } = {},
+) => {
   const ctx = createCtx()
-  if (playlist) currentPlaylistAtom(ctx, playlist)
+  mockLocalPlaylistIds.clear()
+  if (playlist) {
+    currentPlaylistAtom(ctx, playlist)
+    if (local) mockLocalPlaylistIds.add(playlist.id)
+  }
   const utils = await renderWithProviders(
     <PlayerMenu
       audio={MOCK_AUDIO}
@@ -91,6 +100,7 @@ const triggerOnLayout = async (container: TestInstance) => {
 describe('<PlayerMenu>', () => {
   beforeEach(() => {
     jest.clearAllMocks()
+    mockLocalPlaylistIds.clear()
     mockSetPlaybackRate.mockResolvedValue(undefined)
   })
 
@@ -140,11 +150,33 @@ describe('<PlayerMenu>', () => {
     expect(mockOnClose).toHaveBeenCalledTimes(1)
   })
 
-  test('hides the remove item for a server current playlist', async () => {
-    const { queryByText } = await renderMenuWithPlaylist({
+  test('shows the remove item for a manually created local playlist with a UUID id', async () => {
+    const { container, ctx, getByText } = await renderMenuWithPlaylist({
       ...LOCAL_PLAYLIST,
-      id: SERVER_PLAYLIST_ID,
+      id: LOCAL_UUID_ID,
     })
+
+    await triggerOnLayout(container)
+
+    fireEvent.press(getByText(REMOVE_FROM_PLAYLIST_LABEL))
+
+    expect(mockTogglePlaylistSermon).toHaveBeenCalledWith(ctx, LOCAL_UUID_ID, MOCK_AUDIO, false)
+  })
+
+  test('hides the remove item for a UUID playlist that is not local', async () => {
+    const { queryByText } = await renderMenuWithPlaylist(
+      { ...LOCAL_PLAYLIST, id: LOCAL_UUID_ID },
+      { local: false },
+    )
+
+    expect(queryByText(REMOVE_FROM_PLAYLIST_LABEL)).toBeNull()
+  })
+
+  test('hides the remove item for a server current playlist', async () => {
+    const { queryByText } = await renderMenuWithPlaylist(
+      { ...LOCAL_PLAYLIST, id: SERVER_PLAYLIST_ID },
+      { local: false },
+    )
 
     expect(queryByText(REMOVE_FROM_PLAYLIST_LABEL)).toBeNull()
   })
