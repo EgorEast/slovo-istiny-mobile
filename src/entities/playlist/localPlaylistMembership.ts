@@ -8,29 +8,41 @@ import { myPlaylistsAtom } from './model'
 /** Итог переключения принадлежности проповеди локальному плейлисту. */
 type TogglePlaylistSermonOutcome = 'added' | 'limit-reached' | 'noop' | 'removed'
 
-const withSermons = (playlist: LocalPlaylistData, sermons: SermonShape[]): LocalPlaylistData => ({
+// `sermonIds` is the authoritative membership list and is updated directly: an
+// imported playlist carries ids without snapshots, so re-deriving the ids from
+// `sermons` would silently drop every member that has no snapshot yet.
+const addSermonSnapshot = (playlist: LocalPlaylistData, sermon: SermonShape): LocalPlaylistData => {
+  const sermonIds = playlist.sermonIds.includes(sermon.id)
+    ? playlist.sermonIds
+    : [...playlist.sermonIds, sermon.id]
+
+  return {
+    ...playlist,
+    sermonIds,
+    sermons: [...playlist.sermons, toPersistedLocalSermon(sermon)],
+  }
+}
+
+const removeSermonSnapshot = (
+  playlist: LocalPlaylistData,
+  sermonId: string,
+): LocalPlaylistData => ({
   ...playlist,
-  sermonIds: sermons.map(item => item.id),
-  sermons,
+  sermonIds: playlist.sermonIds.filter(id => id !== sermonId),
+  sermons: playlist.sermons.filter(item => item.id !== sermonId),
 })
-
-const addSermonSnapshot = (playlist: LocalPlaylistData, sermon: SermonShape) =>
-  withSermons(playlist, [...playlist.sermons, toPersistedLocalSermon(sermon)])
-
-const removeSermonSnapshot = (playlist: LocalPlaylistData, sermonId: string) =>
-  withSermons(
-    playlist,
-    playlist.sermons.filter(item => item.id !== sermonId),
-  )
 
 /**
  * Переключение принадлежности проповеди локальному плейлисту.
  *
- * Обновляет `myPlaylistsAtom` (добавляет/удаляет снапшот проповеди в `sermons`
- * плейлиста, «Избранные» включены) и персистит результат тем же путём, что и
- * reorder. Снапшот проходит санитизацию (`toPersistedLocalSermon`), чтобы
- * гарантированно проходить `sermonDataSchema` при чтении и быть рендерящимся
- * и проигрываемым офлайн. `sermonIds` остаются производными от `sermons`.
+ * Обновляет `myPlaylistsAtom` (добавляет/удаляет id в `sermonIds` и снапшот
+ * проповеди в `sermons`, «Избранные» включены) и персистит результат тем же
+ * путём, что и reorder. Снапшот проходит санитизацию (`toPersistedLocalSermon`),
+ * чтобы гарантированно проходить `sermonDataSchema` при чтении и быть
+ * рендерящимся и проигрываемым офлайн. `sermonIds` обновляются напрямую (id
+ * дописывается при добавлении с дедупликацией и фильтруется при удалении), а не
+ * выводятся заново из `sermons`, поэтому id-only участники импортированного
+ * плейлиста (`{ sermonIds: ['a','b','c'], sermons: [] }`) не теряются.
  * Чтение атома → вычисление `nextPlaylists` → коммит идут без `await` между
  * ними, поэтому конкурентные переключения не теряют изменения друг друга
  * (lost update). Неизвестный id плейлиста — no-op. Удаление отсутствующей

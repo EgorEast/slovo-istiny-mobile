@@ -32,8 +32,11 @@ export const PlaylistScreen = () => {
 
   // A `custom` share link wins over any stale `playlist` param: the import
   // resolves the target id itself and replaces the route. The flag is bare
-  // (`?custom&…`), so only its absence means there is no custom link.
-  const playlistId = params.custom !== undefined ? '' : (params.playlist ?? '')
+  // (`?custom&…`), so only its absence means there is no custom link. While the
+  // import is in flight the route has no usable playlist id yet — render the
+  // loading state instead of a premature not-found flash.
+  const isImportingCustomPlaylist = params.custom !== undefined
+  const playlistId = isImportingCustomPlaylist ? '' : (params.playlist ?? '')
   const { isLoading, notFound, playlist: resolvedPlaylist } = usePlaylistById(playlistId)
   const playlist = resolvedPlaylist ?? EMPTY_PLAYLIST
 
@@ -85,13 +88,13 @@ export const PlaylistScreen = () => {
     [tracksListStyles],
   )
 
-  if (notFound || isLoading)
+  if (isImportingCustomPlaylist || isLoading || notFound)
     return (
       <PlaylistStatusView
         styles={styles}
-        notFound={notFound}
         theme={currentTheme}
         statusBarStyle={statusBarStyle}
+        notFound={!isImportingCustomPlaylist && notFound}
       />
     )
 

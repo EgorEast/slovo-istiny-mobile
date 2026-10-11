@@ -48,7 +48,7 @@ describe('togglePlaylistSermon', () => {
     expect(stored?.sermonIds).toEqual(['sermon-1'])
   })
 
-  test('keeps sermonIds derived from sermons on add and remove', async () => {
+  test('keeps sermonIds in sync on add and remove', async () => {
     const ctx = createCtx()
     myPlaylistsAtom(ctx, [FAVORITES_PLAYLIST, playlist('a', [sermon('sermon-1')])])
 
@@ -62,6 +62,44 @@ describe('togglePlaylistSermon', () => {
     const afterRemove = ctx.get(myPlaylistsAtom).find(p => p.id === 'a')
     expect(afterRemove?.sermons).toEqual([sermon('sermon-2')])
     expect(afterRemove?.sermonIds).toEqual(['sermon-2'])
+  })
+
+  test('preserves id-only members of an imported playlist on add and remove', async () => {
+    const ctx = createCtx()
+    const imported: LocalPlaylistData = {
+      id: 'imported',
+      sermonIds: ['a', 'b', 'c'],
+      sermons: [],
+      title: 'Импорт',
+    }
+    myPlaylistsAtom(ctx, [FAVORITES_PLAYLIST, imported])
+
+    await togglePlaylistSermon(ctx, 'imported', sermon('new'), true)
+    const afterAdd = ctx.get(myPlaylistsAtom).find(p => p.id === 'imported')
+    expect(afterAdd?.sermonIds).toEqual(['a', 'b', 'c', 'new'])
+    expect(afterAdd?.sermons).toEqual([sermon('new')])
+
+    await togglePlaylistSermon(ctx, 'imported', sermon('b'), false)
+    const afterRemove = ctx.get(myPlaylistsAtom).find(p => p.id === 'imported')
+    expect(afterRemove?.sermonIds).toEqual(['a', 'c', 'new'])
+    expect(afterRemove?.sermons).toEqual([sermon('new')])
+  })
+
+  test('round-trips id-only members through storage without losing them', async () => {
+    const ctx = createCtx()
+    const imported: LocalPlaylistData = {
+      id: 'imported',
+      sermonIds: ['a', 'b', 'c'],
+      sermons: [],
+      title: 'Импорт',
+    }
+    myPlaylistsAtom(ctx, [FAVORITES_PLAYLIST, imported])
+
+    await togglePlaylistSermon(ctx, 'imported', sermon('new'), true)
+
+    const stored = await AsyncStorage.getItem(MY_PLAYLISTS_KEY)
+    const parsed = myPlaylistsArraySchema.parse(JSON.parse(stored ?? '[]'))
+    expect(parsed.find(p => p.id === 'imported')?.sermonIds).toEqual(['a', 'b', 'c', 'new'])
   })
 
   test('can add sermons to favorites', async () => {
