@@ -34,7 +34,7 @@ isInternetReachable ?? isConnected
 **Интеграция с Axios** — `src/shared/api/axiosInstance.ts`:
 
 - response-interceptor: успех → `reportServerReachable(ctx)`; сетевая ошибка (нет `error.response`) → `reportServerUnreachable(ctx)`.
-- Дополнительно: request-interceptor добавляет `Bearer`-токен, 401 → `performTokenRefresh` → повтор запроса; при провале refresh токены очищаются.
+- Дополнительно: request-interceptor добавляет `Bearer`-токен, 401 → `performTokenRefresh` → повтор запроса; токены очищаются только при ответе `/auth/refresh` с 401/403, а сетевая ошибка refresh токены сохраняет для следующей попытки.
 
 ## Ожидание сети
 

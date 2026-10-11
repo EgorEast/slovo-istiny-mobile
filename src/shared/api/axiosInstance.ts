@@ -1,4 +1,4 @@
-import axios, { type AxiosRequestConfig } from 'axios'
+import axios, { type AxiosRequestConfig, isAxiosError } from 'axios'
 import { DEFAULT_API_URL } from '../config/api-url'
 import { ctx } from '../lib/reatom-ctx/ctx'
 import { reportServerReachable, reportServerUnreachable } from '../model/network'
@@ -34,6 +34,15 @@ const performTokenRefresh = async () => {
   await tokenStorage.setTokens(data.accessToken, data.refreshToken)
 
   return data.accessToken
+}
+
+// Refresh-токен мёртв только когда сервер его явно отверг: сетевой сбой во время
+// refresh — случай временный, токены остаются, чтобы следующая попытка восстановила
+// сессию; иначе администратор вылогинивается молча.
+const isAuthRejection = (error: unknown): boolean => {
+  const status = isAxiosError(error) ? error.response?.status : undefined
+
+  return status === 401 || status === 403
 }
 
 // Request interceptor для добавления токенов
@@ -78,8 +87,9 @@ axiosInstance.interceptors.response.use(
         originalRequest.headers.Authorization = `Bearer ${newToken}`
         return axiosInstance(originalRequest)
       } catch (refreshError) {
-        // Если не удалось обновить токен - очищаем хранилище
-        await secureTokenStorage.clearTokens()
+        // Хранилище чистим только при явном отказе в авторизации: сетевой сбой
+        // во время refresh токены не трогает (см. isAuthRejection).
+        if (isAuthRejection(refreshError)) await secureTokenStorage.clearTokens()
 
         // TODO: Здесь можно вызвать действие для перехода на публичный экран логина
         // (интерфейс администратора имеет собственный вход /admin/login).
