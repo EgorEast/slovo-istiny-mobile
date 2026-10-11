@@ -150,6 +150,7 @@
 ## Локальные плейлисты
 
 - [ ] **Экран редактирования плейлиста показывает только сохранённые снапшоты проповедей.** Плейлист, импортированный из ссылки «только по id» (`createLocalPlaylist` без `sermons`), на `/listen/playlist-edit` рендерит пустой список, хотя на экране плейлиста проповеди резолвятся из каталога (`usePlaylistById`). Reorder-экшен (`reorderLocalPlaylistSermons`) id-only плейлисты поддерживает (переставляет `sermonIds`), но UI их не показывает. — `src/pages/playlist-edit/` — вернуться, если понадобится перестановка импортированных плейлистов: вынести резолв `buildLocalPlaylist`/`buildSermonIndex` в `entities/playlist` (через `@x`) и переиспользовать на экране редактирования.
+- [ ] **`normalizeLocalPlaylist` выводит `sermonIds` из `sermons`, когда снапшоты есть, и теряет id-only участников после перезагрузки.** `togglePlaylistSermon` теперь хранит полный `sermonIds` (id-only участники сохраняются в памяти), но запись вида `{ sermonIds: ['a','b','c','d'], sermons: [d] }` при чтении нормализуется в `{ sermonIds: ['d'], sermons: [d] }` — `a,b,c` теряются. `sermonIds` — авторитетный список, `sermons` — офлайн-снапшот-подмножество. — `src/entities/playlist/localPlaylists.ts` (`normalizeLocalPlaylist`), `src/entities/playlist/loadMyPlaylists.test.ts` — вернуться, когда id-only плейлисты реально начнут наполняться: сохранять stored `sermonIds`, выводя из `sermons` только при их отсутствии (тест «drops legacy ids silently…» тогда меняет ожидание).
 
 ## FSD: домен в entities (граница `shared`)
 

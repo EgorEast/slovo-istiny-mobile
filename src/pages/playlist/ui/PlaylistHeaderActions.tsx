@@ -1,6 +1,7 @@
 import { useRouter } from 'expo-router'
 import { type RefObject } from 'react'
 import { type ColorValue, StyleSheet, View } from 'react-native'
+import { useNavigationGuard } from 'shared/routing'
 import { PlaylistEditButton } from './PlaylistEditButton'
 import { PlaylistHeaderMenuButton } from './PlaylistHeaderMenuButton'
 
@@ -32,9 +33,12 @@ export const PlaylistHeaderActions = ({
   playlistId: string
 }) => {
   const router = useRouter()
+  const runGuarded = useNavigationGuard()
 
   const handleEdit = () =>
-    router.push({ params: { playlist: playlistId }, pathname: '/listen/playlist-edit' })
+    runGuarded(() => {
+      router.push({ params: { playlist: playlistId }, pathname: '/listen/playlist-edit' })
+    })
 
   return (
     <View style={styles.actions}>

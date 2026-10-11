@@ -1,8 +1,10 @@
-import { useAction } from '@reatom/npm-react'
+import { useAction, useAtom } from '@reatom/npm-react'
 import { useRouter } from 'expo-router'
 import { useCallback, useState } from 'react'
 import {
+  loadMyPlaylists,
   type LocalPlaylistData,
+  myPlaylistsLoadedAtom,
   renameLocalPlaylist,
   reorderLocalPlaylistSermons,
 } from 'entities/playlist'
@@ -14,10 +16,11 @@ import { type SermonShape } from 'shared/model'
  *
  * Держит локальные копии названия и порядка проповедей, инициализированные из
  * плейлиста. «Сохранить» доступно, только когда название непустое и изменено
- * название **или** порядок. Сохранение вызывает переименование и/или reorder
- * (только изменившиеся части), затем `router.back()`. Экран монтируется лишь
- * когда плейлист найден, поэтому локальные копии не рассинхронизируются с
- * асинхронной гидратацией атома.
+ * название **или** порядок. Сохранение при необходимости гидратирует
+ * `myPlaylistsAtom` (`loadMyPlaylists`), затем вызывает переименование и/или
+ * reorder (только изменившиеся части), после чего `router.back()`. Экран
+ * монтируется лишь когда плейлист найден, поэтому локальные копии не
+ * рассинхронизируются с асинхронной гидратацией атома.
  * @param playlist - Редактируемый локальный плейлист.
  * @returns Значение/сеттер названия, порядок и его сеттер, доступность и обработчик сохранения.
  */
@@ -25,6 +28,8 @@ export const usePlaylistEditForm = (playlist: LocalPlaylistData) => {
   const router = useRouter()
   const rename = useAction(renameLocalPlaylist)
   const reorder = useAction(reorderLocalPlaylistSermons)
+  const loadPlaylists = useAction(loadMyPlaylists)
+  const [isLoaded] = useAtom(myPlaylistsLoadedAtom)
   const [title, setTitle] = useState(playlist.title)
   const [orderedSermons, setOrderedSermons] = useState<SermonShape[]>(playlist.sermons)
 
@@ -35,6 +40,7 @@ export const usePlaylistEditForm = (playlist: LocalPlaylistData) => {
 
   const save = useCallback(async () => {
     if (!canSave) return
+    if (!isLoaded) await loadPlaylists()
 
     if (isTitleChanged) await rename(playlist.id, trimmedTitle)
     if (isOrderChanged)
@@ -45,8 +51,10 @@ export const usePlaylistEditForm = (playlist: LocalPlaylistData) => {
     router.back()
   }, [
     canSave,
+    isLoaded,
     isOrderChanged,
     isTitleChanged,
+    loadPlaylists,
     orderedSermons,
     playlist.id,
     rename,

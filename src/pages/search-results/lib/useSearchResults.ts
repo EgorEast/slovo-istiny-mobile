@@ -1,5 +1,5 @@
 import { useAtom } from '@reatom/npm-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   collectMatchingPreachers,
   fetchPlaylistTitleMatches,
@@ -26,7 +26,7 @@ const FULL_PLAYLISTS_LIMIT = 100
 export const useSearchResults = (type: SearchResultsType, query: string) => {
   const [myPlaylists] = useAtom(myPlaylistsAtom)
   const [sermons, setSermons] = useState<SermonData[]>([])
-  const [playlists, setPlaylists] = useState<PlaylistData[]>([])
+  const [serverPlaylists, setServerPlaylists] = useState<PlaylistData[]>([])
   const [preachers, setPreachers] = useState<string[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
@@ -43,9 +43,7 @@ export const useSearchResults = (type: SearchResultsType, query: string) => {
         const result = await fetchPlaylistTitleMatches(query, FULL_PLAYLISTS_LIMIT)
         if (cancelled) return
         persistPlaylistSearchResults(query, result)
-        setPlaylists(
-          mergePlaylistMatches(selectLocalPlaylistMatches(myPlaylists, query), result.data),
-        )
+        setServerPlaylists(result.data)
         return
       }
 
@@ -63,7 +61,18 @@ export const useSearchResults = (type: SearchResultsType, query: string) => {
     return () => {
       cancelled = true
     }
-  }, [query, type, myPlaylists])
+  }, [query, type])
+
+  // Local matches merge at render, not inside the fetch effect: `myPlaylistsAtom`
+  // yields a fresh array on every hydration/toggle, and depending on it in the
+  // effect would re-run (and duplicate) the network fetch each time.
+  const playlists = useMemo(
+    () =>
+      type === 'playlists'
+        ? mergePlaylistMatches(selectLocalPlaylistMatches(myPlaylists, query), serverPlaylists)
+        : [],
+    [myPlaylists, query, serverPlaylists, type],
+  )
 
   return { isLoading, playlists, preachers, sermons }
 }

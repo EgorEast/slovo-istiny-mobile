@@ -38,9 +38,14 @@
 - Состояние формы — `usePlaylistEditForm` (`src/pages/playlist-edit/lib/`): локальные копии
   названия и порядка, инициализированные из плейлиста. Сохранение вызывает только изменившиеся
   части: переименование `renameLocalPlaylist` и/или перестановку `reorderLocalPlaylistSermons`
-  (`entities/playlist`), затем `router.back()`. Экшен reorder переставляет и снапшоты `sermons`,
-  и производные `sermonIds`, пишет `myPlaylists` через `persistMyPlaylists` и пинит «Избранные»
+  (`entities/playlist`), затем `router.back()`. Перед сохранением форма при необходимости
+  гидратирует `myPlaylistsAtom` (`loadMyPlaylists`, гейт по `myPlaylistsLoadedAtom`), чтобы
+  read-modify-write не шёл по негидратированному атому. Экшен reorder переставляет и снапшоты
+  `sermons`, и `sermonIds`, пишет `myPlaylists` через `persistMyPlaylists` и пинит «Избранные»
   первыми (`withFavoritesFirst`); «Избранные»/неизвестный id — no-op.
+- Строки drag-списка рендерит стабильный `usePlaylistEditItemRenderer`
+  (`src/pages/playlist-edit/ui/usePlaylistEditItemRenderer.tsx`, `useCallback`), поэтому список
+  не перерисовывается на каждый символ в поле названия.
 - Удаление — `useLocalPlaylistDelete` + `LocalPlaylistDeleteDialog`
   (`features/local-playlist-form`); после удаления — `router.back()`.
 

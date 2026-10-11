@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons'
 import { useRouter } from 'expo-router'
 import { useCallback } from 'react'
 import { Text, View } from 'react-native'
-import DraggableFlatList, { type RenderItemParams } from 'react-native-draggable-flatlist'
+import DraggableFlatList from 'react-native-draggable-flatlist'
 import { LocalPlaylistDeleteDialog, useLocalPlaylistDelete } from 'features/local-playlist-form'
 import { type LocalPlaylistData } from 'entities/playlist'
 import { type SermonShape } from 'shared/model'
@@ -11,8 +11,8 @@ import { FormField, FormSubmitContext } from 'shared/ui/form'
 import { PressableButton } from 'shared/ui/pressable-button'
 import { COLORS, useTheme } from 'shared/ui/theme'
 import { usePlaylistEditForm } from '../lib/usePlaylistEditForm'
-import { PlaylistEditSermonRow } from './PlaylistEditSermonRow'
 import { styles } from './styles'
+import { usePlaylistEditItemRenderer } from './usePlaylistEditItemRenderer'
 
 const NAME_LABEL = 'Название'
 const SAVE_LABEL = 'Сохранить'
@@ -36,8 +36,10 @@ export const PlaylistEditForm = ({ playlist }: { playlist: LocalPlaylistData }) 
   const { cancelDelete, confirmDelete, isDeleteOpen, requestDelete } =
     useLocalPlaylistDelete(handleDeleted)
 
-  const renderItem = ({ drag, isActive, item }: RenderItemParams<SermonShape>) => (
-    <PlaylistEditSermonRow item={item} drag={drag} isActive={isActive} />
+  const renderItem = usePlaylistEditItemRenderer()
+  const handleDragEnd = useCallback(
+    ({ data }: { data: SermonShape[] }) => setOrderedSermons(data),
+    [setOrderedSermons],
   )
 
   return (
@@ -45,10 +47,10 @@ export const PlaylistEditForm = ({ playlist }: { playlist: LocalPlaylistData }) 
       <DraggableFlatList
         data={orderedSermons}
         renderItem={renderItem}
+        onDragEnd={handleDragEnd}
         containerStyle={styles.list}
         keyExtractor={sermon => sermon.id}
         contentContainerStyle={styles.listContent}
-        onDragEnd={({ data }) => setOrderedSermons(data)}
         ListEmptyComponent={<EmptyState message={EMPTY_MESSAGE} />}
         ListHeaderComponent={
           <View>

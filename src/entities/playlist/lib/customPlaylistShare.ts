@@ -26,20 +26,26 @@ const firstValue = (value: string | string[] | undefined): string | undefined =>
 // `sermons` is either a packed base64url string (canonical UUIDs) or a
 // comma-separated list (legacy links and non-UUID ids). Packed wins when it
 // decodes to whole UUIDs; anything else is read as csv, so both forms round-trip.
+// A crafted payload may repeat an id (`?sermons=a,a,b`); duplicates are dropped
+// so the parsed list matches the stored membership (ids are unique).
+const dedupe = (ids: string[]): string[] => [...new Set(ids)]
+
 const parseSermonIds = (sermons: string | string[] | undefined): string[] => {
   if (sermons === undefined) return []
 
   const first = firstValue(sermons)
   if (first !== undefined) {
     const packed = unpackSermonIds(first)
-    if (packed !== null) return packed
+    if (packed !== null) return dedupe(packed)
   }
 
   const parts = Array.isArray(sermons) ? sermons : [sermons]
-  return parts
-    .flatMap(part => part.split(','))
-    .map(id => id.trim())
-    .filter(id => id.length > 0)
+  return dedupe(
+    parts
+      .flatMap(part => part.split(','))
+      .map(id => id.trim())
+      .filter(id => id.length > 0),
+  )
 }
 
 /**

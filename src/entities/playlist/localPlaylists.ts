@@ -37,7 +37,8 @@ export const myPlaylistsArraySchema = z.array(localPlaylistDraftSchema)
  *
  * Хранит снапшоты проповедей (`sermons`), а не только id: снапшот делает
  * плейлист рендерящимся и проигрываемым офлайн, без обращения к каталогу.
- * `sermonIds` — производное от `sermons` (durable для совместимости чтения).
+ * `sermonIds` — авторитетный список id-участников (ведётся напрямую; у
+ * импортированного из ссылки плейлиста может содержать id без снапшота).
  */
 export interface LocalPlaylistData {
   id: string

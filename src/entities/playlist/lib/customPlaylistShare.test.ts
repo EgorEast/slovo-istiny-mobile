@@ -60,6 +60,22 @@ describe('customPlaylistShare', () => {
     })
   })
 
+  test('drops duplicate ids from a crafted csv payload', () => {
+    expect(parseCustomPlaylistParams({ sermons: 'a,a,b', title: 'Проповеди' })).toEqual({
+      sermonIds: ['a', 'b'],
+      title: 'Проповеди',
+    })
+  })
+
+  test('drops duplicate ids from a crafted packed payload', () => {
+    expect(
+      parseCustomPlaylistParams({
+        sermons: packSermonIds([UUID_A, UUID_A]) ?? undefined,
+        title: 'Список',
+      }),
+    ).toEqual({ sermonIds: [UUID_A], title: 'Список' })
+  })
+
   test('returns null for a missing or blank title', () => {
     expect(parseCustomPlaylistParams({ sermons: 'a', title: undefined })).toBeNull()
     expect(parseCustomPlaylistParams({ sermons: 'a', title: '   ' })).toBeNull()
