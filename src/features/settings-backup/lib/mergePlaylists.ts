@@ -12,18 +12,20 @@ const mergeSermons = (local: SermonSnapshots, imported: SermonSnapshots): Sermon
   return [...byId.values()]
 }
 
-// Держит инвариант `sermonIds = sermons.map(id)`, который ожидают читатели.
-const toCanonical = (playlist: LocalPlaylistData): LocalPlaylistData => {
-  const sermons = playlist.sermons
-  return { ...playlist, sermonIds: sermons.map(sermon => sermon.id), sermons }
-}
+// `sermonIds` — авторитетный список участников: слияние объединяет списки
+// (дедупликация), а не выводит их из `sermons` (снапшот-подмножество), иначе
+// id-only участники терялись бы при импорте резервной копии.
+const unionSermonIds = (local: string[], imported: string[]): string[] => [
+  ...new Set([...local, ...imported]),
+]
 
 /**
  * Объединяет импортированные локальные плейлисты с текущими.
  *
  * Плейлисты объединяются по id (импортированный выигрывает по названию),
- * проповеди внутри — по id (импортированная выигрывает), после чего список
- * приводится к инварианту «Избранные первыми» и «Избранные существуют».
+ * id-участники (`sermonIds`) объединяются с дедупликацией, проповеди внутри —
+ * по id (импортированная выигрывает), после чего список приводится к инварианту
+ * «Избранные первыми» и «Избранные существуют».
  * @param local - Текущие локальные плейлисты.
  * @param imported - Плейлисты из файла резервной копии.
  */
@@ -42,17 +44,15 @@ export const mergePlaylists = (
       continue
     }
 
-    byId.set(
-      playlist.id,
-      toCanonical({
-        ...existing,
-        sermons: mergeSermons(existing.sermons, playlist.sermons),
-        title: playlist.title,
-      }),
-    )
+    byId.set(playlist.id, {
+      ...existing,
+      sermonIds: unionSermonIds(existing.sermonIds, playlist.sermonIds),
+      sermons: mergeSermons(existing.sermons, playlist.sermons),
+      title: playlist.title,
+    })
   }
 
   if (!byId.has(FAVORITES_PLAYLIST.id)) byId.set(FAVORITES_PLAYLIST.id, FAVORITES_PLAYLIST)
 
-  return withFavoritesFirst([...byId.values()].map(toCanonical))
+  return withFavoritesFirst([...byId.values()])
 }

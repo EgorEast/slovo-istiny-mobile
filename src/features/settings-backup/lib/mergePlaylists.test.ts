@@ -41,4 +41,18 @@ describe('mergePlaylists', () => {
 
     expect(result[0].sermons.map(item => item.id)).toEqual(['s-1', 's-2'])
   })
+
+  test('unions sermonIds so id-only members survive the merge', () => {
+    const local: LocalPlaylistData[] = [
+      { id: 'pl-1', sermonIds: ['s-1', 's-2'], sermons: [], title: 'Local' },
+    ]
+    const imported: LocalPlaylistData[] = [
+      { id: 'pl-1', sermonIds: ['s-2', 's-3'], sermons: [sermon('s-3')], title: 'Imported' },
+    ]
+
+    const merged = mergePlaylists(local, imported).find(item => item.id === 'pl-1')
+
+    expect(merged?.sermonIds).toEqual(['s-1', 's-2', 's-3'])
+    expect(merged?.sermons.map(item => item.id)).toEqual(['s-3'])
+  })
 })

@@ -28,10 +28,9 @@ const permuteById = <T extends { id: string }>(items: T[], orderedIds: string[])
  * Переупорядочивает проповеди локального (пользовательского) плейлиста.
  *
  * Обновляет `myPlaylistsAtom` (read-modify-write по id) и персистит результат
- * тем же путём, что `reorderMyPlaylists`. Перестановка применяется сразу к
- * снапшотам `sermons` и к производным `sermonIds`, чтобы порядок на экране
- * плейлиста совпал с порядком на экране редактирования. Для плейлиста «только
- * по id» (импорт из ссылки, снапшотов нет) переставляются только `sermonIds`.
+ * тем же путём, что `reorderMyPlaylists`. Перестановка применяется к
+ * авторитетному списку `sermonIds`; снапшоты `sermons` выстраиваются в том же
+ * порядке. Id-only участники (импорт из ссылки, снапшотов нет) сохраняются.
  * «Избранные» и неизвестный id — no-op. Чтение атома → вычисление
  * `nextPlaylists` → коммит идут без `await` между ними, поэтому конкурентные
  * операции не теряют изменения друг друга. Отказ записи логируется, но атом
@@ -46,18 +45,19 @@ export const reorderLocalPlaylistSermons = action(
     const target = playlists.find(playlist => playlist.id === playlistId)
     if (!target || target.id === FAVORITES_PLAYLIST.id) return playlists
 
-    const nextTarget: LocalPlaylistData = (() => {
-      if (target.sermons.length === 0) {
-        const orderedIds = permuteById(
-          target.sermonIds.map(id => ({ id })),
-          sermonIds,
-        ).map(item => item.id)
-        return { ...target, sermonIds: orderedIds }
-      }
-
-      const sermons = permuteById(target.sermons, sermonIds)
-      return { ...target, sermonIds: sermons.map(sermon => sermon.id), sermons }
-    })()
+    const orderedSermonIds = permuteById(
+      target.sermonIds.map(id => ({ id })),
+      sermonIds,
+    ).map(item => item.id)
+    const sermonsById = new Map(target.sermons.map(sermon => [sermon.id, sermon]))
+    const nextTarget: LocalPlaylistData = {
+      ...target,
+      sermonIds: orderedSermonIds,
+      sermons: orderedSermonIds.flatMap(id => {
+        const sermon = sermonsById.get(id)
+        return sermon ? [sermon] : []
+      }),
+    }
 
     const nextPlaylists = withFavoritesFirst(
       playlists.map(playlist => (playlist.id === playlistId ? nextTarget : playlist)),

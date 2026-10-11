@@ -103,4 +103,18 @@ describe('reorderLocalPlaylistSermons', () => {
 
     expect(ctx.get(myPlaylistsAtom).find(item => item.id === 'a')?.sermonIds).toEqual(['s2', 's1'])
   })
+
+  test('keeps id-only members when reordering a playlist with snapshots', async () => {
+    const ctx = createCtx()
+    myPlaylistsAtom(ctx, [
+      FAVORITES_PLAYLIST,
+      { id: 'a', sermonIds: ['s1', 's2', 's3'], sermons: [sermon('s1')], title: 'a' },
+    ])
+
+    await reorderLocalPlaylistSermons(ctx, 'a', ['s3', 's1'])
+
+    const target = ctx.get(myPlaylistsAtom).find(item => item.id === 'a')
+    expect(target?.sermonIds).toEqual(['s3', 's1', 's2'])
+    expect(target?.sermons.map(item => item.id)).toEqual(['s1'])
+  })
 })

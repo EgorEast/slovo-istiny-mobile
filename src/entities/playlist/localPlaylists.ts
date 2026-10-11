@@ -47,25 +47,36 @@ export interface LocalPlaylistData {
   title: string
 }
 
+// Недоверенный список участников может нести дубликаты и пустые строки.
+const toUniqueSermonIds = (ids: string[]): string[] => [...new Set(ids.filter(id => id.length > 0))]
+
 /**
  * Приводит прочитанные (недоверенные) данные плейлиста к каноническому виду.
  *
- * Снапшоты выигрывают у `sermonIds`: если `sermons` есть, ids выводятся из них,
- * а unmatched ids молча отбрасываются. Если снапшотов нет (legacy-запись или
- * плейлист, созданный из ссылки «только по id»), `sermonIds` сохраняются как
- * есть — иначе на перезагрузке терялась бы связь с проповедями, которые UI
- * резолвит из каталога по этим id.
+ * `sermonIds` — авторитетный список участников: он берётся как есть
+ * (дедуплицированный, без пустых строк), а `sermons` — снапшот-подмножество,
+ * из которого отбрасываются снапшоты для id, которых больше нет среди
+ * участников. Так id-only участники импортированного из ссылки плейлиста
+ * переживают перезагрузку. Список участников выводится из снапшотов только у
+ * legacy-записи без `sermonIds` (самые ранние хранили одни `sermons`).
  * @param playlist - Сырые данные из схемы (untrusted).
- * @returns Плейлист с гарантированными `sermons` и производными `sermonIds`.
+ * @returns Плейлист с авторитетными `sermonIds` и согласованными `sermons`.
  */
 export const normalizeLocalPlaylist = (
   playlist: z.infer<typeof localPlaylistDraftSchema>,
 ): LocalPlaylistData => {
   const sermons = playlist.sermons ?? []
+  const storedSermonIds = toUniqueSermonIds(playlist.sermonIds ?? [])
+  const sermonIds =
+    storedSermonIds.length > 0
+      ? storedSermonIds
+      : toUniqueSermonIds(sermons.map(sermon => sermon.id))
+  const memberIds = new Set(sermonIds)
+
   return {
     id: playlist.id,
-    sermonIds: sermons.length > 0 ? sermons.map(sermon => sermon.id) : (playlist.sermonIds ?? []),
-    sermons,
+    sermonIds,
+    sermons: sermons.filter(sermon => memberIds.has(sermon.id)),
     title: playlist.title,
   }
 }
