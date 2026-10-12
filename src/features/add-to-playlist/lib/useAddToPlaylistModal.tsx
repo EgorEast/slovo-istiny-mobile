@@ -15,7 +15,10 @@ export const useAddToPlaylistModal = () => {
   const [sermon, setSermon] = useState<null | SermonData>(null)
 
   const openAddToPlaylist = useCallback((next: SermonData) => {
-    setSermon(next)
+    // На Android контекст-меню — тоже нативная Modal, и она закрывает свой Modal
+    // в этом же кадре; если смонтировать нашу модалку сразу, нативные Modal
+    // накладываются друг на друга (меню мигает поверх). Открываем следующим кадром.
+    requestAnimationFrame(() => setSermon(next))
   }, [])
 
   const closeAddToPlaylist = useCallback(() => setSermon(null), [])
