@@ -59,10 +59,15 @@ const removeSermonSnapshot = (
  * что и у `reorderMyPlaylists`.
  * Удаление проповеди, которая сейчас играет из этого же плейлиста
  * (`currentAudioAtom`/`currentPlaylistAtom`), закрывает плеер (`resetPlaybackAction`)
- * — единственная точка сброса для всех поверхностей удаления.
+ * — единственная точка сброса для всех поверхностей удаления. Вызывающий может
+ * подавить этот сброс через `options.suppressPlayerReset` — тогда он сам
+ * оркестрирует закрытие плеера (например, предлагает продолжить в другом
+ * плейлисте): принадлежность меняется, а `resetPlaybackAction` не вызывается.
  * @param playlistId - Идентификатор плейлиста, которому меняем принадлежность.
  * @param sermon - Полная проповедь (для добавления сохраняется её снапшот).
  * @param contained - `true` — добавить, `false` — удалить.
+ * @param options - `suppressPlayerReset: true` — не закрывать плеер изнутри
+ * (сброс на совести вызывающего).
  * @returns Исход операции: `added`/`removed` при изменении, `noop` — нечего
  * менять, `limit-reached` — добавление отклонено из-за лимита.
  */
@@ -72,6 +77,7 @@ export const togglePlaylistSermon = action(
     playlistId: string,
     sermon: SermonShape,
     contained: boolean,
+    options?: { suppressPlayerReset?: boolean },
   ): Promise<TogglePlaylistSermonOutcome> => {
     const playlists = ctx.get(myPlaylistsAtom)
     const target = playlists.find(playlist => playlist.id === playlistId)
@@ -106,7 +112,7 @@ export const togglePlaylistSermon = action(
     // «Добавить в плейлист»).
     const isRemovingCurrentSermon =
       ctx.get(currentAudioAtom)?.id === sermon.id && ctx.get(currentPlaylistAtom)?.id === playlistId
-    if (isRemovingCurrentSermon) void resetPlaybackAction(ctx)
+    if (isRemovingCurrentSermon && !options?.suppressPlayerReset) void resetPlaybackAction(ctx)
 
     return 'removed'
   },

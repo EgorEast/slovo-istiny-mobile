@@ -2,8 +2,9 @@ import { Entypo } from '@expo/vector-icons'
 import { useCtx } from '@reatom/npm-react'
 import { useState } from 'react'
 import { View } from 'react-native'
+import { useContinuePlayback } from 'features/continue-playback'
 import { type TrackCacheVisualState } from 'entities/offline-cache'
-import { currentPlaylistAtom } from 'entities/player'
+import { currentPlaylistAtom, resetPlaybackAction } from 'entities/player'
 import { myPlaylistsAtom, togglePlaylistSermon } from 'entities/playlist'
 import { type AudioPlayerData } from 'entities/sermon'
 import { ConfirmDialog } from 'shared/ui/confirm-dialog'
@@ -51,6 +52,7 @@ export const PlayerMenuAnchor = ({
   visualState: TrackCacheVisualState
 }) => {
   const ctx = useCtx()
+  const { dialog, offer } = useContinuePlayback()
   const [membership, setMembership] = useState<MenuMembership>(EMPTY_MEMBERSHIP)
   const [isRemoveDialogOpen, setRemoveDialogOpen] = useState(false)
 
@@ -71,8 +73,11 @@ export const PlayerMenuAnchor = ({
   // размонтируется, а подтверждение должно пережить этот шаг.
   const confirmRemove = () => {
     setRemoveDialogOpen(false)
-    if (membership.playlistId === null) return
-    void togglePlaylistSermon(ctx, membership.playlistId, audio, false)
+    const { canRemove, playlistId } = membership
+    setMembership(EMPTY_MEMBERSHIP)
+    if (!canRemove || playlistId === null) return
+    void togglePlaylistSermon(ctx, playlistId, audio, false, { suppressPlayerReset: true })
+    offer(audio, playlistId, () => void resetPlaybackAction(ctx))
   }
 
   return (
@@ -107,6 +112,7 @@ export const PlayerMenuAnchor = ({
         confirmText={REMOVE_CONFIRM_TEXT}
         onCancel={() => setRemoveDialogOpen(false)}
       />
+      {dialog}
     </View>
   )
 }

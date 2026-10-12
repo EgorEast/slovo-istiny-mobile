@@ -107,6 +107,7 @@
 
 - [ ] **Гонка гидрации: тап до loadHistoryAction пропускает resume один раз** — `app/_layout.tsx`, `entities/player/lib/usePlaySermon.ts` — приемлемо (тест зафиксирован).
 - [ ] **Дублирование sermon в entry истории сокращено, остаточное для легаси-записей** — `src/entities/listening-history/lib/buildHistoryEntry.ts`, `getEntrySermon.ts` — новые записи slim (top-level `sermon` убран, живёт только в `playlist.sermons[0]`); дублирование возможно только при чтении легаси-записей со старым top-level `sermon`. Вернуться при чистке хранилища/миграции формата.
+- [ ] **При выборе плейлиста для продолжения удаляемой активной проповеди snapshot плейлиста в истории не переписывается.** `useContinuePlayback.pick` вызывает `flushHistoryProgressAction`, но `upsertHistoryProgress` в update-path сохраняет существующую запись (`{...entry, durationMs, positionMs}`) и не трогает `entry.playlist`; при **играющей** (context-only switch) проповеди `playNewSermonAsync` тоже не зовёт `recordPlaybackStart` (сознательно, чтобы не сбросить позицию) — в итоге запись истории остаётся со старым плейлистом. — `src/features/continue-playback/lib/useContinuePlayback.tsx`, `src/entities/listening-history/lib/upsertHistoryProgress.ts` — заменить/дополнить на `recordPlaybackStartAction` (он переписывает `playlist`) либо научить update-path обновлять `playlist`, когда он передан.
 
 ## Updates (самообновление)
 

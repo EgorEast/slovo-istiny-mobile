@@ -283,6 +283,21 @@ describe('togglePlaylistSermon', () => {
     expect(mockResetPlaybackAction).toHaveBeenCalledTimes(1)
   })
 
+  test('suppresses the player reset when the caller orchestrates it', async () => {
+    const ctx = createCtx()
+    myPlaylistsAtom(ctx, [FAVORITES_PLAYLIST, playlist('a', [sermon('sermon-1')])])
+    currentPlaylistAtom(ctx, playerPlaylist('a', 'sermon-1'))
+    currentAudioAtom(ctx, toAudioPlayerData(sermon('sermon-1')))
+
+    const outcome = await togglePlaylistSermon(ctx, 'a', sermon('sermon-1'), false, {
+      suppressPlayerReset: true,
+    })
+
+    expect(outcome).toBe('removed')
+    expect(mockResetPlaybackAction).not.toHaveBeenCalled()
+    expect(ctx.get(myPlaylistsAtom).find(p => p.id === 'a')?.sermonIds).toEqual([])
+  })
+
   test('keeps the player when a different sermon leaves the playlist', async () => {
     const ctx = createCtx()
     myPlaylistsAtom(ctx, [FAVORITES_PLAYLIST, playlist('a', [sermon('sermon-1')])])

@@ -9,13 +9,24 @@ import { type createStyles } from '../ExpandablePlayer/styles'
 import { PlayerMenuAnchor } from './PlayerMenuAnchor'
 
 const mockTogglePlaylistSermon = jest.fn()
+const mockPlayNewSermon = jest.fn()
+const mockResetPlaybackAction = jest.fn()
+const mockFlushHistoryProgress = jest.fn()
 
 jest.mock('entities/player', () => {
   const { atom } = jest.requireActual('@reatom/framework')
   return {
     currentPlaylistAtom: atom(null, 'testCurrentPlaylistAtom'),
+    durationAtom: atom(0, 'testDurationAtom'),
+    positionAtom: atom(0, 'testPositionAtom'),
+    resetPlaybackAction: (...args: unknown[]) => mockResetPlaybackAction(...args),
+    usePlayNewSermon: () => mockPlayNewSermon,
   }
 })
+
+jest.mock('entities/listening-history', () => ({
+  flushHistoryProgressAction: (...args: unknown[]) => mockFlushHistoryProgress(...args),
+}))
 
 jest.mock('entities/playlist', () => {
   const { atom } = jest.requireActual('@reatom/framework')
@@ -54,9 +65,13 @@ const MENU_BUTTON_LABEL = 'Меню плеера'
 const REMOVE_MENU_TEXT = 'Удалить из текущего плейлиста'
 const REMOVE_DIALOG_TITLE = 'Удалить из плейлиста?'
 const REMOVE_DIALOG_MESSAGE = 'Плеер будет закрыт.'
+const CHOOSER_TITLE = 'Где продолжить прослушивание?'
+const SKIP_TEXT = 'Закрыть плеер'
 const CONFIRM_TEXT = 'Удалить'
 const CANCEL_TEXT = 'Отмена'
 const PLAYLIST_ID = 'custom-abcdef0123456789'
+const CANDIDATE_ID = 'candidate-playlist'
+const CANDIDATE_TITLE = 'Другой плейлист'
 
 const MOCK_AUDIO: AudioPlayerData = {
   artist: 'Author',
@@ -97,10 +112,26 @@ const Harness = () => {
   )
 }
 
-const renderAnchor = async ({ isLocal = true }: { isLocal?: boolean } = {}) => {
+const renderAnchor = async ({
+  isLocal = true,
+  withCandidate = false,
+}: { isLocal?: boolean; withCandidate?: boolean } = {}) => {
   const ctx = createCtx()
   currentPlaylistAtom(ctx, PLAYLIST)
-  myPlaylistsAtom(ctx, isLocal ? [{ id: PLAYLIST_ID, sermonIds: [], sermons: [], title: 'П' }] : [])
+  const localPlaylists = isLocal
+    ? [{ id: PLAYLIST_ID, sermonIds: [], sermons: [], title: 'П' }]
+    : []
+  const candidates = withCandidate
+    ? [
+        {
+          id: CANDIDATE_ID,
+          sermonIds: [MOCK_AUDIO.id],
+          sermons: [MOCK_AUDIO],
+          title: CANDIDATE_TITLE,
+        },
+      ]
+    : []
+  myPlaylistsAtom(ctx, [...localPlaylists, ...candidates])
   const utils = await renderWithProviders(<Harness />, { ctx })
   await act(async () => {
     fireEvent.press(utils.getByLabelText(MENU_BUTTON_LABEL))
@@ -143,7 +174,67 @@ describe('<PlayerMenuAnchor>', () => {
       fireEvent.press(getByText(CONFIRM_TEXT))
     })
 
-    expect(mockTogglePlaylistSermon).toHaveBeenCalledWith(ctx, PLAYLIST_ID, MOCK_AUDIO, false)
+    expect(mockTogglePlaylistSermon).toHaveBeenCalledWith(ctx, PLAYLIST_ID, MOCK_AUDIO, false, {
+      suppressPlayerReset: true,
+    })
+    // No other playlist holds the sermon — the player closes with no chooser.
+    expect(mockResetPlaybackAction).toHaveBeenCalledWith(ctx)
+  })
+
+  test('offers the candidate playlists when the sermon lives elsewhere', async () => {
+    const { getByText } = await renderAnchor({ withCandidate: true })
+
+    await act(async () => {
+      fireEvent.press(getByText(REMOVE_MENU_TEXT))
+    })
+    await waitFor(() => expect(getByText(CONFIRM_TEXT)).toBeTruthy())
+    await act(async () => {
+      fireEvent.press(getByText(CONFIRM_TEXT))
+    })
+
+    expect(getByText(CHOOSER_TITLE)).toBeTruthy()
+    expect(getByText(CANDIDATE_TITLE)).toBeTruthy()
+    expect(mockResetPlaybackAction).not.toHaveBeenCalled()
+  })
+
+  test('picking a playlist continues playback there without closing the player', async () => {
+    const { getByText, queryByText } = await renderAnchor({ withCandidate: true })
+
+    await act(async () => {
+      fireEvent.press(getByText(REMOVE_MENU_TEXT))
+    })
+    await waitFor(() => expect(getByText(CONFIRM_TEXT)).toBeTruthy())
+    await act(async () => {
+      fireEvent.press(getByText(CONFIRM_TEXT))
+    })
+    await act(async () => {
+      fireEvent.press(getByText(CANDIDATE_TITLE))
+    })
+
+    expect(mockPlayNewSermon).toHaveBeenCalledWith({
+      playlist: expect.objectContaining({ id: CANDIDATE_ID }),
+      sermon: MOCK_AUDIO,
+    })
+    expect(mockResetPlaybackAction).not.toHaveBeenCalled()
+    await waitFor(() => expect(queryByText(CHOOSER_TITLE)).toBeNull())
+  })
+
+  test('closing the chooser falls back to closing the player', async () => {
+    const { ctx, getByText, queryByText } = await renderAnchor({ withCandidate: true })
+
+    await act(async () => {
+      fireEvent.press(getByText(REMOVE_MENU_TEXT))
+    })
+    await waitFor(() => expect(getByText(CONFIRM_TEXT)).toBeTruthy())
+    await act(async () => {
+      fireEvent.press(getByText(CONFIRM_TEXT))
+    })
+    await act(async () => {
+      fireEvent.press(getByText(SKIP_TEXT))
+    })
+
+    expect(mockResetPlaybackAction).toHaveBeenCalledWith(ctx)
+    await waitFor(() => expect(queryByText(CHOOSER_TITLE)).toBeNull())
   })
 
   test('cancel does not remove the sermon', async () => {

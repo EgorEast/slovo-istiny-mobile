@@ -48,7 +48,9 @@ jest.mock('entities/player', () => {
   return {
     currentAudioAtom: atom(null, 'testCurrentAudioAtom'),
     currentPlaylistAtom: atom(null, 'testCurrentPlaylistAtom'),
+    durationAtom: atom(0, 'testDurationAtom'),
     isPlayingAtom: atom(false, 'testIsPlayingAtom'),
+    positionAtom: atom(0, 'testPositionAtom'),
     // usePlaylistClearMenu wraps this via useAction; the real close-player path
     // is covered by the entity tests, so a no-op is enough here.
     resetPlaybackAction: jest.fn(),
@@ -61,6 +63,7 @@ jest.mock('entities/listening-history', () => {
   return {
     ...actual,
     buildHistoryMenuActions: jest.fn(() => []),
+    flushHistoryProgressAction: jest.fn(),
     useHistoryProgressMap: jest.fn(() => new Map()),
     useHistorySermonIds: jest.fn(() => new Set()),
   }
@@ -543,8 +546,13 @@ describe('<PlaylistScreen> remove-from-playlist flow', () => {
   const REMOVE_MENU_TEXT = 'Удалить из плейлиста'
   const REMOVE_DIALOG_TITLE = 'Удалить из плейлиста?'
   const REMOVE_WARNING_MESSAGE = 'Проповедь будет удалена из этого плейлиста. Плеер будет закрыт.'
+  const CHOOSER_TITLE = 'Где продолжить прослушивание?'
+  const SKIP_TEXT = 'Закрыть плеер'
+  const CANDIDATE_ID = 'other-pl'
+  const CANDIDATE_TITLE = 'Другой плейлист'
   const CONFIRM_TEXT = 'Удалить'
   const CANCEL_TEXT = 'Отмена'
+  const SUPPRESS_OPTION = { suppressPlayerReset: true }
 
   beforeEach(() => {
     jest.clearAllMocks()
@@ -553,46 +561,68 @@ describe('<PlaylistScreen> remove-from-playlist flow', () => {
     delete mockParams.custom
   })
 
-  const renderLocalPlaylist = async () => {
+  const renderLocalPlaylist = async ({ withCandidate = false } = {}) => {
     const ctx = createCtx()
     dynamicSectionsAtom(ctx, [
       makeSection({ playlists: [{ ...PLAYLIST, id: CUSTOM_PLAYLIST_ID }] }),
     ])
+    myPlaylistsAtom(ctx, [
+      { id: FAVORITES_PLAYLIST.id, sermonIds: [], sermons: [], title: FAVORITES_PLAYLIST.title },
+      ...(withCandidate
+        ? [
+            {
+              id: CANDIDATE_ID,
+              sermonIds: [SERMON_1.id],
+              sermons: [SERMON_1],
+              title: CANDIDATE_TITLE,
+            },
+          ]
+        : []),
+    ])
     const utils = await renderScreen(ctx)
     return { ...utils, ctx }
+  }
+
+  const getPlayerMock = () =>
+    jest.requireMock('entities/player') as {
+      currentAudioAtom: (ctx: unknown, value: AudioPlayerData | null) => unknown
+      currentPlaylistAtom: (ctx: unknown, value: null | PlaylistData) => unknown
+      resetPlaybackAction: jest.Mock
+      usePlayNewSermon: jest.Mock
+    }
+
+  const confirmRemoval = async (
+    getByText: (text: string) => Parameters<typeof fireEvent.press>[0],
+  ) => {
+    await waitFor(() => expect(getByText(REMOVE_DIALOG_TITLE)).toBeTruthy())
+    await act(async () => {
+      fireEvent.press(getByText(CONFIRM_TEXT))
+    })
   }
 
   test('removes the sermon after confirmation via togglePlaylistSermon', async () => {
     const { ctx, getAllByText, getByText, queryByText } = await renderLocalPlaylist()
 
     fireEvent.press(getAllByText(REMOVE_MENU_TEXT)[0])
-
-    await waitFor(() => expect(getByText(REMOVE_DIALOG_TITLE)).toBeTruthy())
-
-    await act(async () => {
-      fireEvent.press(getByText(CONFIRM_TEXT))
-    })
+    await confirmRemoval(getByText)
 
     expect(mockTogglePlaylistSermon).toHaveBeenCalledWith(
       ctx,
       CUSTOM_PLAYLIST_ID,
       expect.objectContaining({ id: SERMON_1.id }),
       false,
+      SUPPRESS_OPTION,
     )
     await waitFor(() => expect(queryByText(REMOVE_DIALOG_TITLE)).toBeNull())
   })
 
-  test('warns when removing the currently playing sermon', async () => {
+  test('closes the player when the playing sermon has nowhere else to continue', async () => {
     const { ctx, getAllByText, getByText, queryByText } = await renderLocalPlaylist()
-    const { currentAudioAtom, currentPlaylistAtom } = jest.requireMock('entities/player') as {
-      currentAudioAtom: (ctx: unknown, value: AudioPlayerData | null) => unknown
-      currentPlaylistAtom: (ctx: unknown, value: null | PlaylistData) => unknown
-    }
+    const { currentAudioAtom, currentPlaylistAtom, resetPlaybackAction } = getPlayerMock()
     currentPlaylistAtom(ctx, { ...PLAYLIST, id: CUSTOM_PLAYLIST_ID })
     currentAudioAtom(ctx, toAudioPlayerData(SERMON_1))
 
     fireEvent.press(getAllByText(REMOVE_MENU_TEXT)[0])
-
     await waitFor(() => expect(getByText(REMOVE_DIALOG_TITLE)).toBeTruthy())
     expect(getByText(REMOVE_WARNING_MESSAGE)).toBeTruthy()
 
@@ -605,21 +635,64 @@ describe('<PlaylistScreen> remove-from-playlist flow', () => {
       CUSTOM_PLAYLIST_ID,
       expect.objectContaining({ id: SERMON_1.id }),
       false,
+      SUPPRESS_OPTION,
     )
+    // No candidates → the chooser is skipped and the player resets.
+    expect(resetPlaybackAction).toHaveBeenCalledWith(ctx)
     await waitFor(() => expect(queryByText(REMOVE_DIALOG_TITLE)).toBeNull())
   })
 
-  test('does not close the player when another playlist is current', async () => {
-    const { ctx, getAllByText, getByText, queryByText } = await renderLocalPlaylist()
-    const { currentAudioAtom, currentPlaylistAtom } = jest.requireMock('entities/player') as {
-      currentAudioAtom: (ctx: unknown, value: AudioPlayerData | null) => unknown
-      currentPlaylistAtom: (ctx: unknown, value: null | PlaylistData) => unknown
-    }
+  test('offers to continue in another playlist and keeps the player open on pick', async () => {
+    const { ctx, getAllByText, getByText } = await renderLocalPlaylist({ withCandidate: true })
+    const { currentAudioAtom, currentPlaylistAtom, resetPlaybackAction, usePlayNewSermon } =
+      getPlayerMock()
+    const playNewSermon = jest.fn()
+    usePlayNewSermon.mockReturnValue(playNewSermon)
+    currentPlaylistAtom(ctx, { ...PLAYLIST, id: CUSTOM_PLAYLIST_ID })
+    currentAudioAtom(ctx, toAudioPlayerData(SERMON_1))
+
+    fireEvent.press(getAllByText(REMOVE_MENU_TEXT)[0])
+    await confirmRemoval(getByText)
+
+    expect(getByText(CHOOSER_TITLE)).toBeTruthy()
+    expect(resetPlaybackAction).not.toHaveBeenCalled()
+
+    await act(async () => {
+      fireEvent.press(getByText(CANDIDATE_TITLE))
+    })
+
+    expect(playNewSermon).toHaveBeenCalledWith({
+      playlist: expect.objectContaining({ id: CANDIDATE_ID }),
+      sermon: expect.objectContaining({ id: SERMON_1.id }),
+    })
+    expect(resetPlaybackAction).not.toHaveBeenCalled()
+  })
+
+  test('closing the chooser falls back to closing the player', async () => {
+    const { ctx, getAllByText, getByText } = await renderLocalPlaylist({ withCandidate: true })
+    const { currentAudioAtom, currentPlaylistAtom, resetPlaybackAction } = getPlayerMock()
+    currentPlaylistAtom(ctx, { ...PLAYLIST, id: CUSTOM_PLAYLIST_ID })
+    currentAudioAtom(ctx, toAudioPlayerData(SERMON_1))
+
+    fireEvent.press(getAllByText(REMOVE_MENU_TEXT)[0])
+    await confirmRemoval(getByText)
+
+    await act(async () => {
+      fireEvent.press(getByText(SKIP_TEXT))
+    })
+
+    expect(resetPlaybackAction).toHaveBeenCalledWith(ctx)
+  })
+
+  test('does not offer to continue when another playlist is current', async () => {
+    const { ctx, getAllByText, getByText, queryByText } = await renderLocalPlaylist({
+      withCandidate: true,
+    })
+    const { currentAudioAtom, currentPlaylistAtom, resetPlaybackAction } = getPlayerMock()
     currentPlaylistAtom(ctx, { ...PLAYLIST, id: 'another-playlist' })
     currentAudioAtom(ctx, toAudioPlayerData(SERMON_1))
 
     fireEvent.press(getAllByText(REMOVE_MENU_TEXT)[0])
-
     await waitFor(() => expect(getByText(REMOVE_DIALOG_TITLE)).toBeTruthy())
     expect(queryByText(REMOVE_WARNING_MESSAGE)).toBeNull()
 
@@ -628,6 +701,8 @@ describe('<PlaylistScreen> remove-from-playlist flow', () => {
     })
 
     expect(mockTogglePlaylistSermon).toHaveBeenCalledTimes(1)
+    expect(queryByText(CHOOSER_TITLE)).toBeNull()
+    expect(resetPlaybackAction).not.toHaveBeenCalled()
   })
 
   test('does not remove the sermon when the confirmation is cancelled', async () => {
