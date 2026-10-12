@@ -8,7 +8,7 @@ import { type AutoTourDecision, resolveAutoTour } from './resolveAutoTour'
 
 const AUTO_TOUR_DELAY_MS = 2500
 
-export const useAutoTours = () => {
+export const useAutoTours = ({ delayMs = AUTO_TOUR_DELAY_MS }: { delayMs?: number } = {}) => {
   const [toursDisabled] = useAtom(toursDisabledAtom)
   const [activeTour] = useAtom(onboardingTourAtom)
   const setSeenVersion = useAction(setToursSeenVersion)
@@ -31,8 +31,8 @@ export const useAutoTours = () => {
         await setSeenVersion(APP_VERSION)
         if (activeTour === null) startTour(decision)
       })()
-    }, AUTO_TOUR_DELAY_MS)
+    }, delayMs)
 
     return () => clearTimeout(timer)
-  }, [activeTour, setSeenVersion, startTour, toursDisabled])
+  }, [activeTour, delayMs, setSeenVersion, startTour, toursDisabled])
 }

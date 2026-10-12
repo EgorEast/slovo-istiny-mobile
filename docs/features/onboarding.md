@@ -149,6 +149,7 @@
 - `lib/tooltipPosition.test.ts` — позиция карточки (над/под целью, центрирование без цели, кламп по низу окна, смещение центрирования и нижнего клампа на `bottomInset`).
 - `lib/useOnboardingScenarios.test.ts` — `read`/`study` появляются только при включённых флагах, авто-сценарии (`welcome`/`whatsNew`) в пикер не попадают, остальные всегда.
 - `lib/resolveAutoTour.test.ts` — нет версии → `welcome`, версия изменилась → `whatsNew`, версия совпала → `null`.
+- `lib/useAutoTours.test.ts` — гейтинг автозапуска: при выключенных обзорах ничего не пишется; нет версии → `welcome` (версия пишется до старта тура); версия совпала → ничего; версия изменилась → `whatsNew`; уже активный тур → старт пропущен, но версия записана.
 - `lib/scenarios.test.ts` — данные сценариев: у `welcome` 8 шагов и последний на `settings.tours`, у `whatsNew` задан `sinceVersion`.
 - `lib/useOnboardingTargetRef.test.tsx` — ref-цель измеряется только при совпадении с активным шагом.
 - `ui/HelpHeaderButton.test.tsx` — «?» открывает оффер, «Посмотреть» показывает пикер, «Закрыть» закрывает; при `toursDisabledAtom = true` кнопка не рендерится.
