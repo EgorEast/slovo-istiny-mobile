@@ -64,7 +64,12 @@ describe('togglePlaylistSermon', () => {
     await togglePlaylistSermon(ctx, 'a', draft, true)
 
     const stored = ctx.get(myPlaylistsAtom).find(p => p.id === 'a')
-    expect(stored?.sermons).toEqual([sermon('sermon-1')])
+    expect(stored?.sermons).toEqual([
+      {
+        ...sermon('sermon-1'),
+        playlists: [{ artwork: null, id: 'favorites', sermons: [], title: 'Избранные' }],
+      },
+    ])
     expect(stored?.sermonIds).toEqual(['sermon-1'])
   })
 

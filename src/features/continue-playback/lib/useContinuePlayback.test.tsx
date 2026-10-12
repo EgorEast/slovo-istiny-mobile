@@ -2,12 +2,16 @@ import { createCtx } from '@reatom/framework'
 import { act, fireEvent, waitFor } from '@testing-library/react-native'
 import { durationAtom, positionAtom } from 'entities/player'
 import { myPlaylistsAtom, type PlaylistData } from 'entities/playlist'
+import { dynamicSectionsAtom, type SectionData } from 'entities/section'
 import { type AudioPlayerData } from 'entities/sermon'
 import { renderWithProviders } from 'shared/mocks/renderWithProviders'
 import { useContinuePlayback } from './useContinuePlayback'
 
 const mockPlayNewSermon = jest.fn()
 const mockFlush = jest.fn()
+const mockGetCachedSections = jest.fn()
+const mockFindOne = jest.fn()
+const mockMapPlaylistEntity = jest.fn()
 
 jest.mock('entities/player', () => {
   const { atom } = jest.requireActual('@reatom/framework')
@@ -20,8 +24,27 @@ jest.mock('entities/player', () => {
 
 jest.mock('entities/playlist', () => {
   const { atom } = jest.requireActual('@reatom/framework')
-  return { myPlaylistsAtom: atom([], 'testMyPlaylistsAtom') }
+  return {
+    mapPlaylistEntityToPlaylistData: (...args: unknown[]) => mockMapPlaylistEntity(...args),
+    myPlaylistsAtom: atom([], 'testMyPlaylistsAtom'),
+  }
 })
+
+jest.mock('entities/section', () => {
+  const { atom } = jest.requireActual('@reatom/framework')
+  return {
+    dynamicSectionsAtom: atom([], 'testDynamicSectionsAtom'),
+    getCachedSections: (...args: unknown[]) => mockGetCachedSections(...args),
+  }
+})
+
+jest.mock('shared/api', () => ({
+  playlistsApi: {
+    getPlaylists: () => ({
+      playlistControllerFindOne: (...args: unknown[]) => mockFindOne(...args),
+    }),
+  },
+}))
 
 jest.mock('entities/listening-history', () => ({
   flushHistoryProgressAction: (...args: unknown[]) => mockFlush(...args),
@@ -30,6 +53,7 @@ jest.mock('entities/listening-history', () => ({
 const SERMON_ID = 'sermon-1'
 const FROM_PLAYLIST_ID = 'source'
 const SKIP_TEXT = 'Закрыть плеер'
+const UUID = '123e4567-e89b-42d3-a456-426614174000'
 
 const SERMON: AudioPlayerData = {
   artist: 'Автор',
@@ -38,6 +62,13 @@ const SERMON: AudioPlayerData = {
   id: SERMON_ID,
   title: 'Слово',
 }
+
+const lightPlaylist = (id: string, title: string): PlaylistData => ({
+  artwork: null,
+  id,
+  sermons: [],
+  title,
+})
 
 const serverPlaylist = (id: string, title: string): PlaylistData => ({
   artwork: null,
@@ -51,6 +82,14 @@ const localPlaylist = (id: string, title: string, sermonIds: string[]) => ({
   sermonIds,
   sermons: [SERMON],
   title,
+})
+
+const section = (playlists: PlaylistData[]): SectionData => ({
+  id: 'section-1',
+  itemsSize: 'small',
+  playlists,
+  title: 'Раздел',
+  transform: 'short',
 })
 
 const renderProbe = async () => {
@@ -68,6 +107,8 @@ const renderProbe = async () => {
 describe('useContinuePlayback', () => {
   beforeEach(() => {
     jest.clearAllMocks()
+    // Real `getCachedSections` always returns a promise; keep the mock shape.
+    mockGetCachedSections.mockResolvedValue(undefined)
   })
 
   test('offers server and local candidates, excluding the source and duplicates', async () => {
@@ -153,5 +194,82 @@ describe('useContinuePlayback', () => {
 
     expect(onSkip).toHaveBeenCalledTimes(1)
     expect(mockPlayNewSermon).not.toHaveBeenCalled()
+  })
+
+  test('pick resolves a light candidate to the full playlist from loaded sections', async () => {
+    const { ctx, getByText, result } = await renderProbe()
+    dynamicSectionsAtom(ctx, [section([serverPlaylist('srv-a', 'Сервер A')])])
+    const lightSermon: AudioPlayerData = {
+      ...SERMON,
+      playlists: [lightPlaylist('srv-a', 'Сервер A')],
+    }
+
+    await act(async () => {
+      result.current?.offer(lightSermon, FROM_PLAYLIST_ID, jest.fn())
+    })
+    await act(async () => {
+      fireEvent.press(getByText('Сервер A'))
+    })
+
+    await waitFor(() =>
+      expect(mockPlayNewSermon).toHaveBeenCalledWith({
+        playlist: expect.objectContaining({ id: 'srv-a', sermons: [SERMON] }),
+        sermon: lightSermon,
+      }),
+    )
+    // The resolved full playlist is flushed into history, not the light ref.
+    await waitFor(() =>
+      expect(mockFlush).toHaveBeenCalledWith(
+        ctx,
+        expect.objectContaining({ playlist: expect.objectContaining({ id: 'srv-a' }) }),
+      ),
+    )
+    expect(mockGetCachedSections).not.toHaveBeenCalled()
+  })
+
+  test('pick resolves a light candidate via the API for a UUID', async () => {
+    const { getByText, result } = await renderProbe()
+    const full = serverPlaylist(UUID, 'API плейлист')
+    mockFindOne.mockResolvedValue({ id: UUID })
+    mockMapPlaylistEntity.mockReturnValue(full)
+    const lightSermon: AudioPlayerData = {
+      ...SERMON,
+      playlists: [lightPlaylist(UUID, 'API плейлист')],
+    }
+
+    await act(async () => {
+      result.current?.offer(lightSermon, FROM_PLAYLIST_ID, jest.fn())
+    })
+    await act(async () => {
+      fireEvent.press(getByText('API плейлист'))
+    })
+
+    await waitFor(() => expect(mockFindOne).toHaveBeenCalledWith(UUID))
+    await waitFor(() =>
+      expect(mockPlayNewSermon).toHaveBeenCalledWith({ playlist: full, sermon: lightSermon }),
+    )
+  })
+
+  test('pick falls back to the light ref when a non-UUID candidate is absent from sections', async () => {
+    const { getByText, result } = await renderProbe()
+    const lightSermon: AudioPlayerData = {
+      ...SERMON,
+      playlists: [lightPlaylist('local-custom', 'Неизвестный')],
+    }
+
+    await act(async () => {
+      result.current?.offer(lightSermon, FROM_PLAYLIST_ID, jest.fn())
+    })
+    await act(async () => {
+      fireEvent.press(getByText('Неизвестный'))
+    })
+
+    await waitFor(() =>
+      expect(mockPlayNewSermon).toHaveBeenCalledWith({
+        playlist: expect.objectContaining({ id: 'local-custom', sermons: [] }),
+        sermon: lightSermon,
+      }),
+    )
+    expect(mockFindOne).not.toHaveBeenCalled()
   })
 })

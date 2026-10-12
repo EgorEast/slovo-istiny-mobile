@@ -38,7 +38,8 @@
 2. **Идемпотентность:** если `contained` уже совпадает с фактическим состоянием —
    no-op (без записи и без коммита).
 3. Строит новый список: `contained` — дописывает санитизированный снапшот
-   (`toPersistedLocalSermon`: без `playlists`, `artwork ?? null`) в конец `sermons`,
+   (`toPersistedLocalSermon`: `artwork ?? null`, `playlists` — лёгкие рефы
+   `{ artwork, id, title, sermons: [] }`) в конец `sermons`,
    иначе — фильтрует по `sermon.id`. `sermonIds` пересчитываются как производное
    от `sermons`. «Избранные» обрабатываются тем же кодом, что и любой
    другой плейлист.

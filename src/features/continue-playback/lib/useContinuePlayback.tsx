@@ -5,6 +5,7 @@ import { durationAtom, positionAtom, usePlayNewSermon } from 'entities/player'
 import { type LocalPlaylistData, myPlaylistsAtom, type PlaylistData } from 'entities/playlist'
 import { type AudioPlayerData } from 'entities/sermon'
 import { ContinuePlaybackDialog } from '../ui/ContinuePlaybackDialog'
+import { resolveFullPlaylist } from './resolveFullPlaylist'
 
 interface ContinueRequest {
   candidates: PlaylistData[]
@@ -92,10 +93,13 @@ export const useContinuePlayback = () => {
       setRequest(null)
       onSkipRef.current = null
       void (async () => {
-        await playNewSermon({ playlist, sermon })
+        // Лёгкий реф разворачивается до полного плейлиста, чтобы очередь и
+        // автопереход работали (см. `resolveFullPlaylist`).
+        const fullPlaylist = await resolveFullPlaylist(ctx, playlist)
+        await playNewSermon({ playlist: fullPlaylist, sermon })
         await flushHistoryProgressAction(ctx, {
           durationMs: ctx.get(durationAtom),
-          playlist,
+          playlist: fullPlaylist,
           positionMs: ctx.get(positionAtom),
           sermon,
         })
