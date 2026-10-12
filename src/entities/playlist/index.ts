@@ -1,3 +1,4 @@
+export { clearLocalPlaylistSermons } from './clearLocalPlaylistSermons'
 export { createLocalPlaylist } from './createLocalPlaylist'
 export { deleteLocalPlaylist } from './deleteLocalPlaylist'
 export {

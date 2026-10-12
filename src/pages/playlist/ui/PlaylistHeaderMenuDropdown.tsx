@@ -2,6 +2,7 @@ import { StyleSheet, View } from 'react-native'
 import { AnchoredDropdown } from 'shared/ui/menu'
 import { INDENTS, RADIUSES, useTheme } from 'shared/ui/theme'
 import { PlaylistAddAllMenuItem } from './PlaylistAddAllMenuItem'
+import { PlaylistClearMenuItem } from './PlaylistClearMenuItem'
 import { PlaylistDeleteMenuItem } from './PlaylistDeleteMenuItem'
 import { type PlaylistHeaderMenuDropdownProps } from './PlaylistHeaderMenuDropdown.types'
 import { PlaylistHistoryMenuItem } from './PlaylistHistoryMenuItem'
@@ -13,6 +14,7 @@ export const PlaylistHeaderMenuDropdown = ({
   allCached,
   anchor,
   anchorRef,
+  canClear,
   canDelete,
   canMarkAll,
   canPublish,
@@ -24,6 +26,7 @@ export const PlaylistHeaderMenuDropdown = ({
   isShareDisabled,
   onAddAllToOffline,
   onAddAllToPlaylist,
+  onClear,
   onClearCache,
   onClose,
   onDelete,
@@ -81,12 +84,11 @@ export const PlaylistHeaderMenuDropdown = ({
         />
       )}
 
-      {canDelete && (
-        <>
-          <View style={[styles.dropdownDivider, { backgroundColor: currentTheme.textMuted }]} />
-          <PlaylistDeleteMenuItem onPress={onDelete} />
-        </>
+      {(canClear || canDelete) && (
+        <View style={[styles.dropdownDivider, { backgroundColor: currentTheme.textMuted }]} />
       )}
+      {canClear && <PlaylistClearMenuItem onPress={onClear} />}
+      {canDelete && <PlaylistDeleteMenuItem onPress={onDelete} />}
     </AnchoredDropdown>
   )
 }

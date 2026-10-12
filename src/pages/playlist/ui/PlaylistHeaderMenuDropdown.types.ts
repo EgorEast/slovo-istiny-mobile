@@ -6,6 +6,7 @@ export interface PlaylistHeaderMenuDropdownProps {
   allCached: boolean
   anchor: AnchorRect | null
   anchorRef?: RefObject<null | View>
+  canClear: boolean
   canDelete: boolean
   canMarkAll: boolean
   canPublish: boolean
@@ -22,6 +23,7 @@ export interface PlaylistHeaderMenuDropdownProps {
    * stays page-only.
    */
   onAddAllToPlaylist?: () => void
+  onClear: () => void
   onClearCache: () => void
   onClose: () => void
   onDelete: () => void

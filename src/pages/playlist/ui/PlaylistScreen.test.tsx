@@ -47,7 +47,9 @@ jest.mock('entities/player', () => {
   const { atom } = jest.requireActual('@reatom/framework')
   return {
     currentAudioAtom: atom(null, 'testCurrentAudioAtom'),
+    currentPlaylistAtom: atom(null, 'testCurrentPlaylistAtom'),
     isPlayingAtom: atom(false, 'testIsPlayingAtom'),
+    resetPlaybackAction: jest.fn(),
     usePlayNewSermon: jest.fn(() => jest.fn()),
   }
 })
