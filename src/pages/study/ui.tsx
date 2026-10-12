@@ -32,7 +32,7 @@ export const StudyScreen = () => {
         <HelpHeaderButton />
       </View>
       <View style={{ backgroundColor: currentTheme.background, flex: 1, paddingBottom: 100 }}>
-        <OnboardingTarget id='study.tabs'>
+        <OnboardingTarget id='study.tabs' style={{ flex: 1 }}>
           <TabView
             onIndexChange={setIndex}
             renderScene={renderScene}

@@ -1,7 +1,7 @@
 import { type ViewStyle } from 'react-native'
 import { type GestureType } from 'react-native-gesture-handler'
 import { type AnimatedStyle } from 'react-native-reanimated'
-import { OnboardingTarget } from 'features/onboarding'
+import { useOnboardingTargetRef } from 'features/onboarding'
 import { type PlaylistData } from 'entities/playlist'
 import { type AudioPlayerData } from 'entities/sermon'
 import { type ThemeColors } from 'shared/ui/theme'
@@ -45,13 +45,16 @@ export const CollapsedMiniPlayer = ({
   onPress: () => void
   playing: boolean
   playlist: null | PlaylistData
-}) => (
-  <OnboardingTarget id='player.mini'>
+}) => {
+  const miniTargetRef = useOnboardingTargetRef('player.mini')
+
+  return (
     <MiniPlayer
       audio={audio}
       playing={playing}
       miniPan={miniPan}
       onPress={onPress}
+      ref={miniTargetRef}
       playlist={playlist}
       miniStyle={miniStyle}
       miniStyles={miniStyles}
@@ -59,5 +62,5 @@ export const CollapsedMiniPlayer = ({
       showSpinner={isBuffering}
       currentTheme={currentTheme}
     />
-  </OnboardingTarget>
-)
+  )
+}

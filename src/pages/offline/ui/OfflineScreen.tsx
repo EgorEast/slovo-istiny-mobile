@@ -71,7 +71,7 @@ export const OfflineScreen = () => {
 
   return (
     <View style={tracksListStyles.container}>
-      <OnboardingTarget id='offline.rows'>
+      <OnboardingTarget id='offline.rows' style={{ flex: 1 }}>
         <FlatList
           data={items}
           keyExtractor={item => item.sermon.id}

@@ -57,7 +57,7 @@ export const HistoryScreen = () => {
 
   return (
     <View style={tracksListStyles.container}>
-      <OnboardingTarget id='history.rows'>
+      <OnboardingTarget id='history.rows' style={{ flex: 1 }}>
         <FlatList
           data={entries}
           ItemSeparatorComponent={HistorySeparator}
