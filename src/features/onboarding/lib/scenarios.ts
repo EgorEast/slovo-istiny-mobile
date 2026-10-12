@@ -7,6 +7,8 @@ import { playlistsScenario } from './scenarioData/playlists'
 import { readScenario } from './scenarioData/read'
 import { settingsScenario } from './scenarioData/settings'
 import { studyScenario } from './scenarioData/study'
+import { welcomeScenario } from './scenarioData/welcome'
+import { whatsNewScenario } from './scenarioData/whatsNew'
 
 export interface OnboardingScenario {
   description: string
@@ -14,12 +16,21 @@ export interface OnboardingScenario {
   homeRoute: Href
   icon: keyof typeof Ionicons.glyphMap
   id: OnboardingScenarioId
+  sinceVersion?: string
   steps: OnboardingStep[]
   title: string
 }
 
 export type OnboardingScenarioId =
-  'history' | 'listen' | 'offline' | 'playlists' | 'read' | 'settings' | 'study'
+  | 'history'
+  | 'listen'
+  | 'offline'
+  | 'playlists'
+  | 'read'
+  | 'settings'
+  | 'study'
+  | 'welcome'
+  | 'whatsNew'
 
 export interface OnboardingStep {
   route?: Href
@@ -29,6 +40,8 @@ export interface OnboardingStep {
 }
 
 export const scenarios: OnboardingScenario[] = [
+  welcomeScenario,
+  whatsNewScenario,
   listenScenario,
   playlistsScenario,
   historyScenario,
@@ -46,4 +59,6 @@ export const scenariosById: Record<OnboardingScenarioId, OnboardingScenario> = {
   read: readScenario,
   settings: settingsScenario,
   study: studyScenario,
+  welcome: welcomeScenario,
+  whatsNew: whatsNewScenario,
 }

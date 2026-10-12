@@ -12,6 +12,7 @@ export {
   setServerUrlAction,
   setToursDisabled,
   setToursSeenVersion,
+  TOURS_SEEN_VERSION_KEY,
   toursDisabledAtom,
 } from './settings'
 export { showToast, toastAtom } from './toast'

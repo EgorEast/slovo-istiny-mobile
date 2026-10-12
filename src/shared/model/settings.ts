@@ -6,7 +6,7 @@ import { SERVER_URL } from '../config/server-storage-keys'
 
 const HAPTICS_ENABLED_KEY = 'haptics_enabled'
 const TOURS_DISABLED_KEY = 'tours_disabled'
-const TOURS_SEEN_VERSION_KEY = 'tours_seen_version'
+export const TOURS_SEEN_VERSION_KEY = 'tours_seen_version'
 
 export const hapticsEnabledAtom = atom<boolean>(true, 'hapticsEnabledAtom')
 

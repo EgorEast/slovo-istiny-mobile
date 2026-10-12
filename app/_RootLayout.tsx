@@ -8,7 +8,12 @@ import { NetworkBanner, ServerErrorToast } from 'widgets/network-status'
 import { HeaderBackButton } from 'widgets/sub-screen-header-back'
 import { UpdateDialogRoot } from 'widgets/update-status'
 import { useOfflineRegistrySync } from 'features/offline-sermons'
-import { HelpHeaderButton, OnboardingHelpRow, OnboardingTourOverlay } from 'features/onboarding'
+import {
+  HelpHeaderButton,
+  OnboardingHelpRow,
+  OnboardingTourOverlay,
+  useAutoTours,
+} from 'features/onboarding'
 import { useUpdateNotificationResponse } from 'features/update-notification'
 import { WebUpdateModal } from 'features/web-update'
 import { useFeatureFlagsRefetchOnForeground } from 'entities/feature-flags'
@@ -50,6 +55,7 @@ const RootLayout = () => {
   useOfflineRegistrySync()
   useColdStartLinkRecovery()
   useHardwareBackCascade()
+  useAutoTours()
 
   useEffect(() => {
     const timer = setTimeout(() => void checkForUpdate(), 0)

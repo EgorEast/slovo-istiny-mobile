@@ -1,3 +1,4 @@
+export { useAutoTours } from './lib/useAutoTours'
 export { useOnboardingTargetRef } from './lib/useOnboardingTargetRef'
 export { HelpHeaderButton } from './ui/HelpHeaderButton'
 export { OnboardingHelpRow } from './ui/OnboardingHelpRow'

@@ -50,7 +50,7 @@ export const MoreScreen = () => {
           Приложение для прослушивания и чтения проповедей
         </Text>
 
-        <View style={styles.menu}>
+        <OnboardingTarget id='more.menu' style={styles.menu}>
           <OnboardingTarget id='more.offline-item'>
             <MoreMenuSettingsItem
               title='Офлайн'
@@ -82,7 +82,7 @@ export const MoreScreen = () => {
             title='Поделиться приложением'
             onPress={() => router.push('/share')}
           />
-        </View>
+        </OnboardingTarget>
       </ScrollView>
     </SafeAreaView>
   )

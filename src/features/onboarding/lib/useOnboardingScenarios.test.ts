@@ -50,4 +50,11 @@ describe('useOnboardingScenarios', () => {
     expect(scenarioIds(result.current)).not.toContain('read')
     expect(scenarioIds(result.current)).not.toContain('study')
   })
+
+  test('excludes auto-only scenarios from the picker', async () => {
+    const { result } = await renderHookWithProviders(() => useOnboardingScenarios())
+
+    expect(scenarioIds(result.current)).not.toContain('welcome')
+    expect(scenarioIds(result.current)).not.toContain('whatsNew')
+  })
 })
