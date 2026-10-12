@@ -1,10 +1,11 @@
 import Ionicons from '@expo/vector-icons/Ionicons'
+import { useAction } from '@reatom/npm-react'
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { Modal } from 'shared/ui/modal'
 import { FONT_SIZES, INDENTS, RADIUSES, useTheme } from 'shared/ui/theme'
 import { type OnboardingScenario } from '../lib/scenarios'
 import { useOnboardingScenarios } from '../lib/useOnboardingScenarios'
-import { useStartScenarioTour } from '../lib/useStartScenarioTour'
+import { startOnboardingTour } from '../model'
 
 const TITLE = 'Что посмотреть?'
 const ICON_SIZE = 22
@@ -18,11 +19,11 @@ export const ScenarioPickerModal = ({
 }) => {
   const { currentTheme } = useTheme()
   const scenarios = useOnboardingScenarios()
-  const startScenarioTour = useStartScenarioTour()
+  const startTour = useAction(startOnboardingTour)
 
   const handlePick = (scenario: OnboardingScenario) => {
     onClose()
-    startScenarioTour(scenario)
+    startTour(scenario.id)
   }
 
   return (

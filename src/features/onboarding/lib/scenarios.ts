@@ -22,6 +22,7 @@ export type OnboardingScenarioId =
   'history' | 'listen' | 'offline' | 'playlists' | 'read' | 'settings' | 'study'
 
 export interface OnboardingStep {
+  route?: Href
   targetId?: string
   text: string
   title: string

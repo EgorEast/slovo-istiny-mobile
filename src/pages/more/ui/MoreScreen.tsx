@@ -3,7 +3,7 @@ import { useRouter } from 'expo-router'
 import { useEffect } from 'react'
 import { ScrollView, Text, View } from 'react-native'
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
-import { HelpHeaderButton } from 'features/onboarding'
+import { HelpHeaderButton, OnboardingTarget } from 'features/onboarding'
 import { authStatusAtom, authUserAtom, canAccessAdmin, restoreSession } from 'entities/auth'
 import { APP_NAME, APP_VERSION } from 'shared/config'
 import { useTheme } from 'shared/ui/theme'
@@ -51,21 +51,27 @@ export const MoreScreen = () => {
         </Text>
 
         <View style={styles.menu}>
-          <MoreMenuSettingsItem
-            title='Офлайн'
-            icon='cloud-offline-outline'
-            onPress={() => router.push('/offline')}
-          />
-          <MoreMenuSettingsItem
-            icon='time-outline'
-            title='История прослушивания'
-            onPress={() => router.push('/history')}
-          />
-          <MoreMenuSettingsItem
-            title='Настройки'
-            icon='settings-outline'
-            onPress={() => router.push('/settings')}
-          />
+          <OnboardingTarget id='more.offline-item'>
+            <MoreMenuSettingsItem
+              title='Офлайн'
+              icon='cloud-offline-outline'
+              onPress={() => router.push('/offline')}
+            />
+          </OnboardingTarget>
+          <OnboardingTarget id='more.history-item'>
+            <MoreMenuSettingsItem
+              icon='time-outline'
+              title='История прослушивания'
+              onPress={() => router.push('/history')}
+            />
+          </OnboardingTarget>
+          <OnboardingTarget id='more.settings-item'>
+            <MoreMenuSettingsItem
+              title='Настройки'
+              icon='settings-outline'
+              onPress={() => router.push('/settings')}
+            />
+          </OnboardingTarget>
           <MoreMenuSettingsItem
             title='О приложении'
             icon='information-circle-outline'

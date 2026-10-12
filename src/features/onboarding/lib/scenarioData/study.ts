@@ -8,6 +8,7 @@ export const studyScenario: OnboardingScenario = {
   id: 'study',
   steps: [
     {
+      route: '/study',
       targetId: 'study.tabs',
       text: 'Переключайтесь между «Богословием» и «Душепопечением».',
       title: 'Разделы обучения',

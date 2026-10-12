@@ -7,11 +7,19 @@ export const offlineScenario: OnboardingScenario = {
   id: 'offline',
   steps: [
     {
+      route: '/more',
+      targetId: 'more.offline-item',
+      text: 'Раздел офлайн-кэша доступен из меню «Ещё».',
+      title: 'Офлайн-режим',
+    },
+    {
+      route: '/offline',
       targetId: 'offline.caching-switch',
       text: 'Переключатель включает автоматическое сохранение проповедей на устройство.',
       title: 'Автокэширование',
     },
     {
+      route: '/offline',
       targetId: 'offline.rows',
       text: 'Проповеди, доступные без интернета. Управляйте каждой через её меню.',
       title: 'Загруженные проповеди',

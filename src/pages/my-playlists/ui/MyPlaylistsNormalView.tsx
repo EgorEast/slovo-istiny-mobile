@@ -5,6 +5,7 @@ import {
   type PlaylistListItemData,
   PlaylistListSeparator,
 } from 'widgets/playlist-list'
+import { OnboardingTarget } from 'features/onboarding'
 import { LIST_ITEM_CARD_ARTWORK_SIZE } from 'entities/list-item'
 import { type LocalPlaylistData } from 'entities/playlist'
 import { INDENTS, useTheme } from 'shared/ui/theme'
@@ -59,7 +60,9 @@ export const MyPlaylistsNormalView = ({
       listFooter={
         <View style={styles.create}>
           {items.length > 0 && <PlaylistListSeparator />}
-          <MyPlaylistsCreateRow onPress={onPressCreate} />
+          <OnboardingTarget id='playlists.create'>
+            <MyPlaylistsCreateRow onPress={onPressCreate} />
+          </OnboardingTarget>
         </View>
       }
     />

@@ -7,12 +7,15 @@ export const playlistsScenario: OnboardingScenario = {
   id: 'playlists',
   steps: [
     {
+      route: '/listen',
       targetId: 'listen.my-playlists',
       text: 'Последние плейлисты на главном экране. Кнопка «Все» открывает полный список.',
       title: 'Мои плейлисты',
     },
     {
-      text: 'В списке плейлистов нажмите кнопку создания. Имя можно изменить в любой момент.',
+      route: '/listen/my-playlists',
+      targetId: 'playlists.create',
+      text: 'Нажмите кнопку создания — плейлист появится в списке. Имя можно изменить в любой момент.',
       title: 'Создать плейлист',
     },
     {

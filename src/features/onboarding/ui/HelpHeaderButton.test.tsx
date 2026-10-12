@@ -10,22 +10,13 @@ const CONFIRM_LABEL = 'Посмотреть'
 const CANCEL_LABEL = 'Закрыть'
 const FIRST_SCENARIO_TITLE = 'Как слушать проповеди'
 
-const mockPush = jest.fn()
-const mockPathname = jest.fn(() => '/listen')
-
 jest.mock('entities/feature-flags', () => ({
   useFeatureFlag: () => true,
-}))
-
-jest.mock('expo-router', () => ({
-  usePathname: () => mockPathname(),
-  useRouter: () => ({ push: mockPush }),
 }))
 
 describe('<HelpHeaderButton>', () => {
   beforeEach(() => {
     jest.clearAllMocks()
-    mockPathname.mockReturnValue('/listen')
   })
 
   test('opens the offer dialog when pressed', async () => {

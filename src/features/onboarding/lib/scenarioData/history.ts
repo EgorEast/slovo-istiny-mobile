@@ -7,10 +7,13 @@ export const historyScenario: OnboardingScenario = {
   id: 'history',
   steps: [
     {
-      text: 'Все прослушанные проповеди сохраняются здесь автоматически.',
+      route: '/more',
+      targetId: 'more.history-item',
+      text: 'История открывается из меню «Ещё» — здесь она пополняется автоматически.',
       title: 'История прослушивания',
     },
     {
+      route: '/history',
       targetId: 'history.rows',
       text: 'Нажмите на запись, чтобы продолжить с того же места. Через меню записи проповедь можно добавить в плейлист.',
       title: 'Записи',
