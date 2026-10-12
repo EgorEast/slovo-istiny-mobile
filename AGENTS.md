@@ -144,6 +144,7 @@ See [`docs/BUILD-LOCAL.md`](docs/BUILD-LOCAL.md) → «Prebuild и config-пла
    - `docs/contracts/<протокол>.md` — при работе с API/хранилищем
    - `docs/architecture.md` — при архитектурных решениях
    - `docs/decisions.md` — перед добавлением новой зависимости
+   - `docs/features/onboarding.md` — при работе с онбордингом/турами
 
 2. **При изменении кода** обнови затронутые документы `docs/` **в том же PR/коммите**. Если изменил экран — обнови `docs/screens/<экран>.md`; изменил модуль — `docs/features/<модуль>.md`; изменил API-контракт — `docs/contracts/rest-api.md`; изменил ключи AsyncStorage — `docs/contracts/storage.md`.
 
@@ -160,6 +161,8 @@ See [`docs/BUILD-LOCAL.md`](docs/BUILD-LOCAL.md) → «Prebuild и config-пла
 4. **Новые зависимости** — только через запись в `docs/decisions.md` (секция Approved stack) с объяснением «почему». Не добавляй пакеты «молча».
 
 5. **Если в `docs/` нет нужной информации** — добавь её, исследовав код, чтобы следующий агент не делал это повторно. Это цель документации.
+
+6. **При добавлении новой фичи или изменении поведения** обнови онбординг в том же PR/коммите: добавь сценарий в `src/features/onboarding/lib/scenarioData/` или обнови шаги/цели (`targetId`) существующих сценариев, если затронутые экраны/элементы уже покрыты. Если новая фича заметна пользователю (новый экран, новый блок, новое действие) — у неё должен быть сценарий или шаг онбординга; автопоказ новинок к релизу добавляется через сценарий с `sinceVersion` (см. [`docs/features/onboarding.md`](docs/features/onboarding.md)).
 
 Полные правила ведения docs — в `docs/README.md` и `docs/conventions.md`. AGENTS.md и docs/ должны оставаться консистентными.
 
