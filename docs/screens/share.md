@@ -24,6 +24,8 @@
 
 `CollapsibleSection` — контролируемый компонент (`isExpanded`/`onToggle` пропсами, состояние не хранит сам). Заголовок — `TouchableItem` (роль `button`, в тестах ищется по тексту заголовка) с декоративной иконкой-глифом `Ionicons` (`chevron-up`/`chevron-down`, скрытой от доступности через `accessibilityElementsHidden` + `importantForAccessibility='no'`).
 
+- Кнопка «?» в шапке (общий `renderHelp` корневого стека, `app/_RootLayout.tsx`) — онбординг/обзор возможностей (см. [../features/onboarding.md](../features/onboarding.md)).
+
 ## Откуда данные
 
 - Хук `useLatestReleaseUrl` (`src/pages/share/lib/useLatestReleaseUrl.ts`) — дискриминированное объединение `LatestReleaseState` (`loading` / `error` / `ready`);

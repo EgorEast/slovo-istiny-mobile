@@ -17,6 +17,8 @@
 
 Сцены — серые `View`-заглушки: `FirstRoute`/`SecondRoute` из `src/pages/study/scene-routes.tsx`, сборка в `src/pages/study/scene.tsx` через `SceneMap`.
 
+- Кнопка «?» в верхнем ряду экрана (не в нативной шапке) — онбординг/обзор возможностей (см. [../features/onboarding.md](../features/onboarding.md)).
+
 ## Откуда данные
 
 - Данные отсутствуют (заглушки).

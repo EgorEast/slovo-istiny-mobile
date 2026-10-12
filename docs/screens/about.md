@@ -17,6 +17,7 @@
 - Блок «Исходный код» — текст + `LinkButton` «Исходный код на Forgejo» (`src/pages/about/ui/LinkButton.tsx`, иконка `git-branch-outline`), открывает `PROJECT_URL` через `openURL`;
 - `LinkButton` «Лицензия GPL-3.0-or-later» (иконка `document-text-outline`), открывает `LICENSE_URL`;
 - Копирайт: `© {COPYRIGHT_YEAR} {COPYRIGHT_HOLDER}`.
+- Кнопка «?» в шапке (общий `renderHelp` корневого стека, `app/_RootLayout.tsx`) — онбординг/обзор возможностей (см. [../features/onboarding.md](../features/onboarding.md)).
 
 ## Откуда данные
 

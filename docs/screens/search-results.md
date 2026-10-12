@@ -17,6 +17,7 @@
   - `preachers` → `SearchPreacherRow` (`src/features/sermon-search/ui/SearchPreacherRow.tsx`) на `SearchListItem` только с именем, без обложки.
   - Обе строки делят один `SearchListItem` (`src/features/sermon-search/ui/SearchListItem.tsx`), чья геометрия (отступы `INDENTS.middle`, радиус `RADIUSES.middle`, обложка `TRACK_LIST_ITEM_SIZES.albumArtSize`, типографика `FONT_SIZES.md`/`FONT_SIZES.base`, минимальная высота 50 + отступы) совпадает с `TracksListItem`, поэтому все три группы поиска имеют одинаковую высоту строки. Кэш-бейдж и меню «три точки» строки трека сюда не тянутся — они не применимы к плейлистам/проповедникам.
 - Список рендерит `ResultsList` (`src/pages/search-results/ui/ResultsList.tsx`) — `FlatList` с `keyboardDismissMode='on-drag'`, `keyboardShouldPersistTaps='handled'` и нижним отступом `tabBarHeight + PLAYER_SIZES.miniPlayerHeight` (последний элемент очищается от таб-бара и мини-плеера).
+- Кнопка «?» в шапке стека «Слушать» (`screenOptions.headerRight` в `app/(tabs)/listen/_layout.tsx`) — онбординг/обзор возможностей (см. [../features/onboarding.md](../features/onboarding.md)).
 
 ## Откуда данные
 
