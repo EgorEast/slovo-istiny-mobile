@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import { createCtx } from '@reatom/framework'
 import { currentAudioAtom, currentPlaylistAtom } from 'entities/player/@x/playlist'
 import { type SermonData, toAudioPlayerData } from 'entities/sermon'
+import { CURRENT_PLAYLIST } from 'shared/config'
 import { togglePlaylistSermon } from './localPlaylistMembership'
 import {
   FAVORITES_PLAYLIST,
@@ -14,10 +15,9 @@ import { myPlaylistsAtom } from './model'
 const mockResetPlaybackAction = jest.fn().mockResolvedValue(undefined)
 
 jest.mock('entities/player/@x/playlist', () => {
-  const { atom } = jest.requireActual('@reatom/framework')
+  const actual = jest.requireActual('entities/player/@x/playlist')
   return {
-    currentAudioAtom: atom(null, 'testCurrentAudioAtom'),
-    currentPlaylistAtom: atom(null, 'testCurrentPlaylistAtom'),
+    ...actual,
     resetPlaybackAction: (...args: unknown[]) => mockResetPlaybackAction(...args),
   }
 })
@@ -286,6 +286,48 @@ describe('togglePlaylistSermon', () => {
 
     expect(outcome).toBe('removed')
     expect(mockResetPlaybackAction).toHaveBeenCalledTimes(1)
+  })
+
+  test('updates the queue context when a non-current sermon leaves the playing playlist', async () => {
+    const ctx = createCtx()
+    myPlaylistsAtom(ctx, [
+      FAVORITES_PLAYLIST,
+      playlist('a', [sermon('sermon-1'), sermon('sermon-2')]),
+    ])
+    currentPlaylistAtom(ctx, {
+      artwork: null,
+      id: 'a',
+      sermons: [sermon('sermon-1'), sermon('sermon-2')],
+      title: 'a',
+    })
+    currentAudioAtom(ctx, toAudioPlayerData(sermon('sermon-1')))
+
+    const outcome = await togglePlaylistSermon(ctx, 'a', sermon('sermon-2'), false)
+
+    expect(outcome).toBe('removed')
+    expect(ctx.get(currentPlaylistAtom)?.sermons.map(item => item.id)).toEqual(['sermon-1'])
+    expect(ctx.get(currentAudioAtom)?.id).toBe('sermon-1')
+    expect(mockResetPlaybackAction).not.toHaveBeenCalled()
+
+    const stored = JSON.parse((await AsyncStorage.getItem(CURRENT_PLAYLIST)) ?? 'null')
+    expect(stored?.sermons?.map((item: SermonData) => item.id)).toEqual(['sermon-1'])
+  })
+
+  test('leaves the queue context untouched when removing from another playlist', async () => {
+    const ctx = createCtx()
+    myPlaylistsAtom(ctx, [FAVORITES_PLAYLIST, playlist('a', [sermon('sermon-2')])])
+    currentPlaylistAtom(ctx, {
+      artwork: null,
+      id: 'b',
+      sermons: [sermon('sermon-1')],
+      title: 'b',
+    })
+
+    await togglePlaylistSermon(ctx, 'a', sermon('sermon-2'), false)
+
+    expect(ctx.get(currentPlaylistAtom)?.id).toBe('b')
+    expect(ctx.get(currentPlaylistAtom)?.sermons.map(item => item.id)).toEqual(['sermon-1'])
+    expect(mockResetPlaybackAction).not.toHaveBeenCalled()
   })
 
   test('suppresses the player reset when the caller orchestrates it', async () => {

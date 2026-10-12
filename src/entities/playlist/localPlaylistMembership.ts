@@ -6,6 +6,7 @@ import {
 } from 'entities/player/@x/playlist'
 import { type SermonShape } from 'shared/model'
 import { toPersistedLocalSermon } from './lib/sanitizeLocalPlaylistSermon'
+import { syncQueueAfterSermonRemoval } from './lib/syncQueueAfterSermonRemoval'
 import { type LocalPlaylistData, MAX_CUSTOM_PLAYLIST_SERMONS } from './localPlaylists'
 import { persistMyPlaylists } from './localPlaylistStorage'
 import { myPlaylistsAtom } from './model'
@@ -63,6 +64,8 @@ const removeSermonSnapshot = (
  * подавить этот сброс через `options.suppressPlayerReset` — тогда он сам
  * оркестрирует закрытие плеера (например, предлагает продолжить в другом
  * плейлисте): принадлежность меняется, а `resetPlaybackAction` не вызывается.
+ * Удаление НЕ текущей проповеди из играющего плейлиста обновляет контекст очереди
+ * (`setCurrentPlaylistAction`) — боттомшит и next/prev видят удаление сразу.
  * @param playlistId - Идентификатор плейлиста, которому меняем принадлежность.
  * @param sermon - Полная проповедь (для добавления сохраняется её снапшот).
  * @param contained - `true` — добавить, `false` — удалить.
@@ -109,10 +112,16 @@ export const togglePlaylistSermon = action(
 
     // Удаление текущей проповеди из её плейлиста закрывает плеер (нотификейшн-бар
     // + миниплеер) независимо от поверхности (меню строки, меню плеера, модалка
-    // «Добавить в плейлист»).
+    // «Добавить в плейлист»). Очередь умирает вместе с плеером.
     const isRemovingCurrentSermon =
       ctx.get(currentAudioAtom)?.id === sermon.id && ctx.get(currentPlaylistAtom)?.id === playlistId
-    if (isRemovingCurrentSermon && !options?.suppressPlayerReset) void resetPlaybackAction(ctx)
+    if (isRemovingCurrentSermon) {
+      if (!options?.suppressPlayerReset) void resetPlaybackAction(ctx)
+      return 'removed'
+    }
+
+    // Очередь плеера (боттомшит) следует за удалениями из играющего плейлиста.
+    await syncQueueAfterSermonRemoval(ctx, playlistId, sermon.id)
 
     return 'removed'
   },
