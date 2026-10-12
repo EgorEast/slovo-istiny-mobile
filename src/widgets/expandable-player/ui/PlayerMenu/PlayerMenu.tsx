@@ -1,10 +1,8 @@
-import { useCtx } from '@reatom/npm-react'
 import { useState } from 'react'
 import { Pressable, View } from 'react-native'
 import Animated from 'react-native-reanimated'
 import { type TrackCacheVisualState } from 'entities/offline-cache'
 import { type PlaybackRate, usePlaybackRate } from 'entities/player'
-import { togglePlaylistSermon } from 'entities/playlist'
 import { type AudioPlayerData } from 'entities/sermon'
 import { hapticLight } from 'shared/lib/haptics'
 import { reportError } from 'shared/model/error-dialog'
@@ -21,9 +19,9 @@ export const PlayerMenu = ({
   onAddToPlaylist,
   onClose,
   onOpenSoundSettings,
+  onRequestRemoveFromPlaylist,
   onShowDetails,
   onToggleCache,
-  removablePlaylistId,
   visualState,
 }: {
   audio: AudioPlayerData
@@ -32,13 +30,12 @@ export const PlayerMenu = ({
   onAddToPlaylist?: (sermon: AudioPlayerData) => void
   onClose: () => void
   onOpenSoundSettings: () => void
+  onRequestRemoveFromPlaylist?: () => void
   onShowDetails: () => void
   onToggleCache: () => void
-  removablePlaylistId: null | string
   visualState: TrackCacheVisualState
 }) => {
   const { currentTheme } = useTheme()
-  const ctx = useCtx()
   const { rate, setPlaybackRate } = usePlaybackRate()
   const [view, setView] = useState<'main' | 'speed'>('main')
   const { backdropStyle, handleLayout, wrapperStyle } = useMenuRevealAnimation()
@@ -64,8 +61,7 @@ export const PlayerMenu = ({
   }
 
   const handleRemoveFromPlaylistPress = () => {
-    if (removablePlaylistId === null) return
-    void togglePlaylistSermon(ctx, removablePlaylistId, audio, false)
+    onRequestRemoveFromPlaylist?.()
     onClose()
   }
 
