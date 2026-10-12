@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Platform, ScrollView, StyleSheet, View } from 'react-native'
+import { OnboardingTarget } from 'features/onboarding'
 import { BackupSection } from 'features/settings-backup'
 import { isWebVibrationSupported } from 'shared/lib/haptics'
 import { INDENTS, isMaterialYouSupported, useTheme } from 'shared/ui/theme'
@@ -17,18 +18,26 @@ export const SettingsScreen = () => {
   return (
     <View style={[styles.container, { backgroundColor: currentTheme.background }]}>
       <ScrollView contentContainerStyle={styles.content}>
-        <SettingsItem
-          title='Тема оформления'
-          icon='color-palette-outline'
-          description='Светлая, тёмная или как в системе'
-          onPress={() => {
-            setShowThemeDialog(true)
-          }}
-        />
+        <OnboardingTarget id='settings.theme'>
+          <SettingsItem
+            title='Тема оформления'
+            icon='color-palette-outline'
+            description='Светлая, тёмная или как в системе'
+            onPress={() => {
+              setShowThemeDialog(true)
+            }}
+          />
+        </OnboardingTarget>
         {isMaterialYouSupported() && <DynamicColorsItem />}
-        {showHapticsItem && <HapticsSettingsItem />}
-        <BackupSection />
-        <ServerUrlSettings />
+        <OnboardingTarget id='settings.haptics'>
+          {showHapticsItem && <HapticsSettingsItem />}
+        </OnboardingTarget>
+        <OnboardingTarget id='settings.backup'>
+          <BackupSection />
+        </OnboardingTarget>
+        <OnboardingTarget id='settings.server'>
+          <ServerUrlSettings />
+        </OnboardingTarget>
       </ScrollView>
       <ThemeDialog
         visible={showThemeDialog}

@@ -3,12 +3,11 @@ import { useEffect } from 'react'
 import { ScrollView, StyleSheet, View } from 'react-native'
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useAddToPlaylistModal } from 'features/add-to-playlist'
-import { HelpHeaderButton } from 'features/onboarding'
+import { OnboardingTarget } from 'features/onboarding'
 import {
   SEARCH_HEADER_HEIGHT,
   SearchBar,
   SearchGroupedResults,
-  SearchToggleButton,
   useIsSearchActive,
   useIsSearchOpen,
   useSearchUrlSync,
@@ -16,13 +15,13 @@ import {
 import { authStatusAtom, authUserAtom, canAccessAdmin, restoreSession } from 'entities/auth'
 import { createRefreshControl, PullToRefresh } from 'shared/ui'
 import { tabBarHeightAtom } from 'shared/ui/layout'
-import { INDENTS, PLAYER_SIZES, useTheme } from 'shared/ui/theme'
+import { PLAYER_SIZES, useTheme } from 'shared/ui/theme'
 import { useListenSearchNavigation } from '../lib/useListenSearchNavigation'
 import { usePullToRefresh } from '../lib/usePullToRefresh'
 import { useScrollActivity } from '../lib/useScrollActivity'
-import { AdminShieldButton } from './AdminShieldButton'
 import { ContinueListeningButton } from './ContinueListeningButton'
 import { DynamicSectionsSlider } from './DynamicSectionsSlider'
+import { ListenTopRow } from './ListenTopRow'
 import { MyPlaylistsSlider } from './MyPlaylistsSlider'
 
 export const ListenScreen = () => {
@@ -82,19 +81,21 @@ export const ListenScreen = () => {
               { paddingBottom: tabBarHeight + PLAYER_SIZES.miniPlayerHeight },
             ]}
           >
-            {!isSearchOpen && (
-              <View style={styles.topRow}>
-                <SearchToggleButton />
-                <View style={styles.topRowRight}>
-                  {showAdminButton && <AdminShieldButton />}
-                  <HelpHeaderButton />
-                </View>
-              </View>
-            )}
-            <DynamicSectionsSlider
-              leadingElement={!isSearchActive ? <ContinueListeningButton /> : undefined}
-            />
-            <MyPlaylistsSlider />
+            {!isSearchOpen && <ListenTopRow showAdminButton={showAdminButton} />}
+            <OnboardingTarget id='listen.sections'>
+              <DynamicSectionsSlider
+                leadingElement={
+                  !isSearchActive ? (
+                    <OnboardingTarget id='listen.continue-listening'>
+                      <ContinueListeningButton />
+                    </OnboardingTarget>
+                  ) : undefined
+                }
+              />
+            </OnboardingTarget>
+            <OnboardingTarget id='listen.my-playlists'>
+              <MyPlaylistsSlider />
+            </OnboardingTarget>
           </ScrollView>
         </PullToRefresh>
       )}
@@ -115,16 +116,5 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     height: SEARCH_HEADER_HEIGHT,
     zIndex: 1,
-  },
-  topRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingRight: INDENTS.low,
-  },
-  topRowRight: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: INDENTS.low,
   },
 })

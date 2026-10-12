@@ -4,7 +4,7 @@ import { useLayoutEffect } from 'react'
 import { FlatList, StyleSheet, View } from 'react-native'
 import { useAddToPlaylistModal } from 'features/add-to-playlist'
 import { useOfflineSermons } from 'features/offline-sermons'
-import { OnboardingHelpRow } from 'features/onboarding'
+import { OnboardingHelpRow, OnboardingTarget } from 'features/onboarding'
 import { sermonCachingEnabledAtom } from 'entities/offline-cache'
 import { isPlayingAtom } from 'entities/player'
 import { createTracksListStyles, TracksListSkeleton } from 'entities/track-list'
@@ -45,8 +45,12 @@ export const OfflineScreen = () => {
       headerRight: () => (
         <OnboardingHelpRow>
           <View style={styles.headerActions}>
-            <SermonCachingHeaderSwitch />
-            <OfflineHeaderMenu />
+            <OnboardingTarget id='offline.caching-switch'>
+              <SermonCachingHeaderSwitch />
+            </OnboardingTarget>
+            <OnboardingTarget id='offline.header-menu'>
+              <OfflineHeaderMenu />
+            </OnboardingTarget>
           </View>
         </OnboardingHelpRow>
       ),
@@ -67,20 +71,22 @@ export const OfflineScreen = () => {
 
   return (
     <View style={tracksListStyles.container}>
-      <FlatList
-        data={items}
-        keyExtractor={item => item.sermon.id}
-        ItemSeparatorComponent={OfflineSeparator}
-        ListEmptyComponent={<OfflineEmptyState isCachingEnabled={isCachingEnabled} />}
-        renderItem={({ item }) => (
-          <OfflineRow item={item} isPlaying={isPlaying} onAddToPlaylist={openAddToPlaylist} />
-        )}
-        contentContainerStyle={{
-          flexGrow: 1,
-          justifyContent: items.length === 0 ? 'center' : undefined,
-          paddingBottom: tabBarHeight + PLAYER_SIZES.miniPlayerHeight + INDENTS.low,
-        }}
-      />
+      <OnboardingTarget id='offline.rows'>
+        <FlatList
+          data={items}
+          keyExtractor={item => item.sermon.id}
+          ItemSeparatorComponent={OfflineSeparator}
+          ListEmptyComponent={<OfflineEmptyState isCachingEnabled={isCachingEnabled} />}
+          renderItem={({ item }) => (
+            <OfflineRow item={item} isPlaying={isPlaying} onAddToPlaylist={openAddToPlaylist} />
+          )}
+          contentContainerStyle={{
+            flexGrow: 1,
+            justifyContent: items.length === 0 ? 'center' : undefined,
+            paddingBottom: tabBarHeight + PLAYER_SIZES.miniPlayerHeight + INDENTS.low,
+          }}
+        />
+      </OnboardingTarget>
       {modal}
     </View>
   )

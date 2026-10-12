@@ -24,10 +24,6 @@ const config: KnipConfig = {
   },
 
   ignore: [
-    // Onboarding feature — Phase 1 slice. Its public API is wired into the
-    // screens in a later task; until then nothing imports it, so knip cannot
-    // see the slice as reachable.
-    'src/features/onboarding/**',
     // Read tab WIP — intentionally kept, not routed from app/ yet.
     'src/pages/book-reader/**',
     // Bible book names data for the Read tab.

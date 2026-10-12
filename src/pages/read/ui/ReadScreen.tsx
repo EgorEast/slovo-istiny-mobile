@@ -1,6 +1,6 @@
 import { ScrollView, StyleSheet, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { HelpHeaderButton } from 'features/onboarding'
+import { HelpHeaderButton, OnboardingTarget } from 'features/onboarding'
 import { useFeatureFlag } from 'entities/feature-flags'
 import { INDENTS, useTheme } from 'shared/ui/theme'
 import { NotesForPreachersBooksSlider } from './NotesForPreachersBooksSlider'
@@ -21,9 +21,15 @@ export const ReadScreen = () => {
         <HelpHeaderButton />
       </View>
       <ScrollView style={[styles.content, { backgroundColor: currentTheme.background }]}>
-        <NotesForPreachersBooksSlider />
-        <VerseByVerseBooksSlider />
-        <TopicalAndThematicBooksSlider />
+        <OnboardingTarget id='read.notes'>
+          <NotesForPreachersBooksSlider />
+        </OnboardingTarget>
+        <OnboardingTarget id='read.verse-by-verse'>
+          <VerseByVerseBooksSlider />
+        </OnboardingTarget>
+        <OnboardingTarget id='read.topical'>
+          <TopicalAndThematicBooksSlider />
+        </OnboardingTarget>
       </ScrollView>
     </SafeAreaView>
   )

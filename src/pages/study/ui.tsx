@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { StyleSheet, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { TabView } from 'react-native-tab-view'
-import { HelpHeaderButton } from 'features/onboarding'
+import { HelpHeaderButton, OnboardingTarget } from 'features/onboarding'
 import { useFeatureFlag } from 'entities/feature-flags'
 import { getRenderTabBar } from 'shared/lib/tab-bar'
 import { INDENTS, useTheme } from 'shared/ui/theme'
@@ -32,12 +32,14 @@ export const StudyScreen = () => {
         <HelpHeaderButton />
       </View>
       <View style={{ backgroundColor: currentTheme.background, flex: 1, paddingBottom: 100 }}>
-        <TabView
-          onIndexChange={setIndex}
-          renderScene={renderScene}
-          renderTabBar={renderTabBar}
-          navigationState={{ index, routes }}
-        />
+        <OnboardingTarget id='study.tabs'>
+          <TabView
+            onIndexChange={setIndex}
+            renderScene={renderScene}
+            renderTabBar={renderTabBar}
+            navigationState={{ index, routes }}
+          />
+        </OnboardingTarget>
       </View>
     </SafeAreaView>
   )

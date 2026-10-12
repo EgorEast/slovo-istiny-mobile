@@ -3,7 +3,7 @@ import { useNavigation } from 'expo-router'
 import { useLayoutEffect } from 'react'
 import { FlatList, StyleSheet, Text, View } from 'react-native'
 import { useAddToPlaylistModal } from 'features/add-to-playlist'
-import { OnboardingHelpRow } from 'features/onboarding'
+import { OnboardingHelpRow, OnboardingTarget } from 'features/onboarding'
 import { getEntrySermon, historyAtom, isHistoryLoadedAtom } from 'entities/listening-history'
 import { currentAudioAtom, isPlayingAtom } from 'entities/player'
 import { createTracksListStyles, TracksListSkeleton } from 'entities/track-list'
@@ -57,40 +57,42 @@ export const HistoryScreen = () => {
 
   return (
     <View style={tracksListStyles.container}>
-      <FlatList
-        data={entries}
-        ItemSeparatorComponent={HistorySeparator}
-        keyExtractor={item => getEntrySermon(item)?.id ?? `${item.lastPlayedAt}`}
-        contentContainerStyle={{
-          flexGrow: 1,
-          justifyContent: entries.length === 0 ? 'center' : undefined,
-          paddingBottom: tabBarHeight + PLAYER_SIZES.miniPlayerHeight + INDENTS.low,
-        }}
-        ListEmptyComponent={
-          <Text
-            style={{
-              color: currentTheme.textMuted,
-              flex: 1,
-              fontSize: FONT_SIZES.lg,
-              textAlign: 'center',
-            }}
-          >
-            История пуста
-          </Text>
-        }
-        renderItem={({ item }) => {
-          const sermonId = getEntrySermon(item)?.id
-          const isCurrentAudio = sermonId !== undefined && currentAudio?.id === sermonId
-          return (
-            <HistoryRow
-              entry={item}
-              isPlaying={isCurrentAudio}
-              onAddToPlaylist={openAddToPlaylist}
-              isAudioPlaying={isCurrentAudio && isPlaying}
-            />
-          )
-        }}
-      />
+      <OnboardingTarget id='history.rows'>
+        <FlatList
+          data={entries}
+          ItemSeparatorComponent={HistorySeparator}
+          keyExtractor={item => getEntrySermon(item)?.id ?? `${item.lastPlayedAt}`}
+          contentContainerStyle={{
+            flexGrow: 1,
+            justifyContent: entries.length === 0 ? 'center' : undefined,
+            paddingBottom: tabBarHeight + PLAYER_SIZES.miniPlayerHeight + INDENTS.low,
+          }}
+          ListEmptyComponent={
+            <Text
+              style={{
+                color: currentTheme.textMuted,
+                flex: 1,
+                fontSize: FONT_SIZES.lg,
+                textAlign: 'center',
+              }}
+            >
+              История пуста
+            </Text>
+          }
+          renderItem={({ item }) => {
+            const sermonId = getEntrySermon(item)?.id
+            const isCurrentAudio = sermonId !== undefined && currentAudio?.id === sermonId
+            return (
+              <HistoryRow
+                entry={item}
+                isPlaying={isCurrentAudio}
+                onAddToPlaylist={openAddToPlaylist}
+                isAudioPlaying={isCurrentAudio && isPlaying}
+              />
+            )
+          }}
+        />
+      </OnboardingTarget>
       {modal}
     </View>
   )
