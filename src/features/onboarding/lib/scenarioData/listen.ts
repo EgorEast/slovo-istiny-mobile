@@ -2,7 +2,6 @@ import { type OnboardingScenario } from '../scenarios'
 
 export const listenScenario: OnboardingScenario = {
   description: 'Поиск, разделы и плеер',
-  homeRoute: '/listen',
   icon: 'headset-outline',
   id: 'listen',
   steps: [

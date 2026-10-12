@@ -13,7 +13,6 @@ import { whatsNewScenario } from './scenarioData/whatsNew'
 export interface OnboardingScenario {
   description: string
   featureFlag?: 'read' | 'study'
-  homeRoute: Href
   icon: keyof typeof Ionicons.glyphMap
   id: OnboardingScenarioId
   sinceVersion?: string

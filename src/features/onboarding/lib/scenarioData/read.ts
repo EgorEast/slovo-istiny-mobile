@@ -3,7 +3,6 @@ import { type OnboardingScenario } from '../scenarios'
 export const readScenario: OnboardingScenario = {
   description: 'Библиотека книг',
   featureFlag: 'read',
-  homeRoute: '/read',
   icon: 'book-outline',
   id: 'read',
   steps: [

@@ -2,7 +2,6 @@ import { type OnboardingScenario } from '../scenarios'
 
 export const offlineScenario: OnboardingScenario = {
   description: 'Прослушивание без интернета',
-  homeRoute: '/offline',
   icon: 'cloud-offline-outline',
   id: 'offline',
   steps: [

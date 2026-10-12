@@ -2,7 +2,6 @@ import { type OnboardingScenario } from '../scenarios'
 
 export const playlistsScenario: OnboardingScenario = {
   description: 'Создание и управление подборками',
-  homeRoute: '/listen',
   icon: 'albums-outline',
   id: 'playlists',
   steps: [

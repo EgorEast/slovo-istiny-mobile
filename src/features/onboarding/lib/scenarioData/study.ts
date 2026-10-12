@@ -3,7 +3,6 @@ import { type OnboardingScenario } from '../scenarios'
 export const studyScenario: OnboardingScenario = {
   description: 'Богословие и душепопечение',
   featureFlag: 'study',
-  homeRoute: '/study',
   icon: 'school-outline',
   id: 'study',
   steps: [

@@ -2,7 +2,6 @@ import { type OnboardingScenario } from '../scenarios'
 
 export const welcomeScenario: OnboardingScenario = {
   description: 'Короткая экскурсия по приложению',
-  homeRoute: '/listen',
   icon: 'sparkles-outline',
   id: 'welcome',
   sinceVersion: '0.27.0',

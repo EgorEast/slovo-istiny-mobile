@@ -2,7 +2,6 @@ import { type OnboardingScenario } from '../scenarios'
 
 export const settingsScenario: OnboardingScenario = {
   description: 'Оформление, сервер и бэкапы',
-  homeRoute: '/settings',
   icon: 'settings-outline',
   id: 'settings',
   steps: [

@@ -2,7 +2,6 @@ import { type OnboardingScenario } from '../scenarios'
 
 export const historyScenario: OnboardingScenario = {
   description: 'Что вы слушали и когда',
-  homeRoute: '/history',
   icon: 'time-outline',
   id: 'history',
   steps: [

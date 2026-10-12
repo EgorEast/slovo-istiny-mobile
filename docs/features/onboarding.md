@@ -38,19 +38,19 @@
 
 ## Сценарии
 
-Все 9 сценариев определены в `lib/scenarioData/` и собраны в `lib/scenarios.ts` (`scenarios` — порядок показа в пикере, `scenariosById` — доступ по id). Сценарий — `{ id, title, description, icon, homeRoute, featureFlag?, sinceVersion?, steps }`, шаг — `{ title, text, targetId?, route? }`. `route` — маршрут экрана, на котором живёт шаг (отсутствует = текущий экран); именно он делает тур многоэкранным. `homeRoute` остаётся метаданными сценария (пикер/описание), навигацию ведёт оверлей по `route` шага. `sinceVersion` помечает **авто-сценарий** (недоступен в пикере, запускается только автозапуском): `welcome` и `whatsNew` (см. «Автозапуск»); остальные 7 сценариев доступны в пикере «Что посмотреть?».
+Все 9 сценариев определены в `lib/scenarioData/` и собраны в `lib/scenarios.ts` (`scenarios` — порядок показа в пикере, `scenariosById` — доступ по id). Сценарий — `{ id, title, description, icon, featureFlag?, sinceVersion?, steps }`, шаг — `{ title, text, targetId?, route? }`. `route` — маршрут экрана, на котором живёт шаг (отсутствует = текущий экран); именно он делает тур многоэкранным. `sinceVersion` помечает **авто-сценарий** (недоступен в пикере, запускается только автозапуском): `welcome` и `whatsNew` (см. «Автозапуск»); остальные 7 сценариев доступны в пикере «Что посмотреть?».
 
-| id          | Название                      | Домашний маршрут | Флаг / авто | Шаги (цели)                                                                                         |
-| ----------- | ----------------------------- | ---------------- | ----------- | --------------------------------------------------------------------------------------------------- |
-| `welcome`   | Добро пожаловать              | `/listen`        | авто        | «Добро пожаловать!» (`/listen`), `listen.sections`, `listen.search-toggle`, `listen.my-playlists`, `player.mini`, `more.menu` (`/more`), `settings.theme` (`/settings`), `settings.tours` (`/settings`) |
-| `whatsNew`  | Что нового                    | `/listen`        | авто        | «Обзоры в приложении» (без цели), `settings.tours` (`/settings`)                                     |
-| `listen`    | Как слушать проповеди         | `/listen`        | —           | `listen.sections`, `listen.search-toggle`, `listen.continue-listening`, `listen.my-playlists`, `player.mini` |
-| `playlists` | Плейлисты                     | `/listen`        | —           | `listen.my-playlists` (`/listen`), `playlists.create` (`/listen/my-playlists`), «Добавить проповедь» (без цели) |
-| `history`   | История прослушивания         | `/history`       | —           | `more.history-item` (`/more`), `history.rows` (`/history`), `history.header-menu`                     |
-| `offline`   | Офлайн-режим                  | `/offline`       | —           | `more.offline-item` (`/more`), `offline.caching-switch` (`/offline`), `offline.rows` (`/offline`), `offline.header-menu` |
-| `settings`  | Настройки и резервные копии   | `/settings`      | —           | `more.settings-item` (`/more`), `settings.theme` (`/settings`), `settings.haptics`, `settings.tours`, `settings.backup`, `settings.server` |
-| `read`      | Читать книги                  | `/read`          | `read`      | «Библиотека книг» (без цели), `read.notes`, `read.verse-by-verse`, `read.topical`                    |
-| `study`     | Учиться                       | `/study`         | `study`     | `study.tabs`, «Материалы» (без цели)                                                                |
+| id          | Название                      | Флаг / авто | Шаги (цели)                                                                                         |
+| ----------- | ----------------------------- | ----------- | --------------------------------------------------------------------------------------------------- |
+| `welcome`   | Добро пожаловать              | авто        | «Добро пожаловать!» (`/listen`), `listen.sections`, `listen.search-toggle`, `listen.my-playlists`, `player.mini`, `more.menu` (`/more`), `settings.theme` (`/settings`), `settings.tours` (`/settings`) |
+| `whatsNew`  | Что нового                    | авто        | «Обзоры в приложении» (без цели), `settings.tours` (`/settings`)                                     |
+| `listen`    | Как слушать проповеди         | —           | `listen.sections`, `listen.search-toggle`, `listen.continue-listening`, `listen.my-playlists`, `player.mini` |
+| `playlists` | Плейлисты                     | —           | `listen.my-playlists` (`/listen`), `playlists.create` (`/listen/my-playlists`), «Добавить проповедь» (без цели) |
+| `history`   | История прослушивания         | —           | `more.history-item` (`/more`), `history.rows` (`/history`), `history.header-menu`                     |
+| `offline`   | Офлайн-режим                  | —           | `more.offline-item` (`/more`), `offline.caching-switch` (`/offline`), `offline.rows` (`/offline`), `offline.header-menu` |
+| `settings`  | Настройки и резервные копии   | —           | `more.settings-item` (`/more`), `settings.theme` (`/settings`), `settings.haptics`, `settings.tours`, `settings.backup`, `settings.server` |
+| `read`      | Читать книги                  | `read`      | «Библиотека книг» (без цели), `read.notes`, `read.verse-by-verse`, `read.topical`                    |
+| `study`     | Учиться                       | `study`     | `study.tabs`, «Материалы» (без цели)                                                                |
 
 **Сценарии многоэкранные**: шаг с `route` переводит тур на нужный экран (например, «Плейлисты»: `/listen` → `/listen/my-playlists`; «Офлайн»/«История»/«Настройки»: стартовый шаг на `/more`, затем целевой экран). Навигацию делает сам оверлей: если `pathname` не совпадает с `step.route`, выполняется `router.push(step.route)`. Пока цель на новом экране не измерена, карточка скрыта (см. п. 8), поэтому переход не мигает; если цель так и не появилась, через `MISSING_TARGET_TIMEOUT_MS = 1200` мс карточка показывается по центру как текстовая. Шаг без `route` остаётся на текущем экране (текстовые карточки).
 
@@ -105,7 +105,7 @@
 | `more.settings-item`       | `pages/more/ui/MoreMenuSettingsItem.tsx` (`onboardingTargetId`)           | пункт меню «Настройки»                                  |
 | `playlists.create`         | `pages/my-playlists/ui/MyPlaylistsCreateRow.tsx` (`onboardingTargetId`)   | строка «Создать плейлист» (футер списка)                |
 | `history.rows`             | `pages/history/ui/HistoryScreen.tsx`                                      | список записей истории                                  |
-| `history.header-menu`      | объявлен в сценарии, но `OnboardingTarget` пока не обёрнут                | меню шапки истории; шаг деградирует в центрированную карточку |
+| `history.header-menu`      | `pages/history/ui/HistoryScreen.tsx`                                      | меню шапки истории                                      |
 | `offline.caching-switch`   | `pages/offline/ui/SermonCachingHeaderSwitch.tsx` (`onboardingTargetId`)   | тумблер кеширования                                     |
 | `offline.rows`             | `pages/offline/ui/OfflineScreen.tsx`                                      | список офлайн-проповедей                                |
 | `offline.header-menu`      | `pages/offline/ui/OfflineHeaderMenu.tsx` (`onboardingTargetId`)           | меню шапки «Офлайн»                                     |
@@ -134,7 +134,7 @@
   - Настройка «Обзоры и подсказки» (`toursDisabledAtom`, `setToursDisabled`, `loadToursDisabled`) и ключ `tours_seen_version` (`TOURS_SEEN_VERSION_KEY`, `setToursSeenVersion`) живут в `shared/model/settings.ts` (рядом с виброоткликом) и входят в резервную копию; онбординг только читает атом/ключ и пишет версию.
   - `ui/` — `HelpHeaderButton`, `ScenarioPickerModal`, `OnboardingHelpRow`, `OnboardingTarget`, `OnboardingTourOverlay`, `TourDim`, `TourTooltip`.
 - **Публичное API** (`index.ts`, 6 экспортов): `HelpHeaderButton`, `OnboardingHelpRow`, `OnboardingTarget`, `OnboardingTourOverlay`, `useAutoTours`, `useOnboardingTargetRef`.
-- **Почему overlay смонтирован в `_RootLayout`**: `OnboardingTourOverlay` — один на всё приложение, рендерится поверх любого экрана и модалок независимо от текущего маршрута (`app/_RootLayout.tsx`, рядом с `GlobalErrorDialog`/`GlobalConfirmDialog`). Поэтому тур переживает навигацию: оверлей не размонтируется при `router.push` на `homeRoute`.
+- **Почему overlay смонтирован в `_RootLayout`**: `OnboardingTourOverlay` — один на всё приложение, рендерится поверх любого экрана и модалок независимо от текущего маршрута (`app/_RootLayout.tsx`, рядом с `GlobalErrorDialog`/`GlobalConfirmDialog`). Поэтому тур переживает навигацию: оверлей не размонтируется при `router.push` на маршрут шага (`step.route`).
 - **Стабильные module-level header-рендеры**: `headerRight` для под-экранов задаётся функциями, объявленными на уровне модуля (`renderHelp`, `renderSettingsHelpRow` в `_RootLayout.tsx`; `renderHelp` в `app/(tabs)/listen/_layout.tsx`). Это вынужденно: expo-router передаёт `options` в `navigation.setOptions` на каждый рендер, и свежая inline-функция каждый раз «меняет» опции → `setState` → ре-рендер → цикл «Maximum update depth exceeded». Module-level ссылки идентичны между рендерами и цикла не создают (та же причина, что у `renderHeaderBack`).
 
 ## Интеграция по экранам
