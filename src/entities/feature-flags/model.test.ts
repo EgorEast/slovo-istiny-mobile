@@ -111,6 +111,28 @@ describe('fetchMyFeatureFlags', () => {
     expect(await AsyncStorage.getItem(CACHED_FEATURE_FLAGS)).toBe(JSON.stringify({ read: true }))
   })
 
+  test('skips the cache write when the fetched map matches the current atom value', async () => {
+    setFlagsResponse([{ enabled: true, key: 'read' }])
+    const ctx = createCtx()
+    featureFlagsAtom(ctx, { read: true })
+
+    await fetchMyFeatureFlags(ctx)
+
+    expect(ctx.get(featureFlagsAtom)).toEqual({ read: true })
+    expect(await AsyncStorage.getItem(CACHED_FEATURE_FLAGS)).toBeNull()
+  })
+
+  test('writes the cache when the fetched map differs from the current atom value', async () => {
+    setFlagsResponse([{ enabled: false, key: 'read' }])
+    const ctx = createCtx()
+    featureFlagsAtom(ctx, { read: true })
+
+    await fetchMyFeatureFlags(ctx)
+
+    expect(ctx.get(featureFlagsAtom)).toEqual({ read: false })
+    expect(await AsyncStorage.getItem(CACHED_FEATURE_FLAGS)).toBe(JSON.stringify({ read: false }))
+  })
+
   test('shows the fallback message when the fetch fails without cached flags', async () => {
     mockedGetEffectiveForMe.mockRejectedValue(NETWORK_ERROR)
     const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {})
