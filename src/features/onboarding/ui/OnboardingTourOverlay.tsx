@@ -2,6 +2,7 @@ import { useAction, useAtom } from '@reatom/npm-react'
 import { usePathname, useRouter } from 'expo-router'
 import { useEffect, useState } from 'react'
 import { Modal, StyleSheet, useWindowDimensions, View } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { INDENTS } from 'shared/ui/theme'
 import { scenariosById } from '../lib/scenarios'
 import { computeTooltipLayout } from '../lib/tooltipPosition'
@@ -25,9 +26,11 @@ export const OnboardingTourOverlay = () => {
   const next = useAction(goToNextOnboardingStep)
   const prev = useAction(goToPrevOnboardingStep)
   const { height, width } = useWindowDimensions()
+  const insets = useSafeAreaInsets()
   const router = useRouter()
   const pathname = usePathname()
   const [expiredStepKey, setExpiredStepKey] = useState<null | string>(null)
+  const [cardHeight, setCardHeight] = useState<null | number>(null)
 
   const scenarioId = tour?.scenarioId
   const stepIndex = tour?.stepIndex
@@ -58,14 +61,30 @@ export const OnboardingTourOverlay = () => {
   const hole = activeTargetId === undefined ? null : (rects[activeTargetId] ?? null)
   const isTargetWaitExpired = expiredStepKey === stepKey
   const isWaitingForTarget = activeTargetId !== undefined && hole === null && !isTargetWaitExpired
-  const layout = computeTooltipLayout(hole, TOOLTIP_ESTIMATED_HEIGHT, height, INDENTS.high)
+  const layout = computeTooltipLayout(
+    hole,
+    cardHeight ?? TOOLTIP_ESTIMATED_HEIGHT,
+    height,
+    insets.bottom,
+    INDENTS.high,
+  )
 
   return (
-    <Modal visible transparent animationType='fade' statusBarTranslucent onRequestClose={end}>
+    <Modal
+      visible
+      transparent
+      animationType='fade'
+      statusBarTranslucent
+      onRequestClose={end}
+      navigationBarTranslucent
+    >
       <View style={styles.container}>
         <TourDim hole={hole} width={width} height={height} />
         {isWaitingForTarget ? null : (
-          <View style={[styles.tooltip, { top: layout.top }]}>
+          <View
+            style={[styles.tooltip, { top: layout.top }]}
+            onLayout={event => setCardHeight(event.nativeEvent.layout.height)}
+          >
             <TourTooltip
               step={step}
               onClose={end}
