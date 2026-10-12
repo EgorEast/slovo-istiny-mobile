@@ -1,10 +1,10 @@
-import { useAtom, useCtx } from '@reatom/npm-react'
+import { useCtx } from '@reatom/npm-react'
 import { useState } from 'react'
 import { Pressable, View } from 'react-native'
 import Animated from 'react-native-reanimated'
 import { type TrackCacheVisualState } from 'entities/offline-cache'
-import { currentPlaylistAtom, type PlaybackRate, usePlaybackRate } from 'entities/player'
-import { togglePlaylistSermon, useIsLocalPlaylist } from 'entities/playlist'
+import { type PlaybackRate, usePlaybackRate } from 'entities/player'
+import { togglePlaylistSermon } from 'entities/playlist'
 import { type AudioPlayerData } from 'entities/sermon'
 import { hapticLight } from 'shared/lib/haptics'
 import { reportError } from 'shared/model/error-dialog'
@@ -16,36 +16,32 @@ import { useMenuRevealAnimation } from './useMenuRevealAnimation'
 
 export const PlayerMenu = ({
   audio,
+  canRemoveFromPlaylist,
   isCached,
   onAddToPlaylist,
   onClose,
   onOpenSoundSettings,
   onShowDetails,
   onToggleCache,
+  removablePlaylistId,
   visualState,
 }: {
   audio: AudioPlayerData
+  canRemoveFromPlaylist: boolean
   isCached?: boolean
   onAddToPlaylist?: (sermon: AudioPlayerData) => void
   onClose: () => void
   onOpenSoundSettings: () => void
   onShowDetails: () => void
   onToggleCache: () => void
+  removablePlaylistId: null | string
   visualState: TrackCacheVisualState
 }) => {
   const { currentTheme } = useTheme()
   const ctx = useCtx()
   const { rate, setPlaybackRate } = usePlaybackRate()
-  const [playlist] = useAtom(currentPlaylistAtom)
-  // Hooks stay unconditional; an absent playlist yields a non-local id.
-  const isLocalPlaylist = useIsLocalPlaylist(playlist?.id ?? '')
   const [view, setView] = useState<'main' | 'speed'>('main')
   const { backdropStyle, handleLayout, wrapperStyle } = useMenuRevealAnimation()
-
-  // The item is meaningful only when the current playlist is one of «Мои
-  // плейлисты» (`myPlaylistsAtom`) and actually contains the playing sermon.
-  const canRemoveFromPlaylist =
-    playlist !== null && isLocalPlaylist && playlist.sermons.some(sermon => sermon.id === audio.id)
 
   const handleDetailsPress = () => {
     onShowDetails()
@@ -68,8 +64,8 @@ export const PlayerMenu = ({
   }
 
   const handleRemoveFromPlaylistPress = () => {
-    if (playlist === null) return
-    void togglePlaylistSermon(ctx, playlist.id, audio, false)
+    if (removablePlaylistId === null) return
+    void togglePlaylistSermon(ctx, removablePlaylistId, audio, false)
     onClose()
   }
 
