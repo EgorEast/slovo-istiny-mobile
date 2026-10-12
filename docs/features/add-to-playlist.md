@@ -2,17 +2,25 @@
 
 Действие в контекст-меню проповеди: открывает модалку мультивыбора локальных
 плейлистов. Чекбоксы меняют только черновик, а принадлежность применяется по
-кнопке «Сохранить»; «Отмена» и тап по фону правки отбрасывают.
+кнопке «Сохранить»; «Отмена» и тап по фону правки отбрасывают. Та же модалка
+работает в **батч-режиме** — «Добавить все проповеди в плейлист» из меню шапки
+плейлиста добавляет/убирает сразу весь исходный список проповедей.
 
 **Файлы:**
 
 - `src/entities/playlist/localPlaylistMembership.ts` — экшен `togglePlaylistSermon`
 - `src/entities/playlist/localPlaylistStorage.ts` — приватный `persistMyPlaylists`
 - `src/features/add-to-playlist/index.ts` — публичный API (`useAddToPlaylistModal`)
+- `src/features/add-to-playlist/lib/addToPlaylistState.ts` — тип состояния (`sermon` | `all`)
 - `src/features/add-to-playlist/lib/useAddToPlaylistModal.tsx` — экранный хук: состояние + готовый элемент `modal`
-- `src/features/add-to-playlist/lib/useMembershipDraft.ts` — черновик принадлежности (dirty-гейт и сохранение)
+- `src/features/add-to-playlist/lib/useMembershipDraftValues.ts` — общий черновик (dirty-гейт) для обоих режимов
+- `src/features/add-to-playlist/lib/useMembershipDraft.ts` — черновик одной проповеди
+- `src/features/add-to-playlist/lib/useAllMembershipDraft.ts` — черновик батч-режима
+- `src/features/add-to-playlist/lib/applyAllMembership.ts` — применение батч-черновика + тост лимита
 - `src/features/add-to-playlist/lib/useSortedPlaylists.ts` — начальная принадлежность + сортировка
-- `src/features/add-to-playlist/ui/AddToPlaylistModal.tsx` — модалка
+- `src/features/add-to-playlist/ui/AddToPlaylistModal.tsx` — модалка (диспетчер режимов)
+- `src/features/add-to-playlist/ui/AddSermonToPlaylistContent.tsx` — содержимое режима одной проповеди
+- `src/features/add-to-playlist/ui/AddAllToPlaylistContent.tsx` — содержимое батч-режима
 - `src/features/add-to-playlist/ui/AddToPlaylistFooter.tsx` — футер «Отмена»/«Сохранить»
 - `src/features/add-to-playlist/ui/PlaylistMembershipList.tsx` — ограниченный по высоте список
 - `src/features/add-to-playlist/ui/PlaylistMembershipRow.tsx` — строка: название + чекбокс
@@ -46,13 +54,17 @@
 
 ## Модалка
 
-`AddToPlaylistModal` — «глупый» компонент: `visible`/`onClose` держит
-вызывающий экран, `sermon` — полная `SermonData` (для проверки принадлежности
-используется `sermon.id`, для добавления сохраняется снапшот). Внутри:
+`AddToPlaylistModal` — «глупый» компонент-диспетчер: `visible`/`onClose` держит
+вызывающий экран, `state` — дискриминированный union `AddToPlaylistState`
+(`{ kind: 'sermon', sermon }` | `{ kind: 'all', playlist }`). По режиму он рендерит
+`AddSermonToPlaylistContent` (одна проповедь) или `AddAllToPlaylistContent`
+(батч). Внутри режима одной проповеди `sermon` — полная `SermonData` (для
+проверки принадлежности используется `sermon.id`, для добавления сохраняется
+снапшот):
 
-- `useSortedPlaylists(sermonId)` подписан на `myPlaylistsAtom` и возвращает
+- `useSortedPlaylists(sermonIds)` подписан на `myPlaylistsAtom` и возвращает
   `{ isContained, playlist }[]`, отсортированный так: **сначала плейлисты,
-  содержащие проповедь, затем остальные**. Внутри каждой группы сохраняется
+  содержащие весь набор, затем остальные** (для одной проповеди набор — один id). Внутри каждой группы сохраняется
   порядок атома, поэтому «Избранные» (запиннены первыми в `myPlaylistsAtom`,
   см. [my-playlists.md](./my-playlists.md)) остаются первыми **и в своей группе**
   независимо от принадлежности. Список — **все** плейлисты атома, включая
@@ -61,21 +73,28 @@
   Возвращаемый `isContained` — **снимок** атома: он задаёт начальное значение
   черновика и блокировку заполненных плейлистов, а не отражает ещё не сохранённые
   правки.
-- `useMembershipDraft(sermon)` — **черновик** принадлежности: `values`
-  (`Record<playlistId, boolean>`, инициализируется из `myPlaylistsAtom` по
-  `sermon.id`, «Избранные» включены), `isDirty`, `toggle(playlistId)` и `save()`.
-  `toggle` меняет только черновик (`myPlaylistsAtom` не трогается); `save`
-  последовательно вызывает `togglePlaylistSermon(ctx, id, sermon, value)` **только
-  для изменившихся** плейлистов (исход каждого вызова не разбирается — `void`).
+- `useMembershipDraft(sermon)` (режим одной проповеди) — **черновик**
+  принадлежности: `values` (`Record<playlistId, boolean>`, инициализируется из
+  `myPlaylistsAtom` по `sermon.id`, «Избранные» включены), `isDirty`,
+  `toggle(playlistId)` и `save()`. `toggle` меняет только черновик
+  (`myPlaylistsAtom` не трогается); `save` последовательно вызывает
+  `togglePlaylistSermon(ctx, id, sermon, value)` **только для изменившихся**
+  плейлистов (исход каждого вызова не разбирается — `void`).
+- `useAllMembershipDraft(playlist)` (батч-режим) — черновик пачки: чекбокс
+  включён, когда целевой плейлист содержит **все** проповеди исходного
+  (`target.sermonIds.length > 0 && sourceIds.every(...)`); `save` вызывает
+  `applyAllMembership` (см. ниже) по актуальному `myPlaylistsAtom`.
 - `PlaylistMembershipList` — `FlatList` с ограничением `maxHeight` (360), чтобы
   длинный набор плейлистов скроллился, а не рос за экран. Рендерит строки из
   **черновика** (`values`), а не из живого атома.
 - `PlaylistMembershipRow` — `CheckboxField`: тап по строке вызывает только
   `toggle` черновика и **не** закрывает модалку. Если плейлист заполнен до
-  `MAX_CUSTOM_PLAYLIST_SERMONS` (200) и проповеди в нём изначально нет,
-  строка **отключена** (`disabled`) с подсказкой «Достигнут лимит — 200 проповедей»
-  (тоста нет; это единственный видимый признак лимита, поэтому сохранение туда
-  недостижимо). Содержащую проповедь строку отключать нельзя — её можно снять.
+  `MAX_CUSTOM_PLAYLIST_SERMONS` (200) и проповеди в нём изначально нет (в
+  батч-режиме — не содержит весь набор), строка **отключена** (`disabled`) с
+  подсказкой «Достигнут лимит — 200 проповедей» (в одиночном режиме сохранение
+  туда недостижимо; в батч-режиме частичное добавление доходит до лимита по
+  «Сохранить» и показывает тост — см. ниже). Содержащую проповедь строку
+  отключать нельзя — её можно снять.
 - `AddToPlaylistFooter` — две кнопки: **«Сохранить»** (primary; недоступна, пока
   черновик не изменён — гейт по `isDirty`; по нажатию `save()` применяет изменения
   и закрывает модалку) и **«Отмена»** (закрывает и отбрасывает черновик). Тап по
@@ -86,7 +105,30 @@
 (`requestAnimationFrame`): контекст-меню — тоже нативная `Modal`, и она
 закрывается своим кадром. Без задержки оба нативных `Modal` монтировались бы в
 одном коммите и на Android накладывались бы друг на друга; возвращаемый API хука
-не меняется.
+не меняется. Тот же дефер применён и к `openAddAllToPlaylist` (меню шапки — тоже
+нативная `Modal`).
+
+## Батч-режим «Добавить все проповеди в плейлист»
+
+Пункт меню шапки плейлиста открывает ту же модалку в режиме
+`{ kind: 'all', playlist }`. Начальный чекбокс целевого плейлиста включён, только
+если он содержит **все** проповеди исходного. Сохранение (`applyAllMembership`):
+
+1. Для каждого **изменившегося** плейлиста берётся снимок `sermonIds` из
+   `myPlaylistsAtom` в момент «Сохранить».
+2. Включённый плейлист добирает только **отсутствующие** проповеди исходного
+   списка (`togglePlaylistSermon(ctx, id, sermon, true)` по снапшотам).
+3. На первом исходе `limit-reached` добавление в этот плейлист **останавливается**
+   и показывается тост **«В плейлисте максимум 200 проповедей»** (`showToast` из
+   `shared/model`); остальные целевые плейлисты обрабатываются как обычно.
+4. Выключенный плейлист (был заполнен всем набором) теряет **все** исходные
+   проповеди (`togglePlaylistSermon(..., false)` по каждой).
+
+Как и в одиночном режиме, чекбоксы меняют только черновик, «Сохранить» доступно
+лишь при изменениях, «Отмена»/фон черновик отбрасывают. Пункт меню рендерится
+**только на экране плейлиста** и только для непустого плейлиста (колбэк
+`onAddAllToPlaylist` приходит пропом; шторка плеера его не передаёт) — см.
+[screens/playlist.md](../screens/playlist.md).
 
 ## Интеграция по поверхностям
 

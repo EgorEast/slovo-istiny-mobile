@@ -1,6 +1,6 @@
 import { useLocalSearchParams } from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
-import { useCallback, useMemo } from 'react'
+import { useMemo } from 'react'
 import { View } from 'react-native'
 import { useAddToPlaylistModal } from 'features/add-to-playlist'
 import { useHistoryProgressMap, useHistorySermonIds } from 'entities/listening-history'
@@ -18,12 +18,12 @@ import { usePlaylistTrackActions } from '../lib/usePlaylistTrackActions'
 import { PlaylistHeader } from './PlaylistHeader'
 import { PlaylistStatusView } from './PlaylistStatusView'
 import { PlaylistTrackList } from './PlaylistTrackList'
+import { PlaylistTrackSeparator } from './PlaylistTrackSeparator'
 import { createStyles } from './styles'
 import { usePlaylistItemRenderer } from './usePlaylistItemRenderer'
 import { buildTracksListData, usePlaylistNavigationOptions } from './usePlaylistNavigationOptions'
 
 const EMPTY_PLAYLIST = { artwork: null, description: '', id: 'default', sermons: [], title: '' }
-const FAVORITES_EMPTY_MESSAGE = 'В избранном пока пусто'
 
 export const PlaylistScreen = () => {
   const { currentTheme } = useTheme()
@@ -49,7 +49,7 @@ export const PlaylistScreen = () => {
 
   const progressMap = useHistoryProgressMap()
   const historySermonIds = useHistorySermonIds()
-  const { modal, openAddToPlaylist } = useAddToPlaylistModal()
+  const { modal, openAddAllToPlaylist, openAddToPlaylist } = useAddToPlaylistModal()
   const { buildMenuActions, handlePressItem, handlePressPlayAll, renderDialog } =
     usePlaylistTrackActions(list, playlist, historySermonIds, progressMap, openAddToPlaylist)
 
@@ -77,16 +77,17 @@ export const PlaylistScreen = () => {
     progressMap,
   })
 
-  usePlaylistNavigationOptions({ headerIconColor, playlist, title, tracksListData })
+  usePlaylistNavigationOptions({
+    headerIconColor,
+    onAddAllToPlaylist: openAddAllToPlaylist,
+    playlist,
+    title,
+    tracksListData,
+  })
 
   const tracksListStyles = useMemo(() => createTracksListStyles(currentTheme), [currentTheme])
 
   const styles = useMemo(() => createStyles(currentTheme), [currentTheme])
-
-  const ItemSeparator = useCallback(
-    () => <View style={tracksListStyles.divider} />,
-    [tracksListStyles],
-  )
 
   if (isImportingCustomPlaylist || isLoading || notFound)
     return (
@@ -106,8 +107,8 @@ export const PlaylistScreen = () => {
         renderItem={renderItem}
         onScroll={scrollHandler}
         style={tracksListStyles.container}
-        ItemSeparatorComponent={ItemSeparator}
-        emptyMessage={playlist.id === FAVORITES_PLAYLIST.id ? FAVORITES_EMPTY_MESSAGE : undefined}
+        ItemSeparatorComponent={PlaylistTrackSeparator}
+        emptyMessage={playlist.id === FAVORITES_PLAYLIST.id ? 'В избранном пока пусто' : undefined}
         headerElement={
           <PlaylistHeader
             title={title}

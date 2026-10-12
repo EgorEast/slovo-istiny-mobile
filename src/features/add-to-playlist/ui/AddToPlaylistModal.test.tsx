@@ -1,7 +1,9 @@
 import { createCtx } from '@reatom/framework'
 import { act, fireEvent, screen } from '@testing-library/react-native'
+import { type PlaylistData } from 'entities/playlist'
 import { type SermonData } from 'entities/sermon'
 import { renderWithProviders } from 'shared/mocks/renderWithProviders'
+import { toastAtom } from 'shared/model'
 import { AddToPlaylistModal } from './AddToPlaylistModal'
 
 const mockTogglePlaylistSermon = jest.fn()
@@ -66,7 +68,30 @@ const seedPlaylists = (
 const mockOnClose = jest.fn()
 
 const renderModal = async (ctx: ReturnType<typeof createCtx>) =>
-  renderWithProviders(<AddToPlaylistModal visible sermon={SERMON} onClose={mockOnClose} />, { ctx })
+  renderWithProviders(
+    <AddToPlaylistModal visible onClose={mockOnClose} state={{ kind: 'sermon', sermon: SERMON }} />,
+    { ctx },
+  )
+
+const SOURCE_A: SermonData = { ...SERMON, id: 'source-a', title: 'Первая' }
+const SOURCE_B: SermonData = { ...SERMON, id: 'source-b', title: 'Вторая' }
+const SOURCE_PLAYLIST: PlaylistData = {
+  artwork: null,
+  id: 'source',
+  sermons: [SOURCE_A, SOURCE_B],
+  title: 'Источник',
+}
+const LIMIT_TOAST = `В плейлисте максимум ${MAX_CUSTOM_PLAYLIST_SERMONS} проповедей`
+
+const renderAllModal = async (ctx: ReturnType<typeof createCtx>) =>
+  renderWithProviders(
+    <AddToPlaylistModal
+      visible
+      onClose={mockOnClose}
+      state={{ kind: 'all', playlist: SOURCE_PLAYLIST }}
+    />,
+    { ctx },
+  )
 
 // Membership rows are the only buttons carrying an accessibility `checked` state
 // (the footer buttons only carry `disabled`), so this isolates them from the footer.
@@ -233,5 +258,91 @@ describe('<AddToPlaylistModal>', () => {
 
     expect(mockTogglePlaylistSermon).toHaveBeenCalledTimes(1)
     expect(mockTogglePlaylistSermon.mock.calls[0][3]).toBe(false)
+  })
+})
+
+describe('<AddToPlaylistModal> batch mode', () => {
+  beforeEach(() => {
+    jest.clearAllMocks()
+    mockTogglePlaylistSermon.mockReset()
+    mockOnClose.mockReset()
+  })
+
+  test('checks a target that already contains every source sermon', async () => {
+    const ctx = createCtx()
+    seedPlaylists(ctx, [SOURCE_A, SOURCE_B])
+
+    await renderAllModal(ctx)
+
+    const checkboxes = screen.getAllByRole('checkbox')
+    expect(checkboxes[0]).toBeChecked()
+    expect(checkboxes[1]).not.toBeChecked()
+    expect(getSaveButton()).toBeDisabled()
+  })
+
+  test('disables save until a draft change and enables it once toggled', async () => {
+    const ctx = createCtx()
+    seedPlaylists(ctx, [])
+
+    await renderAllModal(ctx)
+
+    expect(getSaveButton()).toBeDisabled()
+
+    await pressRow(1)
+    expect(getSaveButton()).toBeEnabled()
+  })
+
+  test('toggling only drafts, no entity calls before save', async () => {
+    const ctx = createCtx()
+    seedPlaylists(ctx, [])
+
+    await renderAllModal(ctx)
+    await pressRow(1)
+
+    expect(mockTogglePlaylistSermon).not.toHaveBeenCalled()
+  })
+
+  test('save adds only the missing source sermons as true', async () => {
+    const ctx = createCtx()
+    seedPlaylists(ctx, [SOURCE_A])
+
+    await renderAllModal(ctx)
+    await pressRow(0)
+    await pressSave()
+
+    expect(mockTogglePlaylistSermon).toHaveBeenCalledTimes(1)
+    expect(mockTogglePlaylistSermon.mock.calls[0][1]).toBe(FAVORITES_PLAYLIST.id)
+    expect(mockTogglePlaylistSermon.mock.calls[0][2]).toEqual(SOURCE_B)
+    expect(mockTogglePlaylistSermon.mock.calls[0][3]).toBe(true)
+    expect(mockOnClose).toHaveBeenCalledTimes(1)
+  })
+
+  test('stops adding on limit-reached and shows the limit toast', async () => {
+    const ctx = createCtx()
+    seedPlaylists(ctx, [])
+    mockTogglePlaylistSermon.mockResolvedValue('limit-reached')
+
+    await renderAllModal(ctx)
+    await pressRow(1)
+    await pressSave()
+
+    expect(mockTogglePlaylistSermon).toHaveBeenCalledTimes(1)
+    expect(ctx.get(toastAtom)).toBe(LIMIT_TOAST)
+  })
+
+  test('unchecking a fully-contained target removes every source sermon', async () => {
+    const ctx = createCtx()
+    seedPlaylists(ctx, [SOURCE_A, SOURCE_B])
+
+    await renderAllModal(ctx)
+    await pressRow(0)
+    await pressSave()
+
+    expect(mockTogglePlaylistSermon).toHaveBeenCalledTimes(2)
+    expect(mockTogglePlaylistSermon.mock.calls[0][1]).toBe(FAVORITES_PLAYLIST.id)
+    expect(mockTogglePlaylistSermon.mock.calls[0][2]).toEqual(SOURCE_A)
+    expect(mockTogglePlaylistSermon.mock.calls[0][3]).toBe(false)
+    expect(mockTogglePlaylistSermon.mock.calls[1][2]).toEqual(SOURCE_B)
+    expect(mockTogglePlaylistSermon.mock.calls[1][3]).toBe(false)
   })
 })

@@ -89,6 +89,7 @@ const PLAYLIST = {
 
 const MARK_ALL_TEXT = 'Пометить все прослушанными'
 const REMOVE_TEXT = 'Удалить проповеди из истории'
+const ADD_ALL_TO_PLAYLIST_TEXT = 'Добавить все проповеди в плейлист'
 const MARK_CONFIRM_TEXT = 'Пометить'
 const REMOVE_CONFIRM_TEXT = 'Удалить'
 const EDIT_LABEL = 'Редактировать плейлист'
@@ -364,5 +365,51 @@ describe('<PlaylistHeaderMenu>', () => {
     })
 
     expect(screen.queryByText(DELETE_MENU_TEXT)).toBeNull()
+  })
+
+  test('hides the add-all-to-playlist item without a callback (player sheet)', async () => {
+    await openMenu()
+
+    expect(screen.queryByText(ADD_ALL_TO_PLAYLIST_TEXT)).toBeNull()
+  })
+
+  test('hides the add-all-to-playlist item when the playlist is empty', async () => {
+    const ctx = createCtx()
+    await renderWithProviders(
+      <PlaylistHeaderMenu
+        tracksData={[]}
+        onAddAllToPlaylist={jest.fn()}
+        playlistTitle={PLAYLIST_TITLE}
+        playlist={{ ...PLAYLIST, sermons: [] }}
+      />,
+      { ctx },
+    )
+    await act(async () => {
+      fireEvent.press(screen.getByRole('button', { name: MENU_BUTTON_LABEL }))
+    })
+
+    expect(screen.queryByText(ADD_ALL_TO_PLAYLIST_TEXT)).toBeNull()
+  })
+
+  test('add-all-to-playlist: closes the menu and calls back with the playlist', async () => {
+    const onAddAllToPlaylist = jest.fn()
+    const ctx = createCtx()
+    await renderWithProviders(
+      <PlaylistHeaderMenu
+        playlist={PLAYLIST}
+        tracksData={TRACKS}
+        playlistTitle={PLAYLIST_TITLE}
+        onAddAllToPlaylist={onAddAllToPlaylist}
+      />,
+      { ctx },
+    )
+    await act(async () => {
+      fireEvent.press(screen.getByRole('button', { name: MENU_BUTTON_LABEL }))
+    })
+
+    fireEvent.press(await waitFor(() => screen.getByText(ADD_ALL_TO_PLAYLIST_TEXT)))
+
+    expect(onAddAllToPlaylist).toHaveBeenCalledWith(PLAYLIST)
+    await waitFor(() => expect(screen.queryByText(ADD_ALL_TO_PLAYLIST_TEXT)).toBeNull())
   })
 })

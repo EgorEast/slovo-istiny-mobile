@@ -17,6 +17,7 @@ export const PlaylistHeaderMenu = ({
   accessibilityLabel = DEFAULT_MENU_LABEL,
   iconColor,
   isEditEnabled = false,
+  onAddAllToPlaylist,
   playlist,
   playlistTitle,
   tracksData,
@@ -45,6 +46,13 @@ export const PlaylistHeaderMenu = ({
   } = usePlaylistOfflineMenu(tracksData, playlistTitle)
 
   const closeMenu = () => setMenuVisible(false)
+  const handleAddAllToPlaylist =
+    onAddAllToPlaylist && playlist.sermons.length > 0
+      ? () => {
+          closeMenu()
+          onAddAllToPlaylist(playlist)
+        }
+      : undefined
   const historyMenu = usePlaylistHistoryMenu(playlist, closeMenu)
   const { error, handleErrorClose } = usePlaylistCacheError(cacheDialogVisible)
   const { canShare, handleShare } = usePlaylistShare(playlist, closeMenu)
@@ -86,6 +94,7 @@ export const PlaylistHeaderMenu = ({
         onDelete={() => requestDelete(playlist.id)}
         onMarkAll={historyMenu.handleMarkAllOption}
         isClearCacheDisabled={isClearCacheDisabled}
+        onAddAllToPlaylist={handleAddAllToPlaylist}
         isOfflineItemsVisible={isOfflineItemsVisible}
         onAddAllToOffline={handleAddAllToOfflineOption}
         onRemoveFromHistory={historyMenu.handleRemoveOption}

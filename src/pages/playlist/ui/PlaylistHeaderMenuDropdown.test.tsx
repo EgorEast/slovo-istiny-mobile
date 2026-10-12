@@ -53,6 +53,7 @@ const REMOVE_TEXT = 'Удалить проповеди из истории'
 const SHARE_TEXT = 'Поделиться плейлистом'
 const PUBLISH_TEXT = 'Добавить в глобальные'
 const DELETE_TEXT = 'Удалить плейлист'
+const ADD_ALL_TO_PLAYLIST_TEXT = 'Добавить все проповеди в плейлист'
 
 const defaultProps = {
   allCached: false,
@@ -77,8 +78,9 @@ const defaultProps = {
   visible: true,
 }
 
-const renderDropdown = (props?: Partial<typeof defaultProps>) =>
-  render(<PlaylistHeaderMenuDropdown {...defaultProps} {...props} />)
+const renderDropdown = (
+  props?: Partial<typeof defaultProps> & { onAddAllToPlaylist?: () => void },
+) => render(<PlaylistHeaderMenuDropdown {...defaultProps} {...props} />)
 
 describe('<PlaylistHeaderMenuDropdown>', () => {
   beforeEach(() => {
@@ -201,6 +203,23 @@ describe('<PlaylistHeaderMenuDropdown>', () => {
     fireEvent.press(screen.getByText(SHARE_TEXT))
 
     expect(onShare).not.toHaveBeenCalled()
+  })
+
+  test('hides the add-all-to-playlist item without a callback (player sheet)', async () => {
+    await renderDropdown()
+
+    expect(screen.queryByText(ADD_ALL_TO_PLAYLIST_TEXT)).toBeNull()
+  })
+
+  test('shows the add-all-to-playlist item and fires it when the callback is provided', async () => {
+    const onAddAllToPlaylist = jest.fn()
+    await renderDropdown({ onAddAllToPlaylist })
+
+    expect(screen.getByText(ADD_ALL_TO_PLAYLIST_TEXT)).toBeTruthy()
+
+    fireEvent.press(screen.getByText(ADD_ALL_TO_PLAYLIST_TEXT))
+
+    expect(onAddAllToPlaylist).toHaveBeenCalledTimes(1)
   })
 
   test('hides the publish item for a non-local playlist', async () => {

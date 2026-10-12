@@ -1,30 +1,39 @@
 import { useCallback, useState } from 'react'
+import { type PlaylistData } from 'entities/playlist'
 import { type SermonData } from 'entities/sermon'
 import { AddToPlaylistModal } from '../ui/AddToPlaylistModal'
+import { type AddToPlaylistState } from './addToPlaylistState'
 
 /**
  * Держит состояние «Добавить в плейлист» для экрана: открывает модалку по
- * проповеди и возвращает её готовый элемент для рендера. Состояние живёт на
- * уровне экрана (не строки), поэтому в списке рендерится одна модалка, а не по
- * одной на каждую строку.
+ * проповеди или по всем проповедям плейлиста и возвращает её готовый элемент для
+ * рендера. Состояние живёт на уровне экрана (не строки), поэтому в списке
+ * рендерится одна модалка, а не по одной на каждую строку.
  *
  * Использование: `const { openAddToPlaylist, modal } = useAddToPlaylistModal()`,
  * затем `onAddToPlaylist: openAddToPlaylist` в меню и `{modal}` в разметке.
  */
 export const useAddToPlaylistModal = () => {
-  const [sermon, setSermon] = useState<null | SermonData>(null)
+  const [state, setState] = useState<AddToPlaylistState | null>(null)
 
-  const openAddToPlaylist = useCallback((next: SermonData) => {
+  const openAddToPlaylist = useCallback((sermon: SermonData) => {
     // На Android контекст-меню — тоже нативная Modal, и она закрывает свой Modal
     // в этом же кадре; если смонтировать нашу модалку сразу, нативные Modal
     // накладываются друг на друга (меню мигает поверх). Открываем следующим кадром.
-    requestAnimationFrame(() => setSermon(next))
+    requestAnimationFrame(() => setState({ kind: 'sermon', sermon }))
   }, [])
 
-  const closeAddToPlaylist = useCallback(() => setSermon(null), [])
+  const openAddAllToPlaylist = useCallback((playlist: PlaylistData) => {
+    // Тот же нативный Modal-конфликт, что и у одиночной проповеди: меню шапки
+    // закрывается своим кадром, поэтому модалку монтируем следующим.
+    requestAnimationFrame(() => setState({ kind: 'all', playlist }))
+  }, [])
+
+  const closeAddToPlaylist = useCallback(() => setState(null), [])
 
   return {
-    modal: sermon && <AddToPlaylistModal visible sermon={sermon} onClose={closeAddToPlaylist} />,
+    modal: state && <AddToPlaylistModal visible state={state} onClose={closeAddToPlaylist} />,
+    openAddAllToPlaylist,
     openAddToPlaylist,
   }
 }
