@@ -2,11 +2,18 @@ import { Ionicons } from '@expo/vector-icons'
 import { useAction, useAtom } from '@reatom/npm-react'
 import { Checkbox } from 'expo-checkbox'
 import { type StyleProp, StyleSheet, Text, View, type ViewStyle } from 'react-native'
+import { OnboardingTarget } from 'features/onboarding'
 import { setToursDisabled, toursDisabledAtom } from 'shared/model'
 import { COLORS, FONT_SIZES, INDENTS, useTheme } from 'shared/ui/theme'
 import { TouchableItem } from 'shared/ui/touchable-item'
 
-export const ToursSettingsItem = ({ style }: { style?: StyleProp<ViewStyle> }) => {
+export const ToursSettingsItem = ({
+  onboardingTargetId,
+  style,
+}: {
+  onboardingTargetId?: string
+  style?: StyleProp<ViewStyle>
+}) => {
   const [disabled] = useAtom(toursDisabledAtom)
   const setDisabled = useAction(setToursDisabled)
   const { currentTheme } = useTheme()
@@ -16,32 +23,34 @@ export const ToursSettingsItem = ({ style }: { style?: StyleProp<ViewStyle> }) =
   }
 
   return (
-    <TouchableItem
-      onPress={handleToggle}
-      style={[styles.container, { backgroundColor: currentTheme.surface }, style]}
-    >
-      <View style={styles.content}>
-        <Ionicons
-          size={24}
-          style={styles.icon}
-          color={currentTheme.text}
-          name='help-circle-outline'
-        />
-        <View style={styles.textContainer}>
-          <Text style={[styles.title, { color: currentTheme.text }]}>Обзоры и подсказки</Text>
-          <Text style={[styles.description, { color: currentTheme.textMuted }]}>
-            Кнопка «?» на экранах и автопоказ обзоров
-          </Text>
+    <OnboardingTarget id={onboardingTargetId}>
+      <TouchableItem
+        onPress={handleToggle}
+        style={[styles.container, { backgroundColor: currentTheme.surface }, style]}
+      >
+        <View style={styles.content}>
+          <Ionicons
+            size={24}
+            style={styles.icon}
+            color={currentTheme.text}
+            name='help-circle-outline'
+          />
+          <View style={styles.textContainer}>
+            <Text style={[styles.title, { color: currentTheme.text }]}>Обзоры и подсказки</Text>
+            <Text style={[styles.description, { color: currentTheme.textMuted }]}>
+              Кнопка «?» на экранах и автопоказ обзоров
+            </Text>
+          </View>
+          <Checkbox
+            value={!disabled}
+            style={styles.checkbox}
+            onValueChange={handleToggle}
+            aria-label='Обзоры и подсказки'
+            color={!disabled ? currentTheme.primary : undefined}
+          />
         </View>
-        <Checkbox
-          value={!disabled}
-          style={styles.checkbox}
-          onValueChange={handleToggle}
-          aria-label='Обзоры и подсказки'
-          color={!disabled ? currentTheme.primary : undefined}
-        />
-      </View>
-    </TouchableItem>
+      </TouchableItem>
+    </OnboardingTarget>
   )
 }
 

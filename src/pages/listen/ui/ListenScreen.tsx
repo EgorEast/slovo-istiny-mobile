@@ -3,7 +3,6 @@ import { useEffect } from 'react'
 import { ScrollView, StyleSheet, View } from 'react-native'
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useAddToPlaylistModal } from 'features/add-to-playlist'
-import { OnboardingTarget } from 'features/onboarding'
 import {
   SEARCH_HEADER_HEIGHT,
   SearchBar,
@@ -82,20 +81,15 @@ export const ListenScreen = () => {
             ]}
           >
             {!isSearchOpen && <ListenTopRow showAdminButton={showAdminButton} />}
-            <OnboardingTarget id='listen.sections'>
-              <DynamicSectionsSlider
-                leadingElement={
-                  !isSearchActive ? (
-                    <OnboardingTarget id='listen.continue-listening'>
-                      <ContinueListeningButton />
-                    </OnboardingTarget>
-                  ) : undefined
-                }
-              />
-            </OnboardingTarget>
-            <OnboardingTarget id='listen.my-playlists'>
-              <MyPlaylistsSlider />
-            </OnboardingTarget>
+            <DynamicSectionsSlider
+              onboardingTargetId='listen.sections'
+              leadingElement={
+                !isSearchActive ? (
+                  <ContinueListeningButton onboardingTargetId='listen.continue-listening' />
+                ) : undefined
+              }
+            />
+            <MyPlaylistsSlider onboardingTargetId='listen.my-playlists' />
           </ScrollView>
         </PullToRefresh>
       )}

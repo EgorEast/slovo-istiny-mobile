@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons'
 import { type StyleProp, StyleSheet, Text, View, type ViewStyle } from 'react-native'
+import { OnboardingTarget } from 'features/onboarding'
 import { COLORS, FONT_SIZES, INDENTS, useTheme } from 'shared/ui/theme'
 import { TouchableItem } from 'shared/ui/touchable-item'
 
@@ -7,6 +8,7 @@ export const SettingsItem = ({
   description,
   disabled,
   icon,
+  onboardingTargetId,
   onPress,
   style,
   title,
@@ -14,6 +16,7 @@ export const SettingsItem = ({
   description?: string
   disabled?: boolean
   icon?: keyof typeof Ionicons.glyphMap
+  onboardingTargetId?: string
   onPress: () => void
   style?: StyleProp<ViewStyle>
   title: string
@@ -21,34 +24,39 @@ export const SettingsItem = ({
   const { currentTheme } = useTheme()
 
   return (
-    <TouchableItem
-      onPress={onPress}
-      disabled={disabled}
-      style={[styles.container, { backgroundColor: currentTheme.surface }, style]}
-    >
-      <View style={styles.content}>
-        {icon ? (
-          <Ionicons
-            size={24}
-            name={icon}
-            style={styles.icon}
-            color={disabled ? currentTheme.textMuted : currentTheme.text}
-          />
-        ) : null}
-        <View style={styles.textContainer}>
-          <Text
-            style={[styles.title, { color: disabled ? currentTheme.textMuted : currentTheme.text }]}
-          >
-            {title}
-          </Text>
-          {description ? (
-            <Text style={[styles.description, { color: currentTheme.textMuted }]}>
-              {description}
-            </Text>
+    <OnboardingTarget id={onboardingTargetId}>
+      <TouchableItem
+        onPress={onPress}
+        disabled={disabled}
+        style={[styles.container, { backgroundColor: currentTheme.surface }, style]}
+      >
+        <View style={styles.content}>
+          {icon ? (
+            <Ionicons
+              size={24}
+              name={icon}
+              style={styles.icon}
+              color={disabled ? currentTheme.textMuted : currentTheme.text}
+            />
           ) : null}
+          <View style={styles.textContainer}>
+            <Text
+              style={[
+                styles.title,
+                { color: disabled ? currentTheme.textMuted : currentTheme.text },
+              ]}
+            >
+              {title}
+            </Text>
+            {description ? (
+              <Text style={[styles.description, { color: currentTheme.textMuted }]}>
+                {description}
+              </Text>
+            ) : null}
+          </View>
         </View>
-      </View>
-    </TouchableItem>
+      </TouchableItem>
+    </OnboardingTarget>
   )
 }
 

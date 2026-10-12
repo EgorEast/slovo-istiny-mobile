@@ -3,6 +3,7 @@ import { useAction, useAtom } from '@reatom/npm-react'
 import { type ReactNode, useEffect, useState } from 'react'
 import { StyleSheet } from 'react-native'
 import { CreateLocalPlaylistModal } from 'features/local-playlist-form'
+import { OnboardingTarget } from 'features/onboarding'
 import {
   loadMyPlaylists,
   loadSectionSettings,
@@ -52,7 +53,7 @@ const toCreateItem = (icon: ReactNode): SliderItemsElement<MyPlaylistsItem> => (
 // редактирование порядка живёт на отдельном экране «Мои плейлисты», куда ведёт
 // тап по заголовку секции. Внешний вид берётся из настроек оформления
 // (`sectionSettingsAtom`).
-export const MyPlaylistsSlider = () => {
+export const MyPlaylistsSlider = ({ onboardingTargetId }: { onboardingTargetId?: string }) => {
   const { currentTheme } = useTheme()
   const [playlists] = useAtom(myPlaylistsAtom)
   const [settings] = useAtom(sectionSettingsAtom)
@@ -99,7 +100,7 @@ export const MyPlaylistsSlider = () => {
   ]
 
   return (
-    <>
+    <OnboardingTarget id={onboardingTargetId}>
       <Slider
         items={items}
         style={styles.slider}
@@ -114,7 +115,7 @@ export const MyPlaylistsSlider = () => {
         whereIsSlideTitleLocated={mapWhereIsTitleLocated(settings.whereIsSlideTitleLocated)}
       />
       <CreateLocalPlaylistModal visible={isCreateVisible} onClose={() => setCreateVisible(false)} />
-    </>
+    </OnboardingTarget>
   )
 }
 

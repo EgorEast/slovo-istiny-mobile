@@ -1,5 +1,6 @@
 import { useAction, useAtom, useCtx } from '@reatom/npm-react'
 import { StyleSheet, Switch } from 'react-native'
+import { OnboardingTarget } from 'features/onboarding'
 import { sermonCachingEnabledAtom, setSermonCachingEnabled } from 'entities/offline-cache'
 import { useDebounce } from 'shared/lib/hooks/useDebounce'
 import { PressableButton } from 'shared/ui/pressable-button'
@@ -16,7 +17,11 @@ const SWITCH_SCALE = 0.8
 // OFF value, held for the whole window, runs a single clear.
 export const TOGGLE_SETTLE_MS = 800
 
-export const SermonCachingHeaderSwitch = () => {
+export const SermonCachingHeaderSwitch = ({
+  onboardingTargetId,
+}: {
+  onboardingTargetId?: string
+}) => {
   const ctx = useCtx()
   const [enabled] = useAtom(sermonCachingEnabledAtom)
   const setEnabled = useAction(setSermonCachingEnabled)
@@ -72,22 +77,24 @@ export const SermonCachingHeaderSwitch = () => {
   const toggleColors = buildToggleColors(currentTheme)
 
   return (
-    <PressableButton
-      onPress={handleToggle}
-      style={styles.tapTarget}
-      accessibilityRole='switch'
-      accessibilityLabel={CACHING_LABEL}
-      accessibilityState={{ checked: enabled }}
-    >
-      <Switch
-        value={enabled}
-        {...toggleColors}
-        accessibilityElementsHidden
-        ios_backgroundColor={COLORS.disabled}
-        style={[styles.switch, styles.switchInert]}
-        importantForAccessibility='no-hide-descendants'
-      />
-    </PressableButton>
+    <OnboardingTarget id={onboardingTargetId}>
+      <PressableButton
+        onPress={handleToggle}
+        style={styles.tapTarget}
+        accessibilityRole='switch'
+        accessibilityLabel={CACHING_LABEL}
+        accessibilityState={{ checked: enabled }}
+      >
+        <Switch
+          value={enabled}
+          {...toggleColors}
+          accessibilityElementsHidden
+          ios_backgroundColor={COLORS.disabled}
+          style={[styles.switch, styles.switchInert]}
+          importantForAccessibility='no-hide-descendants'
+        />
+      </PressableButton>
+    </OnboardingTarget>
   )
 }
 

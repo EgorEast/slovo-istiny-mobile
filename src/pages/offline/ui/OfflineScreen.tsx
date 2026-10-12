@@ -45,12 +45,8 @@ export const OfflineScreen = () => {
       headerRight: () => (
         <OnboardingHelpRow>
           <View style={styles.headerActions}>
-            <OnboardingTarget id='offline.caching-switch'>
-              <SermonCachingHeaderSwitch />
-            </OnboardingTarget>
-            <OnboardingTarget id='offline.header-menu'>
-              <OfflineHeaderMenu />
-            </OnboardingTarget>
+            <SermonCachingHeaderSwitch onboardingTargetId='offline.caching-switch' />
+            <OfflineHeaderMenu onboardingTargetId='offline.header-menu' />
           </View>
         </OnboardingHelpRow>
       ),

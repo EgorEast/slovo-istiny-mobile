@@ -51,27 +51,24 @@ export const MoreScreen = () => {
         </Text>
 
         <OnboardingTarget id='more.menu' style={styles.menu}>
-          <OnboardingTarget id='more.offline-item'>
-            <MoreMenuSettingsItem
-              title='Офлайн'
-              icon='cloud-offline-outline'
-              onPress={() => router.push('/offline')}
-            />
-          </OnboardingTarget>
-          <OnboardingTarget id='more.history-item'>
-            <MoreMenuSettingsItem
-              icon='time-outline'
-              title='История прослушивания'
-              onPress={() => router.push('/history')}
-            />
-          </OnboardingTarget>
-          <OnboardingTarget id='more.settings-item'>
-            <MoreMenuSettingsItem
-              title='Настройки'
-              icon='settings-outline'
-              onPress={() => router.push('/settings')}
-            />
-          </OnboardingTarget>
+          <MoreMenuSettingsItem
+            title='Офлайн'
+            icon='cloud-offline-outline'
+            onboardingTargetId='more.offline-item'
+            onPress={() => router.push('/offline')}
+          />
+          <MoreMenuSettingsItem
+            icon='time-outline'
+            title='История прослушивания'
+            onboardingTargetId='more.history-item'
+            onPress={() => router.push('/history')}
+          />
+          <MoreMenuSettingsItem
+            title='Настройки'
+            icon='settings-outline'
+            onboardingTargetId='more.settings-item'
+            onPress={() => router.push('/settings')}
+          />
           <MoreMenuSettingsItem
             title='О приложении'
             icon='information-circle-outline'

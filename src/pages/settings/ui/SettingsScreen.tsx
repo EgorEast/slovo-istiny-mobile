@@ -19,29 +19,22 @@ export const SettingsScreen = () => {
   return (
     <View style={[styles.container, { backgroundColor: currentTheme.background }]}>
       <ScrollView contentContainerStyle={styles.content}>
-        <OnboardingTarget id='settings.theme'>
-          <SettingsItem
-            title='Тема оформления'
-            icon='color-palette-outline'
-            description='Светлая, тёмная или как в системе'
-            onPress={() => {
-              setShowThemeDialog(true)
-            }}
-          />
-        </OnboardingTarget>
+        <SettingsItem
+          title='Тема оформления'
+          icon='color-palette-outline'
+          onboardingTargetId='settings.theme'
+          description='Светлая, тёмная или как в системе'
+          onPress={() => {
+            setShowThemeDialog(true)
+          }}
+        />
         {isMaterialYouSupported() && <DynamicColorsItem />}
-        <OnboardingTarget id='settings.haptics'>
-          {showHapticsItem && <HapticsSettingsItem />}
-        </OnboardingTarget>
-        <OnboardingTarget id='settings.tours'>
-          <ToursSettingsItem />
-        </OnboardingTarget>
+        {showHapticsItem && <HapticsSettingsItem onboardingTargetId='settings.haptics' />}
+        <ToursSettingsItem onboardingTargetId='settings.tours' />
         <OnboardingTarget id='settings.backup'>
           <BackupSection />
         </OnboardingTarget>
-        <OnboardingTarget id='settings.server'>
-          <ServerUrlSettings />
-        </OnboardingTarget>
+        <ServerUrlSettings onboardingTargetId='settings.server' />
       </ScrollView>
       <ThemeDialog
         visible={showThemeDialog}

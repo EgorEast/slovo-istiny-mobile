@@ -1,6 +1,6 @@
 import { createCtx } from '@reatom/framework'
 import { act, waitFor } from '@testing-library/react-native'
-import { View } from 'react-native'
+import { Text, View } from 'react-native'
 import { renderWithProviders } from 'shared/mocks'
 import { onboardingTargetRectsAtom, onboardingTourAtom } from '../model'
 import { OnboardingTarget } from './OnboardingTarget'
@@ -69,6 +69,22 @@ describe('<OnboardingTarget>', () => {
       await new Promise(resolve => setTimeout(resolve, MEASURE_FLUSH_MS))
     })
 
+    expect(ctx.get(onboardingTargetRectsAtom)).toEqual({})
+  })
+
+  test('renders children bare and registers nothing without an id', async () => {
+    mockMeasureInWindow({ height: 4, width: 3, x: 1, y: 2 })
+    const ctx = createCtx()
+    onboardingTourAtom(ctx, { scenarioId: 'listen', stepIndex: 1 })
+
+    const { getByText } = await renderWithProviders(
+      <OnboardingTarget>
+        <Text>bare child</Text>
+      </OnboardingTarget>,
+      { ctx },
+    )
+
+    expect(getByText('bare child')).toBeTruthy()
     expect(ctx.get(onboardingTargetRectsAtom)).toEqual({})
   })
 })

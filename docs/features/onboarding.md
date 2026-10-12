@@ -58,44 +58,71 @@
 
 ### Регистрация rect'а
 
-- **`OnboardingTarget`** (`ui/OnboardingTarget.tsx`) — обёртка `View` (`collapsable={false}`) вокруг подсвечиваемого элемента. Регистрирует `window`-rect через `measureInWindow`, когда её `id` совпадает с `targetId` активного шага (`useTargetMeasure`, `lib/useTargetMeasure.ts`).
+- **`OnboardingTarget`** (`ui/OnboardingTarget.tsx`) — обёртка `View` (`collapsable={false}`) вокруг подсвечиваемого элемента. Регистрирует `window`-rect через `measureInWindow`, когда её `id` совпадает с `targetId` активного шага (`useTargetMeasure`, `lib/useTargetMeasure.ts`). `id` **опционален**: при `id === undefined` компонент отдаёт `children` «как есть» (фрагмент, без `View`, без подписки на навигацию и без измерений), поэтому его можно вешать безусловно.
 - **`useOnboardingTargetRef`** (`lib/useOnboardingTargetRef.ts`) — для элементов, которые владеют собственным позиционированием (абсолютно спозиционированный мини-плеер): хук возвращает ref, который вешают прямо на узел, чтобы не вводить лишний `View` и не сломать layout. Используется в `CollapsedMiniPlayer` для `player.mini`.
 - **Когда измеряем**: при активации шага (через `MEASURE_DELAY_MS = 100` мс — дать layout устояться), на `onLayout` активной цели и на навигационном событии `transitionEnd` (нативный стек) — тур перемеряет цели после перехода на другой экран. Пустые rect'ы (`width`/`height` = 0) не регистрируются.
 - **Где хранится**: `onboardingTargetRectsAtom` (`Record<id, rect>`); при старте тура очищается.
+
+### Компоненты, владеющие своей целью (`onboardingTargetId`)
+
+Переиспользуемые компоненты **сами оборачивают свой корень** в `OnboardingTarget` и принимают опциональный проп `onboardingTargetId`. Call-site только передаёт id — внешняя обёртка не нужна:
+
+| Компонент                            | Проп на call-site        |
+| ------------------------------------ | ------------------------ |
+| `MoreMenuSettingsItem`               | `more.offline-item`, `more.history-item`, `more.settings-item` |
+| `SettingsItem`                       | `settings.theme`         |
+| `HapticsSettingsItem`                | `settings.haptics`       |
+| `ToursSettingsItem`                  | `settings.tours`         |
+| `ServerUrlSettings`                  | `settings.server`        |
+| `SermonCachingHeaderSwitch`          | `offline.caching-switch` |
+| `OfflineHeaderMenu`                  | `offline.header-menu`    |
+| `MyPlaylistsCreateRow`               | `playlists.create`       |
+| `ContinueListeningButton`            | `listen.continue-listening` |
+| `DynamicSectionsSlider`              | `listen.sections`        |
+| `MyPlaylistsSlider`                  | `listen.my-playlists`    |
+| `NotesForPreachersBooksSlider`       | `read.notes`             |
+| `VerseByVerseBooksSlider`            | `read.verse-by-verse`    |
+| `TopicalAndThematicBooksSlider`      | `read.topical`           |
+
+Явный `OnboardingTarget`/`useOnboardingTargetRef` на call-site остаётся **только** там, где компонент не может обернуть себя сам:
+
+- **Структурные элементы** — `FlatList` (`offline.rows`, `history.rows`), `TabView` (`study.tabs`), сырой контейнер (`more.menu`): обёртка вокруг контейнера несёт ещё и стиль (`flex: 1`), её нельзя спрятать внутрь;
+- **Кросс-слойные компоненты** — `SearchToggleButton` (`features/sermon-search`, `listen.search-toggle`) и `BackupSection` (`features/settings-backup`, `settings.backup`): фича не может импортировать фичу, поэтому оборачивает экран-владелец;
+- **Мини-плеер** — `player.mini` через `useOnboardingTargetRef` (узел владеет собственным позиционированием).
 
 ### ids (по сценариям)
 
 | id                         | Где зарегистрирован                                                       | Что подсвечивает                                        |
 | -------------------------- | ------------------------------------------------------------------------- | ------------------------------------------------------- |
-| `listen.sections`          | `pages/listen/ui/ListenScreen.tsx`                                        | вертикальный блок секций (первый раздел + «Продолжить») |
+| `listen.sections`          | `pages/listen/ui/DynamicSectionsSlider.tsx` (`onboardingTargetId`)        | вертикальный блок секций (первый раздел + «Продолжить») |
 | `listen.search-toggle`     | `pages/listen/ui/ListenTopRow.tsx`                                        | кнопка-лупа поиска                                      |
-| `listen.continue-listening` | `pages/listen/ui/ListenScreen.tsx`                                        | кнопка «Продолжить прослушивание»                       |
-| `listen.my-playlists`      | `pages/listen/ui/ListenScreen.tsx`                                        | секция «Мои плейлисты»                                  |
+| `listen.continue-listening` | `pages/listen/ui/ContinueListeningButton.tsx` (`onboardingTargetId`)     | кнопка «Продолжить прослушивание»                       |
+| `listen.my-playlists`      | `pages/listen/ui/MyPlaylistsSlider.tsx` (`onboardingTargetId`)            | секция «Мои плейлисты»                                  |
 | `player.mini`              | `widgets/expandable-player/ui/ExpandablePlayer/CollapsedMiniPlayer.tsx` (`useOnboardingTargetRef`) | мини-плеер (только когда есть загруженный трек)         |
 | `more.menu`                | `pages/more/ui/MoreScreen.tsx`                                            | блок меню «Ещё» (список пунктов)                        |
-| `more.offline-item`        | `pages/more/ui/MoreScreen.tsx`                                            | пункт меню «Офлайн»                                     |
-| `more.history-item`        | `pages/more/ui/MoreScreen.tsx`                                            | пункт меню «История прослушивания»                      |
-| `more.settings-item`       | `pages/more/ui/MoreScreen.tsx`                                            | пункт меню «Настройки»                                  |
-| `playlists.create`         | `pages/my-playlists/ui/MyPlaylistsNormalView.tsx`                         | строка «Создать плейлист» (футер списка)                |
+| `more.offline-item`        | `pages/more/ui/MoreMenuSettingsItem.tsx` (`onboardingTargetId`)           | пункт меню «Офлайн»                                     |
+| `more.history-item`        | `pages/more/ui/MoreMenuSettingsItem.tsx` (`onboardingTargetId`)           | пункт меню «История прослушивания»                      |
+| `more.settings-item`       | `pages/more/ui/MoreMenuSettingsItem.tsx` (`onboardingTargetId`)           | пункт меню «Настройки»                                  |
+| `playlists.create`         | `pages/my-playlists/ui/MyPlaylistsCreateRow.tsx` (`onboardingTargetId`)   | строка «Создать плейлист» (футер списка)                |
 | `history.rows`             | `pages/history/ui/HistoryScreen.tsx`                                      | список записей истории                                  |
 | `history.header-menu`      | объявлен в сценарии, но `OnboardingTarget` пока не обёрнут                | меню шапки истории; шаг деградирует в центрированную карточку |
-| `offline.caching-switch`   | `pages/offline/ui/OfflineScreen.tsx`                                      | тумблер кеширования                                     |
+| `offline.caching-switch`   | `pages/offline/ui/SermonCachingHeaderSwitch.tsx` (`onboardingTargetId`)   | тумблер кеширования                                     |
 | `offline.rows`             | `pages/offline/ui/OfflineScreen.tsx`                                      | список офлайн-проповедей                                |
-| `offline.header-menu`      | `pages/offline/ui/OfflineScreen.tsx`                                      | меню шапки «Офлайн»                                     |
-| `settings.theme`           | `pages/settings/ui/SettingsScreen.tsx`                                    | строка «Тема оформления»                                |
-| `settings.haptics`         | `pages/settings/ui/SettingsScreen.tsx`                                    | строка «Виброотклик»                                    |
-| `settings.tours`           | `pages/settings/ui/SettingsScreen.tsx`                                    | строка «Обзоры и подсказки»                             |
+| `offline.header-menu`      | `pages/offline/ui/OfflineHeaderMenu.tsx` (`onboardingTargetId`)           | меню шапки «Офлайн»                                     |
+| `settings.theme`           | `pages/settings/ui/SettingsItem.tsx` (`onboardingTargetId`)               | строка «Тема оформления»                                |
+| `settings.haptics`         | `pages/settings/ui/HapticsSettingsItem.tsx` (`onboardingTargetId`)        | строка «Виброотклик»                                    |
+| `settings.tours`           | `pages/settings/ui/ToursSettingsItem.tsx` (`onboardingTargetId`)          | строка «Обзоры и подсказки»                             |
 | `settings.backup`          | `pages/settings/ui/SettingsScreen.tsx`                                    | блок «Резервная копия данных»                           |
-| `settings.server`          | `pages/settings/ui/SettingsScreen.tsx`                                    | строка «URL сервера API»                                |
-| `read.notes`               | `pages/read/ui/ReadScreen.tsx`                                            | слайдер «Конспекты для проповедников»                   |
-| `read.verse-by-verse`      | `pages/read/ui/ReadScreen.tsx`                                            | слайдер «По библии. Стих за стихом»                     |
-| `read.topical`             | `pages/read/ui/ReadScreen.tsx`                                            | слайдер «Тематические и доктринальные»                  |
+| `settings.server`          | `pages/settings/ui/ServerUrlSettings.tsx` (`onboardingTargetId`)          | строка «URL сервера API»                                |
+| `read.notes`               | `pages/read/ui/NotesForPreachersBooksSlider.tsx` (`onboardingTargetId`)   | слайдер «Конспекты для проповедников»                   |
+| `read.verse-by-verse`      | `pages/read/ui/VerseByVerseBooksSlider.tsx` (`onboardingTargetId`)        | слайдер «По библии. Стих за стихом»                     |
+| `read.topical`             | `pages/read/ui/TopicalAndThematicBooksSlider.tsx` (`onboardingTargetId`)  | слайдер «Тематические и доктринальные»                  |
 | `study.tabs`               | `pages/study/ui.tsx`                                                      | `TabView` «Богословие / Душепопечение»                  |
 
 ### Как добавить сценарий или цель
 
 1. **Новый сценарий**: добавить файл `lib/scenarioData/<id>.ts` с `OnboardingScenario`, зарегистрировать его в `lib/scenarios.ts` (в `scenarios` и `scenariosById`) и расширить union `OnboardingScenarioId`. Если сценарий должен появляться только по фича-флагу — указать `featureFlag`; если он должен запускаться только автоматически (не показываться в пикере) — указать `sinceVersion` и добавить решение в `lib/resolveAutoTour.ts`.
-2. **Новая цель**: обернуть элемент в `<OnboardingTarget id='...'>` (или повесить ref из `useOnboardingTargetRef('...')` на само-позиционируемый узел) и прописать тот же `targetId` в шаге сценария. id — строковый, конвенция `<экран>.<элемент>`.
+2. **Новая цель**: если цель — переиспользуемый компонент, добавь ему опциональный проп `onboardingTargetId` и оберни им собственный корень (`<OnboardingTarget id={onboardingTargetId}>`). В остальных случаях оберни элемент в `<OnboardingTarget id='...'>` на call-site (или повесь ref из `useOnboardingTargetRef('...')` на само-позиционируемый узел). В любом варианте прописывается тот же `targetId` в шаге сценария. id — строковый, конвенция `<экран>.<элемент>`.
 3. **Многоэкранный шаг**: указать `route` шага — `OnboardingTourOverlay` сам переведёт тур на этот экран (цель на нём должна быть обёрнута в `OnboardingTarget`). Шаг без `route` остаётся на текущем экране.
 4. **Текстовый шаг без цели**: просто не указывать `targetId` — карточка отрисуется по центру.
 
@@ -127,7 +154,8 @@
 - `ui/HelpHeaderButton.test.tsx` — «?» открывает оффер, «Посмотреть» показывает пикер, «Закрыть» закрывает; при `toursDisabledAtom = true` кнопка не рендерится.
 - `src/shared/model/settings.test.ts` — `setToursDisabled` пишет значение и переключает атом, `loadToursDisabled` нормализует `'true'`/`'false'`/отсутствие ключа.
 - `pages/settings/ui/ToursSettingsItem.test.tsx` — строка «Обзоры и подсказки» вызывает `setToursDisabled` с инвертированным значением.
-- `ui/OnboardingTarget.test.tsx` — цель регистрирует rect при активном шаге.
+- `ui/OnboardingTarget.test.tsx` — цель регистрирует rect при активном шаге; без `id` рендерит `children` и ничего не регистрирует.
+- `pages/more/ui/MoreMenuSettingsItem.test.tsx` — при заданном `onboardingTargetId` и активном шаге строка регистрирует свой rect; без пропа регистрации нет.
 - `ui/OnboardingTourOverlay.test.tsx` — пусто без тура; шаг с целью и готовым rect (карточка + «Далее» + close); шаг без цели (карточка + «Назад»); «Готово» на последнем шаге; шаг с `route` → `router.push` вызывается с этим маршрутом при несовпадении `pathname`; шаг с `targetId` без rect → карточка скрыта и появляется после истечения `MISSING_TARGET_TIMEOUT_MS`.
 
 ## Связанные документы

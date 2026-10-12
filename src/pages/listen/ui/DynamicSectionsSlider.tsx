@@ -1,5 +1,6 @@
 import { useAction, useAtom } from '@reatom/npm-react'
 import { type ReactElement, useEffect } from 'react'
+import { OnboardingTarget } from 'features/onboarding'
 import { type PlaylistData } from 'entities/playlist'
 import {
   dynamicSectionsAtom,
@@ -16,7 +17,13 @@ import { FirstSectionRow } from './FirstSectionRow'
 import { renderSection } from './renderSection'
 import { SectionsSkeleton } from './skeleton'
 
-export const DynamicSectionsSlider = ({ leadingElement }: { leadingElement?: ReactElement }) => {
+export const DynamicSectionsSlider = ({
+  leadingElement,
+  onboardingTargetId,
+}: {
+  leadingElement?: ReactElement
+  onboardingTargetId?: string
+}) => {
   const { navigateToPlaylist, navigateToPlaylistList } = useListenNavigation()
   const [sections] = useAtom(dynamicSectionsAtom)
   const [isLoading] = useAtom(isLoadingSectionsAtom)
@@ -49,43 +56,47 @@ export const DynamicSectionsSlider = ({ leadingElement }: { leadingElement?: Rea
   const renderSectionsFrom = (fromIndex: number) =>
     sections.slice(fromIndex).map((section, offset) => renderSectionAt(section, fromIndex + offset))
 
-  if (leadingElement) {
-    if (sections.length === 0) {
-      if (isLoading) {
-        const layout = getFirstSectionLayout(sections, isLoading)
+  const renderContent = () => {
+    if (leadingElement) {
+      if (sections.length === 0) {
+        if (isLoading) {
+          const layout = getFirstSectionLayout(sections, isLoading)
 
-        return (
-          <>
-            <FirstSectionRow
-              button={leadingElement}
-              stacked={layout.stacked}
-              section={<SectionsSkeleton count={1} />}
-              sectionMinWidth={layout.sectionMinWidth}
-            />
-            <SectionsSkeleton from={1} />
-          </>
-        )
+          return (
+            <>
+              <FirstSectionRow
+                button={leadingElement}
+                stacked={layout.stacked}
+                section={<SectionsSkeleton count={1} />}
+                sectionMinWidth={layout.sectionMinWidth}
+              />
+              <SectionsSkeleton from={1} />
+            </>
+          )
+        }
+
+        return <FirstSectionRow button={leadingElement} section={<EmptyState />} />
       }
 
-      return <FirstSectionRow button={leadingElement} section={<EmptyState />} />
+      const layout = getFirstSectionLayout(sections, isLoading)
+
+      return (
+        <>
+          <FirstSectionRow
+            button={leadingElement}
+            stacked={layout.stacked}
+            sectionMinWidth={layout.sectionMinWidth}
+            section={renderSectionAt(sections[0], 0)}
+          />
+          {renderSectionsFrom(1)}
+        </>
+      )
     }
 
-    const layout = getFirstSectionLayout(sections, isLoading)
+    if (sections.length === 0) return isLoading ? <SectionsSkeleton /> : <EmptyState />
 
-    return (
-      <>
-        <FirstSectionRow
-          button={leadingElement}
-          stacked={layout.stacked}
-          sectionMinWidth={layout.sectionMinWidth}
-          section={renderSectionAt(sections[0], 0)}
-        />
-        {renderSectionsFrom(1)}
-      </>
-    )
+    return <>{renderSectionsFrom(0)}</>
   }
 
-  if (sections.length === 0) return isLoading ? <SectionsSkeleton /> : <EmptyState />
-
-  return <>{renderSectionsFrom(0)}</>
+  return <OnboardingTarget id={onboardingTargetId}>{renderContent()}</OnboardingTarget>
 }
