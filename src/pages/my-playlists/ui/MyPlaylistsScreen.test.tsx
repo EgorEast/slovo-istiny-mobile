@@ -33,6 +33,7 @@ jest.mock('expo-router', () => {
       }
       useEffect(callback, [callback])
     },
+    usePathname: () => '/my-playlists',
     useRouter: () => ({ push: mockPush }),
   }
 })

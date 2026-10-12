@@ -4,6 +4,7 @@ import { useLayoutEffect } from 'react'
 import { FlatList, StyleSheet, View } from 'react-native'
 import { useAddToPlaylistModal } from 'features/add-to-playlist'
 import { useOfflineSermons } from 'features/offline-sermons'
+import { OnboardingHelpRow } from 'features/onboarding'
 import { sermonCachingEnabledAtom } from 'entities/offline-cache'
 import { isPlayingAtom } from 'entities/player'
 import { createTracksListStyles, TracksListSkeleton } from 'entities/track-list'
@@ -42,10 +43,12 @@ export const OfflineScreen = () => {
   useLayoutEffect(() => {
     navigation.setOptions({
       headerRight: () => (
-        <View style={styles.headerActions}>
-          <SermonCachingHeaderSwitch />
-          <OfflineHeaderMenu />
-        </View>
+        <OnboardingHelpRow>
+          <View style={styles.headerActions}>
+            <SermonCachingHeaderSwitch />
+            <OfflineHeaderMenu />
+          </View>
+        </OnboardingHelpRow>
       ),
     })
     return () => {

@@ -3,6 +3,7 @@ import { useNavigation } from 'expo-router'
 import { useLayoutEffect } from 'react'
 import { FlatList, StyleSheet, Text, View } from 'react-native'
 import { useAddToPlaylistModal } from 'features/add-to-playlist'
+import { OnboardingHelpRow } from 'features/onboarding'
 import { getEntrySermon, historyAtom, isHistoryLoadedAtom } from 'entities/listening-history'
 import { currentAudioAtom, isPlayingAtom } from 'entities/player'
 import { createTracksListStyles, TracksListSkeleton } from 'entities/track-list'
@@ -33,7 +34,13 @@ export const HistoryScreen = () => {
   const { modal, openAddToPlaylist } = useAddToPlaylistModal()
 
   useLayoutEffect(() => {
-    navigation.setOptions({ headerRight: () => <HistoryHeaderMenu /> })
+    navigation.setOptions({
+      headerRight: () => (
+        <OnboardingHelpRow>
+          <HistoryHeaderMenu />
+        </OnboardingHelpRow>
+      ),
+    })
     return () => {
       navigation.setOptions({ headerRight: undefined })
     }

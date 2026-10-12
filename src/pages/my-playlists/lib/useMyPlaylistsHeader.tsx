@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react'
+import { OnboardingHelpRow } from 'features/onboarding'
 import { useTheme } from 'shared/ui/theme'
 import { MyPlaylistsHeaderActions } from '../ui/MyPlaylistsHeaderActions'
 
@@ -49,11 +50,13 @@ export const useMyPlaylistsHeader = ({
 
   const headerRight = useMemo(
     () => () => (
-      <MyPlaylistsHeaderActions
-        onSave={handleSave}
-        isEditing={isEditing}
-        onToggleEdit={handleToggleEdit}
-      />
+      <OnboardingHelpRow>
+        <MyPlaylistsHeaderActions
+          onSave={handleSave}
+          isEditing={isEditing}
+          onToggleEdit={handleToggleEdit}
+        />
+      </OnboardingHelpRow>
     ),
     [handleSave, handleToggleEdit, isEditing],
   )
