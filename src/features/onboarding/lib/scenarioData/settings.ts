@@ -1,0 +1,31 @@
+import { type OnboardingScenario } from '../scenarios'
+
+export const settingsScenario: OnboardingScenario = {
+  description: 'Оформление, сервер и бэкапы',
+  homeRoute: '/settings',
+  icon: 'settings-outline',
+  id: 'settings',
+  steps: [
+    {
+      targetId: 'settings.theme',
+      text: 'Светлая и тёмная темы, а на Android 12+ — динамические цвета Material You.',
+      title: 'Оформление',
+    },
+    {
+      targetId: 'settings.haptics',
+      text: 'Короткий отклик на основные действия в приложении.',
+      title: 'Виброотклик',
+    },
+    {
+      targetId: 'settings.backup',
+      text: 'Сохраняйте плейлисты, историю и настройки в файл и переносите между устройствами.',
+      title: 'Резервные копии',
+    },
+    {
+      targetId: 'settings.server',
+      text: 'Адрес сервера с проповедями. Не меняйте без необходимости.',
+      title: 'Сервер',
+    },
+  ],
+  title: 'Настройки и резервные копии',
+}
