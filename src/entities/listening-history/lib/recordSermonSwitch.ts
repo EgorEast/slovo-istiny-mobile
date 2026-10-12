@@ -2,6 +2,7 @@ import { action } from '@reatom/framework'
 import { type PlaylistData } from 'entities/playlist/@x/listening-history'
 import { type AudioPlayerData } from 'entities/sermon/@x/listening-history'
 import { commitHistory } from '../model/commitHistory'
+import { isSermonForgotten } from '../model/forgottenSermons'
 import { historyAtom } from '../model/historyAtom'
 import { type ListeningHistory, type ListeningHistoryEntry } from '../model/types'
 import { buildHistoryEntry } from './buildHistoryEntry'
@@ -43,6 +44,15 @@ export const recordSermonSwitchAction = action(
 
     // --- Create/update new sermon entry ---
     const newSermonId = params.newAudio.id
+
+    // Удалённую в этой сессии запись переключение не воскрешает: пропускаем
+    // создание/обновление нового трека, но flush позиции старого сохраняем.
+    if (isSermonForgotten(newSermonId)) {
+      await commitHistory(ctx, flushed)
+      clearLiveProgressSnapshot()
+      return
+    }
+
     const existingIndex = flushed.findIndex(e => getEntrySermon(e)?.id === newSermonId)
 
     let next: ListeningHistory

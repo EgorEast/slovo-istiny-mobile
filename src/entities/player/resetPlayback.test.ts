@@ -5,6 +5,7 @@ import { type PlaylistData } from 'entities/playlist/@x/player'
 import { type AudioPlayerData } from 'entities/sermon/@x/player'
 import { CURRENT_AUDIO, CURRENT_PLAYLIST, CURRENT_SOUND_POSITION } from 'shared/config'
 import { currentAudioAtom, currentPlaylistAtom } from './model'
+import { isPlayerExpandedAtom } from './playerSheet'
 import { resetPlayerState } from './resetPlayback'
 
 const SERMON_ID = 'sermon-1'
@@ -64,5 +65,16 @@ describe('resetPlayerState', () => {
 
     expect(ctx.get(currentAudioAtom)).toBeNull()
     expect(ctx.get(historyAtom)).toHaveLength(1)
+  })
+
+  test('collapses the fullscreen player on reset', async () => {
+    const ctx = createCtx()
+    isPlayerExpandedAtom(ctx, true)
+    currentAudioAtom(ctx, makeSermon(SERMON_ID))
+    historyAtom(ctx, [makeEntry(SERMON_ID)])
+
+    await resetPlayerState(ctx)
+
+    expect(ctx.get(isPlayerExpandedAtom)).toBe(false)
   })
 })

@@ -131,4 +131,51 @@ describe('listening-history race (commitHistory)', () => {
     expect(atomState[1].positionMs).toBe(50000)
     expect(atomState[1].durationMs).toBe(50000)
   })
+
+  test('removed entry is not resurrected by a later flush (tombstone)', async () => {
+    const entryRemoved = makeEntry('removed-sermon', { durationMs: 10000, positionMs: 1000 })
+    const entryKept = makeEntry('kept-sermon')
+    const ctx = createCtx()
+    historyAtom(ctx, [entryRemoved, entryKept])
+
+    const remove = removeHistoryEntryAction(ctx, 'removed-sermon')
+    await resolveAllPendingWrites()
+    await remove
+
+    expect(ctx.get(historyAtom)).toHaveLength(1)
+
+    const flush = flushHistoryProgressAction(ctx, {
+      durationMs: 10000,
+      positionMs: 7000,
+      sermon: { ...mockAudio, id: 'removed-sermon' },
+    })
+    await resolveAllPendingWrites()
+    await flush
+
+    const atomState = ctx.get(historyAtom)
+    expect(atomState).toHaveLength(1)
+    expect(getEntrySermon(atomState[0])?.id).toBe('kept-sermon')
+  })
+
+  test('tombstone blocks only the removed sermon; other sermons still flush', async () => {
+    const entryKept = makeEntry('kept-sermon', { durationMs: 10000, positionMs: 1000 })
+    const ctx = createCtx()
+    historyAtom(ctx, [makeEntry('removed-sermon'), entryKept])
+
+    const remove = removeHistoryEntryAction(ctx, 'removed-sermon')
+    await resolveAllPendingWrites()
+    await remove
+
+    const flush = flushHistoryProgressAction(ctx, {
+      durationMs: 10000,
+      positionMs: 4000,
+      sermon: { ...mockAudio, id: 'kept-sermon' },
+    })
+    await resolveAllPendingWrites()
+    await flush
+
+    const atomState = ctx.get(historyAtom)
+    expect(atomState).toHaveLength(1)
+    expect(atomState[0].positionMs).toBe(4000)
+  })
 })
