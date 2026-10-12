@@ -95,6 +95,9 @@ export const useSeekControls = ({
           seekSpeedRef.current = Math.min(seekSpeedRef.current + 5000, 30000)
       }
 
+      // Overlapping startSeek calls (e.g. both edge zones held at once) must not
+      // orphan the previous interval — clear it so the newest one owns the ref.
+      if (seekIntervalRef.current) clearInterval(seekIntervalRef.current)
       seekIntervalRef.current = setInterval(() => {
         tickCountRef.current++
         if (tickCountRef.current % 3 === 0) accelerate() // Accelerate every 600ms
