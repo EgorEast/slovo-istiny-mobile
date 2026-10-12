@@ -54,10 +54,20 @@ export const OnboardingTourOverlay = () => {
     return () => clearTimeout(timer)
   }, [activeTargetId, stepKey])
 
+  useEffect(() => {
+    if (tour) return
+
+    // eslint-disable-next-line react-hooks/set-state-in-effect, react-hooks-extra/no-direct-set-state-in-use-effect -- reset stale per-tour UI state when the tour ends
+    setExpiredStepKey(null)
+    // eslint-disable-next-line react-hooks-extra/no-direct-set-state-in-use-effect -- reset stale per-tour UI state when the tour ends
+    setCardHeight(null)
+  }, [tour])
+
   if (!tour) return null
 
   const scenario = scenariosById[tour.scenarioId]
   const step = scenario.steps[tour.stepIndex]
+  const isLastStep = tour.stepIndex === scenario.steps.length - 1
   const hole = activeTargetId === undefined ? null : (rects[activeTargetId] ?? null)
   const isTargetWaitExpired = expiredStepKey === stepKey
   const isWaitingForTarget = activeTargetId !== undefined && hole === null && !isTargetWaitExpired
@@ -88,10 +98,10 @@ export const OnboardingTourOverlay = () => {
             <TourTooltip
               step={step}
               onClose={end}
-              onNext={next}
               onPrev={prev}
               index={tour.stepIndex}
               total={scenario.steps.length}
+              onNext={isLastStep ? end : next}
             />
           </View>
         )}

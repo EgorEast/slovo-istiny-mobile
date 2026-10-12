@@ -1,5 +1,5 @@
 import { createCtx } from '@reatom/framework'
-import { waitFor } from '@testing-library/react-native'
+import { fireEvent, waitFor } from '@testing-library/react-native'
 import { renderWithProviders } from 'shared/mocks'
 import { type OnboardingTargetRect, onboardingTargetRectsAtom, onboardingTourAtom } from '../model'
 import { OnboardingTourOverlay } from './OnboardingTourOverlay'
@@ -73,6 +73,24 @@ describe('<OnboardingTourOverlay>', () => {
 
     expect(getByText('Готово')).toBeTruthy()
     expect(queryByText(NEXT_LABEL)).toBeNull()
+  })
+
+  test('ends the tour when the primary button is pressed on the last step', async () => {
+    const { ctx, getByText } = await renderAtStep('playlists', 2)
+
+    fireEvent.press(getByText('Готово'))
+
+    expect(ctx.get(onboardingTourAtom)).toBeNull()
+  })
+
+  test('advances to the next step when the primary button is pressed on a non-last step', async () => {
+    const { ctx, getByText } = await renderAtStep('listen', 0, {
+      'listen.sections': SECTIONS_RECT,
+    })
+
+    fireEvent.press(getByText(NEXT_LABEL))
+
+    expect(ctx.get(onboardingTourAtom)).toEqual({ scenarioId: 'listen', stepIndex: 1 })
   })
 
   test('navigates to the step route when the pathname differs', async () => {
