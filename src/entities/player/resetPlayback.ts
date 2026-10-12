@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import { action } from '@reatom/framework'
-import { CURRENT_AUDIO, CURRENT_PLAYLIST } from 'shared/config'
+import { action, type Ctx } from '@reatom/framework'
+import { removeHistoryEntryAction } from 'entities/listening-history/@x/player'
+import { CURRENT_AUDIO, CURRENT_PLAYLIST, CURRENT_SOUND_POSITION } from 'shared/config'
 import {
   currentAudioAtom,
   currentPlaylistAtom,
@@ -11,10 +12,35 @@ import {
 } from './model'
 
 /**
+ * Сбрасывает сохранённое состояние плеера и «забывает» текущую проповедь:
+ * удаляет storage-ключи (текущее аудио/плейлист/позицию) — после этого холодный
+ * старт их не восстановит, — обнуляет активные состояния (миниплеер и
+ * полноэкранный плеер скрываются, очередь пустеет) и удаляет запись загруженной
+ * проповеди из истории прослушивания. Карточка «Продолжить» на экране «Слушать»
+ * исчезает и больше не предлагает удалённую проповедь; флеш-воссоздание
+ * невозможно, потому что снятие `currentAudioAtom` останавливает 10с-флаш
+ * прогресса (гейт на audio). Id текущей проповеди читается до обнуления атома.
+ * @param ctx - Reatom-контекст.
+ */
+export const resetPlayerState = async (ctx: Ctx): Promise<void> => {
+  const removedSermonId = ctx.get(currentAudioAtom)?.id
+
+  await AsyncStorage.multiRemove([CURRENT_AUDIO, CURRENT_PLAYLIST, CURRENT_SOUND_POSITION])
+  await ctx.schedule(() => {
+    currentAudioAtom(ctx, null)
+    currentPlaylistAtom(ctx, null)
+    isPlayingAtom(ctx, false)
+    positionAtom(ctx, 0)
+    durationAtom(ctx, 0)
+    isBufferingAtom(ctx, false)
+  })
+  if (removedSermonId) void removeHistoryEntryAction(ctx, removedSermonId)
+}
+
+/**
  * Полностью закрывает плеер: освобождает нативный игрок (`unload` убирает
- * нотификейшн-бар нативно), удаляет сохранённые текущие аудио/плейлист — после
- * этого холодный старт их не восстановит, — и обнуляет активные состояния,
- * из-за чего скрываются миниплеер и полноэкранный плеер, а очередь пустеет.
+ * нотификейшн-бар нативно) и сбрасывает состояние и историю через
+ * `resetPlayerState`.
  *
  * Отказ `unload` логируется, но UI всё равно закрывается: очистка состояний
  * должна пройти независимо от нативной ошибки.
@@ -31,13 +57,5 @@ export const resetPlaybackAction = action(async ctx => {
   } catch (error) {
     console.error('[player] unload failed:', error)
   }
-  await AsyncStorage.multiRemove([CURRENT_AUDIO, CURRENT_PLAYLIST])
-  await ctx.schedule(() => {
-    currentAudioAtom(ctx, null)
-    currentPlaylistAtom(ctx, null)
-    isPlayingAtom(ctx, false)
-    positionAtom(ctx, 0)
-    durationAtom(ctx, 0)
-    isBufferingAtom(ctx, false)
-  })
+  await resetPlayerState(ctx)
 }, 'resetPlayback')
