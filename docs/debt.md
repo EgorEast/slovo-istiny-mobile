@@ -170,7 +170,3 @@
 
 - [ ] **Persistent SAF-style folder on iOS not implemented.** Экспорт/импорт резервной копии на iOS идут через системный share sheet («Сохранить в Файлы», `expo-sharing`) и документ-пикер (`expo-document-picker`), поэтому строка выбора папки и автосинхронизация на iOS скрыты (`supportsFolderSync()` = `Platform.OS === 'android'`). Постоянный доступ к папке (security-scoped bookmarks / `enableFileSharing`) не реализован. — `src/features/settings-backup/lib/fileIo/index.native.ts`, `app.config.ts` — вернуться, когда появятся iOS-сборки (сейчас релизится только Android, см. `.forgejo/workflows/release.yml`): добавить bookmark-based доступ и включить автосинхронизацию.
 
-## Онбординг
-
-- [ ] **Нет автозапуска онбординга при первом запуске приложения** — `src/features/onboarding/` — если появится требование показывать обзор автоматически, добавить AsyncStorage-флаг «видел онбординг» и покрытие в settings-backup (см. [features/settings-backup.md](./features/settings-backup.md)).
-- [ ] **Прохождения сценариев онбординга не сохраняются** (нельзя показать «новое с последнего визита») — `src/features/onboarding/` — при добавлении персистентности не забыть [contracts/storage.md](./contracts/storage.md) и settings-backup (ключ `tours_seen_version` и его бэкап уже заведены).
