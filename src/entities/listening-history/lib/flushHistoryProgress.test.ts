@@ -138,6 +138,65 @@ describe('flushHistoryProgressAction', () => {
     expect(clearSpy).toHaveBeenCalledTimes(1)
   })
 
+  test('replaces the playlist snapshot when the flush carries an explicit playlist', async () => {
+    const entry = makeEntry('sermon-1', { durationMs: 1000, positionMs: 500 })
+    const ctx = createCtx()
+    historyAtom(ctx, [entry])
+    const otherPlaylist: PlaylistData = { ...mockPlaylist, id: 'pl-2', title: 'Other Playlist' }
+
+    await flushHistoryProgressAction(ctx, {
+      durationMs: 2000,
+      playlist: otherPlaylist,
+      positionMs: 800,
+      sermon: mockAudio,
+    })
+
+    const updated = ctx.get(historyAtom)[0]
+    expect(updated.playlist.id).toBe('pl-2')
+    expect(updated.playlist.title).toBe('Other Playlist')
+    expect(updated.playlist.artwork).toBe('playlist.jpg')
+    // Context snapshot keeps only the flushed sermon (no full-list bloat).
+    expect(updated.playlist.sermons).toHaveLength(1)
+    expect(updated.playlist.sermons[0].id).toBe('sermon-1')
+    expect(updated.positionMs).toBe(800)
+    expect(updated.durationMs).toBe(2000)
+    expect(clearSpy).toHaveBeenCalledTimes(1)
+  })
+
+  test('preserves the playlist snapshot when the flush has no playlist', async () => {
+    const entry = makeEntry('sermon-1', { durationMs: 1000, positionMs: 500 })
+    const ctx = createCtx()
+    historyAtom(ctx, [entry])
+
+    await flushHistoryProgressAction(ctx, {
+      durationMs: 2000,
+      positionMs: 800,
+      sermon: mockAudio,
+    })
+
+    const updated = ctx.get(historyAtom)[0]
+    expect(updated.playlist.id).toBe('pl-1')
+    expect(updated.playlist.title).toBe('Playlist')
+    expect(updated.positionMs).toBe(800)
+  })
+
+  test('rewrites the playlist snapshot even when progress is unchanged', async () => {
+    const entry = makeEntry('sermon-1', { durationMs: 1000, positionMs: 500 })
+    const ctx = createCtx()
+    historyAtom(ctx, [entry])
+    const otherPlaylist: PlaylistData = { ...mockPlaylist, id: 'pl-2', title: 'Other Playlist' }
+
+    await flushHistoryProgressAction(ctx, {
+      durationMs: 1000,
+      playlist: otherPlaylist,
+      positionMs: 500,
+      sermon: mockAudio,
+    })
+
+    expect(ctx.get(historyAtom)[0].playlist.id).toBe('pl-2')
+    expect(clearSpy).toHaveBeenCalledTimes(1)
+  })
+
   test('persists to storage', async () => {
     const entry = makeEntry('sermon-1')
     const ctx = createCtx()
