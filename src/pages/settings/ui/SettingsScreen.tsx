@@ -9,6 +9,7 @@ import { HapticsSettingsItem } from './HapticsSettingsItem'
 import { ServerUrlSettings } from './ServerUrlSettings'
 import { SettingsItem } from './SettingsItem'
 import { ThemeDialog } from './ThemeDialog'
+import { ToursSettingsItem } from './ToursSettingsItem'
 
 export const SettingsScreen = () => {
   const [showThemeDialog, setShowThemeDialog] = useState(false)
@@ -31,6 +32,9 @@ export const SettingsScreen = () => {
         {isMaterialYouSupported() && <DynamicColorsItem />}
         <OnboardingTarget id='settings.haptics'>
           {showHapticsItem && <HapticsSettingsItem />}
+        </OnboardingTarget>
+        <OnboardingTarget id='settings.tours'>
+          <ToursSettingsItem />
         </OnboardingTarget>
         <OnboardingTarget id='settings.backup'>
           <BackupSection />

@@ -13,7 +13,7 @@ import {
 } from 'entities/player'
 import { myPlaylistsAtom, sectionSettingsAtom } from 'entities/playlist'
 import { useDebounce } from 'shared/lib/hooks/useDebounce'
-import { hapticsEnabledAtom, serverUrlAtom } from 'shared/model'
+import { hapticsEnabledAtom, serverUrlAtom, toursDisabledAtom } from 'shared/model'
 import { dynamicColorsEnabledAtom, themeModeAtom } from 'shared/ui/theme'
 import { writeAutoBackup } from '../lib/autoSync'
 import { backupAutosyncEnabledAtom, backupFolderUriAtom } from '../model/backupFolder'
@@ -33,6 +33,7 @@ export const useAutoBackupSync = (): (() => void) => {
   const [themeMode] = useAtom(themeModeAtom)
   const [dynamicColors] = useAtom(dynamicColorsEnabledAtom)
   const [hapticsEnabled] = useAtom(hapticsEnabledAtom)
+  const [toursDisabled] = useAtom(toursDisabledAtom)
   const [serverUrl] = useAtom(serverUrlAtom)
   const [sermonCachingEnabled] = useAtom(sermonCachingEnabledAtom)
   const [playbackRate] = useAtom(playbackRateAtom)
@@ -70,6 +71,7 @@ export const useAutoBackupSync = (): (() => void) => {
     themeMode,
     dynamicColors,
     hapticsEnabled,
+    toursDisabled,
     serverUrl,
     sermonCachingEnabled,
     playbackRate,

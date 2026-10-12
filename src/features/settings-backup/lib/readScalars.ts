@@ -1,4 +1,4 @@
-import AsyncStorage from '@react-native-async-storage/async-storage'
+import z from 'zod'
 import { readImportSettings } from 'features/sermon-audio-import/@x/settings-backup'
 import {
   balanceSchema,
@@ -15,9 +15,9 @@ import {
   CURRENT_SOUND_BALANCE,
   CURRENT_SOUND_PITCH,
 } from 'shared/config'
-import type z from 'zod'
 import { type BackupImportData } from '../model/backupPayload'
-import { HTTP_URL_PATTERN, themeModeBackupSchema } from '../model/backupScalars'
+import { themeModeBackupSchema } from '../model/backupScalars'
+import { readBoolean, readHttpUrl, readJson, readNumber, readString } from './readScalarValues'
 
 // Ключи, объявленные локальными константами у владельцев (theme/settings/
 // offline-cache), читаются той же строкой. Владельцы: shared/ui/theme/model.ts,
@@ -27,56 +27,37 @@ const DYNAMIC_COLORS_KEY = 'dynamic_colors'
 const HAPTICS_ENABLED_KEY = 'haptics_enabled'
 const SERVER_URL_KEY = 'server-url'
 const SERMON_CACHING_ENABLED_KEY = 'sermon_caching_enabled'
-
-const readString = async <T>(key: string, schema: z.ZodType<T>): Promise<T | undefined> => {
-  const raw = await AsyncStorage.getItem(key)
-  if (raw === null) return undefined
-  const parsed = schema.safeParse(raw)
-  return parsed.success ? parsed.data : undefined
-}
-
-const readNumber = async <T>(key: string, schema: z.ZodType<T>): Promise<T | undefined> => {
-  const raw = await AsyncStorage.getItem(key)
-  if (raw === null) return undefined
-  const parsed = schema.safeParse(Number(raw))
-  return parsed.success ? parsed.data : undefined
-}
-
-const readBoolean = async (key: string): Promise<boolean | undefined> => {
-  const raw = await AsyncStorage.getItem(key)
-  if (raw === null) return undefined
-  return raw === 'true'
-}
-
-const readJson = async <T>(key: string, schema: z.ZodType<T>): Promise<T | undefined> => {
-  const raw = await AsyncStorage.getItem(key)
-  if (raw === null) return undefined
-  try {
-    const value: unknown = JSON.parse(raw)
-    const parsed = schema.safeParse(value)
-    return parsed.success ? parsed.data : undefined
-  } catch {
-    return undefined
-  }
-}
-
-const readHttpUrl = async (key: string): Promise<string | undefined> => {
-  const raw = await AsyncStorage.getItem(key)
-  if (raw === null || !HTTP_URL_PATTERN.test(raw)) return undefined
-  return raw
-}
+const TOURS_DISABLED_KEY = 'tours_disabled'
+const TOURS_SEEN_VERSION_KEY = 'tours_seen_version'
 
 const readSettingsScalars = async (): Promise<BackupImportData['settings']> => {
-  const [dynamicColors, hapticsEnabled, sermonCachingEnabled, serverUrl, themeMode] =
-    await Promise.all([
-      readBoolean(DYNAMIC_COLORS_KEY),
-      readBoolean(HAPTICS_ENABLED_KEY),
-      readBoolean(SERMON_CACHING_ENABLED_KEY),
-      readHttpUrl(SERVER_URL_KEY),
-      readString(THEME_MODE_KEY, themeModeBackupSchema),
-    ])
+  const [
+    dynamicColors,
+    hapticsEnabled,
+    sermonCachingEnabled,
+    serverUrl,
+    themeMode,
+    toursDisabled,
+    toursSeenVersion,
+  ] = await Promise.all([
+    readBoolean(DYNAMIC_COLORS_KEY),
+    readBoolean(HAPTICS_ENABLED_KEY),
+    readBoolean(SERMON_CACHING_ENABLED_KEY),
+    readHttpUrl(SERVER_URL_KEY),
+    readString(THEME_MODE_KEY, themeModeBackupSchema),
+    readBoolean(TOURS_DISABLED_KEY),
+    readString(TOURS_SEEN_VERSION_KEY, z.string()),
+  ])
 
-  return { dynamicColors, hapticsEnabled, sermonCachingEnabled, serverUrl, themeMode }
+  return {
+    dynamicColors,
+    hapticsEnabled,
+    sermonCachingEnabled,
+    serverUrl,
+    themeMode,
+    toursDisabled,
+    toursSeenVersion,
+  }
 }
 
 const readPlayerScalars = async (): Promise<BackupImportData['player']> => {

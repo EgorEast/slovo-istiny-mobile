@@ -13,7 +13,7 @@ import {
 import { initializePlayer, scheduleStartupGuardReset } from 'entities/player'
 import { hydrateCachedSections } from 'entities/section'
 import { ctx } from 'shared/lib/reatom-ctx'
-import { initServerUrlAction, loadHapticsEnabled } from 'shared/model'
+import { initServerUrlAction, loadHapticsEnabled, loadToursDisabled } from 'shared/model'
 import { reportError } from 'shared/model/error-dialog'
 import { ErrorBoundary, GlobalErrorHandler } from 'shared/ui/error-dialog'
 import { COLORS, ThemeProvider, useTheme } from 'shared/ui/theme'
@@ -74,6 +74,7 @@ void cleanupOrphanedDownloads()
 scheduleStartupGuardReset()
 void initServerUrlAction(ctx)
 void loadHapticsEnabled(ctx)
+void loadToursDisabled(ctx)
 void loadHistoryAction(ctx)
 void hydrateCachedSections(ctx)
 void hydrateCachedFeatureFlags(ctx).then(() => fetchMyFeatureFlags(ctx))

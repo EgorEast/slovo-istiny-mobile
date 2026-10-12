@@ -29,6 +29,8 @@ export const settingsBackupSchema = z.object({
   sermonCachingEnabled: z.boolean().optional(),
   serverUrl: z.string().regex(HTTP_URL_PATTERN).optional(),
   themeMode: themeModeBackupSchema.optional(),
+  toursDisabled: z.boolean().optional(),
+  toursSeenVersion: z.string().optional(),
 })
 
 /** Настройки звука плеера (проверяются теми же схемами, что и при восстановлении). */

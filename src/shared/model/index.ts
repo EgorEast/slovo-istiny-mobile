@@ -6,9 +6,13 @@ export {
   hapticsEnabledAtom,
   initServerUrlAction,
   loadHapticsEnabled,
+  loadToursDisabled,
   serverUrlAtom,
   setHapticsEnabled,
   setServerUrlAction,
+  setToursDisabled,
+  setToursSeenVersion,
+  toursDisabledAtom,
 } from './settings'
 export { showToast, toastAtom } from './toast'
 export { checkForUpdateAction, latestVersionAtom, releaseUrlAtom } from './update'

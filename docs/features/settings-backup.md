@@ -47,7 +47,9 @@
       "dynamicColors": true,
       "hapticsEnabled": true,
       "serverUrl": "https://api.slovo-istini.com",
-      "sermonCachingEnabled": false
+      "sermonCachingEnabled": false,
+      "toursDisabled": false,
+      "toursSeenVersion": "1.2.0"
     },
     "player": {
       "playbackRate": 1,
@@ -68,7 +70,7 @@
 - `kind` = `'slovo-propovedi-backup'`, `version` = `1` (`BACKUP_KIND` / `BACKUP_VERSION`).
 - `exportedAt` — ISO-строка момента экспорта.
 - `listeningHistory`, `myPlaylists`, `myPlaylistsSectionSettings` — валидируются **владельческими** схемами (`listeningHistorySchema`, `myPlaylistsArraySchema`, `sectionSettingsDraftSchema`), а не копиями.
-- `settings` — подмножество скаляров: `themeMode` (`'system' | 'light' | 'dark'`), `dynamicColors`, `hapticsEnabled`, `serverUrl` (только `http(s)://`), `sermonCachingEnabled`. Все поля опциональны.
+- `settings` — подмножество скаляров: `themeMode` (`'system' | 'light' | 'dark'`), `dynamicColors`, `hapticsEnabled`, `serverUrl` (только `http(s)://`), `sermonCachingEnabled`, `toursDisabled`, `toursSeenVersion` (строка). Все поля опциональны.
 - `player` — `playbackRate`, `repeatMode`, `balance`, `pitch`, `equalizerEnabled`, `equalizerGains` (те же схемы плеера, что и при восстановлении).
 - `youtubeImport` — `source`, `invidiousBaseUrl`: ослабленная до partial владельческая `importSettingsSchema` из `features/sermon-audio-import` (см. [@x-зависимость](#x-зависимость)).
 - Пустые скалярные секции не пишутся вовсе (`dropEmpty` в `buildPayload`): секция без единого определённого поля в файл не попадает.
@@ -142,7 +144,7 @@
 
 - Включение — чекбокс «Автосинхронизация» (доступен только при выбранной и рабочей папке).
 - Конфликт при включении: если в папке уже есть `slovo-backup-auto.json`, открывается `AutosyncConflictDialog` — «Импортировать (объединить)» / «Импортировать (заменить)» (через общий пайплайн импорта, с подтверждением смены URL) либо «Перезаписать бэкап» (записать текущее состояние сразу). После успешного импорта или перезаписи автосинхронизация включается; отмена/закрытие оставляет её выключенной. Повреждённый автофайл предлагает только «Перезаписать бэкап» + «Отмена». Если файла нет — включение сразу.
-- Триггер — `useAutoBackupSync`: trailing-дебаунс **30 с** (`useDebounce` с `flushOnUnmount`), срабатывает при уходе приложения в фон (`AppState === 'background'`), после ручного экспорта/импорта и при изменении отслеживаемых данных (настройки темы/хаптики/сервера/кеша/плеера, история, локальные плейлисты, настройки секции).
+- Триггер — `useAutoBackupSync`: trailing-дебаунс **30 с** (`useDebounce` с `flushOnUnmount`), срабатывает при уходе приложения в фон (`AppState === 'background'`), после ручного экспорта/импорта и при изменении отслеживаемых данных (настройки темы/хаптики/обзоров/сервера/кеша/плеера, история, локальные плейлисты, настройки секции).
 - Запись сериализуется очередью promise (`writeAutoBackup`), поэтому параллельные flush не перезаписывают `slovo-backup-auto.json` вразнобой; ошибки логируются и не рвут цепочку.
 - Фактически пишется только при включённом флаге и наличии URI папки.
 

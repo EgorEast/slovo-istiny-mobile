@@ -1,5 +1,7 @@
+import { createCtx } from '@reatom/framework'
 import { fireEvent, screen, waitFor } from '@testing-library/react-native'
 import { renderWithProviders } from 'shared/mocks'
+import { toursDisabledAtom } from 'shared/model'
 import { HelpHeaderButton } from './HelpHeaderButton'
 
 const HELP_BUTTON_LABEL = 'Онбординг и помощь'
@@ -50,5 +52,14 @@ describe('<HelpHeaderButton>', () => {
     fireEvent.press(await screen.findByText(CANCEL_LABEL))
 
     await waitFor(() => expect(screen.queryByText(OFFER_TITLE)).toBeNull())
+  })
+
+  test('renders nothing when tours are disabled', async () => {
+    const ctx = createCtx()
+    toursDisabledAtom(ctx, true)
+
+    await renderWithProviders(<HelpHeaderButton />, { ctx })
+
+    expect(screen.queryByRole('button', { name: HELP_BUTTON_LABEL })).toBeNull()
   })
 })

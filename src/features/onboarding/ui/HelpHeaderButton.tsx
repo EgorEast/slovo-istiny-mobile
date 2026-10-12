@@ -1,5 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons'
+import { useAtom } from '@reatom/npm-react'
 import { useState } from 'react'
+import { toursDisabledAtom } from 'shared/model'
 import { ConfirmDialog } from 'shared/ui/confirm-dialog'
 import { IconButton } from 'shared/ui/icon-button'
 import { INDENTS, useTheme } from 'shared/ui/theme'
@@ -10,6 +12,9 @@ type HelpFlowStep = 'idle' | 'offer' | 'picker'
 export const HelpHeaderButton = ({ tintColor }: { tintColor?: string }) => {
   const { currentTheme } = useTheme()
   const [step, setStep] = useState<HelpFlowStep>('idle')
+  const [toursDisabled] = useAtom(toursDisabledAtom)
+
+  if (toursDisabled) return null
 
   return (
     <>

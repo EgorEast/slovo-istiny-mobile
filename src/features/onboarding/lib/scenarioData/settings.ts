@@ -22,6 +22,11 @@ export const settingsScenario: OnboardingScenario = {
       title: 'Резервные копии',
     },
     {
+      targetId: 'settings.tours',
+      text: 'Здесь можно полностью отключить подсказки и автопоказ обзоров.',
+      title: 'Обзоры и подсказки',
+    },
+    {
       targetId: 'settings.server',
       text: 'Адрес сервера с проповедями. Не меняйте без необходимости.',
       title: 'Сервер',

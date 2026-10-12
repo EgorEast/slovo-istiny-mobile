@@ -11,7 +11,7 @@
 
 ## Как работает (поток «?»)
 
-1. **Кнопка «?»** — `HelpHeaderButton` (`ui/HelpHeaderButton.tsx`): `IconButton` с иконкой `help-circle-outline`, `accessibilityLabel` «Онбординг и помощь». Локальный `useState` ведёт поток по трём состояниям `idle → offer → picker`.
+1. **Кнопка «?»** — `HelpHeaderButton` (`ui/HelpHeaderButton.tsx`): `IconButton` с иконкой `help-circle-outline`, `accessibilityLabel` «Онбординг и помощь». Локальный `useState` ведёт поток по трём состояниям `idle → offer → picker`. Если включена настройка «Обзоры и подсказки» (`toursDisabledAtom`, дефолт — подсказки включены) — кнопка рендерит `null` (шапка/меню остаются на месте).
 2. **Оффер-диалог** — общий `ConfirmDialog` «Обзор приложения» («Хотите посмотреть, как пользоваться приложением?») с кнопками «Посмотреть» / «Закрыть». «Посмотреть» переводит в `picker`, «Закрыть» возвращает в `idle`.
 3. **Выбор сценария** — `ScenarioPickerModal` (`ui/ScenarioPickerModal.tsx`, заголовок «Что посмотреть?») со списком доступных сценариев (иконка, название, описание). Список строит `useOnboardingScenarios` — он отфильтровывает `read`/`study` по фича-флагам `read`/`study` (см. [feature-flags.md](./feature-flags.md)); при выключенном флаге сценария в списке нет.
 4. **Старт тура** — тап по сценарию закрывает модалку и вызывает `useStartScenarioTour()`: если текущий `pathname` не равен `scenario.homeRoute`, выполняется `router.push(homeRoute)`, затем через `TOUR_START_DELAY_MS = 400` мс вызывается `startOnboardingTour(scenarioId)`. Задержка нужна, чтобы экран успел смонтироваться и измерить цели. Таймер снимается на размонтировании.
@@ -30,7 +30,7 @@
 | `playlists` | Плейлисты                     | `/listen`        | —       | `listen.my-playlists`, «Создать плейлист» (без цели), «Добавить проповедь» (без цели)                |
 | `history`   | История прослушивания         | `/history`       | —       | «История прослушивания» (без цели), `history.rows`, `history.header-menu`                            |
 | `offline`   | Офлайн-режим                  | `/offline`       | —       | `offline.caching-switch`, `offline.rows`, `offline.header-menu`                                     |
-| `settings`  | Настройки и резервные копии   | `/settings`      | —       | `settings.theme`, `settings.haptics`, `settings.backup`, `settings.server`                           |
+| `settings`  | Настройки и резервные копии   | `/settings`      | —       | `settings.theme`, `settings.haptics`, `settings.tours`, `settings.backup`, `settings.server`         |
 | `read`      | Читать книги                  | `/read`          | `read`  | «Библиотека книг» (без цели), `read.notes`, `read.verse-by-verse`, `read.topical`                    |
 | `study`     | Учиться                       | `/study`         | `study` | `study.tabs`, «Материалы» (без цели)                                                                |
 
@@ -61,6 +61,7 @@
 | `offline.header-menu`      | `pages/offline/ui/OfflineScreen.tsx`                                      | меню шапки «Офлайн»                                     |
 | `settings.theme`           | `pages/settings/ui/SettingsScreen.tsx`                                    | строка «Тема оформления»                                |
 | `settings.haptics`         | `pages/settings/ui/SettingsScreen.tsx`                                    | строка «Виброотклик»                                    |
+| `settings.tours`           | `pages/settings/ui/SettingsScreen.tsx`                                    | строка «Обзоры и подсказки»                             |
 | `settings.backup`          | `pages/settings/ui/SettingsScreen.tsx`                                    | блок «Резервная копия данных»                           |
 | `settings.server`          | `pages/settings/ui/SettingsScreen.tsx`                                    | строка «URL сервера API»                                |
 | `read.notes`               | `pages/read/ui/ReadScreen.tsx`                                            | слайдер «Конспекты для проповедников»                   |
@@ -79,6 +80,7 @@
 - Слайс `src/features/onboarding/`:
   - `model.ts` — атомы `onboardingTourAtom` (`{ scenarioId, stepIndex } | null`) и `onboardingTargetRectsAtom`; экшены `startOnboardingTour`, `goToNextOnboardingStep`, `goToPrevOnboardingStep`, `endOnboardingTour`, `registerOnboardingTargetRect`.
   - `lib/` — `scenarios.ts` + `scenarioData/*`, `useOnboardingScenarios` (гейт по флагам), `useStartScenarioTour` (навигация + отложенный старт), `useTargetMeasure`, `useOnboardingTargetRef`, `tooltipPosition` (чистая функция позиции карточки).
+  - Настройка «Обзоры и подсказки» (`toursDisabledAtom`, `setToursDisabled`, `loadToursDisabled`, `setToursSeenVersion`) живёт в `shared/model/settings.ts` (рядом с виброоткликом) и входит в резервную копию; онбординг только читает атом.
   - `ui/` — `HelpHeaderButton`, `ScenarioPickerModal`, `OnboardingHelpRow`, `OnboardingTarget`, `OnboardingTourOverlay`, `TourDim`, `TourTooltip`.
 - **Публичное API** (`index.ts`, 5 экспортов): `HelpHeaderButton`, `OnboardingHelpRow`, `OnboardingTarget`, `OnboardingTourOverlay`, `useOnboardingTargetRef`.
 - **Почему overlay смонтирован в `_RootLayout`**: `OnboardingTourOverlay` — один на всё приложение, рендерится поверх любого экрана и модалок независимо от текущего маршрута (`app/_RootLayout.tsx`, рядом с `GlobalErrorDialog`/`GlobalConfirmDialog`). Поэтому тур переживает навигацию: оверлей не размонтируется при `router.push` на `homeRoute`.
@@ -96,7 +98,9 @@
 - `lib/tooltipPosition.test.ts` — позиция карточки (над/под целью, центрирование без цели, кламп по низу окна).
 - `lib/useOnboardingScenarios.test.ts` — `read`/`study` появляются только при включённых флагах, остальные всегда.
 - `lib/useOnboardingTargetRef.test.tsx` — ref-цель измеряется только при совпадении с активным шагом.
-- `ui/HelpHeaderButton.test.tsx` — «?» открывает оффер, «Посмотреть» показывает пикер, «Закрыть» закрывает.
+- `ui/HelpHeaderButton.test.tsx` — «?» открывает оффер, «Посмотреть» показывает пикер, «Закрыть» закрывает; при `toursDisabledAtom = true` кнопка не рендерится.
+- `src/shared/model/settings.test.ts` — `setToursDisabled` пишет значение и переключает атом, `loadToursDisabled` нормализует `'true'`/`'false'`/отсутствие ключа.
+- `pages/settings/ui/ToursSettingsItem.test.tsx` — строка «Обзоры и подсказки» вызывает `setToursDisabled` с инвертированным значением.
 - `ui/OnboardingTarget.test.tsx` — цель регистрирует rect при активном шаге.
 - `ui/OnboardingTourOverlay.test.tsx` — пусто без тура, шаг с целью (карточка + «Далее» + close), шаг без цели (карточка + «Назад»), «Готово» на последнем шаге.
 
