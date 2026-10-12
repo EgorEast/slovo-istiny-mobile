@@ -37,7 +37,9 @@ export const HistoryScreen = () => {
     navigation.setOptions({
       headerRight: () => (
         <OnboardingHelpRow>
-          <HistoryHeaderMenu />
+          <OnboardingTarget id='history.header-menu'>
+            <HistoryHeaderMenu />
+          </OnboardingTarget>
         </OnboardingHelpRow>
       ),
     })
