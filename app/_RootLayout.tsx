@@ -8,6 +8,7 @@ import { NetworkBanner, ServerErrorToast } from 'widgets/network-status'
 import { HeaderBackButton } from 'widgets/sub-screen-header-back'
 import { UpdateDialogRoot } from 'widgets/update-status'
 import { useOfflineRegistrySync } from 'features/offline-sermons'
+import { HelpHeaderButton, OnboardingHelpRow, OnboardingTourOverlay } from 'features/onboarding'
 import { useUpdateNotificationResponse } from 'features/update-notification'
 import { WebUpdateModal } from 'features/web-update'
 import { useFeatureFlagsRefetchOnForeground } from 'entities/feature-flags'
@@ -30,8 +31,14 @@ const renderHeaderBack = (props: { tintColor?: ColorValue }) => (
   <HeaderBackButton tintColor={props.tintColor} />
 )
 
-const renderSettingsMenu = (props: { tintColor?: ColorValue }) => (
-  <SettingsHeaderMenu tintColor={props.tintColor} />
+const renderHelp = (props: { tintColor?: ColorValue }) => (
+  <HelpHeaderButton tintColor={typeof props.tintColor === 'string' ? props.tintColor : undefined} />
+)
+
+const renderSettingsHelpRow = (props: { tintColor?: ColorValue }) => (
+  <OnboardingHelpRow tintColor={typeof props.tintColor === 'string' ? props.tintColor : undefined}>
+    <SettingsHeaderMenu tintColor={props.tintColor} />
+  </OnboardingHelpRow>
 )
 
 const RootLayout = () => {
@@ -57,7 +64,7 @@ const RootLayout = () => {
           name={name}
           options={{
             headerLeft: renderHeaderBack,
-            headerRight: name === 'settings' ? renderSettingsMenu : undefined,
+            headerRight: name === 'settings' ? renderSettingsHelpRow : renderHelp,
             headerStyle: { backgroundColor: currentTheme.background },
             headerTintColor: currentTheme.text,
             headerTitleStyle: { color: currentTheme.text },
@@ -89,6 +96,7 @@ const RootLayout = () => {
       <WebUpdateModal />
       <GlobalErrorDialog />
       <GlobalConfirmDialog />
+      <OnboardingTourOverlay />
     </View>
   )
 }
