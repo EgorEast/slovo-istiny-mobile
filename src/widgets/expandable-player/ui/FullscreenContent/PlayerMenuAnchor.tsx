@@ -21,7 +21,8 @@ interface MenuMembership {
 const EMPTY_MEMBERSHIP: MenuMembership = { canRemove: false, playlistId: null }
 
 const REMOVE_TITLE = 'Удалить из плейлиста?'
-const REMOVE_MESSAGE = 'Плеер будет закрыт.'
+const REMOVE_MESSAGE =
+  'Проповедь будет удалена из текущего плейлиста. Выберите, где продолжить прослушивание.'
 const REMOVE_CONFIRM_TEXT = 'Удалить'
 const CANCEL_TEXT = 'Отмена'
 
@@ -77,7 +78,7 @@ export const PlayerMenuAnchor = ({
     setMembership(EMPTY_MEMBERSHIP)
     if (!canRemove || playlistId === null) return
     void togglePlaylistSermon(ctx, playlistId, audio, false, { suppressPlayerReset: true })
-    offer(audio, playlistId, () => void resetPlaybackAction(ctx))
+    void offer(audio, playlistId, () => void resetPlaybackAction(ctx))
   }
 
   return (

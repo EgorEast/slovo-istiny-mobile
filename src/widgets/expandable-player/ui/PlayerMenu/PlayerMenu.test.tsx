@@ -38,7 +38,7 @@ jest.mock('entities/player', () => ({
 const SPEED_LABEL = 'Скорость воспроизведения'
 const SOUND_SETTINGS_LABEL = 'Настройки звука'
 const ADD_TO_PLAYLIST_LABEL = 'Добавить в плейлист'
-const REMOVE_FROM_PLAYLIST_LABEL = 'Удалить из текущего плейлиста'
+const REMOVE_FROM_PLAYLIST_LABEL = 'Удалить из текущего плейлиста и открыть в другом'
 
 const renderMenu = async ({
   canRemoveFromPlaylist = false,

@@ -45,7 +45,7 @@ export const useRemoveSermonFromPlaylist = (playlistId: string) => {
     const { sermon, shouldClosePlayer } = pending
     void togglePlaylistSermon(ctx, playlistId, sermon, false, { suppressPlayerReset: true })
     setPending(null)
-    if (shouldClosePlayer) offer(sermon, playlistId, () => void resetPlaybackAction(ctx))
+    if (shouldClosePlayer) void offer(sermon, playlistId, () => void resetPlaybackAction(ctx))
   }, [ctx, offer, pending, playlistId])
 
   const renderDialog = (): ReactElement => (

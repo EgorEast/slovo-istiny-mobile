@@ -64,7 +64,8 @@ jest.mock('../PlayerMenu/PlayerMenu', () => {
 const MENU_BUTTON_LABEL = 'Меню плеера'
 const REMOVE_MENU_TEXT = 'Удалить из текущего плейлиста'
 const REMOVE_DIALOG_TITLE = 'Удалить из плейлиста?'
-const REMOVE_DIALOG_MESSAGE = 'Плеер будет закрыт.'
+const REMOVE_DIALOG_MESSAGE =
+  'Проповедь будет удалена из текущего плейлиста. Выберите, где продолжить прослушивание.'
 const CHOOSER_TITLE = 'Где продолжить прослушивание?'
 const SKIP_TEXT = 'Закрыть плеер'
 const CONFIRM_TEXT = 'Удалить'
@@ -213,7 +214,7 @@ describe('<PlayerMenuAnchor>', () => {
 
     expect(mockPlayNewSermon).toHaveBeenCalledWith({
       playlist: expect.objectContaining({ id: CANDIDATE_ID }),
-      sermon: MOCK_AUDIO,
+      sermon: expect.objectContaining({ id: MOCK_AUDIO.id }),
     })
     expect(mockResetPlaybackAction).not.toHaveBeenCalled()
     await waitFor(() => expect(queryByText(CHOOSER_TITLE)).toBeNull())

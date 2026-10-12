@@ -5,6 +5,7 @@ import { durationAtom, positionAtom, usePlayNewSermon } from 'entities/player'
 import { type LocalPlaylistData, myPlaylistsAtom, type PlaylistData } from 'entities/playlist'
 import { type AudioPlayerData } from 'entities/sermon'
 import { ContinuePlaybackDialog } from '../ui/ContinuePlaybackDialog'
+import { fetchSermonPlaylists } from './fetchSermonPlaylists'
 import { resolveFullPlaylist } from './resolveFullPlaylist'
 
 interface ContinueRequest {
@@ -67,14 +68,20 @@ export const useContinuePlayback = () => {
   const onSkipRef = useRef<(() => void) | null>(null)
 
   const offer = useCallback(
-    (sermon: AudioPlayerData, fromPlaylistId: string, onSkip: () => void) => {
-      const candidates = collectCandidates(ctx.get(myPlaylistsAtom), sermon, fromPlaylistId)
+    async (sermon: AudioPlayerData, fromPlaylistId: string, onSkip: () => void) => {
+      // Членства могли не сохраниться в снапшоте/хранилище (старые записи) —
+      // уточняем сервером, когда локально их нет.
+      const hasMemberships = (sermon.playlists ?? []).length > 0
+      const playlists = hasMemberships ? sermon.playlists : await fetchSermonPlaylists(sermon.id)
+      const resolvedSermon = hasMemberships ? sermon : { ...sermon, playlists }
+
+      const candidates = collectCandidates(ctx.get(myPlaylistsAtom), resolvedSermon, fromPlaylistId)
       if (candidates.length === 0) {
         onSkip()
         return
       }
       onSkipRef.current = onSkip
-      setRequest({ candidates, sermon })
+      setRequest({ candidates, sermon: resolvedSermon })
     },
     [ctx],
   )
