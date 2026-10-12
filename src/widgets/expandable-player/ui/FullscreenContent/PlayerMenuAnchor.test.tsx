@@ -8,14 +8,12 @@ import { renderWithProviders } from 'shared/mocks/renderWithProviders'
 import { type createStyles } from '../ExpandablePlayer/styles'
 import { PlayerMenuAnchor } from './PlayerMenuAnchor'
 
-const mockResetPlaybackAction = jest.fn().mockResolvedValue(undefined)
 const mockTogglePlaylistSermon = jest.fn()
 
 jest.mock('entities/player', () => {
   const { atom } = jest.requireActual('@reatom/framework')
   return {
     currentPlaylistAtom: atom(null, 'testCurrentPlaylistAtom'),
-    resetPlaybackAction: (...args: unknown[]) => mockResetPlaybackAction(...args),
   }
 })
 
@@ -113,7 +111,6 @@ const renderAnchor = async ({ isLocal = true }: { isLocal?: boolean } = {}) => {
 describe('<PlayerMenuAnchor>', () => {
   beforeEach(() => {
     jest.clearAllMocks()
-    mockResetPlaybackAction.mockResolvedValue(undefined)
   })
 
   test('hides the remove item when the current playlist is not local', async () => {
@@ -135,7 +132,7 @@ describe('<PlayerMenuAnchor>', () => {
     expect(mockTogglePlaylistSermon).not.toHaveBeenCalled()
   })
 
-  test('confirm removes the sermon and closes the player', async () => {
+  test('confirm removes the sermon', async () => {
     const { ctx, getByText } = await renderAnchor()
 
     await act(async () => {
@@ -147,10 +144,9 @@ describe('<PlayerMenuAnchor>', () => {
     })
 
     expect(mockTogglePlaylistSermon).toHaveBeenCalledWith(ctx, PLAYLIST_ID, MOCK_AUDIO, false)
-    expect(mockResetPlaybackAction).toHaveBeenCalledTimes(1)
   })
 
-  test('cancel neither removes nor closes the player', async () => {
+  test('cancel does not remove the sermon', async () => {
     const { getByText } = await renderAnchor()
 
     await act(async () => {
@@ -162,6 +158,5 @@ describe('<PlayerMenuAnchor>', () => {
     })
 
     expect(mockTogglePlaylistSermon).not.toHaveBeenCalled()
-    expect(mockResetPlaybackAction).not.toHaveBeenCalled()
   })
 })

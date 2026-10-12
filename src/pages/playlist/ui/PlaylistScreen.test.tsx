@@ -26,7 +26,6 @@ const mockSetOptions = jest.fn()
 const mockReplace = jest.fn()
 const mockResolvePlaylistFromCache = jest.fn()
 const mockTogglePlaylistSermon = jest.fn()
-const mockResetPlaybackAction = jest.fn().mockResolvedValue(undefined)
 const mockUseIsLocalPlaylist = jest.fn()
 
 jest.mock('expo-router', () => ({
@@ -50,7 +49,9 @@ jest.mock('entities/player', () => {
     currentAudioAtom: atom(null, 'testCurrentAudioAtom'),
     currentPlaylistAtom: atom(null, 'testCurrentPlaylistAtom'),
     isPlayingAtom: atom(false, 'testIsPlayingAtom'),
-    resetPlaybackAction: (...args: unknown[]) => mockResetPlaybackAction(...args),
+    // usePlaylistClearMenu wraps this via useAction; the real close-player path
+    // is covered by the entity tests, so a no-op is enough here.
+    resetPlaybackAction: jest.fn(),
     usePlayNewSermon: jest.fn(() => jest.fn()),
   }
 })
@@ -578,11 +579,10 @@ describe('<PlaylistScreen> remove-from-playlist flow', () => {
       expect.objectContaining({ id: SERMON_1.id }),
       false,
     )
-    expect(mockResetPlaybackAction).not.toHaveBeenCalled()
     await waitFor(() => expect(queryByText(REMOVE_DIALOG_TITLE)).toBeNull())
   })
 
-  test('warns and closes the player when removing the currently playing sermon', async () => {
+  test('warns when removing the currently playing sermon', async () => {
     const { ctx, getAllByText, getByText, queryByText } = await renderLocalPlaylist()
     const { currentAudioAtom, currentPlaylistAtom } = jest.requireMock('entities/player') as {
       currentAudioAtom: (ctx: unknown, value: AudioPlayerData | null) => unknown
@@ -606,7 +606,6 @@ describe('<PlaylistScreen> remove-from-playlist flow', () => {
       expect.objectContaining({ id: SERMON_1.id }),
       false,
     )
-    expect(mockResetPlaybackAction).toHaveBeenCalledTimes(1)
     await waitFor(() => expect(queryByText(REMOVE_DIALOG_TITLE)).toBeNull())
   })
 
@@ -629,7 +628,6 @@ describe('<PlaylistScreen> remove-from-playlist flow', () => {
     })
 
     expect(mockTogglePlaylistSermon).toHaveBeenCalledTimes(1)
-    expect(mockResetPlaybackAction).not.toHaveBeenCalled()
   })
 
   test('does not remove the sermon when the confirmation is cancelled', async () => {

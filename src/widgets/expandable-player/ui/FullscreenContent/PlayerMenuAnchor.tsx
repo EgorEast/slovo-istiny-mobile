@@ -3,7 +3,7 @@ import { useCtx } from '@reatom/npm-react'
 import { useState } from 'react'
 import { View } from 'react-native'
 import { type TrackCacheVisualState } from 'entities/offline-cache'
-import { currentPlaylistAtom, resetPlaybackAction } from 'entities/player'
+import { currentPlaylistAtom } from 'entities/player'
 import { myPlaylistsAtom, togglePlaylistSermon } from 'entities/playlist'
 import { type AudioPlayerData } from 'entities/sermon'
 import { ConfirmDialog } from 'shared/ui/confirm-dialog'
@@ -73,7 +73,6 @@ export const PlayerMenuAnchor = ({
     setRemoveDialogOpen(false)
     if (membership.playlistId === null) return
     void togglePlaylistSermon(ctx, membership.playlistId, audio, false)
-    void resetPlaybackAction(ctx)
   }
 
   return (

@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { createCtx } from '@reatom/framework'
-import { type SermonData } from 'entities/sermon'
+import { currentAudioAtom, currentPlaylistAtom } from 'entities/player/@x/playlist'
+import { type SermonData, toAudioPlayerData } from 'entities/sermon'
 import { togglePlaylistSermon } from './localPlaylistMembership'
 import {
   FAVORITES_PLAYLIST,
@@ -9,6 +10,17 @@ import {
   myPlaylistsArraySchema,
 } from './localPlaylists'
 import { myPlaylistsAtom } from './model'
+
+const mockResetPlaybackAction = jest.fn().mockResolvedValue(undefined)
+
+jest.mock('entities/player/@x/playlist', () => {
+  const { atom } = jest.requireActual('@reatom/framework')
+  return {
+    currentAudioAtom: atom(null, 'testCurrentAudioAtom'),
+    currentPlaylistAtom: atom(null, 'testCurrentPlaylistAtom'),
+    resetPlaybackAction: (...args: unknown[]) => mockResetPlaybackAction(...args),
+  }
+})
 
 const MY_PLAYLISTS_KEY = 'myPlaylists'
 
@@ -24,6 +36,14 @@ const playlist = (id: string, sermons: SermonData[] = []): LocalPlaylistData => 
   id,
   sermonIds: sermons.map(item => item.id),
   sermons,
+  title: id,
+})
+
+// Плейлист в форме плеера (`currentPlaylistAtom`) — снапшот с обложкой.
+const playerPlaylist = (id: string, sermonId: string) => ({
+  artwork: null,
+  id,
+  sermons: [sermon(sermonId)],
   title: id,
 })
 
@@ -249,5 +269,50 @@ describe('togglePlaylistSermon', () => {
     const stored = await AsyncStorage.getItem(MY_PLAYLISTS_KEY)
     const parsed = myPlaylistsArraySchema.parse(JSON.parse(stored ?? '[]'))
     expect(parsed.find(p => p.id === 'a')?.sermons).toEqual([sermon('sermon-1')])
+  })
+
+  test('closes the player when the current sermon leaves its playlist', async () => {
+    const ctx = createCtx()
+    myPlaylistsAtom(ctx, [FAVORITES_PLAYLIST, playlist('a', [sermon('sermon-1')])])
+    currentPlaylistAtom(ctx, playerPlaylist('a', 'sermon-1'))
+    currentAudioAtom(ctx, toAudioPlayerData(sermon('sermon-1')))
+
+    const outcome = await togglePlaylistSermon(ctx, 'a', sermon('sermon-1'), false)
+
+    expect(outcome).toBe('removed')
+    expect(mockResetPlaybackAction).toHaveBeenCalledTimes(1)
+  })
+
+  test('keeps the player when a different sermon leaves the playlist', async () => {
+    const ctx = createCtx()
+    myPlaylistsAtom(ctx, [FAVORITES_PLAYLIST, playlist('a', [sermon('sermon-1')])])
+    currentPlaylistAtom(ctx, playerPlaylist('a', 'sermon-2'))
+    currentAudioAtom(ctx, toAudioPlayerData(sermon('sermon-2')))
+
+    await togglePlaylistSermon(ctx, 'a', sermon('sermon-1'), false)
+
+    expect(mockResetPlaybackAction).not.toHaveBeenCalled()
+  })
+
+  test('keeps the player when the current sermon leaves another playlist', async () => {
+    const ctx = createCtx()
+    myPlaylistsAtom(ctx, [FAVORITES_PLAYLIST, playlist('a', [sermon('sermon-1')])])
+    currentPlaylistAtom(ctx, playerPlaylist('b', 'sermon-1'))
+    currentAudioAtom(ctx, toAudioPlayerData(sermon('sermon-1')))
+
+    await togglePlaylistSermon(ctx, 'a', sermon('sermon-1'), false)
+
+    expect(mockResetPlaybackAction).not.toHaveBeenCalled()
+  })
+
+  test('does not close the player when the current sermon is added', async () => {
+    const ctx = createCtx()
+    myPlaylistsAtom(ctx, [FAVORITES_PLAYLIST, playlist('a')])
+    currentPlaylistAtom(ctx, playerPlaylist('a', 'sermon-1'))
+    currentAudioAtom(ctx, toAudioPlayerData(sermon('sermon-1')))
+
+    await togglePlaylistSermon(ctx, 'a', sermon('sermon-1'), true)
+
+    expect(mockResetPlaybackAction).not.toHaveBeenCalled()
   })
 })

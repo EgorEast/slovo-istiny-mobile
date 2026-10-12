@@ -1,4 +1,9 @@
 import { action } from '@reatom/framework'
+import {
+  currentAudioAtom,
+  currentPlaylistAtom,
+  resetPlaybackAction,
+} from 'entities/player/@x/playlist'
 import { type SermonShape } from 'shared/model'
 import { toPersistedLocalSermon } from './lib/sanitizeLocalPlaylistSermon'
 import { type LocalPlaylistData, MAX_CUSTOM_PLAYLIST_SERMONS } from './localPlaylists'
@@ -52,6 +57,9 @@ const removeSermonSnapshot = (
  * Запись в хранилище может отклониться (сломанный нативный модуль, квота, …);
  * такой отказ логируется, но атом уже закоммичен — та же политика деградации,
  * что и у `reorderMyPlaylists`.
+ * Удаление проповеди, которая сейчас играет из этого же плейлиста
+ * (`currentAudioAtom`/`currentPlaylistAtom`), закрывает плеер (`resetPlaybackAction`)
+ * — единственная точка сброса для всех поверхностей удаления.
  * @param playlistId - Идентификатор плейлиста, которому меняем принадлежность.
  * @param sermon - Полная проповедь (для добавления сохраняется её снапшот).
  * @param contained - `true` — добавить, `false` — удалить.
@@ -90,7 +98,17 @@ export const togglePlaylistSermon = action(
     } catch (error) {
       console.error('[togglePlaylistSermon] failed to persist membership:', error)
     }
-    return contained ? 'added' : 'removed'
+
+    if (contained) return 'added'
+
+    // Удаление текущей проповеди из её плейлиста закрывает плеер (нотификейшн-бар
+    // + миниплеер) независимо от поверхности (меню строки, меню плеера, модалка
+    // «Добавить в плейлист»).
+    const isRemovingCurrentSermon =
+      ctx.get(currentAudioAtom)?.id === sermon.id && ctx.get(currentPlaylistAtom)?.id === playlistId
+    if (isRemovingCurrentSermon) void resetPlaybackAction(ctx)
+
+    return 'removed'
   },
   'togglePlaylistSermon',
 )

@@ -1,7 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { action } from '@reatom/framework'
 import { CURRENT_AUDIO, CURRENT_PLAYLIST } from 'shared/config'
-import { playerService } from './lib/PlayerService'
 import {
   currentAudioAtom,
   currentPlaylistAtom,
@@ -19,8 +18,14 @@ import {
  *
  * Отказ `unload` логируется, но UI всё равно закрывается: очистка состояний
  * должна пройти независимо от нативной ошибки.
+ *
+ * `playerService` грузится динамически: этот модуль переэкспортируется в
+ * `entities/playlist` (`@x/playlist`), и статический импорт затягивал бы
+ * `expo-audio` в граф каждой сущности/теста, которые лишь импортируют
+ * `entities/playlist` (тот же приём, что в `ensureNotifications`).
  */
 export const resetPlaybackAction = action(async ctx => {
+  const { playerService } = await import('./lib/PlayerService')
   try {
     await playerService.unload()
   } catch (error) {
