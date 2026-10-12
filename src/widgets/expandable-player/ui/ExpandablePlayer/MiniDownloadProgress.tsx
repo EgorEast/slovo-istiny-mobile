@@ -1,6 +1,7 @@
 import { useAtom } from '@reatom/npm-react'
 import { View } from 'react-native'
 import { sermonCachingEnabledAtom } from 'entities/offline-cache'
+import { COLORS } from 'shared/ui/theme'
 import { useDisplayedDownloadProgress } from '../../model/useDisplayedDownloadProgress'
 import { type createMiniStyles } from './miniStyles'
 
@@ -25,10 +26,10 @@ export const MiniDownloadProgress = ({
         style={[
           miniStyles.downloadFill,
           {
-            // Same rgba as the fullscreen buffered layer
-            // (`PlayerProgressBar.styles.ts` → `downloadProgress`) so both
-            // players show the buffered volume identically over the track.
-            backgroundColor: 'rgba(255,255,255,0.35)',
+            // Shared `COLORS.progressBuffered` keeps the miniplayer strip and
+            // the fullscreen buffered layer (`PlayerProgressBar.styles.ts`)
+            // identical over their tracks.
+            backgroundColor: COLORS.progressBuffered,
             width: `${displayProgress * 100}%`,
           },
         ]}
