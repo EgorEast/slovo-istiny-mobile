@@ -10,6 +10,7 @@ const ADMIN_PANEL_LABEL = 'В админ панель'
 const mockPush = jest.fn()
 
 jest.mock('expo-router', () => ({
+  usePathname: () => '/more',
   useRouter: () => ({
     push: mockPush,
   }),

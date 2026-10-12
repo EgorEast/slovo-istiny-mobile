@@ -1,7 +1,8 @@
-import { ScrollView, StyleSheet } from 'react-native'
+import { ScrollView, StyleSheet, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import { HelpHeaderButton } from 'features/onboarding'
 import { useFeatureFlag } from 'entities/feature-flags'
-import { useTheme } from 'shared/ui/theme'
+import { INDENTS, useTheme } from 'shared/ui/theme'
 import { NotesForPreachersBooksSlider } from './NotesForPreachersBooksSlider'
 import { TopicalAndThematicBooksSlider } from './TopicalAndThematicBooksSlider'
 import { VerseByVerseBooksSlider } from './VerseByVerseBooksSlider'
@@ -16,6 +17,9 @@ export const ReadScreen = () => {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: currentTheme.background }]}>
+      <View style={styles.topRow}>
+        <HelpHeaderButton />
+      </View>
       <ScrollView style={[styles.content, { backgroundColor: currentTheme.background }]}>
         <NotesForPreachersBooksSlider />
         <VerseByVerseBooksSlider />
@@ -28,4 +32,11 @@ export const ReadScreen = () => {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   content: { flex: 1, paddingBottom: 100 },
+  topRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    paddingHorizontal: INDENTS.medium,
+    paddingVertical: INDENTS.low,
+  },
 })

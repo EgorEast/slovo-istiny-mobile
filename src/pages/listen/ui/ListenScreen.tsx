@@ -3,6 +3,7 @@ import { useEffect } from 'react'
 import { ScrollView, StyleSheet, View } from 'react-native'
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useAddToPlaylistModal } from 'features/add-to-playlist'
+import { HelpHeaderButton } from 'features/onboarding'
 import {
   SEARCH_HEADER_HEIGHT,
   SearchBar,
@@ -84,7 +85,10 @@ export const ListenScreen = () => {
             {!isSearchOpen && (
               <View style={styles.topRow}>
                 <SearchToggleButton />
-                {showAdminButton && <AdminShieldButton />}
+                <View style={styles.topRowRight}>
+                  {showAdminButton && <AdminShieldButton />}
+                  <HelpHeaderButton />
+                </View>
               </View>
             )}
             <DynamicSectionsSlider
@@ -117,5 +121,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     paddingRight: INDENTS.low,
+  },
+  topRowRight: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: INDENTS.low,
   },
 })

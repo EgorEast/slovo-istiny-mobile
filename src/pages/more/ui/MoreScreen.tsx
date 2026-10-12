@@ -3,6 +3,7 @@ import { useRouter } from 'expo-router'
 import { useEffect } from 'react'
 import { ScrollView, Text, View } from 'react-native'
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
+import { HelpHeaderButton } from 'features/onboarding'
 import { authStatusAtom, authUserAtom, canAccessAdmin, restoreSession } from 'entities/auth'
 import { APP_NAME, APP_VERSION } from 'shared/config'
 import { useTheme } from 'shared/ui/theme'
@@ -40,7 +41,10 @@ export const MoreScreen = () => {
             <Text style={[styles.appName, { color: currentTheme.text }]}>{APP_NAME}</Text>
             <Text style={styles.appVersion}>v{APP_VERSION}</Text>
           </View>
-          {canOpenAdminPanel && <AdminPanelButton />}
+          <View style={styles.headerActions}>
+            {canOpenAdminPanel && <AdminPanelButton />}
+            <HelpHeaderButton />
+          </View>
         </View>
         <Text style={[styles.appDescription, { color: currentTheme.textMuted }]}>
           Приложение для прослушивания и чтения проповедей

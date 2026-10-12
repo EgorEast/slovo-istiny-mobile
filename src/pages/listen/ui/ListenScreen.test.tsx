@@ -20,6 +20,7 @@ const mockPush = jest.fn()
 
 jest.mock('expo-router', () => ({
   useLocalSearchParams: () => ({}),
+  usePathname: () => '/listen',
   useRouter: () => ({
     push: mockPush,
   }),
