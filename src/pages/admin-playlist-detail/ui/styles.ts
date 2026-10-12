@@ -31,6 +31,18 @@ export const styles = StyleSheet.create({
   listContent: {
     padding: INDENTS.medium,
   },
+  sermonsHeaderRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: INDENTS.medium,
+    marginTop: INDENTS.medium,
+  },
+  sermonsHeaderTitle: {
+    flex: 1,
+    fontSize: FONT_SIZES.lg,
+    fontWeight: '700',
+  },
   sermonsTitle: {
     fontSize: FONT_SIZES.lg,
     fontWeight: '700',
