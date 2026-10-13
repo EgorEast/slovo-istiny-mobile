@@ -61,6 +61,10 @@ export type OnboardingScenarioId =
 
 export interface OnboardingStep {
   route?: Href
+  // Registered action the tour performs itself (see lib/tourActions.ts). An action
+  // step is demonstrative: after blinking on `tapTargetId` the tour runs the action
+  // and advances on its own — it never navigates.
+  tapActionId?: string
   tapTargetId?: string
   targetId?: string
   text: string
