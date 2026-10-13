@@ -2,7 +2,7 @@ import { INDENTS } from 'shared/ui/theme'
 import { type OnboardingTargetRect } from '../model'
 import { computeTooltipLayout } from './tooltipPosition'
 
-const TOOLTIP_ESTIMATED_HEIGHT = 230
+export const TOOLTIP_ESTIMATED_HEIGHT = 230
 
 interface TourHole {
   isWaitingForTarget: boolean

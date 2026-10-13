@@ -1,10 +1,8 @@
 import { useAction, useAtom } from '@reatom/npm-react'
 import { useEffect, useState } from 'react'
-import { Modal, StyleSheet, useWindowDimensions, View } from 'react-native'
+import { useWindowDimensions } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { INDENTS } from 'shared/ui/theme'
 import { scenariosById } from '../lib/scenarios'
-import { resolveTourHole } from '../lib/tourHole'
 import { useStepNavigation } from '../lib/useStepNavigation'
 import {
   endOnboardingTour,
@@ -13,9 +11,9 @@ import {
   onboardingTargetRectsAtom,
   onboardingTourAtom,
 } from '../model'
-import { TourDim } from './TourDim'
+import { TourSpotlight } from './TourSpotlight'
 import { TourTapLayer } from './TourTapLayer'
-import { TourTooltip } from './TourTooltip'
+import { TourWaitLayer } from './TourWaitLayer'
 
 const MISSING_TARGET_TIMEOUT_MS = 1200
 
@@ -28,7 +26,6 @@ export const OnboardingTourOverlay = () => {
   const { height, width } = useWindowDimensions()
   const insets = useSafeAreaInsets()
   const [expiredStepKey, setExpiredStepKey] = useState<null | string>(null)
-  const [cardHeight, setCardHeight] = useState<null | number>(null)
 
   const scenarioId = tour?.scenarioId
   const stepIndex = tour?.stepIndex
@@ -59,8 +56,6 @@ export const OnboardingTourOverlay = () => {
 
     // eslint-disable-next-line react-hooks/set-state-in-effect, react-hooks-extra/no-direct-set-state-in-use-effect -- reset stale per-tour UI state when the tour ends
     setExpiredStepKey(null)
-    // eslint-disable-next-line react-hooks-extra/no-direct-set-state-in-use-effect -- reset stale per-tour UI state when the tour ends
-    setCardHeight(null)
   }, [tour])
 
   if (tour === null || scenario === undefined || step === undefined) return null
@@ -73,55 +68,41 @@ export const OnboardingTourOverlay = () => {
   if (holdNavigation && tapRect !== undefined) return <TourTapLayer rect={tapRect} />
 
   const isLastStep = tour.stepIndex === scenario.steps.length - 1
-  const { isWaitingForTarget, tooltipTop, visibleHole } = resolveTourHole({
-    activeTargetId,
-    bottomInset: insets.bottom,
-    cardHeight,
-    expiredStepKey,
-    height,
-    rects,
-    stepKey,
-  })
+  const onPrimary = isLastStep ? end : next
+
+  // While an interactive step's condition is unmet, keep the modal unmounted so the
+  // user can actually perform the action on the live UI; the card floats in a
+  // pass-through layer and only the card itself is touchable.
+  if (!isWaitSatisfied)
+    return (
+      <TourWaitLayer
+        step={step}
+        onClose={end}
+        onPrev={prev}
+        onNext={onPrimary}
+        windowHeight={height}
+        index={tour.stepIndex}
+        bottomInset={insets.bottom}
+        total={scenario.steps.length}
+        hole={activeTargetId === undefined ? null : (rects[activeTargetId] ?? null)}
+      />
+    )
 
   return (
-    <Modal
-      visible
-      transparent
-      animationType='fade'
-      statusBarTranslucent
-      onRequestClose={end}
-      navigationBarTranslucent
-    >
-      <View style={styles.container}>
-        <TourDim width={width} height={height} hole={visibleHole} />
-        {isWaitingForTarget ? null : (
-          <View
-            style={[styles.tooltip, { top: tooltipTop }]}
-            onLayout={event => setCardHeight(event.nativeEvent.layout.height)}
-          >
-            <TourTooltip
-              step={step}
-              onClose={end}
-              onPrev={prev}
-              index={tour.stepIndex}
-              total={scenario.steps.length}
-              onNext={isLastStep ? end : next}
-              isWaitSatisfied={isWaitSatisfied}
-            />
-          </View>
-        )}
-      </View>
-    </Modal>
+    <TourSpotlight
+      step={step}
+      onClose={end}
+      onPrev={prev}
+      rects={rects}
+      width={width}
+      height={height}
+      stepKey={stepKey}
+      onNext={onPrimary}
+      stepIndex={tour.stepIndex}
+      total={scenario.steps.length}
+      activeTargetId={activeTargetId}
+      expiredStepKey={expiredStepKey}
+      isWaitSatisfied={isWaitSatisfied}
+    />
   )
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  tooltip: {
-    left: INDENTS.high,
-    position: 'absolute',
-    right: INDENTS.high,
-  },
-})

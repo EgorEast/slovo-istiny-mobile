@@ -1,5 +1,6 @@
 import { createCtx } from '@reatom/framework'
 import { act, fireEvent, waitFor } from '@testing-library/react-native'
+import { currentAudioAtom } from 'entities/player/@x/onboarding'
 import { renderWithProviders } from 'shared/mocks'
 import {
   endOnboardingTour,
@@ -26,6 +27,12 @@ jest.mock('./TapIndicator', () => {
   return { TapIndicator: () => <Text>tap-indicator</Text> }
 })
 
+jest.mock('./TourDim', () => {
+  const { Text } = jest.requireActual('react-native')
+
+  return { TourDim: () => <Text>tour-dim</Text> }
+})
+
 const mockNavigate = jest.fn()
 const mockPathname = jest.fn(() => '/listen')
 
@@ -34,8 +41,17 @@ jest.mock('expo-router', () => ({
   useRouter: () => ({ navigate: mockNavigate }),
 }))
 
+const AUDIO = {
+  artist: 'Проповедник',
+  artwork: null,
+  audioUrl: 'https://example.com/sermon.mp3',
+  id: 'sermon-1',
+  title: 'Проповедь',
+}
 const NEXT_LABEL = 'Далее'
+const HINT = 'Выполните действие, чтобы продолжить'
 const TAP_INDICATOR = 'tap-indicator'
+const DIM = 'tour-dim'
 const MISSING_TARGET_TIMEOUT_MS = 1200
 const TAP_PHASE_TIMEOUT_MS = 3500
 const SECTIONS_RECT: OnboardingTargetRect = { height: 4, width: 3, x: 1, y: 2 }
@@ -43,13 +59,15 @@ const OFFSCREEN_RECT: OnboardingTargetRect = { height: 60, width: 300, x: 0, y: 
 const TAB_MORE_RECT: OnboardingTargetRect = { height: 60, width: 90, x: 300, y: 760 }
 
 const renderAtStep = (
-  scenarioId: 'listen' | 'playlists' | 'settings',
+  scenarioId: 'listen' | 'player' | 'playlists' | 'settings',
   stepIndex: number,
   rects: Record<string, OnboardingTargetRect> = {},
+  setup?: (ctx: ReturnType<typeof createCtx>) => void,
 ) => {
   const ctx = createCtx()
   onboardingTourAtom(ctx, { scenarioId, stepIndex })
   onboardingTargetRectsAtom(ctx, rects)
+  setup?.(ctx)
 
   return renderWithProviders(<OnboardingTourOverlay />, { ctx })
 }
@@ -197,5 +215,29 @@ describe('<OnboardingTourOverlay>', () => {
     await waitFor(() => expect(getByText(NEXT_LABEL)).toBeTruthy(), {
       timeout: MISSING_TARGET_TIMEOUT_MS * 2,
     })
+  })
+
+  test('shows the wait card without a modal dim while the condition is unmet', async () => {
+    const { getByRole, getByText, queryByText } = await renderAtStep('player', 0, {
+      'listen.sections': SECTIONS_RECT,
+    })
+
+    expect(getByText(HINT)).toBeTruthy()
+    expect(getByRole('button', { name: 'Завершить обзор' })).toBeTruthy()
+    expect(queryByText(NEXT_LABEL)).toBeNull()
+    expect(queryByText(DIM)).toBeNull()
+  })
+
+  test('returns the modal with the primary button once the wait condition is satisfied', async () => {
+    const { getByText, queryByText } = await renderAtStep(
+      'player',
+      0,
+      { 'listen.sections': SECTIONS_RECT },
+      ctx => currentAudioAtom(ctx, AUDIO),
+    )
+
+    expect(queryByText(HINT)).toBeNull()
+    expect(getByText(NEXT_LABEL)).toBeTruthy()
+    expect(getByText(DIM)).toBeTruthy()
   })
 })
