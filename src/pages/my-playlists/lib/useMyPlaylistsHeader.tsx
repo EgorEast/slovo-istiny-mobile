@@ -50,7 +50,7 @@ export const useMyPlaylistsHeader = ({
 
   const headerRight = useMemo(
     () => () => (
-      <OnboardingHelpRow>
+      <OnboardingHelpRow tintColor={currentTheme.primary}>
         <MyPlaylistsHeaderActions
           onSave={handleSave}
           isEditing={isEditing}
@@ -58,7 +58,7 @@ export const useMyPlaylistsHeader = ({
         />
       </OnboardingHelpRow>
     ),
-    [handleSave, handleToggleEdit, isEditing],
+    [currentTheme.primary, handleSave, handleToggleEdit, isEditing],
   )
 
   const background = currentTheme.background

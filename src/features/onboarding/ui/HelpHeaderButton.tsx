@@ -1,12 +1,13 @@
 import Ionicons from '@expo/vector-icons/Ionicons'
 import { useAtom } from '@reatom/npm-react'
 import { useState } from 'react'
+import { type ColorValue } from 'react-native'
 import { toursDisabledAtom } from 'shared/model'
 import { IconButton } from 'shared/ui/icon-button'
 import { INDENTS, useTheme } from 'shared/ui/theme'
 import { ScenarioPickerModal } from './ScenarioPickerModal'
 
-export const HelpHeaderButton = ({ tintColor }: { tintColor?: string }) => {
+export const HelpHeaderButton = ({ tintColor }: { tintColor?: ColorValue }) => {
   const { currentTheme } = useTheme()
   const [isPickerOpen, setPickerOpen] = useState(false)
   const [toursDisabled] = useAtom(toursDisabledAtom)

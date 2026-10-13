@@ -7,7 +7,7 @@ import { useTheme } from 'shared/ui/theme'
 const LISTEN_FALLBACK_ROUTE = '/listen'
 
 const renderHelp = (props: { tintColor?: ColorValue }) => (
-  <HelpHeaderButton tintColor={typeof props.tintColor === 'string' ? props.tintColor : undefined} />
+  <HelpHeaderButton tintColor={props.tintColor} />
 )
 
 const ListenStackLayout = () => {

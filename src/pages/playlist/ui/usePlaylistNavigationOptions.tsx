@@ -39,7 +39,7 @@ export const usePlaylistNavigationOptions = ({
   useEffect(() => {
     navigation.setOptions({
       headerRight: () => (
-        <OnboardingHelpRow>
+        <OnboardingHelpRow tintColor={headerIconColor}>
           <PlaylistHeaderMenu
             isEditEnabled
             playlist={playlist}

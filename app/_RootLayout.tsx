@@ -37,11 +37,11 @@ const renderHeaderBack = (props: { tintColor?: ColorValue }) => (
 )
 
 const renderHelp = (props: { tintColor?: ColorValue }) => (
-  <HelpHeaderButton tintColor={typeof props.tintColor === 'string' ? props.tintColor : undefined} />
+  <HelpHeaderButton tintColor={props.tintColor} />
 )
 
 const renderSettingsHelpRow = (props: { tintColor?: ColorValue }) => (
-  <OnboardingHelpRow tintColor={typeof props.tintColor === 'string' ? props.tintColor : undefined}>
+  <OnboardingHelpRow tintColor={props.tintColor}>
     <SettingsHeaderMenu tintColor={props.tintColor} />
   </OnboardingHelpRow>
 )

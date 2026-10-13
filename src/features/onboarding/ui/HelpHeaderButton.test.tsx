@@ -2,12 +2,15 @@ import { createCtx } from '@reatom/framework'
 import { fireEvent, screen, waitFor } from '@testing-library/react-native'
 import { renderWithProviders } from 'shared/mocks'
 import { toursDisabledAtom } from 'shared/model'
+import { LightTheme } from 'shared/ui/theme'
 import { HelpHeaderButton } from './HelpHeaderButton'
 
 const HELP_BUTTON_LABEL = 'Онбординг и помощь'
 const PICKER_TITLE = 'Что посмотреть?'
 const FIRST_SCENARIO_TITLE = 'Как слушать проповеди'
 const BACKDROP_TEST_ID = 'modal-backdrop'
+
+const mockIoniconsSpy = jest.fn()
 
 jest.mock('expo-router', () => ({
   usePathname: () => '/listen',
@@ -16,6 +19,28 @@ jest.mock('expo-router', () => ({
 jest.mock('entities/feature-flags', () => ({
   useFeatureFlag: () => true,
 }))
+
+jest.mock('shared/ui/theme', () => {
+  const actual = jest.requireActual('shared/ui/theme')
+
+  return {
+    ...actual,
+    useTheme: () => ({ currentTheme: actual.LightTheme, isLight: true, themeMode: 'light' }),
+  }
+})
+
+jest.mock('@expo/vector-icons/Ionicons', () => {
+  const { Text } = jest.requireActual('react-native')
+
+  return {
+    __esModule: true,
+    default: (props: { color?: unknown; name: string }) => {
+      mockIoniconsSpy(props)
+
+      return <Text>{props.name}</Text>
+    },
+  }
+})
 
 describe('<HelpHeaderButton>', () => {
   beforeEach(() => {
@@ -49,5 +74,19 @@ describe('<HelpHeaderButton>', () => {
     await renderWithProviders(<HelpHeaderButton />, { ctx })
 
     expect(screen.queryByRole('button', { name: HELP_BUTTON_LABEL })).toBeNull()
+  })
+
+  test('tints the help icon with the theme text color by default', async () => {
+    await renderWithProviders(<HelpHeaderButton />)
+
+    expect(mockIoniconsSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ color: LightTheme.text }),
+    )
+  })
+
+  test('honors an explicit tintColor override', async () => {
+    await renderWithProviders(<HelpHeaderButton tintColor='#abcdef' />)
+
+    expect(mockIoniconsSpy).toHaveBeenCalledWith(expect.objectContaining({ color: '#abcdef' }))
   })
 })

@@ -38,7 +38,7 @@ export const usePlaylistEditHeader = ({
 
   const headerRight = useMemo(
     () => () => (
-      <OnboardingHelpRow>
+      <OnboardingHelpRow tintColor={currentTheme.primary}>
         <IconButton
           disabled={!canSave}
           accessibilityLabel={SAVE_LABEL}
