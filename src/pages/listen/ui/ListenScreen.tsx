@@ -3,6 +3,7 @@ import { useEffect } from 'react'
 import { ScrollView, StyleSheet, View } from 'react-native'
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useAddToPlaylistModal } from 'features/add-to-playlist'
+import { useTourScrollable } from 'features/onboarding'
 import {
   SEARCH_HEADER_HEIGHT,
   SearchBar,
@@ -37,6 +38,7 @@ export const ListenScreen = () => {
   const { modal, openAddToPlaylist } = useAddToPlaylistModal()
   const { isRefreshing, refresh } = usePullToRefresh()
   const { onPlaylistPress, onPreacherPress, onShowAllGroup } = useListenSearchNavigation()
+  const tourScrollableRef = useTourScrollable()
 
   useEffect(() => {
     if (authStatus !== 'idle') return
@@ -71,6 +73,7 @@ export const ListenScreen = () => {
         <PullToRefresh onRefresh={refresh} refreshing={isRefreshing}>
           <ScrollView
             onScroll={onScroll}
+            ref={tourScrollableRef}
             scrollEventThrottle={16}
             keyboardDismissMode='on-drag'
             keyboardShouldPersistTaps='handled'

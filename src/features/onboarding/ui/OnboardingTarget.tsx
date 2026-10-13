@@ -1,5 +1,6 @@
 import { type PropsWithChildren, useCallback, useRef } from 'react'
 import { type StyleProp, View, type ViewStyle } from 'react-native'
+import { useTargetAutoScroll } from '../lib/useTargetAutoScroll'
 import { useTargetMeasure } from '../lib/useTargetMeasure'
 
 // The measuring half lives in its own component so the hook is only mounted when
@@ -13,6 +14,8 @@ const MeasuredTarget = ({
   const ref = useRef<View>(null)
   const getNode = useCallback(() => ref.current, [])
   const { isActive, measure } = useTargetMeasure({ getNode, id })
+
+  useTargetAutoScroll({ id, isActive, measure })
 
   return (
     <View ref={ref} style={style} collapsable={false} onLayout={isActive ? measure : undefined}>

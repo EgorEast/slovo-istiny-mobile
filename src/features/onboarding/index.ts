@@ -1,5 +1,6 @@
 export { useAutoTours } from './lib/useAutoTours'
 export { useOnboardingTargetRef } from './lib/useOnboardingTargetRef'
+export { useTourScrollable } from './lib/useTourScrollable'
 export { HelpHeaderButton } from './ui/HelpHeaderButton'
 export { OnboardingHelpRow } from './ui/OnboardingHelpRow'
 export { OnboardingTarget } from './ui/OnboardingTarget'

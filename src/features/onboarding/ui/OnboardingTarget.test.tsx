@@ -1,12 +1,16 @@
 import { createCtx } from '@reatom/framework'
 import { act, waitFor } from '@testing-library/react-native'
-import { Text, View } from 'react-native'
+import { Dimensions, Text, View } from 'react-native'
 import { renderWithProviders } from 'shared/mocks'
+import { registerTourScrollable, unregisterTourScrollable } from '../lib/tourScrollable'
 import { onboardingTargetRectsAtom, onboardingTourAtom } from '../model'
 import { OnboardingTarget } from './OnboardingTarget'
 
 const TARGET_ID = 'listen.search-toggle'
 const MEASURE_FLUSH_MS = 150
+const VIEWPORT_HEIGHT = 800
+const BELOW_FOLD_RECT = { height: 50, width: 300, x: 0, y: 2000 }
+const BELOW_FOLD_SCROLL_OFFSET = 1625
 
 const mockAddListener = jest.fn(() => jest.fn())
 
@@ -33,6 +37,7 @@ const renderTarget = (ctx: ReturnType<typeof createCtx>) =>
 describe('<OnboardingTarget>', () => {
   afterEach(() => {
     jest.restoreAllMocks()
+    unregisterTourScrollable()
   })
 
   test('does not register a rect while its step is inactive', async () => {
@@ -86,5 +91,40 @@ describe('<OnboardingTarget>', () => {
 
     expect(getByText('bare child')).toBeTruthy()
     expect(ctx.get(onboardingTargetRectsAtom)).toEqual({})
+  })
+
+  test('registers a below-fold rect without a scrollable and does not crash', async () => {
+    mockMeasureInWindow(BELOW_FOLD_RECT)
+    const ctx = createCtx()
+    onboardingTourAtom(ctx, { scenarioId: 'listen', stepIndex: 1 })
+
+    await renderTarget(ctx)
+
+    await waitFor(() =>
+      expect(ctx.get(onboardingTargetRectsAtom)).toEqual({ [TARGET_ID]: BELOW_FOLD_RECT }),
+    )
+  })
+
+  test('scrolls a below-fold target into view and re-measures', async () => {
+    jest.spyOn(Dimensions, 'get').mockReturnValue({
+      fontScale: 1,
+      height: VIEWPORT_HEIGHT,
+      scale: 1,
+      width: 400,
+    })
+    const measureSpy = mockMeasureInWindow(BELOW_FOLD_RECT)
+    const scrollTo = jest.fn()
+    registerTourScrollable({ scrollTo })
+    const ctx = createCtx()
+    onboardingTourAtom(ctx, { scenarioId: 'listen', stepIndex: 1 })
+
+    await renderTarget(ctx)
+
+    await waitFor(() => expect(scrollTo).toHaveBeenCalledWith(BELOW_FOLD_SCROLL_OFFSET, true), {
+      timeout: 2000,
+    })
+    await waitFor(() => expect(measureSpy.mock.calls.length).toBeGreaterThanOrEqual(3), {
+      timeout: 2000,
+    })
   })
 })

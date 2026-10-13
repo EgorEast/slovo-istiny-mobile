@@ -63,6 +63,13 @@
 - **Когда измеряем**: при активации шага (через `MEASURE_DELAY_MS = 100` мс — дать layout устояться), на `onLayout` активной цели и на навигационном событии `transitionEnd` (нативный стек) — тур перемеряет цели после перехода на другой экран. Пустые rect'ы (`width`/`height` = 0) не регистрируются.
 - **Где хранится**: `onboardingTargetRectsAtom` (`Record<id, rect>`); при старте тура очищается.
 
+### Цель за пределами экрана
+
+Цель может быть смонтирована, но прокручена за пределы вьюпорта (её `rect` лежит целиком ниже или выше экрана). Тогда:
+
+- **Автоскролл к цели:** экран регистрирует свой основной скролл через `useTourScrollable` — ref-callback на `ScrollView`/`FlatList`, который кладёт императивный `scrollTo` в модульный реестр `tourScrollable` (`lib/tourScrollable.ts`) на время монтирования экрана. Когда активная цель после замера оказывается ниже сгиба (`isBelowFold`), `useTargetAutoScroll` (`lib/useTargetAutoScroll.ts`, вызывается из `MeasuredTarget` в `OnboardingTarget`) один раз за активацию вызывает `scrollTo(scrollOffsetFor(rect, viewportHeight))` — цель центрируется — и планирует два повторных замера (`+300` / `+700` мс, не более), чтобы подсветить уже видимый элемент. Таймеры чистятся при деактивации и размонтировании; повторных скроллов и бесконечного цикла нет. Реестр заполняют `ListenScreen` и `ReadScreen` (у `read.topical` слайдер тоже может быть ниже сгиба).
+- **Страховка:** если `rect` всё равно лежит целиком за пределами вьюпорта, оверлей (`OnboardingTourOverlay`) рендерит его как отсутствующий: дырка не вырезается, карточка показывается по центру **сразу** (без ожидания `MISSING_TARGET_TIMEOUT_MS` — rect зарегистрирован, режим ожидания не включается). Позиция карточки в любом случае клампится в видимую область окна (`computeTooltipLayout`), поэтому она не уезжает за экран.
+
 ### Компоненты, владеющие своей целью (`onboardingTargetId`)
 
 Переиспользуемые компоненты **сами оборачивают свой корень** в `OnboardingTarget` и принимают опциональный проп `onboardingTargetId`. Call-site только передаёт id — внешняя обёртка не нужна:
@@ -130,10 +137,10 @@
 
 - Слайс `src/features/onboarding/`:
   - `model.ts` — атомы `onboardingTourAtom` (`{ scenarioId, stepIndex } | null`) и `onboardingTargetRectsAtom`; экшены `startOnboardingTour`, `goToNextOnboardingStep`, `goToPrevOnboardingStep`, `endOnboardingTour`, `registerOnboardingTargetRect`.
-  - `lib/` — `scenarios.ts` + `scenarioData/*`, `useOnboardingScenarios` (гейт по флагам и авто-сценариям), `useTargetMeasure`, `useOnboardingTargetRef`, `tooltipPosition` (чистая функция позиции карточки с учётом нижнего инсета), `resolveAutoTour` (чистая функция решения об автозапуске), `useAutoTours` (автозапуск welcome/whatsNew).
+  - `lib/` — `scenarios.ts` + `scenarioData/*`, `useOnboardingScenarios` (гейт по флагам и авто-сценариям), `useTargetMeasure`, `useOnboardingTargetRef`, `tooltipPosition` (чистая функция позиции карточки с учётом нижнего инсета и клампом в видимую область), `tourScrollable` (модульный реестр основного скролла + чистые `isBelowFold`/`scrollOffsetFor`), `useTourScrollable` (ref-callback для регистрации скролла), `useTargetAutoScroll` (автоскролл к цели ниже сгиба + два повторных замера), `resolveAutoTour` (чистая функция решения об автозапуске), `useAutoTours` (автозапуск welcome/whatsNew).
   - Настройка «Обзоры и подсказки» (`toursDisabledAtom`, `setToursDisabled`, `loadToursDisabled`) и ключ `tours_seen_version` (`TOURS_SEEN_VERSION_KEY`, `setToursSeenVersion`) живут в `shared/model/settings.ts` (рядом с виброоткликом) и входят в резервную копию; онбординг только читает атом/ключ и пишет версию.
   - `ui/` — `HelpHeaderButton`, `ScenarioPickerModal`, `OnboardingHelpRow`, `OnboardingTarget`, `OnboardingTourOverlay`, `TourDim`, `TourTooltip`.
-- **Публичное API** (`index.ts`, 6 экспортов): `HelpHeaderButton`, `OnboardingHelpRow`, `OnboardingTarget`, `OnboardingTourOverlay`, `useAutoTours`, `useOnboardingTargetRef`.
+- **Публичное API** (`index.ts`, 7 экспортов): `HelpHeaderButton`, `OnboardingHelpRow`, `OnboardingTarget`, `OnboardingTourOverlay`, `useAutoTours`, `useOnboardingTargetRef`, `useTourScrollable`.
 - **Почему overlay смонтирован в `_RootLayout`**: `OnboardingTourOverlay` — один на всё приложение, рендерится поверх любого экрана и модалок независимо от текущего маршрута (`app/_RootLayout.tsx`, рядом с `GlobalErrorDialog`/`GlobalConfirmDialog`). Поэтому тур переживает навигацию: оверлей не размонтируется при `router.push` на маршрут шага (`step.route`).
 - **Стабильные module-level header-рендеры**: `headerRight` для под-экранов задаётся функциями, объявленными на уровне модуля (`renderHelp`, `renderSettingsHelpRow` в `_RootLayout.tsx`; `renderHelp` в `app/(tabs)/listen/_layout.tsx`). Это вынужденно: expo-router передаёт `options` в `navigation.setOptions` на каждый рендер, и свежая inline-функция каждый раз «меняет» опции → `setState` → ре-рендер → цикл «Maximum update depth exceeded». Module-level ссылки идентичны между рендерами и цикла не создают (та же причина, что у `renderHeaderBack`).
 
@@ -146,7 +153,9 @@
 ## Тесты
 
 - `model.test.ts` — старт сбрасывает rect'ы и ставит первый шаг, регистрация/перезапись rect'а, клампы `next`/`prev` на границах, no-op без тура, `end` чистит тур и rect'ы.
-- `lib/tooltipPosition.test.ts` — позиция карточки (над/под целью, центрирование без цели, кламп по низу окна, смещение центрирования и нижнего клампа на `bottomInset`).
+- `lib/tooltipPosition.test.ts` — позиция карточки (над/под целью, центрирование без цели, кламп по низу окна, смещение центрирования и нижнего клампа на `bottomInset`, кламп позиции «над целью» при цели ниже сгиба, кламп центрированной карточки в коротком окне).
+- `lib/tourScrollable.test.ts` — `isBelowFold` (выше/ровно на сгибе/ниже, учёт нижнего инсета) и `scrollOffsetFor` (центрирование цели, кламп в 0 у верха списка).
+- `lib/useTourScrollable.test.tsx` — ref-callback регистрирует скролл и пробрасывает `scrollTo` в узел, снимает регистрацию при detach.
 - `lib/useOnboardingScenarios.test.ts` — `read`/`study` появляются только при включённых флагах, авто-сценарии (`welcome`/`whatsNew`) в пикер не попадают, остальные всегда.
 - `lib/resolveAutoTour.test.ts` — нет версии → `welcome`, версия изменилась → `whatsNew`, версия совпала → `null`.
 - `lib/useAutoTours.test.ts` — гейтинг автозапуска: при выключенных обзорах ничего не пишется; нет версии → `welcome` (версия пишется до старта тура); версия совпала → ничего; версия изменилась → `whatsNew`; уже активный тур → старт пропущен, но версия записана.
@@ -155,9 +164,9 @@
 - `ui/HelpHeaderButton.test.tsx` — «?» открывает оффер, «Посмотреть» показывает пикер, «Закрыть» закрывает; при `toursDisabledAtom = true` кнопка не рендерится.
 - `src/shared/model/settings.test.ts` — `setToursDisabled` пишет значение и переключает атом, `loadToursDisabled` нормализует `'true'`/`'false'`/отсутствие ключа.
 - `pages/settings/ui/ToursSettingsItem.test.tsx` — строка «Обзоры и подсказки» вызывает `setToursDisabled` с инвертированным значением.
-- `ui/OnboardingTarget.test.tsx` — цель регистрирует rect при активном шаге; без `id` рендерит `children` и ничего не регистрирует.
+- `ui/OnboardingTarget.test.tsx` — цель регистрирует rect при активном шаге; без `id` рендерит `children` и ничего не регистрирует; цель ниже сгиба без зарегистрированного скролла не падает и регистрирует rect; цель ниже сгиба с зарегистрированным скроллом → `scrollTo` с вычисленным офсетом и повторный замер.
 - `pages/more/ui/MoreMenuSettingsItem.test.tsx` — при заданном `onboardingTargetId` и активном шаге строка регистрирует свой rect; без пропа регистрации нет.
-- `ui/OnboardingTourOverlay.test.tsx` — пусто без тура; шаг с целью и готовым rect (карточка + «Далее» + close); шаг без цели (карточка + «Назад»); «Готово» на последнем шаге; шаг с `route` → `router.push` вызывается с этим маршрутом при несовпадении `pathname`; шаг с `targetId` без rect → карточка скрыта и появляется после истечения `MISSING_TARGET_TIMEOUT_MS`.
+- `ui/OnboardingTourOverlay.test.tsx` — пусто без тура; шаг с целью и готовым rect (карточка + «Далее» + close); шаг без цели (карточка + «Назад»); «Готово» на последнем шаге; шаг с `route` → `router.push` вызывается с этим маршрутом при несовпадении `pathname`; зарегистрированный rect целиком ниже вьюпорта → карточка по центру показывается сразу; шаг с `targetId` без rect → карточка скрыта и появляется после истечения `MISSING_TARGET_TIMEOUT_MS`.
 
 ## Связанные документы
 
