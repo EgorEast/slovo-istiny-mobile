@@ -46,6 +46,7 @@ export const usePlaylistNavigationOptions = ({
             playlistTitle={title}
             tracksData={tracksListData}
             iconColor={headerIconColor}
+            onboardingTargetId='playlist.menu'
             onAddAllToPlaylist={onAddAllToPlaylist}
           />
         </OnboardingHelpRow>

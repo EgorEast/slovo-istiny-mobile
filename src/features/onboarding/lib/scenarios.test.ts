@@ -94,6 +94,15 @@ describe('onboarding scenario data', () => {
     expect(search.steps).toHaveLength(3)
     expect(search.steps[0].targetId).toBe('search-results.group-sermons')
   })
+
+  test('playlist-menu scenario targets playback and the header menu', () => {
+    const playlistMenu = scenariosById['playlist-menu']
+
+    expect(playlistMenu.screens).toEqual(['/listen/playlist'])
+    expect(playlistMenu.steps).toHaveLength(6)
+    expect(playlistMenu.steps[0].targetId).toBe('playlist.playback')
+    expect(playlistMenu.steps[1].targetId).toBe('playlist.menu')
+  })
 })
 
 describe('resolveStepRoute', () => {

@@ -17,6 +17,8 @@ export interface PlaylistHeaderMenuProps {
    * playlist has sermons) but never in the player sheet.
    */
   onAddAllToPlaylist?: (playlist: PlaylistData) => void
+  /** Optional onboarding target id for the menu trigger (playlist screen header only). */
+  onboardingTargetId?: string
   playlist: PlaylistData
   playlistTitle: string
   tracksData: TrackToCache[]

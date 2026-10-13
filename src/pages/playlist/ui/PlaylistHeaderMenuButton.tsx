@@ -1,6 +1,7 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons'
 import { type RefObject } from 'react'
 import { type ColorValue, View } from 'react-native'
+import { OnboardingTarget } from 'features/onboarding'
 import { IconButton } from 'shared/ui/icon-button'
 import { useTheme } from 'shared/ui/theme'
 import { headerMenuButtonStyles } from './styles'
@@ -14,35 +15,40 @@ const ICON_SIZE = 24
  * @param props.buttonRef - Ref to the wrapper view used as the dropdown anchor.
  * @param props.iconColor - Icon tint; defaults to the theme text color.
  * @param props.onPress - Opens the menu.
+ * @param props.onboardingTargetId - Optional onboarding target id for the trigger.
  */
 export const PlaylistHeaderMenuButton = ({
   accessibilityLabel,
   buttonRef,
   iconColor,
+  onboardingTargetId,
   onPress,
 }: {
   accessibilityLabel: string
   buttonRef: RefObject<null | View>
   iconColor?: ColorValue
+  onboardingTargetId?: string
   onPress: () => void
 }) => {
   const { currentTheme } = useTheme()
 
   return (
-    <View ref={buttonRef} collapsable={false}>
-      <IconButton
-        onPress={onPress}
-        style={headerMenuButtonStyles.button}
-        accessibilityLabel={accessibilityLabel}
-        accessibilityHint='Нажмите чтобы открыть меню'
-        Icon={
-          <MaterialCommunityIcons
-            size={ICON_SIZE}
-            name='dots-vertical'
-            color={iconColor ?? currentTheme.text}
-          />
-        }
-      />
-    </View>
+    <OnboardingTarget id={onboardingTargetId}>
+      <View ref={buttonRef} collapsable={false}>
+        <IconButton
+          onPress={onPress}
+          style={headerMenuButtonStyles.button}
+          accessibilityLabel={accessibilityLabel}
+          accessibilityHint='Нажмите чтобы открыть меню'
+          Icon={
+            <MaterialCommunityIcons
+              size={ICON_SIZE}
+              name='dots-vertical'
+              color={iconColor ?? currentTheme.text}
+            />
+          }
+        />
+      </View>
+    </OnboardingTarget>
   )
 }

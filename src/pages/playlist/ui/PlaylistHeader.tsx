@@ -2,6 +2,7 @@ import { BlurTargetView, BlurView } from 'expo-blur'
 import { useRef } from 'react'
 import { Text, View } from 'react-native'
 import Animated, { type useAnimatedStyle } from 'react-native-reanimated'
+import { OnboardingTarget } from 'features/onboarding'
 import { CoverImage } from 'shared/ui'
 import { type ThemeColors } from 'shared/ui/theme'
 import { createHeaderStyles } from './headerStyles'
@@ -58,11 +59,13 @@ export const PlaylistHeader = ({
 
       <View style={headerStyles.contentSection}>
         {description ? <Text style={headerStyles.description}>{description}</Text> : null}
-        <QueueControls
-          label={playAllLabel}
-          isDisabled={isPlayAllDisabled}
-          onPressPlayAll={onPressPlayAll}
-        />
+        <OnboardingTarget id='playlist.playback'>
+          <QueueControls
+            label={playAllLabel}
+            isDisabled={isPlayAllDisabled}
+            onPressPlayAll={onPressPlayAll}
+          />
+        </OnboardingTarget>
       </View>
     </>
   )

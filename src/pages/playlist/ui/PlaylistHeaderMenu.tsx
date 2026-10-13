@@ -1,4 +1,5 @@
 import { ErrorModal } from 'shared/ui/error-modal'
+import { buildAddAllToPlaylistHandler } from '../lib/buildAddAllToPlaylistHandler'
 import { useLocalPlaylistPublish } from '../lib/useLocalPlaylistPublish'
 import { usePlaylistCacheError } from '../lib/usePlaylistCacheError'
 import { usePlaylistHistoryMenu } from '../lib/usePlaylistHistoryMenu'
@@ -18,6 +19,7 @@ export const PlaylistHeaderMenu = ({
   iconColor,
   isEditEnabled = false,
   onAddAllToPlaylist,
+  onboardingTargetId,
   playlist,
   playlistTitle,
   tracksData,
@@ -46,13 +48,7 @@ export const PlaylistHeaderMenu = ({
   } = usePlaylistOfflineMenu(tracksData, playlistTitle)
 
   const closeMenu = () => setMenuVisible(false)
-  const handleAddAllToPlaylist =
-    onAddAllToPlaylist && playlist.sermons.length > 0
-      ? () => {
-          closeMenu()
-          onAddAllToPlaylist(playlist)
-        }
-      : undefined
+  const addAllHandler = buildAddAllToPlaylistHandler(onAddAllToPlaylist, playlist, closeMenu)
   const historyMenu = usePlaylistHistoryMenu(playlist, closeMenu)
   const { error, handleErrorClose } = usePlaylistCacheError(cacheDialogVisible)
   const { canShare, handleShare } = usePlaylistShare(playlist, closeMenu)
@@ -71,6 +67,7 @@ export const PlaylistHeaderMenu = ({
         playlistId={playlist.id}
         onOpenMenu={handleOpenMenu}
         accessibilityLabel={accessibilityLabel}
+        onboardingTargetId={onboardingTargetId}
         isEditable={isEditEnabled && isLocalPlaylist}
       />
 
@@ -88,13 +85,13 @@ export const PlaylistHeaderMenu = ({
         onPublish={handlePublish}
         isShareDisabled={!canShare}
         onStopCaching={handleStopCaching}
+        onAddAllToPlaylist={addAllHandler}
         canMarkAll={historyMenu.canMarkAll}
         onClearCache={handleClearCacheOption}
         onClear={() => requestClear(playlist.id)}
         onDelete={() => requestDelete(playlist.id)}
         onMarkAll={historyMenu.handleMarkAllOption}
         isClearCacheDisabled={isClearCacheDisabled}
-        onAddAllToPlaylist={handleAddAllToPlaylist}
         isOfflineItemsVisible={isOfflineItemsVisible}
         onAddAllToOffline={handleAddAllToOfflineOption}
         onRemoveFromHistory={historyMenu.handleRemoveOption}
