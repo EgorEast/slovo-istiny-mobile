@@ -30,6 +30,15 @@ describe('onboarding scenario data', () => {
     expect(scenariosById.whatsNew.sinceVersion).toBeTruthy()
   })
 
+  test('share scenario walks the QR code, copy button and link contents', () => {
+    const share = scenariosById.share
+
+    expect(share.screens).toEqual(['/share'])
+    expect(share.steps).toHaveLength(3)
+    expect(share.steps[0].targetId).toBe('share.qr')
+    expect(share.steps[1].targetId).toBe('share.copy')
+  })
+
   test('each scenario wires the tab or row it taps when navigating', () => {
     expect(scenariosById.listen.steps[0].tapTargetId).toBe('tab.listen')
     expect(scenariosById.playlists.steps[1].tapTargetId).toBe('listen.my-playlists')

@@ -1,5 +1,6 @@
 import { Linking, Text } from 'react-native'
 import QRCode from 'react-native-qrcode-svg'
+import { OnboardingTarget } from 'features/onboarding'
 import { PressableButton } from 'shared/ui/pressable-button'
 import { useTheme } from 'shared/ui/theme'
 import { CopyLinkButton } from './CopyLinkButton'
@@ -11,18 +12,28 @@ const openUrl = (url: string) => {
   })
 }
 
-export const ShareLinkCard = ({ url }: { url: string }) => {
+export const ShareLinkCard = ({
+  copyTargetId,
+  qrTargetId,
+  url,
+}: {
+  copyTargetId?: string
+  qrTargetId?: string
+  url: string
+}) => {
   const { currentTheme } = useTheme()
 
   return (
     <>
-      <PressableButton
-        accessibilityRole='link'
-        onPress={() => openUrl(url)}
-        style={[styles.qrCard, { backgroundColor: '#ffffff' }]}
-      >
-        <QRCode size={220} value={url} color='#000000' backgroundColor='#ffffff' />
-      </PressableButton>
+      <OnboardingTarget id={qrTargetId}>
+        <PressableButton
+          accessibilityRole='link'
+          onPress={() => openUrl(url)}
+          style={[styles.qrCard, { backgroundColor: '#ffffff' }]}
+        >
+          <QRCode size={220} value={url} color='#000000' backgroundColor='#ffffff' />
+        </PressableButton>
+      </OnboardingTarget>
       <PressableButton accessibilityRole='link' onPress={() => openUrl(url)}>
         <Text
           selectable
@@ -31,7 +42,7 @@ export const ShareLinkCard = ({ url }: { url: string }) => {
           {url}
         </Text>
       </PressableButton>
-      <CopyLinkButton url={url} style={styles.copyButton} />
+      <CopyLinkButton url={url} style={styles.copyButton} onboardingTargetId={copyTargetId} />
     </>
   )
 }

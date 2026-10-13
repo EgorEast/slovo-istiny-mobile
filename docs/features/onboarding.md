@@ -38,7 +38,7 @@
 
 ## Сценарии
 
-Все 10 сценариев определены в `lib/scenarioData/` и собраны в `lib/scenarios.ts` (`scenarios` — порядок показа в пикере, `scenariosById` — доступ по id). Сценарий — `{ id, title, description, icon, screens?, featureFlag?, sinceVersion?, steps }`, шаг — `{ title, text, targetId?, tapTargetId?, route?, waitFor? }`. `route` — маршрут экрана, на котором живёт шаг; шаг без `route` наследует маршрут ближайшего предыдущего (`resolveStepRoute`), поэтому все шаги сценария живут на конкретных экранах. `screens` — точные маршруты (`Href[]`), на которых сценарий в пикере попадает в группу «На этом экране» (совпадение точное, по `pathname`, без префиксов); `undefined` — сценарий глобальный (всегда в группе «Глобальные»). `tapTargetId` — элемент, по которому тур «нажимает» при переходе на маршрут шага (см. «Симуляция нажатия»). `waitFor` (`sermonSelected` | `paused`) делает шаг интерактивным: «Далее» скрыта, пока действие не выполнено. `sinceVersion` помечает **авто-сценарий** (запускается автозапуском, но также доступен в пикере для ручного повтора): `welcome` и `whatsNew` (см. «Автозапуск»).
+Все 11 сценариев определены в `lib/scenarioData/` и собраны в `lib/scenarios.ts` (`scenarios` — порядок показа в пикере, `scenariosById` — доступ по id). Сценарий — `{ id, title, description, icon, screens?, featureFlag?, sinceVersion?, steps }`, шаг — `{ title, text, targetId?, tapTargetId?, route?, waitFor? }`. `route` — маршрут экрана, на котором живёт шаг; шаг без `route` наследует маршрут ближайшего предыдущего (`resolveStepRoute`), поэтому все шаги сценария живут на конкретных экранах. `screens` — точные маршруты (`Href[]`), на которых сценарий в пикере попадает в группу «На этом экране» (совпадение точное, по `pathname`, без префиксов); `undefined` — сценарий глобальный (всегда в группе «Глобальные»). `tapTargetId` — элемент, по которому тур «нажимает» при переходе на маршрут шага (см. «Симуляция нажатия»). `waitFor` (`sermonSelected` | `paused`) делает шаг интерактивным: «Далее» скрыта, пока действие не выполнено. `sinceVersion` помечает **авто-сценарий** (запускается автозапуском, но также доступен в пикере для ручного повтора): `welcome` и `whatsNew` (см. «Автозапуск»).
 
 | id          | Название                      | Флаг / авто | Экраны (`screens`)                                            | Шаги (цели)                                                                                         |
 | ----------- | ----------------------------- | ----------- | ------------------------------------------------------------ | --------------------------------------------------------------------------------------------------- |
@@ -50,6 +50,7 @@
 | `settings`  | Настройки и резервные копии   | —           | `/more`, `/settings`                                         | `more.settings-item` (`/more`), `settings.theme` (`/settings`), `settings.haptics`, `settings.tours`, `settings.backup`, `settings.server` |
 | `read`      | Читать книги                  | `read`      | `/read`                                                      | «Библиотека книг» (`/read`), `read.notes`, `read.verse-by-verse`, `read.topical`                    |
 | `study`     | Учиться                       | `study`     | `/study`                                                     | `study.tabs` (`/study`), «Материалы» (без цели)                                                     |
+| `share`     | Поделиться приложением        | —           | `/share`                                                     | `share.qr` (`/share`), `share.copy`, «Что откроется по ссылке» (без цели)                           |
 | `welcome`   | Добро пожаловать              | авто        | — (глобальный)                                               | «Добро пожаловать!» (`/listen`), `listen.sections`, `listen.search-toggle`, `listen.my-playlists`, `more.menu` (`/more`), `settings.theme` (`/settings`), `settings.tours` (`/settings`) |
 | `whatsNew`  | Что нового                    | авто        | — (глобальный)                                               | «Обзоры в приложении» (без цели), `settings.tours` (`/settings`)                                     |
 
@@ -91,6 +92,7 @@
 | `NotesForPreachersBooksSlider`       | `read.notes`             |
 | `VerseByVerseBooksSlider`            | `read.verse-by-verse`    |
 | `TopicalAndThematicBooksSlider`      | `read.topical`           |
+| `CopyLinkButton`                     | `share.copy`             |
 
 Явный `OnboardingTarget`/`useOnboardingTargetRef` на call-site остаётся **только** там, где компонент не может обернуть себя сам:
 
@@ -130,6 +132,8 @@
 | `read.verse-by-verse`      | `pages/read/ui/VerseByVerseBooksSlider.tsx` (`onboardingTargetId`)        | слайдер «По библии. Стих за стихом»                     |
 | `read.topical`             | `pages/read/ui/TopicalAndThematicBooksSlider.tsx` (`onboardingTargetId`)  | слайдер «Тематические и доктринальные»                  |
 | `study.tabs`               | `pages/study/ui.tsx`                                                      | `TabView` «Богословие / Душепопечение»                  |
+| `share.qr`                 | `pages/share/ui/ShareLinkCard.tsx` (`qrTargetId`)                         | QR-код лендинга (только секция «Сайт»)                  |
+| `share.copy`               | `pages/share/ui/CopyLinkButton.tsx` (`onboardingTargetId`)                | кнопка «Скопировать ссылку» лендинга                    |
 
 ### Как добавить сценарий или цель
 
@@ -164,10 +168,10 @@
 - `lib/tourScrollable.test.ts` — `isRectOutsideViewport` (полностью видим / ровно на границе / ниже сгиба / выше вьюпорта / учёт нижнего инсета) и `scrollOffsetFor` (центрирование цели, кламп в 0 у верха списка).
 - `lib/useTourScrollable.test.tsx` — ref-callback регистрирует скролл и пробрасывает `scrollTo` (ScrollView) / `scrollToOffset` (FlatList) в узел, снимает регистрацию при detach.
 - `lib/useOnboardingScenarios.test.ts` — `read`/`study` появляются только при включённых флагах; авто-сценарии (`welcome`/`whatsNew`) в пикере есть и идут последними.
-- `ui/ScenarioPickerModal.test.tsx` — список делится на «На этом экране»/«Глобальные» по `pathname`: на `/listen` локальны listen/player/playlists; на `/listen/playlist` — только playlists; на `/settings` — только settings; на `/more` — history/offline/settings; без совпадений локальная группа не рендерится.
+- `ui/ScenarioPickerModal.test.tsx` — список делится на «На этом экране»/«Глобальные» по `pathname`: на `/listen` локальны listen/player/playlists; на `/listen/playlist` — только playlists; на `/settings` — только settings; на `/more` — history/offline/settings; на `/share` — только share; без совпадений локальная группа не рендерится.
 - `lib/resolveAutoTour.test.ts` — нет версии → `welcome`, версия изменилась → `whatsNew`, версия совпала → `null`.
 - `lib/useAutoTours.test.ts` — гейтинг автозапуска: при выключенных обзорах ничего не пишется; нет версии → `welcome` (версия пишется до старта тура); версия совпала → ничего; версия изменилась → `whatsNew`; уже активный тур → старт пропущен, но версия записана.
-- `lib/scenarios.test.ts` — данные сценариев: у `welcome` 7 шагов (последний на `settings.tours`) и tap-подсказки на `tab.more`/`more.settings-item`; у `player` 3 шага с `waitFor` (`sermonSelected`/`paused`); tapTargetId у каждого сценария; у `whatsNew` задан `sinceVersion`; `resolveStepRoute` (свой route, наследование, `undefined`).
+- `lib/scenarios.test.ts` — данные сценариев: у `welcome` 7 шагов (последний на `settings.tours`) и tap-подсказки на `tab.more`/`more.settings-item`; у `player` 3 шага с `waitFor` (`sermonSelected`/`paused`); у `share` экран `/share` и 3 шага с целями `share.qr`/`share.copy`; tapTargetId у каждого сценария; у `whatsNew` задан `sinceVersion`; `resolveStepRoute` (свой route, наследование, `undefined`).
 - `lib/useOnboardingTargetRef.test.tsx` — ref-цель измеряется только при совпадении с активным шагом.
 - `lib/useTargetMeasure.test.tsx` — активная цель перемеряется по расписанию (несколько замеров); изменение rect между замерами обновляет реестр; неизменный rect не переписывает атом; деактивация снимает запланированные замеры (дальнейших вызовов нет).
 - `lib/useWaitForSatisfied.test.tsx` — без `waitFor` всегда true; `sermonSelected`/`paused` считаются по атомам плеера (выбран трек, идёт воспроизведение).

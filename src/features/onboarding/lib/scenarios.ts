@@ -7,6 +7,7 @@ import { playerScenario } from './scenarioData/player'
 import { playlistsScenario } from './scenarioData/playlists'
 import { readScenario } from './scenarioData/read'
 import { settingsScenario } from './scenarioData/settings'
+import { shareScenario } from './scenarioData/share'
 import { studyScenario } from './scenarioData/study'
 import { welcomeScenario } from './scenarioData/welcome'
 import { whatsNewScenario } from './scenarioData/whatsNew'
@@ -32,6 +33,7 @@ export type OnboardingScenarioId =
   | 'playlists'
   | 'read'
   | 'settings'
+  | 'share'
   | 'study'
   | 'welcome'
   | 'whatsNew'
@@ -54,6 +56,7 @@ export const scenarios: OnboardingScenario[] = [
   settingsScenario,
   readScenario,
   studyScenario,
+  shareScenario,
   welcomeScenario,
   whatsNewScenario,
 ]
@@ -66,6 +69,7 @@ export const scenariosById: Record<OnboardingScenarioId, OnboardingScenario> = {
   playlists: playlistsScenario,
   read: readScenario,
   settings: settingsScenario,
+  share: shareScenario,
   study: studyScenario,
   welcome: welcomeScenario,
   whatsNew: whatsNewScenario,
