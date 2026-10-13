@@ -58,7 +58,7 @@ export type OnboardingScenarioId =
   | 'whatsNew'
 
 export interface OnboardingStep {
-  // Highlighted target rects (no dim) — see ui/TourWaitLayer.tsx.
+  // Highlighted target rects (background dimmed, zones stay bright) — see ui/TourWaitLayer.tsx.
   areaTargetIds?: string[]
   // Pass-through card over the live UI, no spotlight modal.
   interactive?: boolean

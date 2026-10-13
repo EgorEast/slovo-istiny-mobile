@@ -62,7 +62,7 @@ export const TourSpotlight = ({
       navigationBarTranslucent
     >
       <View style={styles.container}>
-        <TourDim width={width} height={height} hole={visibleHole} />
+        <TourDim width={width} height={height} holes={visibleHole === null ? [] : [visibleHole]} />
         {isWaitingForTarget ? null : (
           <View
             style={[styles.tooltip, { top: tooltipTop }]}

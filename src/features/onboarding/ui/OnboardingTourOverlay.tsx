@@ -88,6 +88,7 @@ export const OnboardingTourOverlay = () => {
         onClose={end}
         onPrev={prev}
         onNext={onPrimary}
+        windowWidth={width}
         windowHeight={height}
         areaRects={areaRects}
         index={tour.stepIndex}

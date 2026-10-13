@@ -5,6 +5,7 @@ import { type OnboardingStep } from '../lib/scenarios'
 import { computeTooltipLayout } from '../lib/tooltipPosition'
 import { TOOLTIP_ESTIMATED_HEIGHT } from '../lib/tourHole'
 import { type OnboardingTargetRect } from '../model'
+import { TourDim } from './TourDim'
 import { TourTooltip } from './TourTooltip'
 
 const AREA_BORDER_OPACITY = 0.6
@@ -23,7 +24,8 @@ export interface OnboardingAreaRect {
 // visible and interactive — the user performs the real action or watches the
 // highlighted areas — while the card floats above it. `pointerEvents='none'` lets
 // every touch through except the card itself (`pointerEvents='auto'`), so the tour
-// stays cancellable.
+// stays cancellable. Area steps dim the background around their zones, keeping the
+// zones themselves bright and tappable.
 export const TourWaitLayer = ({
   areaRects = [],
   bottomInset,
@@ -36,6 +38,7 @@ export const TourWaitLayer = ({
   step,
   total,
   windowHeight,
+  windowWidth,
 }: {
   areaRects?: OnboardingAreaRect[]
   bottomInset: number
@@ -48,6 +51,7 @@ export const TourWaitLayer = ({
   step: OnboardingStep
   total: number
   windowHeight: number
+  windowWidth: number
 }) => {
   const { currentTheme } = useTheme()
   const [cardHeight, setCardHeight] = useState<null | number>(null)
@@ -59,9 +63,17 @@ export const TourWaitLayer = ({
     bottomInset,
     INDENTS.high,
   )
+  const isAreaStep = step.areaTargetIds !== undefined
 
   return (
     <View pointerEvents='none' style={StyleSheet.absoluteFill}>
+      {isAreaStep ? (
+        <TourDim
+          width={windowWidth}
+          height={windowHeight}
+          holes={areaRects.map(({ rect }) => rect)}
+        />
+      ) : null}
       {areaRects.map(({ id, rect }) => (
         <View
           key={id}

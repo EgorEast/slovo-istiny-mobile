@@ -29,9 +29,18 @@ jest.mock('./TapIndicator', () => {
 })
 
 jest.mock('./TourDim', () => {
-  const { Text } = jest.requireActual('react-native')
+  const { Text, View } = jest.requireActual('react-native')
 
-  return { TourDim: () => <Text>tour-dim</Text> }
+  return {
+    TourDim: ({ holes }: { holes: Array<{ x: number; y: number }> }) => (
+      <View>
+        <Text>tour-dim</Text>
+        {holes.map(hole => (
+          <Text key={`${hole.x}-${hole.y}`}>{`hole:${hole.x},${hole.y}`}</Text>
+        ))}
+      </View>
+    ),
+  }
 })
 
 const mockNavigate = jest.fn()
@@ -247,16 +256,18 @@ describe('<OnboardingTourOverlay>', () => {
     expect(getByText('Мои плейлисты')).toBeTruthy()
   })
 
-  test('highlights registered clickable areas in a pass-through layer without a dim', async () => {
-    const { getAllByTestId, getByText, queryByText } = await renderAtStep('player-intro', 0, {
+  test('dims the background and keeps registered clickable areas bright in a pass-through layer', async () => {
+    const { getAllByTestId, getByText } = await renderAtStep('player-intro', 0, {
       'player-fullscreen.edge-back': EDGE_BACK_RECT,
       'player-fullscreen.edge-forward': EDGE_FORWARD_RECT,
     })
 
     expect(getAllByTestId(AREA_HIGHLIGHT)).toHaveLength(2)
+    expect(getByText(DIM)).toBeTruthy()
+    expect(getByText('hole:0,100')).toBeTruthy()
+    expect(getByText('hole:336,100')).toBeTruthy()
     expect(getByText('Края экрана')).toBeTruthy()
     expect(getByText(NEXT_LABEL)).toBeTruthy()
-    expect(queryByText(DIM)).toBeNull()
   })
 
   test('renders the area step card centered while no area rect has registered', async () => {
@@ -264,7 +275,18 @@ describe('<OnboardingTourOverlay>', () => {
 
     expect(queryAllByTestId(AREA_HIGHLIGHT)).toHaveLength(0)
     expect(getByText('Края экрана')).toBeTruthy()
-    expect(queryByText(DIM)).toBeNull()
+    expect(getByText(DIM)).toBeTruthy()
+    expect(queryByText(/^hole:/)).toBeNull()
+  })
+
+  test('cuts a hole only for the registered area rects of the step', async () => {
+    const { getAllByTestId, getByText, queryByText } = await renderAtStep('player-intro', 0, {
+      'player-fullscreen.edge-back': EDGE_BACK_RECT,
+    })
+
+    expect(getAllByTestId(AREA_HIGHLIGHT)).toHaveLength(1)
+    expect(getByText('hole:0,100')).toBeTruthy()
+    expect(queryByText('hole:336,100')).toBeNull()
   })
 
   test('renders an interactive step as a pass-through card without a spotlight modal', async () => {

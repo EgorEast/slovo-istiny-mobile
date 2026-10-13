@@ -9,26 +9,27 @@ const DIM_COLOR = 'rgba(0,0,0,0.75)'
 
 export const TourDim = ({
   height,
-  hole,
+  holes,
   width,
 }: {
   height: number
-  hole: null | OnboardingTargetRect
+  holes: OnboardingTargetRect[]
   width: number
 }) => (
   <Svg width={width} height={height} style={StyleSheet.absoluteFill}>
     <Mask id={MASK_ID}>
       <Rect x={0} y={0} fill='white' width={width} height={height} />
-      {hole ? (
+      {holes.map(hole => (
         <Rect
           fill='black'
           rx={HOLE_RADIUS}
           x={hole.x - HOLE_PADDING}
           y={hole.y - HOLE_PADDING}
+          key={`${hole.x}-${hole.y}`}
           width={hole.width + HOLE_PADDING * 2}
           height={hole.height + HOLE_PADDING * 2}
         />
-      ) : null}
+      ))}
     </Mask>
     <Rect x={0} y={0} width={width} height={height} fill={DIM_COLOR} mask={`url(#${MASK_ID})`} />
   </Svg>
