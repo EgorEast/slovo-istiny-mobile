@@ -1,9 +1,11 @@
 import { screen } from '@testing-library/react-native'
 import { renderWithProviders } from 'shared/mocks'
+import { type ScenarioScope } from '../lib/scenarios'
 import { ScenarioPickerModal } from './ScenarioPickerModal'
 
 const SCREEN_GROUP_TITLE = 'На этом экране'
 const GLOBAL_GROUP_TITLE = 'Глобальные'
+const PLAYER_GROUP_TITLE = 'Плеер'
 
 const mockPathname = jest.fn(() => '/listen')
 
@@ -15,7 +17,8 @@ jest.mock('entities/feature-flags', () => ({
   useFeatureFlag: () => true,
 }))
 
-const renderPicker = () => renderWithProviders(<ScenarioPickerModal visible onClose={jest.fn()} />)
+const renderPicker = (scope?: ScenarioScope) =>
+  renderWithProviders(<ScenarioPickerModal visible scope={scope} onClose={jest.fn()} />)
 
 // Rows render in document order: the screen group first, then the global one.
 const expectRowTitles = (titles: string[]) => {
@@ -140,5 +143,15 @@ describe('<ScenarioPickerModal>', () => {
 
     expect(screen.queryByText(SCREEN_GROUP_TITLE)).toBeNull()
     expect(screen.getByText(GLOBAL_GROUP_TITLE)).toBeTruthy()
+  })
+
+  test('player scope shows only player scenarios plus the global auto tours', async () => {
+    await renderPicker('player')
+
+    expect(screen.queryByText(SCREEN_GROUP_TITLE)).toBeNull()
+    expect(screen.getByText(GLOBAL_GROUP_TITLE)).toBeTruthy()
+    // No player-scope scenarios exist yet — the group stays empty.
+    expect(screen.queryByText(PLAYER_GROUP_TITLE)).toBeNull()
+    expectRowTitles(['Добро пожаловать', 'Что нового'])
   })
 })

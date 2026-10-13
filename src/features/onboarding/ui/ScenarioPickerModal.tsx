@@ -3,7 +3,7 @@ import { usePathname } from 'expo-router'
 import { ScrollView, StyleSheet, Text, View } from 'react-native'
 import { Modal } from 'shared/ui/modal'
 import { FONT_SIZES, INDENTS, useTheme } from 'shared/ui/theme'
-import { type OnboardingScenario } from '../lib/scenarios'
+import { type OnboardingScenario, type ScenarioScope } from '../lib/scenarios'
 import { useOnboardingScenarios } from '../lib/useOnboardingScenarios'
 import { startOnboardingTour } from '../model'
 import { ScenarioPickerGroup } from './ScenarioPickerGroup'
@@ -11,20 +11,24 @@ import { ScenarioPickerGroup } from './ScenarioPickerGroup'
 const TITLE = 'Что посмотреть?'
 const SCREEN_GROUP_TITLE = 'На этом экране'
 const GLOBAL_GROUP_TITLE = 'Глобальные'
+const PLAYER_GROUP_TITLE = 'Плеер'
 
 const isScenarioOnScreen = (scenario: OnboardingScenario, pathname: string) =>
   scenario.screens?.includes(pathname) ?? false
 
 export const ScenarioPickerModal = ({
   onClose,
+  scope = 'default',
   visible,
 }: {
   onClose: () => void
+  scope?: ScenarioScope
   visible: boolean
 }) => {
   const { currentTheme } = useTheme()
   const pathname = usePathname()
-  const scenarios = useOnboardingScenarios()
+  const scenarios = useOnboardingScenarios(scope)
+  const defaultScenarios = useOnboardingScenarios('default')
   const startTour = useAction(startOnboardingTour)
 
   const handlePick = (scenario: OnboardingScenario) => {
@@ -34,22 +38,42 @@ export const ScenarioPickerModal = ({
 
   const screenScenarios = scenarios.filter(scenario => isScenarioOnScreen(scenario, pathname))
   const globalScenarios = scenarios.filter(scenario => !isScenarioOnScreen(scenario, pathname))
+  // The player picker is route-agnostic: its «Глобальные» group is every
+  // route-less scenario (welcome/whatsNew), not the screen picker's leftovers.
+  const playerGlobalScenarios = defaultScenarios.filter(scenario => scenario.screens === undefined)
 
   return (
     <Modal visible={visible} onBackdropPress={onClose}>
       <View style={styles.container}>
         <Text style={[styles.title, { color: currentTheme.text }]}>{TITLE}</Text>
         <ScrollView>
-          <ScenarioPickerGroup
-            onPick={handlePick}
-            title={SCREEN_GROUP_TITLE}
-            scenarios={screenScenarios}
-          />
-          <ScenarioPickerGroup
-            onPick={handlePick}
-            title={GLOBAL_GROUP_TITLE}
-            scenarios={globalScenarios}
-          />
+          {scope === 'player' ? (
+            <>
+              <ScenarioPickerGroup
+                onPick={handlePick}
+                scenarios={scenarios}
+                title={PLAYER_GROUP_TITLE}
+              />
+              <ScenarioPickerGroup
+                onPick={handlePick}
+                title={GLOBAL_GROUP_TITLE}
+                scenarios={playerGlobalScenarios}
+              />
+            </>
+          ) : (
+            <>
+              <ScenarioPickerGroup
+                onPick={handlePick}
+                title={SCREEN_GROUP_TITLE}
+                scenarios={screenScenarios}
+              />
+              <ScenarioPickerGroup
+                onPick={handlePick}
+                title={GLOBAL_GROUP_TITLE}
+                scenarios={globalScenarios}
+              />
+            </>
+          )}
         </ScrollView>
       </View>
     </Modal>

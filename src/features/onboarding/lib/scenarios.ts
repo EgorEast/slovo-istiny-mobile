@@ -17,6 +17,7 @@ export interface OnboardingScenario {
   featureFlag?: 'read' | 'study'
   icon: keyof typeof Ionicons.glyphMap
   id: OnboardingScenarioId
+  scope?: ScenarioScope
   // Exact routes the scenario belongs to; `undefined` means it is global and
   // offered on every screen. The picker splits its list by exact pathname match.
   screens?: Href[]
@@ -24,6 +25,14 @@ export interface OnboardingScenario {
   steps: OnboardingStep[]
   title: string
 }
+
+// Which picker offers the scenario. `default` scenarios belong to the screen
+// pickers (the header «?»); `player` scenarios belong only to the fullscreen
+// player picker, so they never leak into the screen pickers.
+export type ScenarioScope = 'default' | 'player'
+
+export const resolveScenarioScope = (scenario: OnboardingScenario): ScenarioScope =>
+  scenario.scope ?? 'default'
 
 export type OnboardingScenarioId =
   | 'history'

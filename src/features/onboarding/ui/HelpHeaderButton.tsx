@@ -5,9 +5,16 @@ import { type ColorValue } from 'react-native'
 import { toursDisabledAtom } from 'shared/model'
 import { IconButton } from 'shared/ui/icon-button'
 import { INDENTS, useTheme } from 'shared/ui/theme'
+import { type ScenarioScope } from '../lib/scenarios'
 import { ScenarioPickerModal } from './ScenarioPickerModal'
 
-export const HelpHeaderButton = ({ tintColor }: { tintColor?: ColorValue }) => {
+export const HelpHeaderButton = ({
+  scope,
+  tintColor,
+}: {
+  scope?: ScenarioScope
+  tintColor?: ColorValue
+}) => {
   const { currentTheme } = useTheme()
   const [isPickerOpen, setPickerOpen] = useState(false)
   const [toursDisabled] = useAtom(toursDisabledAtom)
@@ -24,7 +31,11 @@ export const HelpHeaderButton = ({ tintColor }: { tintColor?: ColorValue }) => {
           <Ionicons size={22} name='help-circle-outline' color={tintColor ?? currentTheme.text} />
         }
       />
-      <ScenarioPickerModal visible={isPickerOpen} onClose={() => setPickerOpen(false)} />
+      <ScenarioPickerModal
+        scope={scope}
+        visible={isPickerOpen}
+        onClose={() => setPickerOpen(false)}
+      />
     </>
   )
 }
