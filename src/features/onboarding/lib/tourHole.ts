@@ -1,32 +1,25 @@
-import { INDENTS } from 'shared/ui/theme'
 import { type OnboardingTargetRect } from '../model'
-import { computeTooltipLayout } from './tooltipPosition'
 
 export const TOOLTIP_ESTIMATED_HEIGHT = 230
 
 interface TourHole {
+  holes: OnboardingTargetRect[]
   isWaitingForTarget: boolean
-  tooltipTop: number
-  visibleHole: null | OnboardingTargetRect
 }
 
 interface TourHoleInput {
   activeTargetId: string | undefined
-  bottomInset: number
-  cardHeight: null | number
   expiredStepKey: null | string
   height: number
   rects: Record<string, OnboardingTargetRect>
   stepKey: string
 }
 
-// Resolves the spotlight hole, the waiting state and the tooltip position for the
-// active step. A rect that sits fully outside the viewport renders as if missing:
-// no hole, centered card — but the real registration still counts as "not pending".
+// Resolves the spotlight holes and the waiting state for the active target step.
+// A rect that sits fully outside the viewport renders as if missing: no hole, card
+// centered — but the real registration still counts as "not pending".
 export const resolveTourHole = ({
   activeTargetId,
-  bottomInset,
-  cardHeight,
   expiredStepKey,
   height,
   rects,
@@ -37,13 +30,17 @@ export const resolveTourHole = ({
   const visibleHole = isRectOutsideViewport ? null : hole
   const isTargetWaitExpired = expiredStepKey === stepKey
   const isWaitingForTarget = activeTargetId !== undefined && hole === null && !isTargetWaitExpired
-  const layout = computeTooltipLayout(
-    visibleHole,
-    cardHeight ?? TOOLTIP_ESTIMATED_HEIGHT,
-    height,
-    bottomInset,
-    INDENTS.high,
-  )
 
-  return { isWaitingForTarget, tooltipTop: layout.top, visibleHole }
+  return { holes: visibleHole === null ? [] : [visibleHole], isWaitingForTarget }
 }
+
+// The rects of a step's highlighted zones, in declaration order, skipping ids whose
+// target has not registered yet (the caller renders those as fills/holes as they land).
+export const resolveAreaHoles = (
+  areaTargetIds: string[] | undefined,
+  rects: Record<string, OnboardingTargetRect>,
+): OnboardingTargetRect[] =>
+  (areaTargetIds ?? []).flatMap(id => {
+    const rect = rects[id]
+    return rect === undefined ? [] : [rect]
+  })

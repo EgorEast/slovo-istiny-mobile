@@ -71,6 +71,7 @@ const TAB_MORE_RECT: OnboardingTargetRect = { height: 60, width: 90, x: 300, y: 
 const EDGE_BACK_RECT: OnboardingTargetRect = { height: 400, width: 64, x: 0, y: 100 }
 const EDGE_FORWARD_RECT: OnboardingTargetRect = { height: 400, width: 64, x: 336, y: 100 }
 const AREA_HIGHLIGHT = 'onboarding-area-highlight'
+const TOUR_MODAL = 'onboarding-tour-modal'
 
 const renderAtStep = (
   scenarioId: 'listen' | 'player-intro' | 'player' | 'playlists' | 'search' | 'settings',
@@ -256,12 +257,15 @@ describe('<OnboardingTourOverlay>', () => {
     expect(getByText('Мои плейлисты')).toBeTruthy()
   })
 
-  test('dims the background and keeps registered clickable areas bright in a pass-through layer', async () => {
-    const { getAllByTestId, getByText } = await renderAtStep('player-intro', 0, {
+  test('blocks the app under a registered area step with a spotlight modal', async () => {
+    const { getAllByTestId, getByTestId, getByText } = await renderAtStep('player-intro', 0, {
       'player-fullscreen.edge-back': EDGE_BACK_RECT,
       'player-fullscreen.edge-forward': EDGE_FORWARD_RECT,
     })
 
+    // The blocking modal tree is used, not the pass-through TourWaitLayer: the app
+    // underneath is unreachable, so the card buttons cannot fall through.
+    expect(getByTestId(TOUR_MODAL)).toBeTruthy()
     expect(getAllByTestId(AREA_HIGHLIGHT)).toHaveLength(2)
     expect(getByText(DIM)).toBeTruthy()
     expect(getByText('hole:0,100')).toBeTruthy()
@@ -270,9 +274,24 @@ describe('<OnboardingTourOverlay>', () => {
     expect(getByText(NEXT_LABEL)).toBeTruthy()
   })
 
-  test('renders the area step card centered while no area rect has registered', async () => {
-    const { getByText, queryAllByTestId, queryByText } = await renderAtStep('player-intro', 0)
+  test('advances from an area step when the primary button is pressed', async () => {
+    const { ctx, getByText } = await renderAtStep('player-intro', 0, {
+      'player-fullscreen.edge-back': EDGE_BACK_RECT,
+      'player-fullscreen.edge-forward': EDGE_FORWARD_RECT,
+    })
 
+    fireEvent.press(getByText(NEXT_LABEL))
+
+    expect(ctx.get(onboardingTourAtom)).toEqual({ scenarioId: 'player-intro', stepIndex: 1 })
+  })
+
+  test('renders the area step card centered while no area rect has registered', async () => {
+    const { getByTestId, getByText, queryAllByTestId, queryByText } = await renderAtStep(
+      'player-intro',
+      0,
+    )
+
+    expect(getByTestId(TOUR_MODAL)).toBeTruthy()
     expect(queryAllByTestId(AREA_HIGHLIGHT)).toHaveLength(0)
     expect(getByText('Края экрана')).toBeTruthy()
     expect(getByText(DIM)).toBeTruthy()
@@ -290,8 +309,9 @@ describe('<OnboardingTourOverlay>', () => {
   })
 
   test('renders an interactive step as a pass-through card without a spotlight modal', async () => {
-    const { getByText, queryByText } = await renderAtStep('search', 4)
+    const { getByText, queryByTestId, queryByText } = await renderAtStep('search', 4)
 
+    expect(queryByTestId(TOUR_MODAL)).toBeNull()
     expect(getByText('Выберите плейлист')).toBeTruthy()
     expect(getByText(NEXT_LABEL)).toBeTruthy()
     expect(queryByText(DIM)).toBeNull()

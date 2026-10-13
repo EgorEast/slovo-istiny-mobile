@@ -1,18 +1,13 @@
 import { useState } from 'react'
 import { StyleSheet, View } from 'react-native'
-import { INDENTS, useTheme, withAlpha } from 'shared/ui/theme'
+import { INDENTS } from 'shared/ui/theme'
 import { type OnboardingStep } from '../lib/scenarios'
 import { computeTooltipLayout } from '../lib/tooltipPosition'
 import { TOOLTIP_ESTIMATED_HEIGHT } from '../lib/tourHole'
 import { type OnboardingTargetRect } from '../model'
+import { TourAreaHighlight } from './TourAreaHighlight'
 import { TourDim } from './TourDim'
 import { TourTooltip } from './TourTooltip'
-
-const AREA_BORDER_OPACITY = 0.6
-const AREA_BORDER_WIDTH = 1.5
-const AREA_FILL_OPACITY = 0.18
-const AREA_RADIUS = 12
-const AREA_HIGHLIGHT_TEST_ID = 'onboarding-area-highlight'
 
 export interface OnboardingAreaRect {
   id: string
@@ -20,9 +15,8 @@ export interface OnboardingAreaRect {
 }
 
 // Non-modal layer for a pass-through step (an interactive step whose condition is
-// unmet yet, or a step that highlights clickable areas). The live UI stays fully
-// visible and interactive — the user performs the real action or watches the
-// highlighted areas — while the card floats above it. `pointerEvents='none'` lets
+// unmet yet). The live UI stays fully visible and interactive — the user performs
+// the real action — while the card floats above it. `pointerEvents='none'` lets
 // every touch through except the card itself (`pointerEvents='auto'`), so the tour
 // stays cancellable. Area steps dim the background around their zones, keeping the
 // zones themselves bright and tappable.
@@ -53,7 +47,6 @@ export const TourWaitLayer = ({
   windowHeight: number
   windowWidth: number
 }) => {
-  const { currentTheme } = useTheme()
   const [cardHeight, setCardHeight] = useState<null | number>(null)
   const anchor = areaRects[0]?.rect ?? hole
   const { top } = computeTooltipLayout(
@@ -75,22 +68,7 @@ export const TourWaitLayer = ({
         />
       ) : null}
       {areaRects.map(({ id, rect }) => (
-        <View
-          key={id}
-          pointerEvents='none'
-          testID={AREA_HIGHLIGHT_TEST_ID}
-          style={[
-            styles.area,
-            {
-              backgroundColor: withAlpha(currentTheme.primary, AREA_FILL_OPACITY),
-              borderColor: withAlpha(currentTheme.primary, AREA_BORDER_OPACITY),
-              height: rect.height,
-              left: rect.x,
-              top: rect.y,
-              width: rect.width,
-            },
-          ]}
-        />
+        <TourAreaHighlight key={id} rect={rect} />
       ))}
       <View
         pointerEvents='auto'
@@ -112,11 +90,6 @@ export const TourWaitLayer = ({
 }
 
 const styles = StyleSheet.create({
-  area: {
-    borderRadius: AREA_RADIUS,
-    borderWidth: AREA_BORDER_WIDTH,
-    position: 'absolute',
-  },
   card: {
     left: INDENTS.high,
     position: 'absolute',

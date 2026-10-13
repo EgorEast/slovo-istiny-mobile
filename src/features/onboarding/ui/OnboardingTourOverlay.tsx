@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { useWindowDimensions } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { scenariosById } from '../lib/scenarios'
+import { resolveAreaHoles, resolveTourHole } from '../lib/tourHole'
 import { useStepNavigation } from '../lib/useStepNavigation'
 import {
   endOnboardingTour,
@@ -34,10 +35,6 @@ export const OnboardingTourOverlay = () => {
   const step =
     scenario === undefined || stepIndex === undefined ? undefined : scenario.steps[stepIndex]
   const activeTargetId = step?.targetId
-  const areaRects = (step?.areaTargetIds ?? []).flatMap(id => {
-    const rect = rects[id]
-    return rect === undefined ? [] : [{ id, rect }]
-  })
   const { holdNavigation, isNavigatingToStep, isPerformingAction, isWaitSatisfied, tapRect } =
     useStepNavigation({
       bottomInset: insets.bottom,
@@ -77,10 +74,9 @@ export const OnboardingTourOverlay = () => {
   const onPrimary = isLastStep ? end : next
 
   // Pass-through steps keep the modal unmounted so the live UI stays interactive:
-  // an interactive step the user must act on, or an area step highlighting
-  // clickable zones. The card floats in a pass-through layer; only it is touchable.
-  const isPassThrough =
-    step.interactive === true || step.areaTargetIds !== undefined || !isWaitSatisfied
+  // an interactive step the user must act on, or a step whose wait condition is
+  // unmet yet. The card floats in a pass-through layer; only it is touchable.
+  const isPassThrough = step.interactive === true || !isWaitSatisfied
   if (isPassThrough)
     return (
       <TourWaitLayer
@@ -90,7 +86,6 @@ export const OnboardingTourOverlay = () => {
         onNext={onPrimary}
         windowWidth={width}
         windowHeight={height}
-        areaRects={areaRects}
         index={tour.stepIndex}
         bottomInset={insets.bottom}
         total={scenario.steps.length}
@@ -99,21 +94,35 @@ export const OnboardingTourOverlay = () => {
       />
     )
 
+  // Every other step is a blocking spotlight modal: a target step whose rect is
+  // ready, or an area step highlighting clickable zones. The app underneath stays
+  // blocked — the onboarding owns the touch, not just the visuals.
+  const isAreaStep = step.areaTargetIds !== undefined
+  const areaHoles = resolveAreaHoles(step.areaTargetIds, rects)
+  const { holes: targetHoles, isWaitingForTarget } = resolveTourHole({
+    activeTargetId,
+    expiredStepKey,
+    height,
+    rects,
+    stepKey,
+  })
+  const holes = isAreaStep ? areaHoles : targetHoles
+
   return (
     <TourSpotlight
       step={step}
       onClose={end}
       onPrev={prev}
-      rects={rects}
       width={width}
+      holes={holes}
       height={height}
-      stepKey={stepKey}
       onNext={onPrimary}
       stepIndex={tour.stepIndex}
+      highlightAreas={isAreaStep}
       total={scenario.steps.length}
-      activeTargetId={activeTargetId}
-      expiredStepKey={expiredStepKey}
+      anchorRect={holes[0] ?? null}
       isWaitSatisfied={isWaitSatisfied}
+      isWaitingForTarget={isWaitingForTarget}
     />
   )
 }

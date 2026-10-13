@@ -3,54 +3,57 @@ import { Modal, StyleSheet, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { INDENTS } from 'shared/ui/theme'
 import { type OnboardingStep } from '../lib/scenarios'
-import { resolveTourHole } from '../lib/tourHole'
+import { computeTooltipLayout } from '../lib/tooltipPosition'
+import { TOOLTIP_ESTIMATED_HEIGHT } from '../lib/tourHole'
 import { type OnboardingTargetRect } from '../model'
+import { TourAreaHighlight } from './TourAreaHighlight'
 import { TourDim } from './TourDim'
 import { TourTooltip } from './TourTooltip'
 
-// The spotlight phase: a modal dim with a hole over the active target and the step
-// card next to it. Kept in its own component so the overlay stays a thin dispatcher
-// between the tap/wait pass-through layers and this modal.
+const MODAL_TEST_ID = 'onboarding-tour-modal'
+
+// The spotlight phase: a modal dim with one or more holes and the step card next to
+// the first hole (centered when there is none). A RN Modal always blocks the app
+// beneath — the requested behavior for target and area steps alike: the tour, not
+// the app, owns the touch while a step is shown.
 export const TourSpotlight = ({
-  activeTargetId,
-  expiredStepKey,
+  anchorRect,
   height,
+  highlightAreas,
+  holes,
+  isWaitingForTarget,
   isWaitSatisfied,
   onClose,
   onNext,
   onPrev,
-  rects,
   step,
   stepIndex,
-  stepKey,
   total,
   width,
 }: {
-  activeTargetId: string | undefined
-  expiredStepKey: null | string
+  anchorRect: null | OnboardingTargetRect
   height: number
+  highlightAreas: boolean
+  holes: OnboardingTargetRect[]
+  isWaitingForTarget: boolean
   isWaitSatisfied: boolean
   onClose: () => void
   onNext: () => void
   onPrev: () => void
-  rects: Record<string, OnboardingTargetRect>
   step: OnboardingStep
   stepIndex: number
-  stepKey: string
   total: number
   width: number
 }) => {
   const insets = useSafeAreaInsets()
   const [cardHeight, setCardHeight] = useState<null | number>(null)
-  const { isWaitingForTarget, tooltipTop, visibleHole } = resolveTourHole({
-    activeTargetId,
-    bottomInset: insets.bottom,
-    cardHeight,
-    expiredStepKey,
+  const { top } = computeTooltipLayout(
+    anchorRect,
+    cardHeight ?? TOOLTIP_ESTIMATED_HEIGHT,
     height,
-    rects,
-    stepKey,
-  })
+    insets.bottom,
+    INDENTS.high,
+  )
 
   return (
     <Modal
@@ -58,14 +61,18 @@ export const TourSpotlight = ({
       transparent
       animationType='fade'
       statusBarTranslucent
+      testID={MODAL_TEST_ID}
       onRequestClose={onClose}
       navigationBarTranslucent
     >
       <View style={styles.container}>
-        <TourDim width={width} height={height} holes={visibleHole === null ? [] : [visibleHole]} />
+        <TourDim width={width} holes={holes} height={height} />
+        {highlightAreas
+          ? holes.map(rect => <TourAreaHighlight rect={rect} key={`${rect.x}-${rect.y}`} />)
+          : null}
         {isWaitingForTarget ? null : (
           <View
-            style={[styles.tooltip, { top: tooltipTop }]}
+            style={[styles.tooltip, { top }]}
             onLayout={event => setCardHeight(event.nativeEvent.layout.height)}
           >
             <TourTooltip
