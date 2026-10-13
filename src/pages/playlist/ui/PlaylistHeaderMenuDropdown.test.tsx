@@ -53,10 +53,13 @@ const REMOVE_TEXT = 'Удалить проповеди из истории'
 const SHARE_TEXT = 'Поделиться плейлистом'
 const PUBLISH_TEXT = 'Добавить в глобальные'
 const DELETE_TEXT = 'Удалить плейлист'
+const CLEAR_TEXT = 'Очистить плейлист'
+const ADD_ALL_TO_PLAYLIST_TEXT = 'Добавить все проповеди в плейлист'
 
 const defaultProps = {
   allCached: false,
   anchor: ANCHOR,
+  canClear: false,
   canDelete: false,
   canMarkAll: false,
   canPublish: false,
@@ -66,6 +69,7 @@ const defaultProps = {
   isClearCacheDisabled: false,
   isShareDisabled: false,
   onAddAllToOffline: jest.fn(),
+  onClear: jest.fn(),
   onClearCache: jest.fn(),
   onClose: jest.fn(),
   onDelete: jest.fn(),
@@ -77,8 +81,9 @@ const defaultProps = {
   visible: true,
 }
 
-const renderDropdown = (props?: Partial<typeof defaultProps>) =>
-  render(<PlaylistHeaderMenuDropdown {...defaultProps} {...props} />)
+const renderDropdown = (
+  props?: Partial<typeof defaultProps> & { onAddAllToPlaylist?: () => void },
+) => render(<PlaylistHeaderMenuDropdown {...defaultProps} {...props} />)
 
 describe('<PlaylistHeaderMenuDropdown>', () => {
   beforeEach(() => {
@@ -203,6 +208,23 @@ describe('<PlaylistHeaderMenuDropdown>', () => {
     expect(onShare).not.toHaveBeenCalled()
   })
 
+  test('hides the add-all-to-playlist item without a callback (player sheet)', async () => {
+    await renderDropdown()
+
+    expect(screen.queryByText(ADD_ALL_TO_PLAYLIST_TEXT)).toBeNull()
+  })
+
+  test('shows the add-all-to-playlist item and fires it when the callback is provided', async () => {
+    const onAddAllToPlaylist = jest.fn()
+    await renderDropdown({ onAddAllToPlaylist })
+
+    expect(screen.getByText(ADD_ALL_TO_PLAYLIST_TEXT)).toBeTruthy()
+
+    fireEvent.press(screen.getByText(ADD_ALL_TO_PLAYLIST_TEXT))
+
+    expect(onAddAllToPlaylist).toHaveBeenCalledTimes(1)
+  })
+
   test('hides the publish item for a non-local playlist', async () => {
     await renderDropdown()
 
@@ -271,6 +293,23 @@ describe('<PlaylistHeaderMenuDropdown>', () => {
     fireEvent.press(screen.getByText(DELETE_TEXT))
 
     expect(onDelete).toHaveBeenCalledTimes(1)
+  })
+
+  test('hides the clear item when canClear is false', async () => {
+    await renderDropdown()
+
+    expect(screen.queryByText(CLEAR_TEXT)).toBeNull()
+  })
+
+  test('shows the clear item and fires onClear when canClear', async () => {
+    const onClear = jest.fn()
+    await renderDropdown({ canClear: true, onClear })
+
+    expect(screen.getByText(CLEAR_TEXT)).toBeTruthy()
+
+    fireEvent.press(screen.getByText(CLEAR_TEXT))
+
+    expect(onClear).toHaveBeenCalledTimes(1)
   })
 })
 

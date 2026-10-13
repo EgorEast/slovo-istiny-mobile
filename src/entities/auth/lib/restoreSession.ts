@@ -1,4 +1,5 @@
 import { action } from '@reatom/framework'
+import { fetchMyFeatureFlags } from 'entities/feature-flags/@x/auth'
 import { authApi, secureTokenStorage } from 'shared/api'
 import { getHttpStatus } from 'shared/lib/error-utils'
 import { showToast } from 'shared/model'
@@ -85,5 +86,10 @@ export const restoreSession = action(async ctx => {
     })
 
     return null
+  } finally {
+    // После восстановления (и возможного refresh) токена перезапрашиваем флаги:
+    // стартовый фетч мог уйти с просроченным токеном и получить глобальный срез
+    // (эндпоинт не отдаёт 401, поэтому refresh в интерцепторе не срабатывал).
+    void fetchMyFeatureFlags(ctx)
   }
 }, 'restoreSession')

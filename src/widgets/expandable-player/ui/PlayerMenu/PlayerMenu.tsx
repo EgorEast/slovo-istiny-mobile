@@ -1,10 +1,8 @@
-import { useAtom, useCtx } from '@reatom/npm-react'
 import { useState } from 'react'
 import { Pressable, View } from 'react-native'
 import Animated from 'react-native-reanimated'
 import { type TrackCacheVisualState } from 'entities/offline-cache'
-import { currentPlaylistAtom, type PlaybackRate, usePlaybackRate } from 'entities/player'
-import { isLocalPlaylistId, togglePlaylistSermon } from 'entities/playlist'
+import { type PlaybackRate, usePlaybackRate } from 'entities/player'
 import { type AudioPlayerData } from 'entities/sermon'
 import { hapticLight } from 'shared/lib/haptics'
 import { reportError } from 'shared/model/error-dialog'
@@ -16,36 +14,31 @@ import { useMenuRevealAnimation } from './useMenuRevealAnimation'
 
 export const PlayerMenu = ({
   audio,
+  canRemoveFromPlaylist,
   isCached,
   onAddToPlaylist,
   onClose,
   onOpenSoundSettings,
+  onRequestRemoveFromPlaylist,
   onShowDetails,
   onToggleCache,
   visualState,
 }: {
   audio: AudioPlayerData
+  canRemoveFromPlaylist: boolean
   isCached?: boolean
   onAddToPlaylist?: (sermon: AudioPlayerData) => void
   onClose: () => void
   onOpenSoundSettings: () => void
+  onRequestRemoveFromPlaylist?: () => void
   onShowDetails: () => void
   onToggleCache: () => void
   visualState: TrackCacheVisualState
 }) => {
   const { currentTheme } = useTheme()
-  const ctx = useCtx()
   const { rate, setPlaybackRate } = usePlaybackRate()
-  const [playlist] = useAtom(currentPlaylistAtom)
   const [view, setView] = useState<'main' | 'speed'>('main')
   const { backdropStyle, handleLayout, wrapperStyle } = useMenuRevealAnimation()
-
-  // The item is meaningful only when the current playlist is a local one that
-  // actually contains the playing sermon.
-  const canRemoveFromPlaylist =
-    playlist !== null &&
-    isLocalPlaylistId(playlist.id) &&
-    playlist.sermons.some(sermon => sermon.id === audio.id)
 
   const handleDetailsPress = () => {
     onShowDetails()
@@ -68,8 +61,7 @@ export const PlayerMenu = ({
   }
 
   const handleRemoveFromPlaylistPress = () => {
-    if (playlist === null) return
-    void togglePlaylistSermon(ctx, playlist.id, audio, false)
+    onRequestRemoveFromPlaylist?.()
     onClose()
   }
 

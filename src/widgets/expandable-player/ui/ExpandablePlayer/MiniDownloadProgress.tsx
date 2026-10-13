@@ -1,17 +1,15 @@
 import { useAtom } from '@reatom/npm-react'
 import { View } from 'react-native'
 import { sermonCachingEnabledAtom } from 'entities/offline-cache'
-import { type ThemeColors } from 'shared/ui/theme'
+import { COLORS } from 'shared/ui/theme'
 import { useDisplayedDownloadProgress } from '../../model/useDisplayedDownloadProgress'
 import { type createMiniStyles } from './miniStyles'
 
 export const MiniDownloadProgress = ({
   audioUrl,
-  currentTheme,
   miniStyles,
 }: {
   audioUrl: string
-  currentTheme: ThemeColors
   miniStyles: ReturnType<typeof createMiniStyles>
 }) => {
   const [isSermonCachingEnabled] = useAtom(sermonCachingEnabledAtom)
@@ -28,7 +26,10 @@ export const MiniDownloadProgress = ({
         style={[
           miniStyles.downloadFill,
           {
-            backgroundColor: currentTheme.primary,
+            // Shared `COLORS.progressBuffered` keeps the miniplayer strip and
+            // the fullscreen buffered layer (`PlayerProgressBar.styles.ts`)
+            // identical over their tracks.
+            backgroundColor: COLORS.progressBuffered,
             width: `${displayProgress * 100}%`,
           },
         ]}

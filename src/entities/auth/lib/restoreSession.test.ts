@@ -12,6 +12,11 @@ const mockClearTokens = jest.fn()
 const mockClearCachedUser = jest.fn()
 const mockReportError = jest.fn()
 const mockShowToast = jest.fn()
+const mockFetchMyFeatureFlags = jest.fn()
+
+jest.mock('entities/feature-flags/@x/auth', () => ({
+  fetchMyFeatureFlags: (...args: unknown[]) => mockFetchMyFeatureFlags(...args),
+}))
 
 jest.mock('shared/model', () => ({
   showToast: (...args: unknown[]) => mockShowToast(...args),
@@ -136,5 +141,30 @@ describe('restoreSession', () => {
     expect(mockClearTokens).not.toHaveBeenCalled()
     expect(mockGetProfile).not.toHaveBeenCalled()
     expect(ctx.get(authStatusAtom)).toBe('unauthenticated')
+  })
+
+  test('refetches feature flags after the profile resolves with a valid token', async () => {
+    mockGetProfile.mockResolvedValue(ADMIN_USER())
+
+    await runRestore()
+
+    expect(mockFetchMyFeatureFlags).toHaveBeenCalledTimes(1)
+    expect(mockFetchMyFeatureFlags).toHaveBeenCalledWith(expect.anything())
+  })
+
+  test('refetches feature flags even when the profile check fails transiently', async () => {
+    mockGetProfile.mockRejectedValue(networkError())
+
+    await runRestore()
+
+    expect(mockFetchMyFeatureFlags).toHaveBeenCalledTimes(1)
+  })
+
+  test('does not refetch feature flags without tokens', async () => {
+    mockGetAccessToken.mockResolvedValue(null)
+
+    await runRestore()
+
+    expect(mockFetchMyFeatureFlags).not.toHaveBeenCalled()
   })
 })

@@ -1,5 +1,4 @@
 import { FlatList, StyleSheet } from 'react-native'
-import { type SermonData } from 'entities/sermon'
 import { INDENTS, useTheme } from 'shared/ui/theme'
 import { type PlaylistMembership } from '../lib/useSortedPlaylists'
 import { PlaylistMembershipRow } from './PlaylistMembershipRow'
@@ -11,10 +10,12 @@ const LIST_PADDING = INDENTS.medium
 // instead of letting a long playlist collection grow the dialog off-screen.
 export const PlaylistMembershipList = ({
   items,
-  sermon,
+  onToggle,
+  values,
 }: {
   items: PlaylistMembership[]
-  sermon: SermonData
+  onToggle: (playlistId: string) => void
+  values: Record<string, boolean>
 }) => {
   const { currentTheme } = useTheme()
 
@@ -26,10 +27,10 @@ export const PlaylistMembershipList = ({
       style={[styles.list, { backgroundColor: currentTheme.surface }]}
       renderItem={({ item }) => (
         <PlaylistMembershipRow
-          sermon={sermon}
           title={item.playlist.title}
-          playlistId={item.playlist.id}
           isContained={item.isContained}
+          value={values[item.playlist.id]}
+          onChange={() => onToggle(item.playlist.id)}
           sermonCount={item.playlist.sermonIds.length}
         />
       )}

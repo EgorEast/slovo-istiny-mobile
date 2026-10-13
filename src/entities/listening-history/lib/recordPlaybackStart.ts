@@ -2,6 +2,7 @@ import { action } from '@reatom/framework'
 import { type PlaylistData } from 'entities/playlist/@x/listening-history'
 import { type AudioPlayerData } from 'entities/sermon/@x/listening-history'
 import { commitHistory } from '../model/commitHistory'
+import { isSermonForgotten } from '../model/forgottenSermons'
 import { historyAtom } from '../model/historyAtom'
 import { type ListeningHistory } from '../model/types'
 import { buildHistoryEntry } from './buildHistoryEntry'
@@ -15,6 +16,10 @@ export const recordPlaybackStartAction = action(
     const current = ctx.get(historyAtom)
     const sermonId = audio.id
     const now = Date.now()
+
+    // Удалённую в этой сессии запись старт воспроизведения не воскрешает:
+    // пользователь явно убрал её из истории — оставляем как есть.
+    if (isSermonForgotten(sermonId)) return current
 
     const existingIndex = current.findIndex(e => getEntrySermon(e)?.id === sermonId)
 

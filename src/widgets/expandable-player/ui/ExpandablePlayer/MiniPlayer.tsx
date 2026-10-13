@@ -70,11 +70,7 @@ export const MiniPlayer = ({
             />
           )}
         </View>
-        <MiniDownloadProgress
-          miniStyles={miniStyles}
-          audioUrl={audio.audioUrl}
-          currentTheme={currentTheme}
-        />
+        <MiniDownloadProgress miniStyles={miniStyles} audioUrl={audio.audioUrl} />
       </AnimatedPressable>
     </GestureDetector>
   )

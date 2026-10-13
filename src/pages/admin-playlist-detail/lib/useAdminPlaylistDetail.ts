@@ -12,6 +12,7 @@ export interface AdminPlaylistDetailState {
   isNotFound: boolean
   isReordering: boolean
   playlist: APITypes.PlaylistEntity | null
+  refresh: () => Promise<void>
   remove: () => Promise<boolean>
   reorder: (nextOrder: APITypes.PlaylistSermon[]) => Promise<void>
   sermons: APITypes.PlaylistSermon[]
@@ -36,6 +37,20 @@ export const useAdminPlaylistDetail = (id: string): AdminPlaylistDetailState => 
     () => playlistsApi.getPlaylists().playlistControllerFindOne(id),
     [id],
   )
+
+  // Silent reload used after mutations and on focus: keeps the current entity on
+  // screen (no skeleton, no not-found flip) and reports network errors only.
+  const refresh = useCallback(async () => {
+    if (!id) return
+
+    try {
+      const entity = await fetchPlaylist()
+      setPlaylist(entity)
+      setSermons(entity.sermons)
+    } catch (error) {
+      reportError(error, LOAD_ERROR_MESSAGE)
+    }
+  }, [fetchPlaylist, id])
 
   useEffect(() => {
     let isActive = true
@@ -66,19 +81,7 @@ export const useAdminPlaylistDetail = (id: string): AdminPlaylistDetailState => 
     }
   }, [fetchPlaylist, id])
 
-  useSilentRefetchOnFocus(
-    useCallback(async () => {
-      if (!id) return
-
-      try {
-        const entity = await fetchPlaylist()
-        setPlaylist(entity)
-        setSermons(entity.sermons)
-      } catch (error) {
-        reportError(error, LOAD_ERROR_MESSAGE)
-      }
-    }, [fetchPlaylist, id]),
-  )
+  useSilentRefetchOnFocus(refresh)
 
   const reorder = useCallback(
     async (nextOrder: APITypes.PlaylistSermon[]) => {
@@ -115,5 +118,5 @@ export const useAdminPlaylistDetail = (id: string): AdminPlaylistDetailState => 
     }
   }, [id])
 
-  return { isDeleting, isNotFound, isReordering, playlist, remove, reorder, sermons }
+  return { isDeleting, isNotFound, isReordering, playlist, refresh, remove, reorder, sermons }
 }

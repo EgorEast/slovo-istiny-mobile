@@ -1,42 +1,20 @@
-import { type RefObject } from 'react'
 import { StyleSheet, View } from 'react-native'
-import { AnchoredDropdown, type AnchorRect } from 'shared/ui/menu'
+import { AnchoredDropdown } from 'shared/ui/menu'
 import { INDENTS, RADIUSES, useTheme } from 'shared/ui/theme'
+import { PlaylistAddAllMenuItem } from './PlaylistAddAllMenuItem'
+import { PlaylistClearMenuItem } from './PlaylistClearMenuItem'
 import { PlaylistDeleteMenuItem } from './PlaylistDeleteMenuItem'
+import { type PlaylistHeaderMenuDropdownProps } from './PlaylistHeaderMenuDropdown.types'
 import { PlaylistHistoryMenuItem } from './PlaylistHistoryMenuItem'
 import { PlaylistOfflineMenuItems } from './PlaylistOfflineMenuItems'
 import { PlaylistPublishMenuItem, PUBLISH_TEXT } from './PlaylistPublishMenuItem'
 import { PlaylistShareMenuItem, SHARE_TEXT } from './PlaylistShareMenuItem'
 
-export interface PlaylistHeaderMenuDropdownProps {
-  allCached: boolean
-  anchor: AnchorRect | null
-  anchorRef?: RefObject<null | View>
-  canDelete: boolean
-  canMarkAll: boolean
-  canPublish: boolean
-  canRemoveFromHistory: boolean
-  isAddAllToOfflineDisabled: boolean
-  isCaching: boolean
-  isClearCacheDisabled?: boolean
-  isOfflineItemsVisible?: boolean
-  isShareDisabled: boolean
-  onAddAllToOffline: () => void
-  onClearCache: () => void
-  onClose: () => void
-  onDelete: () => void
-  onMarkAll: () => void
-  onPublish: () => void
-  onRemoveFromHistory: () => void
-  onShare: () => void
-  onStopCaching: () => void
-  visible: boolean
-}
-
 export const PlaylistHeaderMenuDropdown = ({
   allCached,
   anchor,
   anchorRef,
+  canClear,
   canDelete,
   canMarkAll,
   canPublish,
@@ -47,6 +25,8 @@ export const PlaylistHeaderMenuDropdown = ({
   isOfflineItemsVisible = true,
   isShareDisabled,
   onAddAllToOffline,
+  onAddAllToPlaylist,
+  onClear,
   onClearCache,
   onClose,
   onDelete,
@@ -69,6 +49,8 @@ export const PlaylistHeaderMenuDropdown = ({
       menuStyle={[styles.dropdown, { backgroundColor: currentTheme.surface }]}
     >
       <PlaylistShareMenuItem onPress={onShare} text={SHARE_TEXT} isDisabled={isShareDisabled} />
+
+      {onAddAllToPlaylist && <PlaylistAddAllMenuItem onPress={onAddAllToPlaylist} />}
 
       {canPublish && <PlaylistPublishMenuItem onPress={onPublish} text={PUBLISH_TEXT} />}
 
@@ -102,12 +84,11 @@ export const PlaylistHeaderMenuDropdown = ({
         />
       )}
 
-      {canDelete && (
-        <>
-          <View style={[styles.dropdownDivider, { backgroundColor: currentTheme.textMuted }]} />
-          <PlaylistDeleteMenuItem onPress={onDelete} />
-        </>
+      {(canClear || canDelete) && (
+        <View style={[styles.dropdownDivider, { backgroundColor: currentTheme.textMuted }]} />
       )}
+      {canClear && <PlaylistClearMenuItem onPress={onClear} />}
+      {canDelete && <PlaylistDeleteMenuItem onPress={onDelete} />}
     </AnchoredDropdown>
   )
 }

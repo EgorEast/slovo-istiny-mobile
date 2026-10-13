@@ -8,7 +8,7 @@ export const createProgressBarStyles = (theme: ThemeColors) =>
     container: { width: '100%' },
     downloadProgress: {
       ...StyleSheet.absoluteFill,
-      backgroundColor: 'rgba(255,255,255,0.35)',
+      backgroundColor: COLORS.progressBuffered,
       borderBottomLeftRadius: 2.5,
       borderTopLeftRadius: 2.5,
       pointerEvents: 'none',

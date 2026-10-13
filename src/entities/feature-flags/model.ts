@@ -13,6 +13,18 @@ export const featureFlagsAtom = atom<null | Record<string, boolean>>(null, 'feat
 // only on the success→failure transition instead of on every foreground refetch.
 const flagsFetchFailedAtom = atom<boolean>(false, 'flagsFetchFailedAtom')
 
+const isSameFlags = (
+  current: null | Record<string, boolean>,
+  next: Record<string, boolean>,
+): boolean => {
+  if (current == null) return false
+
+  const nextKeys = Object.keys(next)
+  if (nextKeys.length !== Object.keys(current).length) return false
+
+  return nextKeys.every(key => current[key] === next[key])
+}
+
 // GET /feature-flags/me has optional auth: anonymous callers receive the global
 // flag state, authenticated ones their effective flags (the Authorization header
 // is attached by the axios request interceptor when a token exists). Always fetch.
@@ -26,9 +38,12 @@ export const fetchMyFeatureFlags = action(async ctx => {
       flags.map(({ enabled, key }): [string, boolean] => [key, enabled]),
     )
 
-    await setCachedFlags(flagsByKey).catch((error: unknown) =>
-      console.error('[feature-flags] cache write failed:', error),
-    )
+    // Не перезаписываем кеш, если значение не изменилось: лишний рефетч
+    // (foreground, восстановление сессии) иначе трогал бы AsyncStorage без нужды.
+    if (!isSameFlags(ctx.get(featureFlagsAtom), flagsByKey))
+      await setCachedFlags(flagsByKey).catch((error: unknown) =>
+        console.error('[feature-flags] cache write failed:', error),
+      )
 
     await ctx.schedule(() => {
       flagsFetchFailedAtom(ctx, false)

@@ -10,6 +10,8 @@ const PLAYLISTS_TITLE = 'Плейлисты раздела'
 
 // Шапка режима редактирования: блок «Оформление» (поля оформления применяются
 // мгновенно) и закреплённая строка «Избранные» с заголовком «Плейлисты раздела».
+// Горизонтальный отступ даёт контейнер списка (`MyPlaylistsDragList`), поэтому
+// шапка держит только верхний отступ и не дублирует инсет.
 export const MyPlaylistsEditHeader = ({
   favorites,
   onAppearanceChange,
@@ -45,6 +47,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     marginBottom: INDENTS.low,
   },
-  header: { paddingHorizontal: INDENTS.medium, paddingTop: INDENTS.medium },
+  header: { paddingTop: INDENTS.medium },
   playlistsTitle: { marginTop: INDENTS.highest },
 })

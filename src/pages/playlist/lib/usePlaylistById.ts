@@ -1,6 +1,6 @@
 import { useAtom } from '@reatom/npm-react'
 import { useEffect, useMemo, useState } from 'react'
-import { myPlaylistsAtom, type PlaylistData } from 'entities/playlist'
+import { myPlaylistsAtom, myPlaylistsLoadedAtom, type PlaylistData } from 'entities/playlist'
 import { dynamicSectionsAtom } from 'entities/section'
 import { buildLocalPlaylist } from './buildLocalPlaylist'
 import { buildSermonIndex } from './buildSermonIndex'
@@ -27,6 +27,7 @@ type ResolvedTier = 'api' | 'cache' | 'sections' | null
 export const usePlaylistById = (playlistId: string) => {
   const [sections] = useAtom(dynamicSectionsAtom)
   const [localPlaylists] = useAtom(myPlaylistsAtom)
+  const [myPlaylistsLoaded] = useAtom(myPlaylistsLoadedAtom)
   const [resolution, setResolution] = useState<PlaylistResolution>({
     playlist: undefined,
     playlistId: '',
@@ -81,8 +82,13 @@ export const usePlaylistById = (playlistId: string) => {
   const resolvedTier: ResolvedTier = playlistFromSections
     ? 'sections'
     : (currentResolution?.tier ?? null)
+  // A custom local playlist lives only in `myPlaylistsAtom`; until that atom is
+  // hydrated a lookup legitimately misses and the sections/cache/API chain cannot
+  // find it either. Suppressing notFound until hydration avoids the premature
+  // «Плейлист не найден» flash on reload / native cold start of `?playlist=custom-…`.
   const notFound = !playlistId || (!playlist && resolvedTier !== null)
-  const isLoading = !playlist && !notFound
+  const isNotFound = myPlaylistsLoaded && notFound
+  const isLoading = !playlist && !isNotFound
 
-  return { isLoading, notFound, playlist }
+  return { isLoading, notFound: isNotFound, playlist }
 }

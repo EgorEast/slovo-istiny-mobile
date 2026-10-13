@@ -17,6 +17,7 @@ jest.mock('entities/playlist', () => ({
 }))
 
 const UUID = '123e4567-e89b-12d3-a456-426614174000'
+const UNAVAILABLE_MESSAGE = 'resolvePlaylistFromApi: playlist unavailable:'
 
 const ENTITY = playlistsMocks.getPlaylistControllerFindOneResponseMock()
 
@@ -101,20 +102,31 @@ describe('resolvePlaylistFromApi', () => {
     expect(consoleErrorSpy).not.toHaveBeenCalled()
   })
 
-  test('returns undefined when the request fails without rethrowing', async () => {
+  test('warns and returns undefined when the request fails without rethrowing', async () => {
     mockFindOne.mockRejectedValue(new Error('network down'))
 
     const result = await resolvePlaylistFromApi(UUID)
 
     expect(result).toBeUndefined()
-    expect(consoleErrorSpy).toHaveBeenCalledWith(
-      'resolvePlaylistFromApi failed:',
-      expect.any(Error),
-    )
-    expect(consoleWarnSpy).not.toHaveBeenCalled()
+    expect(consoleWarnSpy).toHaveBeenCalledWith(UNAVAILABLE_MESSAGE, UUID, undefined)
+    expect(consoleErrorSpy).not.toHaveBeenCalled()
   })
 
-  test('returns undefined and logs an error when the response mapper throws', async () => {
+  test('warns with the HTTP status and returns undefined on a 5xx', async () => {
+    const serverError = Object.assign(new Error('Request failed with status code 500'), {
+      isAxiosError: true,
+      response: { status: 500 },
+    })
+    mockFindOne.mockRejectedValue(serverError)
+
+    const result = await resolvePlaylistFromApi(UUID)
+
+    expect(result).toBeUndefined()
+    expect(consoleWarnSpy).toHaveBeenCalledWith(UNAVAILABLE_MESSAGE, UUID, 500)
+    expect(consoleErrorSpy).not.toHaveBeenCalled()
+  })
+
+  test('warns and returns undefined when the response mapper throws', async () => {
     mockFindOne.mockResolvedValue(ENTITY)
     mockMapPlaylistEntityToPlaylistData.mockImplementation(() => {
       throw new Error('unexpected sections shape')
@@ -123,10 +135,7 @@ describe('resolvePlaylistFromApi', () => {
     const result = await resolvePlaylistFromApi(UUID)
 
     expect(result).toBeUndefined()
-    expect(consoleErrorSpy).toHaveBeenCalledWith(
-      'resolvePlaylistFromApi failed:',
-      expect.any(Error),
-    )
-    expect(consoleWarnSpy).not.toHaveBeenCalled()
+    expect(consoleWarnSpy).toHaveBeenCalledWith(UNAVAILABLE_MESSAGE, UUID, undefined)
+    expect(consoleErrorSpy).not.toHaveBeenCalled()
   })
 })

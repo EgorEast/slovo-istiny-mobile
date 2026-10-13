@@ -51,6 +51,8 @@ export {
 
 export { closePlayerSheetAction, isPlayerExpandedAtom, openPlayerSheetAction } from './playerSheet'
 
+export { resetPlaybackAction } from './resetPlayback'
+
 export { type TrackToggleNotice, trackToggleNoticeAtom } from './trackToggleNotice'
 
 export { PlayerControlButton } from './ui/control-button/control-button'

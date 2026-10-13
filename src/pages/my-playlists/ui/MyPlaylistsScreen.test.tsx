@@ -8,6 +8,7 @@ import {
   sectionSettingsAtom,
 } from 'entities/playlist'
 import { renderWithProviders } from 'shared/mocks'
+import { INDENTS } from 'shared/ui/theme'
 import { MyPlaylistsScreen } from './MyPlaylistsScreen'
 
 const mockPush = jest.fn()
@@ -290,6 +291,31 @@ describe('<MyPlaylistsScreen>', () => {
     fireEvent.press(getByText('Скруглённые углы карточек'))
 
     await waitFor(() => expect(ctx.get(sectionSettingsAtom).borderRadius).toBe(false))
+  })
+
+  test('indents drag rows and favorites with the same horizontal inset in edit mode', async () => {
+    const ctx = createCtx()
+    seedPlaylists(ctx)
+
+    const { container, getByLabelText } = await renderWithProviders(<MyPlaylistsScreen />, { ctx })
+    const user = userEvent.setup()
+
+    await user.press(getByLabelText(EDIT_LABEL))
+
+    // The single list-content inset lines up the header («Избранные») and rows.
+    const lists = container.queryAll(
+      node => node.props?.contentContainerStyle?.paddingHorizontal === INDENTS.medium,
+    )
+    expect(lists.length).toBeGreaterThan(0)
+
+    // The edit header keeps no own horizontal padding — otherwise the favorites
+    // row (inside the header) would be indented twice.
+    const doubleIndented = container.queryAll(
+      node =>
+        node.props?.style?.paddingHorizontal === INDENTS.medium &&
+        node.props?.style?.paddingTop === INDENTS.medium,
+    )
+    expect(doubleIndented).toHaveLength(0)
   })
 
   test('renders a create row and opens the create form on tap', async () => {

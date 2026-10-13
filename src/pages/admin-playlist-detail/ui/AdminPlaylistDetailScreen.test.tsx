@@ -1,4 +1,5 @@
 import { fireEvent, waitFor } from '@testing-library/react-native'
+import { View as RNView } from 'react-native'
 import { playlistsMocks } from 'shared/api/generated'
 import { renderWithProviders } from 'shared/mocks'
 import { AdminPlaylistDetailScreen } from './AdminPlaylistDetailScreen'
@@ -20,6 +21,8 @@ const mockRemove = jest.fn()
 const mockReorder = jest.fn()
 const mockBack = jest.fn()
 const mockPush = jest.fn()
+const mockSermonUpdate = jest.fn()
+const mockShowToast = jest.fn()
 
 jest.mock('shared/api', () => ({
   playlistsApi: {
@@ -29,7 +32,40 @@ jest.mock('shared/api', () => ({
       reorderSermonsInPlaylist: mockReorder,
     }),
   },
+  sermonsApi: {
+    getSermons: () => ({ sermonControllerUpdate: mockSermonUpdate }),
+  },
 }))
+
+jest.mock('shared/model', () => ({
+  ...jest.requireActual('shared/model'),
+  showToast: (...args: unknown[]) => mockShowToast(...args),
+}))
+
+// The real dropdown gates presses behind an onLayout measurement; a Pressable
+// stub keeps the item pressable under test.
+jest.mock('shared/ui/menu', () => {
+  const { Pressable, Text } = jest.requireActual('react-native')
+
+  return {
+    MenuDropdown: ({
+      items,
+      visible,
+    }: {
+      items: Array<{ onPress: () => void; text: string }>
+      visible: boolean
+    }) =>
+      visible ? (
+        <>
+          {items.map(item => (
+            <Pressable key={item.text} onPress={item.onPress}>
+              <Text>{item.text}</Text>
+            </Pressable>
+          ))}
+        </>
+      ) : null,
+  }
+})
 
 jest.mock('expo-router', () => {
   const React = jest.requireActual('react') as {
@@ -75,10 +111,27 @@ const createPlaylist = () => {
   return playlist
 }
 
+const PLAYLIST_ARTWORK = 'https://cdn.example.com/playlist.jpg'
+const MENU_BUTTON_LABEL = 'Меню проповедей плейлиста'
+const MENU_ITEM_TEXT = 'Установить обложки из плейлиста'
+const DIALOG_TITLE = 'Установить обложки из плейлиста?'
+const CONFIRM_TEXT = 'ОК'
+const NO_ARTWORK_MESSAGE = 'У плейлиста нет обложки'
+const UPDATED_MESSAGE = 'Обложки обновлены'
+
 describe('<AdminPlaylistDetailScreen>', () => {
   beforeEach(() => {
     jest.clearAllMocks()
     mockRemove.mockResolvedValue({ status: 'ok' })
+    mockSermonUpdate.mockResolvedValue({ status: 'ok' })
+    jest.spyOn(RNView.prototype, 'measureInWindow').mockImplementation(cb => {
+      cb(0, 0, 44, 44)
+      return undefined
+    })
+  })
+
+  afterEach(() => {
+    jest.restoreAllMocks()
   })
 
   test('renders the playlist hero and its sermons', async () => {
@@ -165,5 +218,55 @@ describe('<AdminPlaylistDetailScreen>', () => {
 
     await waitFor(() => expect(mockRemove).toHaveBeenCalledWith('p1'))
     await waitFor(() => expect(mockBack).toHaveBeenCalled())
+  })
+
+  test('sets every sermon artwork from the playlist artwork', async () => {
+    const playlist = createPlaylist()
+    const firstSermon = playlist.sermons[0]
+    const secondSermon = { ...firstSermon, id: 'sermon-2' }
+    playlist.artwork = PLAYLIST_ARTWORK
+    playlist.sermons = [firstSermon, secondSermon]
+    mockFindOne.mockResolvedValue(playlist)
+
+    const { findByLabelText, findByText } = await renderWithProviders(<AdminPlaylistDetailScreen />)
+
+    fireEvent.press(await findByLabelText(MENU_BUTTON_LABEL))
+    fireEvent.press(await findByText(MENU_ITEM_TEXT))
+
+    expect(await findByText(DIALOG_TITLE, { includeHiddenElements: true })).toBeTruthy()
+    fireEvent.press(await findByText(CONFIRM_TEXT, { includeHiddenElements: true }))
+
+    await waitFor(() => expect(mockSermonUpdate).toHaveBeenCalledTimes(2))
+    expect(mockSermonUpdate).toHaveBeenNthCalledWith(
+      1,
+      firstSermon.id,
+      expect.objectContaining({
+        artwork: PLAYLIST_ARTWORK,
+        playlistsIds: firstSermon.playlists.map(item => item.id),
+      }),
+    )
+    expect(mockSermonUpdate).toHaveBeenNthCalledWith(
+      2,
+      secondSermon.id,
+      expect.objectContaining({ artwork: PLAYLIST_ARTWORK }),
+    )
+    expect(mockShowToast).toHaveBeenCalledWith(expect.anything(), UPDATED_MESSAGE)
+  })
+
+  test('shows a toast and skips updates when the playlist has no artwork', async () => {
+    const playlist = createPlaylist()
+    playlist.artwork = ''
+    mockFindOne.mockResolvedValue(playlist)
+
+    const { findByLabelText, findByText } = await renderWithProviders(<AdminPlaylistDetailScreen />)
+
+    fireEvent.press(await findByLabelText(MENU_BUTTON_LABEL))
+    fireEvent.press(await findByText(MENU_ITEM_TEXT))
+    fireEvent.press(await findByText(CONFIRM_TEXT, { includeHiddenElements: true }))
+
+    await waitFor(() =>
+      expect(mockShowToast).toHaveBeenCalledWith(expect.anything(), NO_ARTWORK_MESSAGE),
+    )
+    expect(mockSermonUpdate).not.toHaveBeenCalled()
   })
 })
