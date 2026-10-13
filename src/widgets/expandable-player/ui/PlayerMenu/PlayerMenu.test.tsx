@@ -1,8 +1,7 @@
-import { createCtx } from '@reatom/framework'
 import { act, fireEvent } from '@testing-library/react-native'
 import { type TestInstance } from 'test-renderer'
 import { type TrackCacheVisualState } from 'entities/offline-cache'
-import { currentPlaylistAtom, type PlaybackRate } from 'entities/player'
+import { type PlaybackRate } from 'entities/player'
 import { type AudioPlayerData } from 'entities/sermon'
 import { renderWithProviders } from 'shared/mocks/renderWithProviders'
 import { isOnlineAtom } from 'shared/model'
@@ -19,6 +18,7 @@ const mockOnOpenSoundSettings = jest.fn()
 const mockOnSelect = jest.fn()
 const mockOnBack = jest.fn()
 const mockOnAddToPlaylist = jest.fn()
+const mockOnRequestRemoveFromPlaylist = jest.fn()
 
 const CLOUD_STATE: TrackCacheVisualState = 'cloud'
 
@@ -30,52 +30,33 @@ const MOCK_AUDIO: AudioPlayerData = {
   title: 'Sermon',
 }
 
-jest.mock('entities/player', () => {
-  const { atom } = jest.requireActual('@reatom/framework')
-  return {
-    currentPlaylistAtom: atom(null, 'testCurrentPlaylistAtom'),
-    PLAYBACK_RATES: [0.75, 1, 1.25, 1.5, 2],
-    usePlaybackRate: () => ({ rate: 1, setPlaybackRate: mockSetPlaybackRate }),
-  }
-})
-
-const mockTogglePlaylistSermon = jest.fn()
-
-jest.mock('entities/playlist', () => ({
-  isLocalPlaylistId: jest.requireActual('entities/playlist').isLocalPlaylistId,
-  togglePlaylistSermon: (...args: unknown[]) => mockTogglePlaylistSermon(...args),
+jest.mock('entities/player', () => ({
+  PLAYBACK_RATES: [0.75, 1, 1.25, 1.5, 2],
+  usePlaybackRate: () => ({ rate: 1, setPlaybackRate: mockSetPlaybackRate }),
 }))
 
 const SPEED_LABEL = 'Скорость воспроизведения'
 const SOUND_SETTINGS_LABEL = 'Настройки звука'
 const ADD_TO_PLAYLIST_LABEL = 'Добавить в плейлист'
-const REMOVE_FROM_PLAYLIST_LABEL = 'Удалить из текущего плейлиста'
-const SERVER_PLAYLIST_ID = '123e4567-e89b-42d3-a456-426614174000'
+const REMOVE_FROM_PLAYLIST_LABEL = 'Удалить из текущего плейлиста и открыть в другом'
 
-const LOCAL_PLAYLIST = {
-  artwork: null,
-  description: '',
-  id: 'custom-abcdef0123456789',
-  sermons: [MOCK_AUDIO],
-  title: 'Плейлист',
-}
-
-const renderMenuWithPlaylist = async (playlist: null | typeof LOCAL_PLAYLIST) => {
-  const ctx = createCtx()
-  if (playlist) currentPlaylistAtom(ctx, playlist)
-  const utils = await renderWithProviders(
+const renderMenu = async ({
+  canRemoveFromPlaylist = false,
+}: {
+  canRemoveFromPlaylist?: boolean
+} = {}) =>
+  renderWithProviders(
     <PlayerMenu
       audio={MOCK_AUDIO}
       onClose={mockOnClose}
       visualState={CLOUD_STATE}
       onShowDetails={mockOnShowDetails}
       onToggleCache={mockOnToggleCache}
+      canRemoveFromPlaylist={canRemoveFromPlaylist}
       onOpenSoundSettings={mockOnOpenSoundSettings}
+      onRequestRemoveFromPlaylist={mockOnRequestRemoveFromPlaylist}
     />,
-    { ctx },
   )
-  return { ...utils, ctx }
-}
 
 const triggerOnLayout = async (container: TestInstance) => {
   const layoutView = container.queryAll(node => node.props.onLayout !== undefined, {
@@ -100,6 +81,7 @@ describe('<PlayerMenu>', () => {
         audio={MOCK_AUDIO}
         onClose={mockOnClose}
         visualState={CLOUD_STATE}
+        canRemoveFromPlaylist={false}
         onShowDetails={mockOnShowDetails}
         onToggleCache={mockOnToggleCache}
         onOpenSoundSettings={mockOnOpenSoundSettings}
@@ -114,6 +96,7 @@ describe('<PlayerMenu>', () => {
         audio={MOCK_AUDIO}
         onClose={mockOnClose}
         visualState={CLOUD_STATE}
+        canRemoveFromPlaylist={false}
         onShowDetails={mockOnShowDetails}
         onToggleCache={mockOnToggleCache}
         onAddToPlaylist={mockOnAddToPlaylist}
@@ -129,31 +112,19 @@ describe('<PlayerMenu>', () => {
     expect(mockOnClose).toHaveBeenCalledTimes(1)
   })
 
-  test('removes the audio from a local current playlist and closes the menu', async () => {
-    const { container, ctx, getByText } = await renderMenuWithPlaylist(LOCAL_PLAYLIST)
+  test('requesting removal calls the callback and closes the menu', async () => {
+    const { container, getByText } = await renderMenu({ canRemoveFromPlaylist: true })
 
     await triggerOnLayout(container)
 
     fireEvent.press(getByText(REMOVE_FROM_PLAYLIST_LABEL))
 
-    expect(mockTogglePlaylistSermon).toHaveBeenCalledWith(ctx, LOCAL_PLAYLIST.id, MOCK_AUDIO, false)
+    expect(mockOnRequestRemoveFromPlaylist).toHaveBeenCalledTimes(1)
     expect(mockOnClose).toHaveBeenCalledTimes(1)
   })
 
-  test('hides the remove item for a server current playlist', async () => {
-    const { queryByText } = await renderMenuWithPlaylist({
-      ...LOCAL_PLAYLIST,
-      id: SERVER_PLAYLIST_ID,
-    })
-
-    expect(queryByText(REMOVE_FROM_PLAYLIST_LABEL)).toBeNull()
-  })
-
-  test('hides the remove item when the audio is not in the local playlist', async () => {
-    const { queryByText } = await renderMenuWithPlaylist({
-      ...LOCAL_PLAYLIST,
-      sermons: [{ ...MOCK_AUDIO, id: 'other-sermon' }],
-    })
+  test('hides the remove item when the snapshot is not removable', async () => {
+    const { queryByText } = await renderMenu({ canRemoveFromPlaylist: false })
 
     expect(queryByText(REMOVE_FROM_PLAYLIST_LABEL)).toBeNull()
   })
@@ -164,6 +135,7 @@ describe('<PlayerMenu>', () => {
         audio={MOCK_AUDIO}
         onClose={mockOnClose}
         visualState={CLOUD_STATE}
+        canRemoveFromPlaylist={false}
         onShowDetails={mockOnShowDetails}
         onToggleCache={mockOnToggleCache}
         onOpenSoundSettings={mockOnOpenSoundSettings}
@@ -197,6 +169,7 @@ describe('<PlayerMenu>', () => {
         audio={MOCK_AUDIO}
         onClose={mockOnClose}
         visualState={CLOUD_STATE}
+        canRemoveFromPlaylist={false}
         onShowDetails={mockOnShowDetails}
         onToggleCache={mockOnToggleCache}
         onOpenSoundSettings={mockOnOpenSoundSettings}

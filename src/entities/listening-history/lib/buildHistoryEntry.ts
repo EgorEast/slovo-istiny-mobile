@@ -7,7 +7,15 @@ export const buildSanitizedSermon = (audio: AudioPlayerData) => {
   return rest
 }
 
-const buildContextPlaylist = (
+/**
+ * Снапшот контекстного плейлиста записи: только сам проигрываемый трек в
+ * `sermons` (с `playlists` вырезанными), чтобы запись истории не раздувалась
+ * полным списком плейлиста.
+ * @param playlist - Плейлист-контекст.
+ * @param sanitizedSermon - Проповедь без вложенных `playlists`.
+ * @returns Плейлист с единственной проповедью.
+ */
+export const buildContextPlaylist = (
   playlist: PlaylistData,
   sanitizedSermon: ReturnType<typeof buildSanitizedSermon>,
 ): PlaylistData => ({

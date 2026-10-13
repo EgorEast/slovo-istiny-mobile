@@ -12,9 +12,12 @@ import { MyPlaylistsRow } from './MyPlaylistsRow'
 // long-press тянет строку целиком, `onDragEnd` отдаёт итоговый порядок id наверх.
 // `listHeader`/`listEmpty`/`listFooter` — слоты для формы оформления, пустого
 // состояния и завершающей строки «Создать плейлист».
-// Нижний отступ резервирует место под мини-плеер и таб-бар (как `PlaylistTrackList`),
-// чтобы последние строки не прятались за плавающим плеером — и в обычном режиме,
-// и в режиме редактирования.
+// Горизонтальный отступ контента задаётся здесь (`INDENTS.medium`) и покрывает
+// и шапку с «Избранными», и drag-строки — карточки выровнены по одной вертикали
+// с «Избранными» (раньше отступ несла только шапка). Нижний отступ резервирует
+// место под мини-плеер и таб-бар (как `PlaylistTrackList`), чтобы последние
+// строки не прятались за плавающим плеером — и в обычном режиме, и в режиме
+// редактирования.
 export const MyPlaylistsDragList = ({
   isDraggingEnabled,
   items,
@@ -47,6 +50,7 @@ export const MyPlaylistsDragList = ({
       onDragEnd={({ data }) => onDragEnd(data.map(playlist => playlist.id))}
       contentContainerStyle={{
         paddingBottom: tabBarHeight + PLAYER_SIZES.miniPlayerHeight + INDENTS.low,
+        paddingHorizontal: INDENTS.medium,
       }}
       renderItem={({ drag, isActive, item }: RenderItemParams<LocalPlaylistData>) => (
         <MyPlaylistsRow

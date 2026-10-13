@@ -11,10 +11,8 @@ const STATIC_COLORS = {
   gray: '#808080',
   onPrimary: '#fff',
   primary: '#f16031',
-  success: '#34c759',
-  tabBarActive: '#f16031',
-  tabBarBackground: 'rgba(0, 0, 0, 0.8)',
-  tabBarInactive: '#9ca3af',
+  // Полупрозрачный слой буфера/загрузки поверх трека плеера.
+  progressBuffered: 'rgba(255,255,255,0.35)',
   white: '#fff',
 } as const
 
@@ -28,7 +26,6 @@ interface MutableColorSlots {
   primary: ColorValue
   skeleton: ColorValue
   surface: ColorValue
-  tabBarActive: ColorValue
   text: ColorValue
   textMuted: ColorValue
 }
@@ -57,6 +54,5 @@ export const updateCOLORS = (ctx: Ctx) => {
     icon: newTheme.text,
     maximumTrackTintColor: 'rgba(128, 128, 128, 0.6)',
     minimumTrackTintColor: 'rgba(128, 128, 128, 0.4)',
-    tabBarActive: newTheme.primary,
   })
 }

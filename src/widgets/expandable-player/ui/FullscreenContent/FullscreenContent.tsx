@@ -87,6 +87,9 @@ export const FullscreenContent = ({
         <PlayerMiddleArea
           audio={audio}
           styles={styles}
+          tapSeek={tapSeek}
+          stopSeek={stopSeek}
+          startSeek={startSeek}
           insetsTop={insets.top}
           showDetails={showDetails}
           onTogglePlay={handleTogglePlay}

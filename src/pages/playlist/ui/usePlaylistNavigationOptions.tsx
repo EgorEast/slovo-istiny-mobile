@@ -22,11 +22,13 @@ export const buildTracksListData = (list: SermonData[], artwork: null | string) 
 
 export const usePlaylistNavigationOptions = ({
   headerIconColor,
+  onAddAllToPlaylist,
   playlist,
   title,
   tracksListData,
 }: {
   headerIconColor: ColorValue
+  onAddAllToPlaylist: (playlist: PlaylistData) => void
   playlist: PlaylistData
   title: string
   tracksListData: TracksListData
@@ -42,6 +44,7 @@ export const usePlaylistNavigationOptions = ({
           playlistTitle={title}
           tracksData={tracksListData}
           iconColor={headerIconColor}
+          onAddAllToPlaylist={onAddAllToPlaylist}
         />
       ),
     })
@@ -49,5 +52,5 @@ export const usePlaylistNavigationOptions = ({
     return () => {
       navigation.setOptions({ headerRight: undefined })
     }
-  }, [navigation, title, tracksListData, headerIconColor, playlist])
+  }, [navigation, title, tracksListData, headerIconColor, playlist, onAddAllToPlaylist])
 }

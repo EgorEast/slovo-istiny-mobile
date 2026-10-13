@@ -11,6 +11,12 @@ export interface PlaylistHeaderMenuProps {
   iconColor?: ColorValue
   /** Render the edit affordance for local playlists (playlist screen header only). */
   isEditEnabled?: boolean
+  /**
+   * Opens the batch add-to-playlist modal. Passed only by the playlist screen, so
+   * the «Добавить все проповеди в плейлист» row appears there (and only when the
+   * playlist has sermons) but never in the player sheet.
+   */
+  onAddAllToPlaylist?: (playlist: PlaylistData) => void
   playlist: PlaylistData
   playlistTitle: string
   tracksData: TrackToCache[]

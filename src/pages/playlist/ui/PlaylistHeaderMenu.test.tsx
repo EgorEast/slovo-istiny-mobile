@@ -1,6 +1,7 @@
 import { createCtx } from '@reatom/framework'
 import { act, fireEvent, screen, waitFor } from '@testing-library/react-native'
 import { View } from 'react-native'
+import { currentPlaylistAtom } from 'entities/player'
 import { FAVORITES_PLAYLIST, myPlaylistsAtom } from 'entities/playlist'
 import { renderWithProviders } from 'shared/mocks/renderWithProviders'
 import { isCachingPlaylistAtom } from '../model'
@@ -59,6 +60,16 @@ jest.mock('entities/listening-history', () => ({
   useHistorySermonIds: () => mockUseHistorySermonIds(),
 }))
 
+const mockResetPlaybackAction = jest.fn().mockResolvedValue(undefined)
+
+jest.mock('entities/player', () => {
+  const { atom } = jest.requireActual('@reatom/framework')
+  return {
+    currentPlaylistAtom: atom(null, 'testCurrentPlaylistAtom'),
+    resetPlaybackAction: (...args: unknown[]) => mockResetPlaybackAction(...args),
+  }
+})
+
 const TRACKS = [{ audioUrl: 'http://example.com/1.mp3', id: '1', title: 'Первая' }]
 
 const SERMON_1 = {
@@ -89,12 +100,18 @@ const PLAYLIST = {
 
 const MARK_ALL_TEXT = 'Пометить все прослушанными'
 const REMOVE_TEXT = 'Удалить проповеди из истории'
+const ADD_ALL_TO_PLAYLIST_TEXT = 'Добавить все проповеди в плейлист'
 const MARK_CONFIRM_TEXT = 'Пометить'
 const REMOVE_CONFIRM_TEXT = 'Удалить'
 const EDIT_LABEL = 'Редактировать плейлист'
 const DELETE_MENU_TEXT = 'Удалить плейлист'
 const DELETE_DIALOG_TITLE = 'Удалить плейлист?'
 const DELETE_CONFIRM_TEXT = 'Удалить'
+const CLEAR_MENU_TEXT = 'Очистить плейлист'
+const CLEAR_DIALOG_TITLE = 'Очистить плейлист?'
+const CLEAR_CONFIRM_TEXT = 'Очистить'
+const CLEAR_MESSAGE = 'Все проповеди будут удалены из плейлиста'
+const CLEAR_WARNING_MESSAGE = `${CLEAR_MESSAGE} Плеер будет закрыт.`
 
 const renderMenu = async () => {
   const ctx = createCtx()
@@ -364,5 +381,210 @@ describe('<PlaylistHeaderMenu>', () => {
     })
 
     expect(screen.queryByText(DELETE_MENU_TEXT)).toBeNull()
+  })
+
+  test('hides the add-all-to-playlist item without a callback (player sheet)', async () => {
+    await openMenu()
+
+    expect(screen.queryByText(ADD_ALL_TO_PLAYLIST_TEXT)).toBeNull()
+  })
+
+  test('hides the add-all-to-playlist item when the playlist is empty', async () => {
+    const ctx = createCtx()
+    await renderWithProviders(
+      <PlaylistHeaderMenu
+        tracksData={[]}
+        onAddAllToPlaylist={jest.fn()}
+        playlistTitle={PLAYLIST_TITLE}
+        playlist={{ ...PLAYLIST, sermons: [] }}
+      />,
+      { ctx },
+    )
+    await act(async () => {
+      fireEvent.press(screen.getByRole('button', { name: MENU_BUTTON_LABEL }))
+    })
+
+    expect(screen.queryByText(ADD_ALL_TO_PLAYLIST_TEXT)).toBeNull()
+  })
+
+  test('add-all-to-playlist: closes the menu and calls back with the playlist', async () => {
+    const onAddAllToPlaylist = jest.fn()
+    const ctx = createCtx()
+    await renderWithProviders(
+      <PlaylistHeaderMenu
+        playlist={PLAYLIST}
+        tracksData={TRACKS}
+        playlistTitle={PLAYLIST_TITLE}
+        onAddAllToPlaylist={onAddAllToPlaylist}
+      />,
+      { ctx },
+    )
+    await act(async () => {
+      fireEvent.press(screen.getByRole('button', { name: MENU_BUTTON_LABEL }))
+    })
+
+    fireEvent.press(await waitFor(() => screen.getByText(ADD_ALL_TO_PLAYLIST_TEXT)))
+
+    expect(onAddAllToPlaylist).toHaveBeenCalledWith(PLAYLIST)
+    await waitFor(() => expect(screen.queryByText(ADD_ALL_TO_PLAYLIST_TEXT)).toBeNull())
+  })
+
+  test('clears a local playlist from the header menu and closes the player when it is current', async () => {
+    const ctx = createCtx()
+    myPlaylistsAtom(ctx, [
+      FAVORITES_PLAYLIST,
+      {
+        id: 'pl-1',
+        sermonIds: [SERMON_1.id, SERMON_2.id],
+        sermons: [SERMON_1, SERMON_2],
+        title: PLAYLIST_TITLE,
+      },
+    ])
+    await renderWithProviders(
+      <PlaylistHeaderMenu
+        isEditEnabled
+        tracksData={TRACKS}
+        playlist={PLAYLIST}
+        playlistTitle={PLAYLIST_TITLE}
+      />,
+      { ctx },
+    )
+    await act(async () => {
+      fireEvent.press(screen.getByRole('button', { name: MENU_BUTTON_LABEL }))
+    })
+    currentPlaylistAtom(ctx, { ...PLAYLIST })
+
+    fireEvent.press(await waitFor(() => screen.getByText(CLEAR_MENU_TEXT)))
+    await waitFor(() => expect(screen.getByText(CLEAR_DIALOG_TITLE)).toBeTruthy())
+    expect(screen.getByText(CLEAR_WARNING_MESSAGE)).toBeTruthy()
+
+    await act(async () => {
+      fireEvent.press(screen.getByText(CLEAR_CONFIRM_TEXT))
+    })
+
+    await waitFor(() =>
+      expect(ctx.get(myPlaylistsAtom).find(playlist => playlist.id === 'pl-1')?.sermonIds).toEqual(
+        [],
+      ),
+    )
+    expect(mockResetPlaybackAction).toHaveBeenCalledTimes(1)
+  })
+
+  test('clears without closing the player when another playlist is current', async () => {
+    const ctx = createCtx()
+    myPlaylistsAtom(ctx, [
+      FAVORITES_PLAYLIST,
+      {
+        id: 'pl-1',
+        sermonIds: [SERMON_1.id, SERMON_2.id],
+        sermons: [SERMON_1, SERMON_2],
+        title: PLAYLIST_TITLE,
+      },
+    ])
+    await renderWithProviders(
+      <PlaylistHeaderMenu
+        isEditEnabled
+        tracksData={TRACKS}
+        playlist={PLAYLIST}
+        playlistTitle={PLAYLIST_TITLE}
+      />,
+      { ctx },
+    )
+    await act(async () => {
+      fireEvent.press(screen.getByRole('button', { name: MENU_BUTTON_LABEL }))
+    })
+    currentPlaylistAtom(ctx, { ...PLAYLIST, id: 'other-playlist' })
+
+    fireEvent.press(await waitFor(() => screen.getByText(CLEAR_MENU_TEXT)))
+    await waitFor(() => expect(screen.getByText(CLEAR_DIALOG_TITLE)).toBeTruthy())
+    expect(screen.getByText(CLEAR_MESSAGE)).toBeTruthy()
+    expect(screen.queryByText(CLEAR_WARNING_MESSAGE)).toBeNull()
+
+    await act(async () => {
+      fireEvent.press(screen.getByText(CLEAR_CONFIRM_TEXT))
+    })
+
+    await waitFor(() =>
+      expect(ctx.get(myPlaylistsAtom).find(playlist => playlist.id === 'pl-1')?.sermonIds).toEqual(
+        [],
+      ),
+    )
+    expect(mockResetPlaybackAction).not.toHaveBeenCalled()
+  })
+
+  test('does not clear nor close the player when clearing is cancelled', async () => {
+    const ctx = createCtx()
+    myPlaylistsAtom(ctx, [
+      FAVORITES_PLAYLIST,
+      {
+        id: 'pl-1',
+        sermonIds: [SERMON_1.id, SERMON_2.id],
+        sermons: [SERMON_1, SERMON_2],
+        title: PLAYLIST_TITLE,
+      },
+    ])
+    await renderWithProviders(
+      <PlaylistHeaderMenu
+        isEditEnabled
+        tracksData={TRACKS}
+        playlist={PLAYLIST}
+        playlistTitle={PLAYLIST_TITLE}
+      />,
+      { ctx },
+    )
+    await act(async () => {
+      fireEvent.press(screen.getByRole('button', { name: MENU_BUTTON_LABEL }))
+    })
+    currentPlaylistAtom(ctx, { ...PLAYLIST })
+
+    fireEvent.press(await waitFor(() => screen.getByText(CLEAR_MENU_TEXT)))
+    await waitFor(() => expect(screen.getByText(CLEAR_DIALOG_TITLE)).toBeTruthy())
+
+    await act(async () => {
+      fireEvent.press(screen.getByText('Отмена'))
+    })
+
+    expect(mockResetPlaybackAction).not.toHaveBeenCalled()
+    expect(ctx.get(myPlaylistsAtom).find(playlist => playlist.id === 'pl-1')?.sermonIds).toEqual([
+      SERMON_1.id,
+      SERMON_2.id,
+    ])
+    await waitFor(() => expect(screen.queryByText(CLEAR_DIALOG_TITLE)).toBeNull())
+  })
+
+  test('hides the clear item for the favorites playlist', async () => {
+    const ctx = createCtx()
+    myPlaylistsAtom(ctx, [FAVORITES_PLAYLIST])
+    await renderWithProviders(
+      <PlaylistHeaderMenu
+        isEditEnabled
+        tracksData={TRACKS}
+        playlistTitle={FAVORITES_PLAYLIST.title}
+        playlist={{ ...PLAYLIST, id: FAVORITES_PLAYLIST.id }}
+      />,
+      { ctx },
+    )
+    await act(async () => {
+      fireEvent.press(screen.getByRole('button', { name: MENU_BUTTON_LABEL }))
+    })
+
+    expect(screen.queryByText(CLEAR_MENU_TEXT)).toBeNull()
+  })
+
+  test('hides the clear item when editing is not enabled (player sheet)', async () => {
+    const ctx = createCtx()
+    myPlaylistsAtom(ctx, [
+      FAVORITES_PLAYLIST,
+      { id: 'pl-1', sermonIds: [], sermons: [], title: PLAYLIST_TITLE },
+    ])
+    await renderWithProviders(
+      <PlaylistHeaderMenu tracksData={TRACKS} playlist={PLAYLIST} playlistTitle={PLAYLIST_TITLE} />,
+      { ctx },
+    )
+    await act(async () => {
+      fireEvent.press(screen.getByRole('button', { name: MENU_BUTTON_LABEL }))
+    })
+
+    expect(screen.queryByText(CLEAR_MENU_TEXT)).toBeNull()
   })
 })

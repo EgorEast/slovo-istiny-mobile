@@ -31,9 +31,7 @@ const STATIC_ENTRIES: Record<string, string> = {
   gray: '#808080',
   onPrimary: '#fff',
   primary: '#f16031',
-  tabBarActive: '#f16031',
-  tabBarBackground: 'rgba(0, 0, 0, 0.8)',
-  tabBarInactive: '#9ca3af',
+  progressBuffered: 'rgba(255,255,255,0.35)',
   white: '#fff',
 }
 
@@ -110,13 +108,6 @@ describe('colors', () => {
       expect(COLORS.minimumTrackTintColor).toBe(TRACK_MIN_INIT)
     })
 
-    test('does NOT set tabBarActive from theme — stays static', () => {
-      currentThemeAtom(ctx, DarkTheme)
-      initializeCOLORS(ctx)
-
-      expect(COLORS.tabBarActive).toBe('#f16031')
-    })
-
     test('preserves static color values after initialization', () => {
       currentThemeAtom(ctx, DarkTheme)
       initializeCOLORS(ctx)
@@ -124,7 +115,7 @@ describe('colors', () => {
       expect(COLORS.black).toBe('#000')
       expect(COLORS.white).toBe('#fff')
       expect(COLORS.error).toBe('#ff3b30')
-      expect(COLORS.tabBarBackground).toBe('rgba(0, 0, 0, 0.8)')
+      expect(COLORS.progressBuffered).toBe('rgba(255,255,255,0.35)')
     })
   })
 
@@ -163,27 +154,9 @@ describe('colors', () => {
 
       expect(COLORS.minimumTrackTintColor).toBe(TRACK_MIN_UPDATE)
     })
-
-    test('sets tabBarActive to theme.primary', () => {
-      currentThemeAtom(ctx, DarkTheme)
-      updateCOLORS(ctx)
-
-      expect(COLORS.tabBarActive).toBe(DarkTheme.primary)
-    })
   })
 
   describe('difference between initialize and update', () => {
-    test('update sets tabBarActive to theme.primary; initialize does not', () => {
-      currentThemeAtom(ctx, DarkTheme)
-      initializeCOLORS(ctx)
-
-      expect(COLORS.tabBarActive).toBe('#f16031')
-
-      updateCOLORS(ctx)
-
-      expect(COLORS.tabBarActive).toBe(DarkTheme.primary)
-    })
-
     test('update swaps track tint values vs initialize', () => {
       currentThemeAtom(ctx, DarkTheme)
       initializeCOLORS(ctx)

@@ -1,6 +1,6 @@
 import { useLocalSearchParams } from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
-import { useCallback, useMemo } from 'react'
+import { useMemo } from 'react'
 import { View } from 'react-native'
 import { useAddToPlaylistModal } from 'features/add-to-playlist'
 import { useHistoryProgressMap, useHistorySermonIds } from 'entities/listening-history'
@@ -9,6 +9,7 @@ import { createTracksListStyles } from 'entities/track-list'
 import { useTheme } from 'shared/ui/theme'
 import { useCollapsingHeader } from '../lib/useCollapsingHeader'
 import { useCustomPlaylistImport } from '../lib/useCustomPlaylistImport'
+import { useHydrateMyPlaylists } from '../lib/useHydrateMyPlaylists'
 import { usePlaylistById } from '../lib/usePlaylistById'
 import { usePlaylistHeader } from '../lib/usePlaylistHeader'
 import { usePlaylistPlaybackTarget } from '../lib/usePlaylistPlaybackTarget'
@@ -17,26 +18,30 @@ import { usePlaylistTrackActions } from '../lib/usePlaylistTrackActions'
 import { PlaylistHeader } from './PlaylistHeader'
 import { PlaylistStatusView } from './PlaylistStatusView'
 import { PlaylistTrackList } from './PlaylistTrackList'
+import { PlaylistTrackSeparator } from './PlaylistTrackSeparator'
 import { createStyles } from './styles'
 import { usePlaylistItemRenderer } from './usePlaylistItemRenderer'
 import { buildTracksListData, usePlaylistNavigationOptions } from './usePlaylistNavigationOptions'
 
 const EMPTY_PLAYLIST = { artwork: null, description: '', id: 'default', sermons: [], title: '' }
-const FAVORITES_EMPTY_MESSAGE = 'В избранном пока пусто'
 
 export const PlaylistScreen = () => {
   const { currentTheme } = useTheme()
   const params = useLocalSearchParams<{ custom?: string; playlist: string }>()
 
-  useCustomPlaylistImport()
+  useHydrateMyPlaylists()
+
+  const { importedPlaylistId } = useCustomPlaylistImport()
 
   // A `custom` share link wins over any stale `playlist` param: the import
-  // resolves the target id itself and replaces the route. The flag is bare
-  // (`?custom&…`), so only its absence means there is no custom link. While the
-  // import is in flight the route has no usable playlist id yet — render the
-  // loading state instead of a premature not-found flash.
-  const isImportingCustomPlaylist = params.custom !== undefined
-  const playlistId = isImportingCustomPlaylist ? '' : (params.playlist ?? '')
+  // resolves the target id itself and leaves the share params in place (the
+  // address bar keeps the shareable link). While it is in flight there is no
+  // usable id yet — render the loading state instead of a premature not-found.
+  // Once resolved, the id points at the local playlist, which tier 0 builds from
+  // the hydrated atom.
+  const isImportingCustomPlaylist = params.custom !== undefined && importedPlaylistId === null
+  const playlistId =
+    importedPlaylistId ?? (isImportingCustomPlaylist ? '' : (params.playlist ?? ''))
   const { isLoading, notFound, playlist: resolvedPlaylist } = usePlaylistById(playlistId)
   const playlist = resolvedPlaylist ?? EMPTY_PLAYLIST
 
@@ -44,7 +49,7 @@ export const PlaylistScreen = () => {
 
   const progressMap = useHistoryProgressMap()
   const historySermonIds = useHistorySermonIds()
-  const { modal, openAddToPlaylist } = useAddToPlaylistModal()
+  const { modal, openAddAllToPlaylist, openAddToPlaylist } = useAddToPlaylistModal()
   const { buildMenuActions, handlePressItem, handlePressPlayAll, renderDialog } =
     usePlaylistTrackActions(list, playlist, historySermonIds, progressMap, openAddToPlaylist)
 
@@ -72,16 +77,17 @@ export const PlaylistScreen = () => {
     progressMap,
   })
 
-  usePlaylistNavigationOptions({ headerIconColor, playlist, title, tracksListData })
+  usePlaylistNavigationOptions({
+    headerIconColor,
+    onAddAllToPlaylist: openAddAllToPlaylist,
+    playlist,
+    title,
+    tracksListData,
+  })
 
   const tracksListStyles = useMemo(() => createTracksListStyles(currentTheme), [currentTheme])
 
   const styles = useMemo(() => createStyles(currentTheme), [currentTheme])
-
-  const ItemSeparator = useCallback(
-    () => <View style={tracksListStyles.divider} />,
-    [tracksListStyles],
-  )
 
   if (isImportingCustomPlaylist || isLoading || notFound)
     return (
@@ -101,8 +107,8 @@ export const PlaylistScreen = () => {
         renderItem={renderItem}
         onScroll={scrollHandler}
         style={tracksListStyles.container}
-        ItemSeparatorComponent={ItemSeparator}
-        emptyMessage={playlist.id === FAVORITES_PLAYLIST.id ? FAVORITES_EMPTY_MESSAGE : undefined}
+        ItemSeparatorComponent={PlaylistTrackSeparator}
+        emptyMessage={playlist.id === FAVORITES_PLAYLIST.id ? 'В избранном пока пусто' : undefined}
         headerElement={
           <PlaylistHeader
             title={title}

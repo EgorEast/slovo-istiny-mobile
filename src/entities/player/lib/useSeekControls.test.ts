@@ -38,6 +38,45 @@ describe('useSeekControls', () => {
     })
   })
 
+  test('overlapping startSeek does not leak a running interval', async () => {
+    const seekTo = jest.fn()
+    const { result } = await renderHook(() =>
+      useSeekControls({ duration: 100000, position: 10000, seekTo }),
+    )
+
+    await act(() => {
+      result.current.startSeek(FORWARD)
+    })
+
+    await act(() => {
+      jest.advanceTimersByTime(200)
+    })
+    expect(seekTo).toHaveBeenCalledTimes(1)
+
+    // Overlapping start: the previous interval must be replaced, not orphaned.
+    await act(() => {
+      result.current.startSeek(BACKWARD)
+    })
+
+    await act(() => {
+      jest.advanceTimersByTime(200)
+    })
+    await act(() => {
+      jest.advanceTimersByTime(200)
+    })
+    expect(seekTo).toHaveBeenCalledTimes(3)
+
+    await act(() => {
+      result.current.stopSeek()
+    })
+    const callsAfterStop = seekTo.mock.calls.length
+
+    await act(() => {
+      jest.advanceTimersByTime(400)
+    })
+    expect(seekTo).toHaveBeenCalledTimes(callsAfterStop)
+  })
+
   test('backward seek clamps at zero and stops', async () => {
     const seekTo = jest.fn()
     const { result } = await renderHook(() =>

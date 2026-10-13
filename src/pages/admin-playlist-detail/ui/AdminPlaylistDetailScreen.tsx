@@ -1,7 +1,7 @@
 import { useAction } from '@reatom/npm-react'
 import { type Href, Stack, useLocalSearchParams, useRouter } from 'expo-router'
 import { useMemo, useState } from 'react'
-import { Text, View } from 'react-native'
+import { View } from 'react-native'
 import DraggableFlatList, { type RenderItemParams } from 'react-native-draggable-flatlist'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useAdminDetailHeader } from 'widgets/admin-form-header'
@@ -11,8 +11,7 @@ import { AdminContentSkeleton, EmptyState } from 'shared/ui'
 import { ConfirmDialog } from 'shared/ui/confirm-dialog'
 import { useTheme } from 'shared/ui/theme'
 import { useAdminPlaylistDetail } from '../lib/useAdminPlaylistDetail'
-import { PlaylistDetailHeader } from './PlaylistDetailHeader'
-import { PlaylistDetailSectionRow } from './PlaylistDetailSectionRow'
+import { PlaylistDetailListHeader } from './PlaylistDetailListHeader'
 import { PlaylistDetailSermonRow } from './PlaylistDetailSermonRow'
 import { styles } from './styles'
 
@@ -24,7 +23,8 @@ export const AdminPlaylistDetailScreen = () => {
   const { currentTheme } = useTheme()
   const params = useLocalSearchParams<{ id: string }>()
   const id = params.id ?? ''
-  const { isDeleting, isNotFound, playlist, remove, reorder, sermons } = useAdminPlaylistDetail(id)
+  const { isDeleting, isNotFound, playlist, refresh, remove, reorder, sermons } =
+    useAdminPlaylistDetail(id)
   const showToastAction = useAction(showToast)
   const [isDeleteOpen, setIsDeleteOpen] = useState(false)
 
@@ -89,28 +89,7 @@ export const AdminPlaylistDetailScreen = () => {
         onDragEnd={({ data }) => void reorder(data)}
         ListEmptyComponent={<EmptyState message='Проповедей пока нет' />}
         ListHeaderComponent={
-          <View>
-            <PlaylistDetailHeader playlist={playlist} sermonsCount={sermons.length} />
-            {playlist.sections.length > 0 ? (
-              <>
-                <Text style={[styles.sermonsTitle, { color: currentTheme.text }]}>
-                  {`Разделы (${playlist.sections.length})`}
-                </Text>
-                {playlist.sections.map(section => (
-                  <PlaylistDetailSectionRow
-                    key={section.id}
-                    section={section}
-                    onPress={() =>
-                      router.push({ params: { id: section.id }, pathname: '/admin/sections/[id]' })
-                    }
-                  />
-                ))}
-              </>
-            ) : null}
-            <Text style={[styles.sermonsTitle, { color: currentTheme.text }]}>
-              {`Проповеди плейлиста (${sermons.length})`}
-            </Text>
-          </View>
+          <PlaylistDetailListHeader refresh={refresh} sermons={sermons} playlist={playlist} />
         }
       />
       <ConfirmDialog

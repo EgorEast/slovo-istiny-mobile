@@ -33,7 +33,7 @@
 - **Правило именования:** в `ThemeContext/` нет двух файлов, отличающихся только регистром имени (`ThemeContext.ts` переименован в `ThemeContextValue.ts`): на case-insensitive ФС (macOS по умолчанию) `./themeContext` резолвится в `themeContext.ts` → case-insensitive матчинг с типом-only `ThemeContext.ts`, ломая tsc (TS1149/TS2305), jest (`Cannot read properties of undefined (reading 'Provider')`) и typed-линт. Новые файлы не должны отличаться от соседей только регистром.
 - Также есть мутируемый объект `COLORS` + `updateCOLORS()` — `src/shared/ui/theme/colors.ts` (инициализируется `initializeCOLORS(ctx)` в `themed.ts`).
 
-**Правило:** мутируемые слоты темы (`primary`, `background`, `card`, `surface`, `text`, `textMuted`, `placeholder`, `skeleton`, `icon`, `backdrop`, `tabBarActive`) **никогда** не захватываются внутри `StyleSheet.create` — `StyleSheet.create` фиксирует примитив на момент вычисления модуля, и цвет перестаёт следовать за сменой темы/динамических цветов. Цвета темы задавай через `useTheme()` + инлайн-стиль; `COLORS.<slot>` в styles-файлах допустим только для статичных слотов (`white`, `black`, `disabled` и т.п.).
+**Правило:** мутируемые слоты темы (`primary`, `background`, `card`, `surface`, `text`, `textMuted`, `placeholder`, `skeleton`, `icon`, `backdrop`) **никогда** не захватываются внутри `StyleSheet.create` — `StyleSheet.create` фиксирует примитив на момент вычисления модуля, и цвет перестаёт следовать за сменой темы/динамических цветов. Цвета темы задавай через `useTheme()` + инлайн-стиль; `COLORS.<slot>` в styles-файлах допустим только для статичных слотов (`white`, `black`, `disabled` и т.п.).
 
 ## Токены
 

@@ -29,7 +29,7 @@ describe('useSortedPlaylists', () => {
       playlist('c', [SERMON]),
     ])
 
-    const { result } = await renderHookWithProviders(() => useSortedPlaylists(SERMON.id), { ctx })
+    const { result } = await renderHookWithProviders(() => useSortedPlaylists([SERMON.id]), { ctx })
 
     expect(result.current.map(membership => membership.playlist.id)).toEqual([
       'favorites',
@@ -43,5 +43,19 @@ describe('useSortedPlaylists', () => {
       true,
       false,
     ])
+  })
+
+  test('treats a playlist as contained only when it holds every id of the set', async () => {
+    const ctx = createCtx()
+    const second: SermonData = { ...SERMON, id: 'sermon-2' }
+    myPlaylistsAtom(ctx, [playlist('a', [SERMON]), playlist('b', [SERMON, second])])
+
+    const { result } = await renderHookWithProviders(
+      () => useSortedPlaylists([SERMON.id, second.id]),
+      { ctx },
+    )
+
+    expect(result.current.map(membership => membership.playlist.id)).toEqual(['b', 'a'])
+    expect(result.current.map(membership => membership.isContained)).toEqual([true, false])
   })
 })

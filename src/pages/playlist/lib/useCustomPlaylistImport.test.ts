@@ -8,6 +8,7 @@ const mockSetParams = jest.fn()
 const mockLoad = jest.fn()
 const mockCreate = jest.fn()
 const mockShowToast = jest.fn()
+const GENERATED_ID = 'generated-uuid'
 let mockLoadedPlaylists: unknown[] = []
 let mockParams: {
   custom?: null | string
@@ -26,9 +27,9 @@ jest.mock('entities/playlist', () => {
   const actual = jest.requireActual('entities/playlist')
   return {
     ...actual,
-    createLocalPlaylist: action((_ctx: unknown, input: { id: string }) => {
+    createLocalPlaylist: action((_ctx: unknown, input: { id?: string }) => {
       mockCreate(input)
-      return Promise.resolve({ id: input.id })
+      return Promise.resolve({ id: input.id ?? GENERATED_ID })
     }, 'createLocalPlaylistMock'),
     loadMyPlaylists: action(() => {
       mockLoad()
@@ -48,6 +49,7 @@ jest.mock('shared/model', () => {
 })
 
 const IMPORT_TITLE = 'Импорт'
+const FAVORITES = { id: 'favorites', sermonIds: [], sermons: [], title: 'Избранные' }
 
 describe('useCustomPlaylistImport', () => {
   beforeEach(() => {
@@ -56,70 +58,81 @@ describe('useCustomPlaylistImport', () => {
     mockParams = {}
   })
 
-  test('hydrates playlists before creating, then replaces the route', async () => {
+  test('imports a valid link without rewriting the route and returns the created id', async () => {
     mockParams = { custom: null, sermons: 's1', title: IMPORT_TITLE }
     const id = deriveCustomPlaylistId({ sermonIds: ['s1'], title: IMPORT_TITLE })
 
+    const { result } = await renderHookWithProviders(() => useCustomPlaylistImport())
+    await act(async () => {})
+
+    expect(mockCreate).toHaveBeenCalledWith({ id, sermonIds: ['s1'], title: IMPORT_TITLE })
+    expect(result.current.importedPlaylistId).toBe(id)
+    expect(mockReplace).not.toHaveBeenCalled()
+  })
+
+  test('hydrates playlists before creating', async () => {
+    mockParams = { custom: null, sermons: 's1', title: IMPORT_TITLE }
+
     await renderHookWithProviders(() => useCustomPlaylistImport())
     await act(async () => {})
 
-    expect(mockLoad).toHaveBeenCalledTimes(1)
-    expect(mockCreate).toHaveBeenCalledWith({ id, sermonIds: ['s1'], title: IMPORT_TITLE })
     expect(mockLoad.mock.invocationCallOrder[0]).toBeLessThan(
       mockCreate.mock.invocationCallOrder[0],
     )
-    expect(mockReplace).toHaveBeenCalledWith({
-      params: { playlist: id },
-      pathname: '/listen/playlist',
-    })
   })
 
-  test('lets a custom link win over a stale playlist param', async () => {
-    mockParams = { custom: null, playlist: 'server-1', sermons: 's1', title: IMPORT_TITLE }
-    const id = deriveCustomPlaylistId({ sermonIds: ['s1'], title: IMPORT_TITLE })
-
-    await renderHookWithProviders(() => useCustomPlaylistImport())
-    await act(async () => {})
-
-    expect(mockCreate).toHaveBeenCalledWith({ id, sermonIds: ['s1'], title: IMPORT_TITLE })
-  })
-
-  test('reuses the playlist of the same link instead of duplicating it', async () => {
+  test('reuses the same-content playlist of the same link instead of duplicating it', async () => {
     mockParams = { custom: null, sermons: 'b,a', title: IMPORT_TITLE }
     const id = deriveCustomPlaylistId({ sermonIds: ['b', 'a'], title: IMPORT_TITLE })
     mockLoadedPlaylists = [
-      { id: 'favorites', sermonIds: [], sermons: [], title: 'Избранные' },
+      FAVORITES,
       { id, sermonIds: ['b', 'a'], sermons: [], title: IMPORT_TITLE },
     ]
 
-    await renderHookWithProviders(() => useCustomPlaylistImport())
+    const { result } = await renderHookWithProviders(() => useCustomPlaylistImport())
     await act(async () => {})
 
     expect(mockCreate).not.toHaveBeenCalled()
-    expect(mockReplace).toHaveBeenCalledWith({
-      params: { playlist: id },
-      pathname: '/listen/playlist',
-    })
+    expect(result.current.importedPlaylistId).toBe(id)
+    expect(mockReplace).not.toHaveBeenCalled()
   })
 
-  test('creates a new playlist when only a same-content playlist with another id exists', async () => {
+  test('creates a new playlist when a stored same-id playlist was renamed', async () => {
     mockParams = { custom: null, sermons: 'b,a', title: IMPORT_TITLE }
     const id = deriveCustomPlaylistId({ sermonIds: ['b', 'a'], title: IMPORT_TITLE })
-    mockLoadedPlaylists = [
-      { id: 'favorites', sermonIds: [], sermons: [], title: 'Избранные' },
-      { id: 'local-uuid', sermonIds: ['b', 'a'], sermons: [], title: IMPORT_TITLE },
-    ]
+    mockLoadedPlaylists = [FAVORITES, { id, sermonIds: ['b', 'a'], sermons: [], title: 'Другое' }]
 
-    await renderHookWithProviders(() => useCustomPlaylistImport())
+    const { result } = await renderHookWithProviders(() => useCustomPlaylistImport())
     await act(async () => {})
 
-    expect(mockCreate).toHaveBeenCalledWith({ id, sermonIds: ['b', 'a'], title: IMPORT_TITLE })
+    expect(mockCreate).toHaveBeenCalledWith({
+      id: undefined,
+      sermonIds: ['b', 'a'],
+      title: IMPORT_TITLE,
+    })
+    expect(result.current.importedPlaylistId).toBe(GENERATED_ID)
+  })
+
+  test('creates a new playlist when the stored same-id playlist lost a sermon', async () => {
+    mockParams = { custom: null, sermons: 'b,a', title: IMPORT_TITLE }
+    const id = deriveCustomPlaylistId({ sermonIds: ['b', 'a'], title: IMPORT_TITLE })
+    mockLoadedPlaylists = [FAVORITES, { id, sermonIds: ['b'], sermons: [], title: IMPORT_TITLE }]
+
+    const { result } = await renderHookWithProviders(() => useCustomPlaylistImport())
+    await act(async () => {})
+
+    expect(mockCreate).toHaveBeenCalledWith({
+      id: undefined,
+      sermonIds: ['b', 'a'],
+      title: IMPORT_TITLE,
+    })
+    expect(result.current.importedPlaylistId).toBe(GENERATED_ID)
   })
 
   test('shows a toast and clears an invalid link', async () => {
     mockParams = { custom: null, sermons: 's1', title: '   ' }
 
-    await renderHookWithProviders(() => useCustomPlaylistImport())
+    const { result } = await renderHookWithProviders(() => useCustomPlaylistImport())
     await act(async () => {})
 
     expect(mockShowToast).toHaveBeenCalledTimes(1)
@@ -129,17 +142,19 @@ describe('useCustomPlaylistImport', () => {
       title: undefined,
     })
     expect(mockCreate).not.toHaveBeenCalled()
+    expect(result.current.importedPlaylistId).toBeNull()
   })
 
   test('does nothing when there is no custom marker', async () => {
     mockParams = { playlist: 'server-1' }
 
-    await renderHookWithProviders(() => useCustomPlaylistImport())
+    const { result } = await renderHookWithProviders(() => useCustomPlaylistImport())
     await act(async () => {})
 
     expect(mockLoad).not.toHaveBeenCalled()
     expect(mockCreate).not.toHaveBeenCalled()
     expect(mockReplace).not.toHaveBeenCalled()
+    expect(result.current.importedPlaylistId).toBeNull()
   })
 
   test('imports a playlist from the packed sermon ids form', async () => {

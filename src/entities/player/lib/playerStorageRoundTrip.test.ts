@@ -106,14 +106,20 @@ describe('player storage round-trip (save ↔ restore)', () => {
     expect(restored?.artwork).toBeNull()
   })
 
-  test('drops heavy nested playlists before persisting', async () => {
+  test('projects heavy nested playlists into light refs before persisting', async () => {
     const restored = await writeThenRestoreAudio({
       ...BASE_AUDIO,
       playlists: [BASE_PLAYLIST],
     })
 
-    expect(await readRaw(CURRENT_AUDIO)).not.toHaveProperty('playlists')
-    expect(restored?.playlists).toBeUndefined()
+    const lightRef = {
+      artwork: null,
+      id: 'playlist-1',
+      sermons: [],
+      title: 'Nested playlist',
+    }
+    expect(await readRaw(CURRENT_AUDIO)).toHaveProperty('playlists', [lightRef])
+    expect(restored?.playlists).toEqual([lightRef])
   })
 
   test('restores despite a nested playlist whose sermon lost its artwork key', async () => {

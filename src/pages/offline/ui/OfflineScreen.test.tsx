@@ -170,6 +170,9 @@ describe('<OfflineScreen>', () => {
 
     await act(async () => {
       fireEvent.press(getByText('Добавить в плейлист'))
+      // The modal mounts one frame later so the context menu's native Modal
+      // dismisses first; flush the scheduled requestAnimationFrame.
+      await new Promise(resolve => setTimeout(resolve, 0))
     })
 
     const checkboxes = getAllByRole('checkbox')

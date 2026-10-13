@@ -1,8 +1,8 @@
 import { ErrorModal } from 'shared/ui/error-modal'
 import { useLocalPlaylistPublish } from '../lib/useLocalPlaylistPublish'
 import { usePlaylistCacheError } from '../lib/usePlaylistCacheError'
-import { usePlaylistDeleteMenu } from '../lib/usePlaylistDeleteMenu'
 import { usePlaylistHistoryMenu } from '../lib/usePlaylistHistoryMenu'
+import { usePlaylistManagementMenu } from '../lib/usePlaylistManagementMenu'
 import { usePlaylistOfflineMenu } from '../lib/usePlaylistOfflineMenu'
 import { usePlaylistShare } from '../lib/usePlaylistShare'
 import { PlaylistHeaderActions } from './PlaylistHeaderActions'
@@ -17,6 +17,7 @@ export const PlaylistHeaderMenu = ({
   accessibilityLabel = DEFAULT_MENU_LABEL,
   iconColor,
   isEditEnabled = false,
+  onAddAllToPlaylist,
   playlist,
   playlistTitle,
   tracksData,
@@ -45,6 +46,13 @@ export const PlaylistHeaderMenu = ({
   } = usePlaylistOfflineMenu(tracksData, playlistTitle)
 
   const closeMenu = () => setMenuVisible(false)
+  const handleAddAllToPlaylist =
+    onAddAllToPlaylist && playlist.sermons.length > 0
+      ? () => {
+          closeMenu()
+          onAddAllToPlaylist(playlist)
+        }
+      : undefined
   const historyMenu = usePlaylistHistoryMenu(playlist, closeMenu)
   const { error, handleErrorClose } = usePlaylistCacheError(cacheDialogVisible)
   const { canShare, handleShare } = usePlaylistShare(playlist, closeMenu)
@@ -52,10 +60,8 @@ export const PlaylistHeaderMenu = ({
     playlist,
     closeMenu,
   )
-  const { canDelete, renderDialog, requestDelete } = usePlaylistDeleteMenu(
-    isEditEnabled && isLocalPlaylist,
-    closeMenu,
-  )
+  const { canClear, canDelete, renderDialogs, requestClear, requestDelete } =
+    usePlaylistManagementMenu(isEditEnabled && isLocalPlaylist, closeMenu)
 
   return (
     <>
@@ -71,6 +77,7 @@ export const PlaylistHeaderMenu = ({
       <PlaylistHeaderMenuDropdown
         anchor={menuAnchor}
         onClose={closeMenu}
+        canClear={canClear}
         anchorRef={buttonRef}
         visible={menuVisible}
         canDelete={canDelete}
@@ -83,9 +90,11 @@ export const PlaylistHeaderMenu = ({
         onStopCaching={handleStopCaching}
         canMarkAll={historyMenu.canMarkAll}
         onClearCache={handleClearCacheOption}
+        onClear={() => requestClear(playlist.id)}
         onDelete={() => requestDelete(playlist.id)}
         onMarkAll={historyMenu.handleMarkAllOption}
         isClearCacheDisabled={isClearCacheDisabled}
+        onAddAllToPlaylist={handleAddAllToPlaylist}
         isOfflineItemsVisible={isOfflineItemsVisible}
         onAddAllToOffline={handleAddAllToOfflineOption}
         onRemoveFromHistory={historyMenu.handleRemoveOption}
@@ -115,7 +124,7 @@ export const PlaylistHeaderMenu = ({
 
       <ErrorModal error={error} visible={error !== null} onClose={handleErrorClose} />
 
-      {renderDialog()}
+      {renderDialogs()}
     </>
   )
 }

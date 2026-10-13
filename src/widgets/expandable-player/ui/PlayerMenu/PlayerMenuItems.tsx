@@ -107,7 +107,7 @@ export const PlayerMenuItems = ({
       {onRemoveFromPlaylist && (
         <PressableButton style={styles.menuItem} onPress={onRemoveFromPlaylist}>
           <Text style={[styles.menuItemText, { color: currentTheme.text }]}>
-            Удалить из текущего плейлиста
+            Удалить из текущего плейлиста и открыть в другом
           </Text>
         </PressableButton>
       )}

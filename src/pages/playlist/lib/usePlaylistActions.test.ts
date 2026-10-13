@@ -14,6 +14,12 @@ jest.mock('entities/player', () => ({
   usePlayNewSermon: jest.fn(() => jest.fn()),
 }))
 
+const mockUseIsLocalPlaylist = jest.fn()
+
+jest.mock('entities/playlist', () => ({
+  useIsLocalPlaylist: (id: string) => mockUseIsLocalPlaylist(id),
+}))
+
 const SERMON_1 = {
   artist: 'Автор',
   artwork: 'art1.jpg',
@@ -46,6 +52,7 @@ const SERVER_PLAYLIST_ID = '123e4567-e89b-42d3-a456-426614174000'
 describe('usePlaylistActions', () => {
   beforeEach(() => {
     jest.clearAllMocks()
+    mockUseIsLocalPlaylist.mockReturnValue(false)
   })
 
   test('buildMenuActions builds history actions for playable sermon', async () => {
@@ -165,6 +172,7 @@ describe('usePlaylistActions', () => {
   })
 
   test('buildMenuActions adds the removal item right after add-to-playlist for a custom playlist', async () => {
+    mockUseIsLocalPlaylist.mockReturnValue(true)
     const onRemoveRequest = jest.fn()
     const playlist = { ...PLAYLIST, id: CUSTOM_PLAYLIST_ID }
 
@@ -184,6 +192,7 @@ describe('usePlaylistActions', () => {
   })
 
   test('buildMenuActions adds the removal item for the favorites playlist', async () => {
+    mockUseIsLocalPlaylist.mockReturnValue(true)
     const onRemoveRequest = jest.fn()
     const playlist = { ...PLAYLIST, id: 'favorites' }
 
@@ -198,7 +207,23 @@ describe('usePlaylistActions', () => {
     expect(actions?.map(action => action.text)).toContain(REMOVE_FROM_PLAYLIST_TEXT)
   })
 
-  test('buildMenuActions omits the removal item for a server playlist', async () => {
+  test('buildMenuActions adds the removal item for a UUID-id playlist that is local', async () => {
+    mockUseIsLocalPlaylist.mockReturnValue(true)
+    const onRemoveRequest = jest.fn()
+    const playlist = { ...PLAYLIST, id: SERVER_PLAYLIST_ID }
+
+    const { result } = await renderHookWithProviders(
+      () =>
+        usePlaylistActions([SERMON_1], playlist, new Set(), new Map(), undefined, onRemoveRequest),
+      {},
+    )
+
+    const actions = result.current.buildMenuActions(0)
+
+    expect(actions?.map(action => action.text)).toContain(REMOVE_FROM_PLAYLIST_TEXT)
+  })
+
+  test('buildMenuActions omits the removal item for a UUID-id playlist that is not local', async () => {
     const onRemoveRequest = jest.fn()
     const playlist = { ...PLAYLIST, id: SERVER_PLAYLIST_ID }
 
@@ -214,6 +239,7 @@ describe('usePlaylistActions', () => {
   })
 
   test('buildMenuActions omits the removal item when no request handler is provided', async () => {
+    mockUseIsLocalPlaylist.mockReturnValue(true)
     const playlist = { ...PLAYLIST, id: CUSTOM_PLAYLIST_ID }
 
     const { result } = await renderHookWithProviders(
@@ -227,6 +253,7 @@ describe('usePlaylistActions', () => {
   })
 
   test('removal item requests removal with the sermon instead of removing directly', async () => {
+    mockUseIsLocalPlaylist.mockReturnValue(true)
     const onRemoveRequest = jest.fn()
     const playlist = { ...PLAYLIST, id: CUSTOM_PLAYLIST_ID }
 
