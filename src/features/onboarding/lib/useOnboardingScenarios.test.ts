@@ -60,18 +60,23 @@ describe('useOnboardingScenarios', () => {
     expect(ids.slice(-2)).toEqual(['welcome', 'whatsNew'])
   })
 
-  test('default scope keeps the screen scenarios', async () => {
+  test('default scope keeps the screen scenarios and drops the player scope', async () => {
     const { result } = await renderHookWithProviders(() => useOnboardingScenarios('default'))
 
-    expect(scenarioIds(result.current)).toEqual(expect.arrayContaining(['listen', 'player']))
+    const ids = scenarioIds(result.current)
+    expect(ids).toEqual(expect.arrayContaining(['listen', 'player']))
+    expect(ids).not.toContain('player-intro')
+    expect(ids).not.toContain('player-speed')
   })
 
   test('player scope returns only player-scope scenarios', async () => {
     const { result } = await renderHookWithProviders(() => useOnboardingScenarios('player'))
 
-    // Player-scope scenarios are registered in a later change; the default
-    // screen scenarios never leak into the player scope.
-    expect(scenarioIds(result.current)).not.toContain('listen')
-    expect(scenarioIds(result.current)).not.toContain('player')
+    expect(scenarioIds(result.current)).toEqual([
+      'player-intro',
+      'player-description',
+      'player-speed',
+      'player-sound',
+    ])
   })
 })

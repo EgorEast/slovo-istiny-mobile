@@ -3,8 +3,8 @@ import { FONT_SIZES, INDENTS, RADIUSES } from 'shared/ui/theme'
 
 // Horizontal inset so the pill never slides under the 48×48 close button
 // (expandedControlsStyles.closeButton: left: INDENTS.medium, width: 48) or the
-// symmetric 48×48 stop-all button (expandedControlsStyles.stopAllButton:
-// right: INDENTS.medium, width: 48).
+// always-on 48×48 help button that owns the right slot (expandedControlsStyles
+// .helpButton: right: INDENTS.medium, width: 48).
 const CLOSE_BUTTON_SAFE_AREA = INDENTS.medium + 48 + INDENTS.medium
 
 export const expandedTrackStyles = StyleSheet.create({

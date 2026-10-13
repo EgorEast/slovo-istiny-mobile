@@ -1,19 +1,17 @@
-import { Entypo } from '@expo/vector-icons'
 import { useState } from 'react'
 import { Text, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { type TrackCacheVisualState } from 'entities/offline-cache'
-import { PlayerRepeatToggle, SermonPlayerControls } from 'entities/player'
 import { type PlaylistData } from 'entities/playlist'
 import { type AudioPlayerData } from 'entities/sermon'
 import { millisToMinutesAndSeconds } from 'shared/lib/player'
 import { MovingText } from 'shared/ui'
-import { IconButton } from 'shared/ui/icon-button'
 import { getFullscreenPlayerBottomPadding } from '../../lib/getFullscreenPlayerBottomPadding'
 import { getPlayerSubtitle } from '../../lib/getPlayerSubtitle'
 import { type createStyles } from '../ExpandablePlayer/styles'
 import { BoundaryHint } from './BoundaryHint'
 import { FullscreenDownloadProgressBar } from './FullscreenDownloadProgressBar'
+import { PlayerControlsRow } from './PlayerControlsRow'
 import { PlayerMenuAnchor } from './PlayerMenuAnchor'
 
 export const PlayerControlsSection = ({
@@ -86,6 +84,7 @@ export const PlayerControlsSection = ({
           onAddToPlaylist={onAddToPlaylist}
           onOpenMenu={() => setShowMenu(true)}
           onOpenSoundSettings={onOpenSoundSettings}
+          onboardingTargetId='player-fullscreen.menu'
         />
       </View>
       <View style={styles.progressRow}>
@@ -106,20 +105,12 @@ export const PlayerControlsSection = ({
       </View>
       <View style={styles.controlsArea}>
         <BoundaryHint styles={styles} />
-        <View style={styles.controlsRow}>
-          <PlayerRepeatToggle style={styles.sideControl} />
-          <SermonPlayerControls
-            variant='fullscreen'
-            onPressOutSeek={stopSeek}
-            onLongPressSeek={startSeek}
-          />
-          <IconButton
-            onPress={onOpenPlaylist}
-            style={styles.sideControl}
-            accessibilityLabel='Открыть плейлист'
-            Icon={<Entypo name='list' style={styles.controlIcon} />}
-          />
-        </View>
+        <PlayerControlsRow
+          styles={styles}
+          stopSeek={stopSeek}
+          startSeek={startSeek}
+          onOpenPlaylist={onOpenPlaylist}
+        />
       </View>
     </View>
   )

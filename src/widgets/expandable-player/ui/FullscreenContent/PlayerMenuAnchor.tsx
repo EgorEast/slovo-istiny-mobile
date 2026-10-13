@@ -3,6 +3,7 @@ import { useCtx } from '@reatom/npm-react'
 import { useState } from 'react'
 import { View } from 'react-native'
 import { useContinuePlayback } from 'features/continue-playback'
+import { OnboardingTarget } from 'features/onboarding'
 import { type TrackCacheVisualState } from 'entities/offline-cache'
 import { currentPlaylistAtom, resetPlaybackAction } from 'entities/player'
 import { myPlaylistsAtom, togglePlaylistSermon } from 'entities/playlist'
@@ -31,6 +32,7 @@ export const PlayerMenuAnchor = ({
   audio,
   isCached,
   onAddToPlaylist,
+  onboardingTargetId,
   onOpenMenu,
   onOpenSoundSettings,
   onShowDetails,
@@ -43,6 +45,7 @@ export const PlayerMenuAnchor = ({
   audio: AudioPlayerData
   isCached?: boolean
   onAddToPlaylist?: (sermon: AudioPlayerData) => void
+  onboardingTargetId?: string
   onOpenMenu: () => void
   onOpenSoundSettings: () => void
   onShowDetails: () => void
@@ -83,12 +86,14 @@ export const PlayerMenuAnchor = ({
 
   return (
     <View style={styles.menuContainer}>
-      <IconButton
-        onPress={handleOpenMenu}
-        style={styles.menuButton}
-        accessibilityLabel='Меню плеера'
-        Icon={<Entypo style={styles.menuIcon} name='dots-three-vertical' />}
-      />
+      <OnboardingTarget id={onboardingTargetId}>
+        <IconButton
+          onPress={handleOpenMenu}
+          style={styles.menuButton}
+          accessibilityLabel='Меню плеера'
+          Icon={<Entypo style={styles.menuIcon} name='dots-three-vertical' />}
+        />
+      </OnboardingTarget>
       {showMenu && (
         <PlayerMenu
           audio={audio}

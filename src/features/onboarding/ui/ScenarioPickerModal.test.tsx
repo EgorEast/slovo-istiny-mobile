@@ -149,9 +149,15 @@ describe('<ScenarioPickerModal>', () => {
     await renderPicker('player')
 
     expect(screen.queryByText(SCREEN_GROUP_TITLE)).toBeNull()
+    expect(screen.getByText(PLAYER_GROUP_TITLE)).toBeTruthy()
     expect(screen.getByText(GLOBAL_GROUP_TITLE)).toBeTruthy()
-    // No player-scope scenarios exist yet — the group stays empty.
-    expect(screen.queryByText(PLAYER_GROUP_TITLE)).toBeNull()
-    expectRowTitles(['Добро пожаловать', 'Что нового'])
+    expectRowTitles([
+      'Экран плеера',
+      'Подробнее и таймкоды',
+      'Скорость прослушивания',
+      'Настройка звука',
+      'Добро пожаловать',
+      'Что нового',
+    ])
   })
 })

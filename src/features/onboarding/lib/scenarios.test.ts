@@ -51,6 +51,41 @@ describe('onboarding scenario data', () => {
     expect(scenariosById.read.steps[0].tapTargetId).toBe('tab.read')
     expect(scenariosById.study.steps[0].tapTargetId).toBe('tab.study')
   })
+
+  test('player-scope scenarios are scoped to the player and never route-bound', () => {
+    const playerScenarioIds = [
+      'player-intro',
+      'player-description',
+      'player-speed',
+      'player-sound',
+    ] as const
+
+    playerScenarioIds.forEach(id => {
+      const scenario = scenariosById[id]
+
+      expect(scenario.scope).toBe('player')
+      expect(scenario.screens).toBeUndefined()
+    })
+  })
+
+  test('player-intro walks edges, controls, repeat, playlist and menu', () => {
+    const intro = scenariosById['player-intro']
+
+    expect(intro.steps).toHaveLength(5)
+    expect(intro.steps[0].targetId).toBeUndefined()
+    expect(intro.steps[1].targetId).toBe('player-fullscreen.controls')
+    expect(intro.steps[2].targetId).toBe('player-fullscreen.repeat')
+    expect(intro.steps[3].targetId).toBe('player-fullscreen.playlist')
+    expect(intro.steps[4].targetId).toBe('player-fullscreen.menu')
+  })
+
+  test('menu-driven player scenarios open the player menu first', () => {
+    const menuTargetId = 'player-fullscreen.menu'
+
+    expect(scenariosById['player-description'].steps[0].targetId).toBe(menuTargetId)
+    expect(scenariosById['player-speed'].steps[0].targetId).toBe(menuTargetId)
+    expect(scenariosById['player-sound'].steps[0].targetId).toBe(menuTargetId)
+  })
 })
 
 describe('resolveStepRoute', () => {
