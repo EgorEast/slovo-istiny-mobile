@@ -42,12 +42,18 @@ export const endOnboardingTour = action(ctx => {
   onboardingTargetRectsAtom(ctx, {})
 }, 'endOnboardingTour')
 
+const isSameRect = (a: OnboardingTargetRect, b: OnboardingTargetRect) =>
+  a.x === b.x && a.y === b.y && a.width === b.width && a.height === b.height
+
 export const registerOnboardingTargetRect = action(
   (ctx, payload: { id: string; rect: OnboardingTargetRect }) => {
-    onboardingTargetRectsAtom(ctx, {
-      ...ctx.get(onboardingTargetRectsAtom),
-      [payload.id]: payload.rect,
-    })
+    const rects = ctx.get(onboardingTargetRectsAtom)
+    const existing = rects[payload.id]
+    // Repeated measurements of a settled target are the common case (the bounded
+    // re-measure schedule), so skip the write when the rect is unchanged.
+    if (existing !== undefined && isSameRect(existing, payload.rect)) return
+
+    onboardingTargetRectsAtom(ctx, { ...rects, [payload.id]: payload.rect })
   },
   'registerOnboardingTargetRect',
 )

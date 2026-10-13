@@ -6,6 +6,11 @@ import { onboardingTourAtom, registerOnboardingTargetRect } from '../model'
 import { scenariosById } from './scenarios'
 
 const MEASURE_DELAY_MS = 100
+// The active target is re-measured a bounded number of times after activation:
+// async content (lists loading) and the navigation transition shift the layout
+// after the first frame, so a single early measurement can land the highlight in
+// the wrong place.
+const MEASURE_SAMPLE_DELAYS_MS = [100, 500, 1200, 2500]
 
 interface TargetMeasureInput {
   getNode: () => null | View
@@ -36,15 +41,23 @@ export const useTargetMeasure = ({ getNode, id }: TargetMeasureInput) => {
   }, [getNode, id, register])
 
   // Register every mounted target once the tour starts — a tap hint may reference
-  // a target that is not the active step's own target. Also re-measure when this
-  // target becomes (or stops being) the active step's target so its rect stays
-  // fresh across step changes (needed for auto-scroll in both directions).
+  // a target that is not the active step's own target.
   useEffect(() => {
-    if (!isTourActive && !isActive) return
+    if (isActive || !isTourActive) return
 
     const timer = setTimeout(measure, MEASURE_DELAY_MS)
     return () => clearTimeout(timer)
   }, [isActive, isTourActive, measure])
+
+  // The active target re-measures on a bounded schedule so the highlight follows
+  // the screen as it settles (async data loads, transition offsets). Timers are
+  // cleared when the target deactivates or unmounts.
+  useEffect(() => {
+    if (!isActive) return
+
+    const timers = MEASURE_SAMPLE_DELAYS_MS.map(delay => setTimeout(measure, delay))
+    return () => timers.forEach(clearTimeout)
+  }, [isActive, measure])
 
   useEffect(() => {
     if (!isActive) return
