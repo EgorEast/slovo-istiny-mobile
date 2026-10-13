@@ -1,5 +1,7 @@
 import { screen } from '@testing-library/react-native'
+import { StyleSheet } from 'react-native'
 import { renderWithProviders } from 'shared/mocks'
+import { INDENTS } from 'shared/ui/theme'
 import { type ScenarioScope } from '../lib/scenarios'
 import { ScenarioPickerModal } from './ScenarioPickerModal'
 
@@ -153,6 +155,16 @@ describe('<ScenarioPickerModal>', () => {
 
     expect(screen.queryByText(SCREEN_GROUP_TITLE)).toBeNull()
     expect(screen.getByText(GLOBAL_GROUP_TITLE)).toBeTruthy()
+  })
+
+  test('bounds the scroll area and pads the last row above the system nav bar', async () => {
+    await renderPicker()
+
+    const scroll = screen.getByTestId('scenario-picker-scroll')
+
+    expect(StyleSheet.flatten(scroll.props.contentContainerStyle)).toMatchObject({
+      paddingBottom: INDENTS.low,
+    })
   })
 
   test('player scope shows only player scenarios plus the global auto tours', async () => {

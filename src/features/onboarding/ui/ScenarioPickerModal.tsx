@@ -1,6 +1,7 @@
 import { useAction } from '@reatom/npm-react'
 import { usePathname } from 'expo-router'
 import { ScrollView, StyleSheet, Text, View } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Modal } from 'shared/ui/modal'
 import { FONT_SIZES, INDENTS, useTheme } from 'shared/ui/theme'
 import { type OnboardingScenario, type ScenarioScope } from '../lib/scenarios'
@@ -12,6 +13,7 @@ const TITLE = 'Что посмотреть?'
 const SCREEN_GROUP_TITLE = 'На этом экране'
 const GLOBAL_GROUP_TITLE = 'Глобальные'
 const PLAYER_GROUP_TITLE = 'Плеер'
+const SCROLL_TEST_ID = 'scenario-picker-scroll'
 
 const isScenarioOnScreen = (scenario: OnboardingScenario, pathname: string) =>
   scenario.screens?.includes(pathname) ?? false
@@ -26,6 +28,7 @@ export const ScenarioPickerModal = ({
   visible: boolean
 }) => {
   const { currentTheme } = useTheme()
+  const insets = useSafeAreaInsets()
   const pathname = usePathname()
   const scenarios = useOnboardingScenarios(scope)
   const defaultScenarios = useOnboardingScenarios('default')
@@ -46,7 +49,10 @@ export const ScenarioPickerModal = ({
     <Modal visible={visible} onBackdropPress={onClose}>
       <View style={styles.container}>
         <Text style={[styles.title, { color: currentTheme.text }]}>{TITLE}</Text>
-        <ScrollView>
+        <ScrollView
+          testID={SCROLL_TEST_ID}
+          contentContainerStyle={{ paddingBottom: insets.bottom + INDENTS.low }}
+        >
           {scope === 'player' ? (
             <>
               <ScenarioPickerGroup
@@ -82,6 +88,11 @@ export const ScenarioPickerModal = ({
 
 const styles = StyleSheet.create({
   container: {
+    // Bound the scroll area to the shared Modal's maxHeight: flexShrink lets the
+    // column shrink to the contentContainer cap, so the ScrollView inside gets a
+    // viewport shorter than its content and actually scrolls (otherwise the last
+    // row is clipped by the contentContainer's `overflow: 'hidden'`).
+    flexShrink: 1,
     minWidth: '100%',
     paddingTop: INDENTS.medium,
   },
