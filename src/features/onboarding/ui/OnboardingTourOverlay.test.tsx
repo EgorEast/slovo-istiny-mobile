@@ -7,6 +7,7 @@ import {
   type OnboardingTargetRect,
   onboardingTargetRectsAtom,
   onboardingTourAtom,
+  registerOnboardingTargetRect,
 } from '../model'
 import { OnboardingTourOverlay } from './OnboardingTourOverlay'
 
@@ -54,6 +55,7 @@ const TAP_INDICATOR = 'tap-indicator'
 const DIM = 'tour-dim'
 const MISSING_TARGET_TIMEOUT_MS = 1200
 const TAP_PHASE_TIMEOUT_MS = 3500
+const HOLD_TIMEOUT_MS = 1200
 const SECTIONS_RECT: OnboardingTargetRect = { height: 4, width: 3, x: 1, y: 2 }
 const OFFSCREEN_RECT: OnboardingTargetRect = { height: 60, width: 300, x: 0, y: 99999 }
 const TAB_MORE_RECT: OnboardingTargetRect = { height: 60, width: 90, x: 300, y: 760 }
@@ -137,7 +139,9 @@ describe('<OnboardingTourOverlay>', () => {
 
     await renderAtStep('settings', 0)
 
-    await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('/more'))
+    await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('/more'), {
+      timeout: HOLD_TIMEOUT_MS,
+    })
   })
 
   test('renders nothing while the router is moving to the effective route', async () => {
@@ -163,6 +167,39 @@ describe('<OnboardingTourOverlay>', () => {
     await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('/more'), {
       timeout: TAP_PHASE_TIMEOUT_MS,
     })
+  })
+
+  test('holds navigation for a declared tap target until its rect registers, then blinks', async () => {
+    mockPathname.mockReturnValue('/settings')
+
+    const { ctx, queryByText } = await renderAtStep('settings', 0)
+
+    // No rect yet: navigation is held and no blink plays.
+    expect(mockNavigate).not.toHaveBeenCalled()
+    expect(queryByText(TAP_INDICATOR)).toBeNull()
+
+    await act(async () => {
+      registerOnboardingTargetRect(ctx, { id: 'tab.more', rect: TAB_MORE_RECT })
+    })
+
+    await waitFor(() => expect(queryByText(TAP_INDICATOR)).toBeTruthy())
+    await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('/more'), {
+      timeout: TAP_PHASE_TIMEOUT_MS,
+    })
+  })
+
+  test('navigates without a blink when the declared tap target never registers', async () => {
+    mockPathname.mockReturnValue('/settings')
+
+    const { queryByText } = await renderAtStep('settings', 0)
+
+    expect(queryByText(TAP_INDICATOR)).toBeNull()
+    expect(mockNavigate).not.toHaveBeenCalled()
+
+    await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('/more'), {
+      timeout: HOLD_TIMEOUT_MS,
+    })
+    expect(queryByText(TAP_INDICATOR)).toBeNull()
   })
 
   test('cancels the tap phase without navigating when the user reaches the route first', async () => {

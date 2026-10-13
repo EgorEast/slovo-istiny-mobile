@@ -8,12 +8,18 @@ import { getTourScrollable, isRectOutsideViewport, scrollOffsetFor } from './tou
 const RESCROLL_DELAYS_MS = [300, 700]
 
 interface TargetAutoScrollInput {
+  bottomInset: number
   id: string
   isActive: boolean
   measure: () => void
 }
 
-export const useTargetAutoScroll = ({ id, isActive, measure }: TargetAutoScrollInput) => {
+export const useTargetAutoScroll = ({
+  bottomInset,
+  id,
+  isActive,
+  measure,
+}: TargetAutoScrollInput) => {
   const [rects] = useAtom(onboardingTargetRectsAtom)
   const rect = rects[id]
   const hasScrolledRef = useRef(false)
@@ -38,7 +44,7 @@ export const useTargetAutoScroll = ({ id, isActive, measure }: TargetAutoScrollI
     if (hasScrolledRef.current || rect === undefined) return
 
     const viewportHeight = Dimensions.get('window').height
-    if (!isRectOutsideViewport(rect, viewportHeight, 0)) return
+    if (!isRectOutsideViewport(rect, viewportHeight, bottomInset)) return
 
     const scrollable = getTourScrollable()
     if (scrollable === null) return
@@ -46,5 +52,5 @@ export const useTargetAutoScroll = ({ id, isActive, measure }: TargetAutoScrollI
     hasScrolledRef.current = true
     scrollable.scrollTo(scrollOffsetFor(rect, viewportHeight), true)
     timersRef.current = RESCROLL_DELAYS_MS.map(delay => setTimeout(measure, delay))
-  }, [clearTimers, isActive, measure, rect])
+  }, [bottomInset, clearTimers, isActive, measure, rect])
 }
