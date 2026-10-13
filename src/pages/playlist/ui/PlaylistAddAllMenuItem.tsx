@@ -11,15 +11,23 @@ const ADD_ALL_TEXT = 'Добавить все проповеди в плейли
  * батч-режим модалки добавления (выбор целевого плейлиста), поэтому рендерится
  * только на экране плейлиста и при непустом плейлисте.
  * @param root0 - Пропсы пункта.
+ * @param root0.onboardingTargetId - Опциональный id цели онбординга.
  * @param root0.onPress - Открыть батч-модалку добавления.
  */
-export const PlaylistAddAllMenuItem = ({ onPress }: { onPress: () => void }) => {
+export const PlaylistAddAllMenuItem = ({
+  onboardingTargetId,
+  onPress,
+}: {
+  onboardingTargetId?: string
+  onPress: () => void
+}) => {
   const { currentTheme } = useTheme()
 
   return (
     <PlaylistMenuRow
       onPress={onPress}
       text={ADD_ALL_TEXT}
+      onboardingTargetId={onboardingTargetId}
       icon={<Ionicons size={ICON_SIZE} name={ADD_ALL_ICON} color={currentTheme.icon} />}
     />
   )

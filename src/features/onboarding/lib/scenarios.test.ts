@@ -149,13 +149,24 @@ describe('onboarding scenario data', () => {
     expect(search.steps[5].interactive).toBe(true)
   })
 
-  test('playlist-menu scenario targets playback and the header menu', () => {
+  test('playlist-menu opens the menu and walks every item separately', () => {
     const playlistMenu = scenariosById['playlist-menu']
 
     expect(playlistMenu.screens).toEqual(['/listen/playlist'])
-    expect(playlistMenu.steps).toHaveLength(6)
+    expect(playlistMenu.steps).toHaveLength(9)
     expect(playlistMenu.steps[0].targetId).toBe('playlist.playback')
     expect(playlistMenu.steps[1].targetId).toBe('playlist.menu')
+    expect(playlistMenu.steps[1].tapTargetId).toBe('playlist.menu')
+    expect(playlistMenu.steps[1].tapActionId).toBe('open-playlist-menu')
+    expect(playlistMenu.steps.slice(2).map(step => step.targetId)).toEqual([
+      'playlist.menu-share',
+      'playlist.menu-add-all',
+      'playlist.menu-publish',
+      'playlist.menu-offline-add',
+      'playlist.menu-history-mark',
+      'playlist.menu-clear',
+      'playlist.menu-delete',
+    ])
   })
 })
 

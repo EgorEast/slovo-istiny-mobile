@@ -1,11 +1,13 @@
 import { type ReactNode } from 'react'
 import { type ColorValue, StyleSheet, Text, View } from 'react-native'
+import { OnboardingTarget } from 'features/onboarding'
 import { PressableButton } from 'shared/ui/pressable-button'
 import { FONT_SIZES, INDENTS, useTheme } from 'shared/ui/theme'
 
 export interface PlaylistMenuRowProps {
   icon: ReactNode
   isDisabled?: boolean
+  onboardingTargetId?: string
   onPress: () => void
   text: string
   textColor?: ColorValue
@@ -14,6 +16,7 @@ export interface PlaylistMenuRowProps {
 export const PlaylistMenuRow = ({
   icon,
   isDisabled = false,
+  onboardingTargetId,
   onPress,
   text,
   textColor,
@@ -25,21 +28,23 @@ export const PlaylistMenuRow = ({
   }
 
   return (
-    <PressableButton
-      onPress={handlePress}
-      style={[styles.dropdownItem, isDisabled && styles.dropdownItemDisabled]}
-    >
-      <View style={styles.dropdownIcon}>{icon}</View>
-      <Text
-        style={[
-          styles.dropdownItemText,
-          { color: isDisabled ? currentTheme.textMuted : currentTheme.text },
-          textColor && { color: textColor },
-        ]}
+    <OnboardingTarget id={onboardingTargetId}>
+      <PressableButton
+        onPress={handlePress}
+        style={[styles.dropdownItem, isDisabled && styles.dropdownItemDisabled]}
       >
-        {text}
-      </Text>
-    </PressableButton>
+        <View style={styles.dropdownIcon}>{icon}</View>
+        <Text
+          style={[
+            styles.dropdownItemText,
+            { color: isDisabled ? currentTheme.textMuted : currentTheme.text },
+            textColor && { color: textColor },
+          ]}
+        >
+          {text}
+        </Text>
+      </PressableButton>
+    </OnboardingTarget>
   )
 }
 

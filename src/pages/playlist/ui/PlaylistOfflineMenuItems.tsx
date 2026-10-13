@@ -42,11 +42,13 @@ export const PlaylistOfflineMenuItems = ({
           onPress={onStopCaching}
           icon='stop-circle-outline'
           text='Остановить добавление в офлайн'
+          onboardingTargetId='playlist.menu-offline-add'
         />
       ) : (
         <PlaylistOfflineMenuItem
           onPress={onAddAllToOffline}
           isDisabled={isAddAllToOfflineDisabled}
+          onboardingTargetId='playlist.menu-offline-add'
           icon={allCached ? 'check-circle-outline' : 'cloud-download'}
           text={allCached ? 'Плейлист в офлайне' : 'Добавить все в офлайн'}
         />
@@ -57,6 +59,7 @@ export const PlaylistOfflineMenuItems = ({
         icon='cloud-off-outline'
         text='Удалить из офлайн все'
         isDisabled={isClearCacheDisabled}
+        onboardingTargetId='playlist.menu-offline-remove'
         textColor={isClearCacheDisabled ? COLORS.disabled : undefined}
         iconColor={isClearCacheDisabled ? COLORS.disabled : currentTheme.text}
       />

@@ -9,12 +9,14 @@ export const SHARE_TEXT = 'Поделиться плейлистом'
 
 export interface PlaylistShareMenuItemProps {
   isDisabled?: boolean
+  onboardingTargetId?: string
   onPress: () => void
   text: string
 }
 
 export const PlaylistShareMenuItem = ({
   isDisabled = false,
+  onboardingTargetId,
   onPress,
   text,
 }: PlaylistShareMenuItemProps) => {
@@ -25,6 +27,7 @@ export const PlaylistShareMenuItem = ({
       text={text}
       onPress={onPress}
       isDisabled={isDisabled}
+      onboardingTargetId={onboardingTargetId}
       icon={<Ionicons size={ICON_SIZE} name={SHARE_ICON} color={currentTheme.icon} />}
     />
   )

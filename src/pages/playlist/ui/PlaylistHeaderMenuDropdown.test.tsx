@@ -42,6 +42,19 @@ jest.mock('shared/ui/menu', () => {
   }
 })
 
+jest.mock('features/onboarding', () => {
+  const { Text } = jest.requireActual('react-native')
+
+  return {
+    OnboardingTarget: ({ children, id }: { children: React.ReactNode; id?: string }) => (
+      <>
+        {id === undefined ? null : <Text>{id}</Text>}
+        {children}
+      </>
+    ),
+  }
+})
+
 jest.mock('./PlaylistMenuDivider', () => {
   const { Text } = jest.requireActual('react-native')
 
@@ -317,6 +330,31 @@ describe('<PlaylistHeaderMenuDropdown>', () => {
     fireEvent.press(screen.getByText(CLEAR_TEXT))
 
     expect(onClear).toHaveBeenCalledTimes(1)
+  })
+
+  test('wires an onboarding target id for every rendered menu row', async () => {
+    await renderDropdown({
+      canClear: true,
+      canDelete: true,
+      canMarkAll: true,
+      canPublish: true,
+      canRemoveFromHistory: true,
+      onAddAllToPlaylist: jest.fn(),
+    })
+
+    const ids = [
+      'playlist.menu-share',
+      'playlist.menu-add-all',
+      'playlist.menu-publish',
+      'playlist.menu-offline-add',
+      'playlist.menu-offline-remove',
+      'playlist.menu-history-mark',
+      'playlist.menu-history-remove',
+      'playlist.menu-clear',
+      'playlist.menu-delete',
+    ]
+
+    ids.forEach(id => expect(screen.getByText(id)).toBeTruthy())
   })
 })
 

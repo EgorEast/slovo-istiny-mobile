@@ -1,3 +1,4 @@
+import { useTourActionRegistrar } from 'features/onboarding'
 import { ErrorModal } from 'shared/ui/error-modal'
 import { buildAddAllToPlaylistHandler } from '../lib/buildAddAllToPlaylistHandler'
 import { useLocalPlaylistPublish } from '../lib/useLocalPlaylistPublish'
@@ -46,6 +47,8 @@ export const PlaylistHeaderMenu = ({
     setClearDialogVisible,
     setMenuVisible,
   } = usePlaylistOfflineMenu(tracksData, playlistTitle)
+
+  useTourActionRegistrar('open-playlist-menu', handleOpenMenu)
 
   const closeMenu = () => setMenuVisible(false)
   const addAllHandler = buildAddAllToPlaylistHandler(onAddAllToPlaylist, playlist, closeMenu)
