@@ -4,7 +4,7 @@ import { useLayoutEffect } from 'react'
 import { FlatList, StyleSheet, View } from 'react-native'
 import { useAddToPlaylistModal } from 'features/add-to-playlist'
 import { useOfflineSermons } from 'features/offline-sermons'
-import { OnboardingHelpRow, OnboardingTarget } from 'features/onboarding'
+import { OnboardingHelpRow, OnboardingTarget, useTourScrollable } from 'features/onboarding'
 import { sermonCachingEnabledAtom } from 'entities/offline-cache'
 import { isPlayingAtom } from 'entities/player'
 import { createTracksListStyles, TracksListSkeleton } from 'entities/track-list'
@@ -39,6 +39,7 @@ export const OfflineScreen = () => {
   const [tabBarHeight] = useAtom(tabBarHeightAtom)
   const tracksListStyles = createTracksListStyles(currentTheme)
   const { modal, openAddToPlaylist } = useAddToPlaylistModal()
+  const tourScrollableRef = useTourScrollable()
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -70,6 +71,7 @@ export const OfflineScreen = () => {
       <OnboardingTarget id='offline.rows' style={{ flex: 1 }}>
         <FlatList
           data={items}
+          ref={tourScrollableRef}
           keyExtractor={item => item.sermon.id}
           ItemSeparatorComponent={OfflineSeparator}
           ListEmptyComponent={<OfflineEmptyState isCachingEnabled={isCachingEnabled} />}

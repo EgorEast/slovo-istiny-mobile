@@ -3,7 +3,7 @@ import { useNavigation } from 'expo-router'
 import { useLayoutEffect } from 'react'
 import { FlatList, StyleSheet, Text, View } from 'react-native'
 import { useAddToPlaylistModal } from 'features/add-to-playlist'
-import { OnboardingHelpRow, OnboardingTarget } from 'features/onboarding'
+import { OnboardingHelpRow, OnboardingTarget, useTourScrollable } from 'features/onboarding'
 import { getEntrySermon, historyAtom, isHistoryLoadedAtom } from 'entities/listening-history'
 import { currentAudioAtom, isPlayingAtom } from 'entities/player'
 import { createTracksListStyles, TracksListSkeleton } from 'entities/track-list'
@@ -32,6 +32,7 @@ export const HistoryScreen = () => {
   const [tabBarHeight] = useAtom(tabBarHeightAtom)
   const tracksListStyles = createTracksListStyles(currentTheme)
   const { modal, openAddToPlaylist } = useAddToPlaylistModal()
+  const tourScrollableRef = useTourScrollable()
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -62,6 +63,7 @@ export const HistoryScreen = () => {
       <OnboardingTarget id='history.rows' style={{ flex: 1 }}>
         <FlatList
           data={entries}
+          ref={tourScrollableRef}
           ItemSeparatorComponent={HistorySeparator}
           keyExtractor={item => getEntrySermon(item)?.id ?? `${item.lastPlayedAt}`}
           contentContainerStyle={{

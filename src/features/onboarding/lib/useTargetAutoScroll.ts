@@ -2,7 +2,7 @@ import { useAtom } from '@reatom/npm-react'
 import { useCallback, useEffect, useRef } from 'react'
 import { Dimensions } from 'react-native'
 import { onboardingTargetRectsAtom } from '../model'
-import { getTourScrollable, isBelowFold, scrollOffsetFor } from './tourScrollable'
+import { getTourScrollable, isRectOutsideViewport, scrollOffsetFor } from './tourScrollable'
 
 // Two bounded re-measure attempts after an auto-scroll; no endless retry loop.
 const RESCROLL_DELAYS_MS = [300, 700]
@@ -28,6 +28,8 @@ export const useTargetAutoScroll = ({ id, isActive, measure }: TargetAutoScrollI
 
   useEffect(() => {
     if (!isActive) {
+      // Deactivation (step change / tour end) is the per-activation reset point:
+      // the next false→true toggle scrolls again.
       clearTimers()
       hasScrolledRef.current = false
       return
@@ -36,7 +38,7 @@ export const useTargetAutoScroll = ({ id, isActive, measure }: TargetAutoScrollI
     if (hasScrolledRef.current || rect === undefined) return
 
     const viewportHeight = Dimensions.get('window').height
-    if (!isBelowFold(rect, viewportHeight, 0)) return
+    if (!isRectOutsideViewport(rect, viewportHeight, 0)) return
 
     const scrollable = getTourScrollable()
     if (scrollable === null) return

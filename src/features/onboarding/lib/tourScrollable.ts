@@ -19,11 +19,15 @@ export const unregisterTourScrollable = () => {
 
 export const getTourScrollable = () => scrollable
 
-export const isBelowFold = (
+// A rect is "outside the viewport" when any part of it falls off the top edge or
+// below the bottom edge (minus the bottom inset) — i.e. it is not fully visible.
+// Covers both scroll directions: a target scrolled above the fold (`rect.y < 0`)
+// needs scrolling up, one below it needs scrolling down.
+export const isRectOutsideViewport = (
   rect: OnboardingTargetRect,
   viewportHeight: number,
   bottomInset: number,
-) => rect.y + rect.height > viewportHeight - bottomInset
+) => rect.y < 0 || rect.y + rect.height > viewportHeight - bottomInset
 
 export const scrollOffsetFor = (rect: OnboardingTargetRect, viewportHeight: number) =>
   Math.max(0, rect.y - viewportHeight / 2 + rect.height / 2)

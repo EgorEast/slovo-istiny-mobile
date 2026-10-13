@@ -1,29 +1,43 @@
-import { isBelowFold, scrollOffsetFor } from './tourScrollable'
+import { isRectOutsideViewport, scrollOffsetFor } from './tourScrollable'
 
 const VIEWPORT_HEIGHT = 800
 const NO_INSET = 0
 
-describe('isBelowFold', () => {
-  test('is false when the rect ends above the fold', () => {
-    expect(isBelowFold({ height: 100, width: 100, x: 0, y: 600 }, VIEWPORT_HEIGHT, NO_INSET)).toBe(
-      false,
-    )
+describe('isRectOutsideViewport', () => {
+  test('is false when the rect is fully visible', () => {
+    expect(
+      isRectOutsideViewport({ height: 100, width: 100, x: 0, y: 600 }, VIEWPORT_HEIGHT, NO_INSET),
+    ).toBe(false)
   })
 
   test('is false when the rect ends exactly on the fold', () => {
-    expect(isBelowFold({ height: 100, width: 100, x: 0, y: 700 }, VIEWPORT_HEIGHT, NO_INSET)).toBe(
-      false,
-    )
+    expect(
+      isRectOutsideViewport({ height: 100, width: 100, x: 0, y: 700 }, VIEWPORT_HEIGHT, NO_INSET),
+    ).toBe(false)
   })
 
   test('is true when the rect ends below the fold', () => {
-    expect(isBelowFold({ height: 100, width: 100, x: 0, y: 701 }, VIEWPORT_HEIGHT, NO_INSET)).toBe(
-      true,
-    )
+    expect(
+      isRectOutsideViewport({ height: 100, width: 100, x: 0, y: 701 }, VIEWPORT_HEIGHT, NO_INSET),
+    ).toBe(true)
+  })
+
+  test('is true when the rect starts above the viewport', () => {
+    expect(
+      isRectOutsideViewport({ height: 100, width: 100, x: 0, y: -1 }, VIEWPORT_HEIGHT, NO_INSET),
+    ).toBe(true)
+  })
+
+  test('is false when the rect starts exactly on the top edge', () => {
+    expect(
+      isRectOutsideViewport({ height: 100, width: 100, x: 0, y: 0 }, VIEWPORT_HEIGHT, NO_INSET),
+    ).toBe(false)
   })
 
   test('accounts for the bottom inset', () => {
-    expect(isBelowFold({ height: 100, width: 100, x: 0, y: 700 }, VIEWPORT_HEIGHT, 100)).toBe(true)
+    expect(
+      isRectOutsideViewport({ height: 100, width: 100, x: 0, y: 700 }, VIEWPORT_HEIGHT, 100),
+    ).toBe(true)
   })
 })
 

@@ -11,6 +11,9 @@ const MEASURE_FLUSH_MS = 150
 const VIEWPORT_HEIGHT = 800
 const BELOW_FOLD_RECT = { height: 50, width: 300, x: 0, y: 2000 }
 const BELOW_FOLD_SCROLL_OFFSET = 1625
+const ABOVE_VIEWPORT_RECT = { height: 50, width: 300, x: 0, y: -120 }
+const ABOVE_VIEWPORT_SCROLL_OFFSET = 0
+const VISIBLE_RECT = { height: 50, width: 300, x: 0, y: 200 }
 
 const mockAddListener = jest.fn(() => jest.fn())
 
@@ -126,5 +129,47 @@ describe('<OnboardingTarget>', () => {
     await waitFor(() => expect(measureSpy.mock.calls.length).toBeGreaterThanOrEqual(3), {
       timeout: 2000,
     })
+  })
+
+  test('scrolls a target that sits above the viewport back into view', async () => {
+    jest.spyOn(Dimensions, 'get').mockReturnValue({
+      fontScale: 1,
+      height: VIEWPORT_HEIGHT,
+      scale: 1,
+      width: 400,
+    })
+    mockMeasureInWindow(ABOVE_VIEWPORT_RECT)
+    const scrollTo = jest.fn()
+    registerTourScrollable({ scrollTo })
+    const ctx = createCtx()
+    onboardingTourAtom(ctx, { scenarioId: 'listen', stepIndex: 1 })
+
+    await renderTarget(ctx)
+
+    await waitFor(() => expect(scrollTo).toHaveBeenCalledWith(ABOVE_VIEWPORT_SCROLL_OFFSET, true), {
+      timeout: 2000,
+    })
+  })
+
+  test('does not scroll when the target is fully visible', async () => {
+    jest.spyOn(Dimensions, 'get').mockReturnValue({
+      fontScale: 1,
+      height: VIEWPORT_HEIGHT,
+      scale: 1,
+      width: 400,
+    })
+    mockMeasureInWindow(VISIBLE_RECT)
+    const scrollTo = jest.fn()
+    registerTourScrollable({ scrollTo })
+    const ctx = createCtx()
+    onboardingTourAtom(ctx, { scenarioId: 'listen', stepIndex: 1 })
+
+    await renderTarget(ctx)
+
+    await act(async () => {
+      await new Promise(resolve => setTimeout(resolve, MEASURE_FLUSH_MS))
+    })
+
+    expect(scrollTo).not.toHaveBeenCalled()
   })
 })

@@ -3,7 +3,7 @@ import { useRouter } from 'expo-router'
 import { useEffect } from 'react'
 import { ScrollView, Text, View } from 'react-native'
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
-import { HelpHeaderButton, OnboardingTarget } from 'features/onboarding'
+import { HelpHeaderButton, OnboardingTarget, useTourScrollable } from 'features/onboarding'
 import { authStatusAtom, authUserAtom, canAccessAdmin, restoreSession } from 'entities/auth'
 import { APP_NAME, APP_VERSION } from 'shared/config'
 import { useTheme } from 'shared/ui/theme'
@@ -18,6 +18,7 @@ export const MoreScreen = () => {
   const restore = useAction(restoreSession)
   const [status] = useAtom(authStatusAtom)
   const [user] = useAtom(authUserAtom)
+  const tourScrollableRef = useTourScrollable()
 
   useEffect(() => {
     if (status !== 'idle') return
@@ -35,7 +36,7 @@ export const MoreScreen = () => {
         { backgroundColor: currentTheme.background, paddingTop: insets.top },
       ]}
     >
-      <ScrollView>
+      <ScrollView ref={tourScrollableRef}>
         <View style={styles.header}>
           <View style={styles.headerTexts}>
             <Text style={[styles.appName, { color: currentTheme.text }]}>{APP_NAME}</Text>

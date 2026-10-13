@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Platform, ScrollView, StyleSheet, View } from 'react-native'
-import { OnboardingTarget } from 'features/onboarding'
+import { OnboardingTarget, useTourScrollable } from 'features/onboarding'
 import { BackupSection } from 'features/settings-backup'
 import { isWebVibrationSupported } from 'shared/lib/haptics'
 import { INDENTS, isMaterialYouSupported, useTheme } from 'shared/ui/theme'
@@ -14,11 +14,12 @@ import { ToursSettingsItem } from './ToursSettingsItem'
 export const SettingsScreen = () => {
   const [showThemeDialog, setShowThemeDialog] = useState(false)
   const { currentTheme } = useTheme()
+  const tourScrollableRef = useTourScrollable()
   const showHapticsItem = Platform.OS !== 'web' || isWebVibrationSupported()
 
   return (
     <View style={[styles.container, { backgroundColor: currentTheme.background }]}>
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView ref={tourScrollableRef} contentContainerStyle={styles.content}>
         <SettingsItem
           title='Тема оформления'
           icon='color-palette-outline'
