@@ -1,5 +1,8 @@
-import { act, fireEvent } from '@testing-library/react-native'
+import { createCtx } from '@reatom/framework'
+import { act, fireEvent, waitFor } from '@testing-library/react-native'
+import { View } from 'react-native'
 import { type TestInstance } from 'test-renderer'
+import { onboardingTargetRectsAtom, onboardingTourAtom } from 'features/onboarding/model'
 import { type TrackCacheVisualState } from 'entities/offline-cache'
 import { type PlaybackRate } from 'entities/player'
 import { type AudioPlayerData } from 'entities/sermon'
@@ -8,6 +11,10 @@ import { isOnlineAtom } from 'shared/model'
 import { PlayerMenu } from './PlayerMenu'
 import { PlayerMenuItems } from './PlayerMenuItems'
 import { PlayerSpeedMenu } from './PlayerSpeedMenu'
+
+jest.mock('expo-router', () => ({
+  useNavigation: () => ({ addListener: jest.fn() }),
+}))
 
 const mockOnClose = jest.fn()
 const mockOnShowDetails = jest.fn()
@@ -39,6 +46,8 @@ const SPEED_LABEL = 'Скорость воспроизведения'
 const SOUND_SETTINGS_LABEL = 'Настройки звука'
 const ADD_TO_PLAYLIST_LABEL = 'Добавить в плейлист'
 const REMOVE_FROM_PLAYLIST_LABEL = 'Удалить из текущего плейлиста и открыть в другом'
+const DETAILS_TARGET_ID = 'player-fullscreen.menu-details'
+const RECT = { height: 4, width: 3, x: 1, y: 2 }
 
 const renderMenu = async ({
   canRemoveFromPlaylist = false,
@@ -193,6 +202,10 @@ describe('<PlayerMenu>', () => {
 describe('<PlayerMenuItems>', () => {
   beforeEach(() => {
     jest.clearAllMocks()
+  })
+
+  afterEach(() => {
+    jest.restoreAllMocks()
   })
 
   test('shows speed row with current rate', async () => {
@@ -381,6 +394,33 @@ describe('<PlayerMenuItems>', () => {
     })
     fireEvent.press(getByText('Остановить добавление в офлайн'))
     expect(mockOnToggleCache).toHaveBeenCalledTimes(1)
+  })
+
+  test('registers the details target rect while its tour step is active', async () => {
+    jest
+      .spyOn(View.prototype, 'measureInWindow')
+      .mockImplementation((cb: (x: number, y: number, width: number, height: number) => void) => {
+        cb(RECT.x, RECT.y, RECT.width, RECT.height)
+        return undefined
+      })
+    const ctx = createCtx()
+    onboardingTourAtom(ctx, { scenarioId: 'player-description', stepIndex: 1 })
+
+    await renderWithProviders(
+      <PlayerMenuItems
+        rate={1}
+        visualState={CLOUD_STATE}
+        onDetails={mockOnShowDetails}
+        onShowSpeed={mockOnShowSpeed}
+        onToggleCache={mockOnToggleCache}
+        onOpenSoundSettings={mockOnOpenSoundSettings}
+      />,
+      { ctx },
+    )
+
+    await waitFor(() =>
+      expect(ctx.get(onboardingTargetRectsAtom)).toEqual({ [DETAILS_TARGET_ID]: RECT }),
+    )
   })
 })
 

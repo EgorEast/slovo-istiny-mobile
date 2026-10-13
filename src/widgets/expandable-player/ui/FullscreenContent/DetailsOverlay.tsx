@@ -1,5 +1,6 @@
 import { Entypo } from '@expo/vector-icons'
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
+import { OnboardingTarget } from 'features/onboarding'
 import { type AudioPlayerData } from 'entities/sermon'
 import { hapticLight } from 'shared/lib/haptics'
 import { IconButton } from 'shared/ui/icon-button'
@@ -33,6 +34,10 @@ const localStyles = StyleSheet.create({
     marginBottom: INDENTS.lowest,
     textTransform: 'uppercase',
   },
+
+  targetWrapper: {
+    flex: 1,
+  },
 })
 
 export const DetailsOverlay = ({
@@ -49,41 +54,43 @@ export const DetailsOverlay = ({
   const hasContent = Boolean(audio.description) || Boolean(audio.artist)
 
   return (
-    <View style={[styles.descriptionContainer, { marginTop: insetsTop + HEADER_OFFSET }]}>
-      <Pressable
-        tabIndex={-1}
-        onPress={onClose}
-        onPressIn={hapticLight}
-        style={StyleSheet.absoluteFill}
-      />
-      <View style={styles.descriptionCard}>
-        <ScrollView contentContainerStyle={localStyles.content}>
-          {hasContent ? (
-            <>
-              {audio.description ? (
-                <View>
-                  <Text style={localStyles.label}>Описание</Text>
-                  <DescriptionWithTimecodes description={audio.description} />
-                </View>
-              ) : null}
-              {audio.artist ? (
-                <View>
-                  <Text style={localStyles.label}>Проповедник</Text>
-                  <Text style={localStyles.authorText}>{audio.artist}</Text>
-                </View>
-              ) : null}
-            </>
-          ) : (
-            <Text style={localStyles.emptyMessage}>Нет информации</Text>
-          )}
-        </ScrollView>
-        <IconButton
+    <OnboardingTarget id='player-fullscreen.details' style={localStyles.targetWrapper}>
+      <View style={[styles.descriptionContainer, { marginTop: insetsTop + HEADER_OFFSET }]}>
+        <Pressable
+          tabIndex={-1}
           onPress={onClose}
-          accessibilityLabel='Закрыть детали'
-          style={styles.descriptionCloseButton}
-          Icon={<Entypo name='cross' style={styles.descriptionCloseIcon} />}
+          onPressIn={hapticLight}
+          style={StyleSheet.absoluteFill}
         />
+        <View style={styles.descriptionCard}>
+          <ScrollView contentContainerStyle={localStyles.content}>
+            {hasContent ? (
+              <>
+                {audio.description ? (
+                  <View>
+                    <Text style={localStyles.label}>Описание</Text>
+                    <DescriptionWithTimecodes description={audio.description} />
+                  </View>
+                ) : null}
+                {audio.artist ? (
+                  <View>
+                    <Text style={localStyles.label}>Проповедник</Text>
+                    <Text style={localStyles.authorText}>{audio.artist}</Text>
+                  </View>
+                ) : null}
+              </>
+            ) : (
+              <Text style={localStyles.emptyMessage}>Нет информации</Text>
+            )}
+          </ScrollView>
+          <IconButton
+            onPress={onClose}
+            accessibilityLabel='Закрыть детали'
+            style={styles.descriptionCloseButton}
+            Icon={<Entypo name='cross' style={styles.descriptionCloseIcon} />}
+          />
+        </View>
       </View>
-    </View>
+    </OnboardingTarget>
   )
 }

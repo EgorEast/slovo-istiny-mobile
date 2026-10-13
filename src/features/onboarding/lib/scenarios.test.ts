@@ -87,6 +87,19 @@ describe('onboarding scenario data', () => {
     expect(scenariosById['player-sound'].steps[0].targetId).toBe(menuTargetId)
   })
 
+  test('player-description performs the menu and details actions itself', () => {
+    const description = scenariosById['player-description']
+
+    expect(description.steps).toHaveLength(3)
+    expect(description.steps[0].tapTargetId).toBe('player-fullscreen.menu')
+    expect(description.steps[0].tapActionId).toBe('open-player-menu')
+    expect(description.steps[1].targetId).toBe('player-fullscreen.menu-details')
+    expect(description.steps[1].tapTargetId).toBe('player-fullscreen.menu-details')
+    expect(description.steps[1].tapActionId).toBe('show-player-details')
+    expect(description.steps[2].targetId).toBe('player-fullscreen.details')
+    expect(description.steps[2].tapActionId).toBeUndefined()
+  })
+
   test('search scenario groups the results and lives on /listen', () => {
     const search = scenariosById.search
 
