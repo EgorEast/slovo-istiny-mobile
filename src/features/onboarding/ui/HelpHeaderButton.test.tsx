@@ -42,6 +42,19 @@ jest.mock('@expo/vector-icons/Ionicons', () => {
   }
 })
 
+jest.mock('./OnboardingTarget', () => {
+  const { Text } = jest.requireActual('react-native')
+
+  return {
+    OnboardingTarget: ({ children, id }: { children: React.ReactNode; id?: string }) => (
+      <>
+        {id === undefined ? null : <Text>{id}</Text>}
+        {children}
+      </>
+    ),
+  }
+})
+
 describe('<HelpHeaderButton>', () => {
   beforeEach(() => {
     jest.clearAllMocks()
@@ -65,6 +78,12 @@ describe('<HelpHeaderButton>', () => {
     fireEvent.press(screen.getByTestId(BACKDROP_TEST_ID))
 
     await waitFor(() => expect(screen.queryByText(PICKER_TITLE)).toBeNull())
+  })
+
+  test('wraps the help button in the app-wide onboarding target', async () => {
+    await renderWithProviders(<HelpHeaderButton />)
+
+    expect(screen.getByText('app.help-button')).toBeTruthy()
   })
 
   test('renders nothing when tours are disabled', async () => {

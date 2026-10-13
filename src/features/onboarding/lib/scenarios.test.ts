@@ -1,18 +1,19 @@
 import { resolveStepRoute, scenariosById } from './scenarios'
 
 describe('onboarding scenario data', () => {
-  test('welcome runs seven steps and ends on the tours setting', () => {
+  test('welcome runs eight steps and ends on the tours setting', () => {
     const welcome = scenariosById.welcome
 
-    expect(welcome.steps).toHaveLength(7)
-    expect(welcome.steps[6].targetId).toBe('settings.tours')
+    expect(welcome.steps).toHaveLength(8)
+    expect(welcome.steps[1].targetId).toBe('app.help-button')
+    expect(welcome.steps[7].targetId).toBe('settings.tours')
   })
 
   test('welcome wires tap hints for the tab and the settings row', () => {
     const welcome = scenariosById.welcome
 
-    expect(welcome.steps[4].tapTargetId).toBe('tab.more')
-    expect(welcome.steps[5].tapTargetId).toBe('more.settings-item')
+    expect(welcome.steps[5].tapTargetId).toBe('tab.more')
+    expect(welcome.steps[6].tapTargetId).toBe('more.settings-item')
   })
 
   test('player scenario waits for the user to select a sermon and pause', () => {
@@ -28,6 +29,13 @@ describe('onboarding scenario data', () => {
 
   test('whats-new is a release scenario pinned to a version', () => {
     expect(scenariosById.whatsNew.sinceVersion).toBeTruthy()
+  })
+
+  test('whats-new spotlights the help button in its first step', () => {
+    const whatsNew = scenariosById.whatsNew
+
+    expect(whatsNew.steps[0].targetId).toBe('app.help-button')
+    expect(whatsNew.steps[0].title).toBe('Обзоры в приложении')
   })
 
   test('share scenario walks the QR code, copy button and link contents', () => {
