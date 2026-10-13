@@ -1,8 +1,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { act, waitFor } from '@testing-library/react-native'
 import { renderHookWithProviders } from 'shared/mocks/renderWithProviders'
-import { loadImportSettings, normalizeInvidiousBaseUrl, useImportSettings } from './importSettings'
-import { type ImportSettings } from './importTypes'
+import { type ImportSettings, loadImportSettings } from 'shared/model'
+import { normalizeInvidiousBaseUrl, useImportSettings } from './importSettings'
 
 const YOUTUBE_IMPORT_SETTINGS = 'youtube_import_settings'
 const DEFAULT_INSTANCE = 'https://inv.phobos.observer'

@@ -1,24 +1,18 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import z from 'zod'
-import { getCachedJson, setCachedJson } from 'shared/lib/cache'
-import { type ImportSettings } from './importTypes'
-
-// Настройки импорта живут в одном ключе: при смене источника или адреса
-// инстанса перезаписывается весь объект. Ключ объявлен здесь, а не в
-// shared/config, потому что принадлежит только этой фиче.
-const YOUTUBE_IMPORT_SETTINGS = 'youtube_import_settings'
-
-// Дефолтный адрес инстанса. Используется и как настройка по умолчанию, и как
-// единственный запасной пресет, если список с бэкенда не загрузился.
-export const DEFAULT_INVIDIOUS_BASE_URL = 'https://inv.phobos.observer'
+import {
+  DEFAULT_SETTINGS,
+  type ImportSettings,
+  loadImportSettings,
+  persistImportSettings,
+} from 'shared/model'
 
 // Свой инстанс часто поднимают в локальной сети и вводят без схемы («192.168.1.10:8080»),
 // но хранить такой адрес нельзя: fetch без схемы не разберёт хост. Нормализуем адрес
-// на границе ввода (в коммиенте поля), поэтому в хранилище попадает только URL,
-// со схемой; схема в zod-схеме ниже остаётся страховкой для чужих/битых данных.
-// Учётные данные (basic auth) допустимы: адрес вида «user:pass@host» нормализуется
-// в «http://user:pass@host», а сами креды остаются в хранилище (нужны для запроса)
-// и никогда не логируются.
+// на границе ввода (в коммите поля), поэтому в хранилище попадает только URL со схемой;
+// схема в zod-схеме хранилища (`shared/model`) остаётся страховкой для чужих/битых данных.
+// Учётные данные (basic auth) допустимы: адрес вида «user:pass@host» нормализуется в
+// «http://user:pass@host», а сами креды остаются в хранилище (нужны для запроса) и
+// никогда не логируются.
 const URL_WITH_SCHEME = /^https?:\/\//i
 const FALLBACK_SCHEME = 'http://'
 
@@ -36,47 +30,6 @@ export const normalizeInvidiousBaseUrl = (invidiousBaseUrl: string): string => {
 
   return withScheme.replace(/\/+$/, '')
 }
-
-const DEFAULT_SETTINGS: ImportSettings = {
-  invidiousBaseUrl: DEFAULT_INVIDIOUS_BASE_URL,
-  source: 'invidious',
-}
-
-// Значение из хранилища — недоверенный ввод (оно переживает обновления
-// приложения), поэтому читаем его через схему, а не доверяя форме. http://
-// разрешён: инстанс часто поднимают локально в своей сети. `z.url()` принимает
-// и userinfo (basic auth: `https://user:pass@host`) — учётные данные легальны,
-// запрос уйдёт с заголовком Authorization.
-export const importSettingsSchema = z.object({
-  invidiousBaseUrl: z.url().refine(url => url.startsWith('http://') || url.startsWith('https://')),
-  source: z.enum(['invidious', 'youtube']),
-})
-
-/** Читает настройки импорта как есть: отсутствие/невалидность → `undefined`. */
-export const readImportSettings = async (): Promise<ImportSettings | undefined> => {
-  try {
-    return await getCachedJson(YOUTUBE_IMPORT_SETTINGS, importSettingsSchema)
-  } catch (error) {
-    console.warn('Failed to read youtube import settings', error)
-    return undefined
-  }
-}
-
-/**
- * Единственный путь записи настроек импорта в AsyncStorage (владелец ключа).
- * @param settings - Настройки для записи в хранилище.
- */
-export const persistImportSettings = async (settings: ImportSettings): Promise<void> => {
-  try {
-    await setCachedJson(YOUTUBE_IMPORT_SETTINGS, settings)
-  } catch (error) {
-    console.warn('Failed to save youtube import settings', error)
-  }
-}
-
-/** Настройки импорта из хранилища; при отсутствии/невалидности — дефолт. */
-export const loadImportSettings = async (): Promise<ImportSettings> =>
-  (await readImportSettings()) ?? DEFAULT_SETTINGS
 
 /**
  * Настройки источника импорта с ленивой загрузкой из хранилища: в памяти держим

@@ -1,9 +1,4 @@
 import { type Ctx } from '@reatom/framework'
-import {
-  importSettingsSchema,
-  persistImportSettings,
-  readImportSettings,
-} from 'features/sermon-audio-import/@x/settings-backup'
 import { setSermonCachingEnabled } from 'entities/offline-cache'
 import {
   setBalanceAction,
@@ -14,6 +9,9 @@ import {
   setRepeatModeAction,
 } from 'entities/player'
 import {
+  importSettingsSchema,
+  persistImportSettings,
+  readImportSettings,
   setHapticsEnabled,
   setServerUrlAction,
   setToursDisabled,

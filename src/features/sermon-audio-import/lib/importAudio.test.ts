@@ -1,7 +1,8 @@
 import { AxiosError, type AxiosResponse } from 'axios'
 import { Platform } from 'react-native'
+import { type ImportSettings } from 'shared/model'
 import { importAudio } from './importAudio'
-import { type ImportPhaseProgress, type ImportSettings } from './importTypes'
+import { type ImportPhaseProgress } from './importTypes'
 
 const mockResolveInvidiousAudio = jest.fn()
 const mockResolveYoutubeAudio = jest.fn()

@@ -72,7 +72,7 @@
 - `listeningHistory`, `myPlaylists`, `myPlaylistsSectionSettings` — валидируются **владельческими** схемами (`listeningHistorySchema`, `myPlaylistsArraySchema`, `sectionSettingsDraftSchema`), а не копиями.
 - `settings` — подмножество скаляров: `themeMode` (`'system' | 'light' | 'dark'`), `dynamicColors`, `hapticsEnabled`, `serverUrl` (только `http(s)://`), `sermonCachingEnabled`, `toursDisabled`, `toursSeenVersion` (строка). Все поля опциональны.
 - `player` — `playbackRate`, `repeatMode`, `balance`, `pitch`, `equalizerEnabled`, `equalizerGains` (те же схемы плеера, что и при восстановлении).
-- `youtubeImport` — `source`, `invidiousBaseUrl`: ослабленная до partial владельческая `importSettingsSchema` из `features/sermon-audio-import` (см. [@x-зависимость](#x-зависимость)).
+- `youtubeImport` — `source`, `invidiousBaseUrl`: ослабленная до partial `importSettingsSchema` из `shared/model` (см. [Общий контракт с импортом аудио](#общий-контракт-с-импортом-аудио)).
 - Пустые скалярные секции не пишутся вовсе (`dropEmpty` в `buildPayload`): секция без единого определённого поля в файл не попадает.
 
 Разбор недоверенного ввода двухэтапный (`parseBackupFile`): сначала лёгкий конверт `{kind, version}`, затем полная схема данных. Результат: `ok` (данные), `newer-version` (файл новее поддерживаемой версии), `invalid` (битый JSON, чужой маркер, плохие данные).
@@ -150,9 +150,9 @@
 
 Ключи `backup_dir_uri` и `backup_autosync` (значения переживают обновления приложения, читаются защищённо) описаны в [contracts/storage.md](../contracts/storage.md).
 
-## @x зависимость
+## Общий контракт с импортом аудио
 
-`features/settings-backup` и `features/sermon-audio-import` — слайсы одного слоя. Кросс-импорт идёт по конвенции FSD `@x`: `src/features/sermon-audio-import/@x/settings-backup.ts` реэкспортирует `importSettingsSchema`, `readImportSettings`, `persistImportSettings`. Благодаря этому фича не дублирует схему и ключ настроек импорта аудио, а `youtubeImport` читается и пишется через владельческий публичный интерфейс.
+`features/settings-backup` и `features/sermon-audio-import` не связаны кросс-импортом: контракт хранения настроек импорта (`importSettingsSchema`, `readImportSettings`, `persistImportSettings`, ключ `youtube_import_settings`) живёт в `src/shared/model/importSettings.ts`. Обе фичи импортируют его из `shared/model` — фича не дублирует схему и ключ, а `youtubeImport` читается и пишется через общий read/persist. Прежний feature-to-feature `@x`-мост (`src/features/sermon-audio-import/@x/settings-backup.ts`) удалён по правилу «`@x` — только между `entities`» (см. [architecture.md](../architecture.md) → «@x cross-import»).
 
 ## Связанные документы
 

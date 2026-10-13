@@ -1,5 +1,4 @@
 import z from 'zod'
-import { readImportSettings } from 'features/sermon-audio-import/@x/settings-backup'
 import {
   balanceSchema,
   equalizerGainsSchema,
@@ -15,6 +14,7 @@ import {
   CURRENT_SOUND_BALANCE,
   CURRENT_SOUND_PITCH,
 } from 'shared/config'
+import { readImportSettings } from 'shared/model'
 import { type BackupImportData } from '../model/backupPayload'
 import { themeModeBackupSchema } from '../model/backupScalars'
 import { readBoolean, readHttpUrl, readJson, readNumber, readString } from './readScalarValues'

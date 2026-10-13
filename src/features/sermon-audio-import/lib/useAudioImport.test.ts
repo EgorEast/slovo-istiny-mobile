@@ -1,12 +1,8 @@
 import { act } from '@testing-library/react-native'
 import { renderHookWithProviders } from 'shared/mocks/renderWithProviders'
-import { showToast } from 'shared/model'
+import { type ImportSettings, showToast } from 'shared/model'
 import { reportError } from 'shared/model/error-dialog'
-import {
-  type ImportedSermonData,
-  type ImportedSermonMetadata,
-  type ImportSettings,
-} from './importTypes'
+import { type ImportedSermonData, type ImportedSermonMetadata } from './importTypes'
 import { ImportSourceError } from './sourceErrors'
 import { useAudioImport } from './useAudioImport'
 

@@ -1,5 +1,4 @@
 import z from 'zod'
-import { importSettingsSchema } from 'features/sermon-audio-import/@x/settings-backup'
 import {
   balanceSchema,
   equalizerGainsSchema,
@@ -7,6 +6,7 @@ import {
   playbackRateSchema,
   repeatModeSchema,
 } from 'entities/player'
+import { importSettingsSchema } from 'shared/model'
 
 /** Маркер и версия формата резервной копии — недоверенный ввод проверяется по ним. */
 export const BACKUP_KIND = 'slovo-propovedi-backup'
@@ -46,8 +46,8 @@ export const playerBackupSchema = z.object({
 /**
  * Опциональные поля настроек импорта аудио в резервной копии.
  *
- * Схема не дублируется: берётся владельческая `importSettingsSchema`
- * (features/sermon-audio-import) и ослабляется до partial — в файле поле может
- * отсутствовать, а дефолты применяются только на стороне владельца.
+ * Схема не дублируется: берётся `importSettingsSchema` из `shared/model`
+ * (общий контракт хранения настроек импорта) и ослабляется до partial — в файле
+ * поле может отсутствовать, а дефолты применяются только на стороне потребителя.
  */
 export const youtubeImportBackupSchema = importSettingsSchema.partial()

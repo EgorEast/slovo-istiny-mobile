@@ -1,8 +1,4 @@
 import { createCtx, type Ctx } from '@reatom/framework'
-import {
-  persistImportSettings,
-  readImportSettings,
-} from 'features/sermon-audio-import/@x/settings-backup'
 import { setSermonCachingEnabled } from 'entities/offline-cache'
 import {
   setBalanceAction,
@@ -13,6 +9,8 @@ import {
   setRepeatModeAction,
 } from 'entities/player'
 import {
+  persistImportSettings,
+  readImportSettings,
   setHapticsEnabled,
   setServerUrlAction,
   setToursDisabled,
@@ -34,7 +32,11 @@ jest.mock('entities/offline-cache', () => ({
   setSermonCachingEnabled: jest.fn(),
 }))
 
+// Схему берём настоящую (merge валидируется ею), а экшены и владельческие read/persist — мокаем.
 jest.mock('shared/model', () => ({
+  ...jest.requireActual('shared/model'),
+  persistImportSettings: jest.fn(),
+  readImportSettings: jest.fn(),
   setHapticsEnabled: jest.fn(),
   setServerUrlAction: jest.fn(),
   setToursDisabled: jest.fn(),
@@ -45,12 +47,6 @@ jest.mock('shared/ui/theme', () => ({
   setDynamicColors: jest.fn(),
   setThemeMode: jest.fn(),
 }))
-
-// Схему берём настоящую (merge валидируется ею), а владельческие read/persist — мокаем.
-jest.mock('features/sermon-audio-import/@x/settings-backup', () => {
-  const actual = jest.requireActual('features/sermon-audio-import/@x/settings-backup')
-  return { ...actual, persistImportSettings: jest.fn(), readImportSettings: jest.fn() }
-})
 
 const ctx: Ctx = createCtx()
 
