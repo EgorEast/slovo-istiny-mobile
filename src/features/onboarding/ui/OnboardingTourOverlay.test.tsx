@@ -138,12 +138,31 @@ describe('<OnboardingTourOverlay>', () => {
       'tab.more': TAB_MORE_RECT,
     })
 
+    // The tap phase is a pass-through layer: the hint shows, the dim/tooltip do not.
     expect(getByText(TAP_INDICATOR)).toBeTruthy()
     expect(queryByText(NEXT_LABEL)).toBeNull()
 
     await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('/more'), {
       timeout: TAP_PHASE_TIMEOUT_MS,
     })
+  })
+
+  test('cancels the tap phase without navigating when the user reaches the route first', async () => {
+    mockPathname.mockReturnValue('/settings')
+
+    const { getByText, queryByText, rerender } = await renderAtStep('settings', 0, {
+      'tab.more': TAB_MORE_RECT,
+    })
+
+    expect(getByText(TAP_INDICATOR)).toBeTruthy()
+
+    mockPathname.mockReturnValue('/more')
+    await act(async () => {
+      rerender(<OnboardingTourOverlay />)
+    })
+
+    expect(queryByText(TAP_INDICATOR)).toBeNull()
+    expect(mockNavigate).not.toHaveBeenCalled()
   })
 
   test('clears the tap phase when the tour ends', async () => {

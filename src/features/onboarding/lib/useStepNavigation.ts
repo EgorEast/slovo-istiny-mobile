@@ -64,6 +64,16 @@ export const useStepNavigation = ({
     return () => clearTimeout(timer)
   }, [shouldBlink, stepKey])
 
+  // Self-navigation race: the user can tap the real control during the blink and
+  // arrive at the route themselves. Then the hint is stale — cancel the phase
+  // (the timer is cleared by the blink effect's cleanup) and let the step render.
+  useEffect(() => {
+    if (!isTapPhase || needsNavigation) return
+
+    // eslint-disable-next-line react-hooks/set-state-in-effect, react-hooks-extra/no-direct-set-state-in-use-effect -- pathname reached the effective route
+    setPhaseStepKey(null)
+  }, [isTapPhase, needsNavigation])
+
   useEffect(() => {
     if (holdNavigation) return
     if (effectiveRoute === undefined) return

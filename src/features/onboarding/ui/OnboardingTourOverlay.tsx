@@ -13,8 +13,8 @@ import {
   onboardingTargetRectsAtom,
   onboardingTourAtom,
 } from '../model'
-import { TapIndicator } from './TapIndicator'
 import { TourDim } from './TourDim'
+import { TourTapLayer } from './TourTapLayer'
 import { TourTooltip } from './TourTooltip'
 
 const MISSING_TARGET_TIMEOUT_MS = 1200
@@ -68,6 +68,10 @@ export const OnboardingTourOverlay = () => {
   // Hide the overlay while the router plays the real transition to the step's route.
   if (isNavigatingToStep) return null
 
+  // The tap hint is a pass-through layer, not a modal: a modal would swallow every
+  // touch and freeze the screen the tour is "pressing".
+  if (holdNavigation && tapRect !== undefined) return <TourTapLayer rect={tapRect} />
+
   const isLastStep = tour.stepIndex === scenario.steps.length - 1
   const { isWaitingForTarget, tooltipTop, visibleHole } = resolveTourHole({
     activeTargetId,
@@ -89,28 +93,22 @@ export const OnboardingTourOverlay = () => {
       navigationBarTranslucent
     >
       <View style={styles.container}>
-        {holdNavigation && tapRect !== undefined ? (
-          <TapIndicator rect={tapRect} />
-        ) : (
-          <>
-            <TourDim width={width} height={height} hole={visibleHole} />
-            {isWaitingForTarget ? null : (
-              <View
-                style={[styles.tooltip, { top: tooltipTop }]}
-                onLayout={event => setCardHeight(event.nativeEvent.layout.height)}
-              >
-                <TourTooltip
-                  step={step}
-                  onClose={end}
-                  onPrev={prev}
-                  index={tour.stepIndex}
-                  total={scenario.steps.length}
-                  onNext={isLastStep ? end : next}
-                  isWaitSatisfied={isWaitSatisfied}
-                />
-              </View>
-            )}
-          </>
+        <TourDim width={width} height={height} hole={visibleHole} />
+        {isWaitingForTarget ? null : (
+          <View
+            style={[styles.tooltip, { top: tooltipTop }]}
+            onLayout={event => setCardHeight(event.nativeEvent.layout.height)}
+          >
+            <TourTooltip
+              step={step}
+              onClose={end}
+              onPrev={prev}
+              index={tour.stepIndex}
+              total={scenario.steps.length}
+              onNext={isLastStep ? end : next}
+              isWaitSatisfied={isWaitSatisfied}
+            />
+          </View>
         )}
       </View>
     </Modal>
