@@ -1,4 +1,5 @@
 import { type AudioPlayer } from 'expo-audio'
+import { AppState } from 'react-native'
 import { lockScreenControls } from './LockScreenControls'
 
 jest.mock('shared/lib/isExpoEnvironment', () => ({
@@ -17,6 +18,7 @@ const metadataStub = { title: 'Проповедь' }
 describe('setMetadata (retry — player not loaded initially)', () => {
   beforeEach(() => {
     jest.clearAllMocks()
+    AppState.currentState = 'active'
     jest.useFakeTimers()
   })
 
