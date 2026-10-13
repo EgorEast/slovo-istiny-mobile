@@ -9,7 +9,7 @@ export const offlineScenario: OnboardingScenario = {
       route: '/more',
       tapTargetId: 'tab.more',
       targetId: 'more.offline-item',
-      text: 'Раздел офлайн-кэша доступен из меню «Ещё».',
+      text: 'Раздел офлайн-кэша доступен на табе «Ещё».',
       title: 'Офлайн-режим',
     },
     {

@@ -9,7 +9,7 @@ export const settingsScenario: OnboardingScenario = {
       route: '/more',
       tapTargetId: 'tab.more',
       targetId: 'more.settings-item',
-      text: 'Все настройки собраны в меню «Ещё».',
+      text: 'Все настройки собраны на табе «Ещё».',
       title: 'Настройки',
     },
     {
