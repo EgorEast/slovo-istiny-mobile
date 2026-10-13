@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { type StyleProp, StyleSheet, Text, type ViewStyle } from 'react-native'
 import { FONT_SIZES, RADIUSES, useTheme } from 'shared/ui/theme'
 import { TouchableItem } from 'shared/ui/touchable-item'
+import { SHARE_MESSAGE } from '../lib/constants'
 
 const COPIED_FEEDBACK_MS = 2000
 
@@ -20,7 +21,7 @@ export const CopyLinkButton = ({ style, url }: { style?: StyleProp<ViewStyle>; u
 
   const handleCopy = async () => {
     try {
-      await Clipboard.setStringAsync(url)
+      await Clipboard.setStringAsync(`${SHARE_MESSAGE}\n${url}`)
       setIsCopied(true)
     } catch (error) {
       console.error('[share] Failed to copy release URL:', error)

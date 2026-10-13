@@ -2,6 +2,7 @@ import { act, fireEvent } from '@testing-library/react-native'
 import * as Clipboard from 'expo-clipboard'
 import { View as MockView } from 'react-native'
 import { renderWithProviders } from 'shared/mocks'
+import { SHARE_MESSAGE } from '../lib/constants'
 import { type LatestReleaseState } from '../lib/useLatestReleaseUrl'
 import { ShareScreen } from './ShareScreen'
 
@@ -108,7 +109,7 @@ describe('<ShareScreen>', () => {
     await fireEvent.press(getByText('Скопировать ссылку'))
     await act(async () => {})
 
-    expect(Clipboard.setStringAsync).toHaveBeenCalledWith(LANDING_URL)
+    expect(Clipboard.setStringAsync).toHaveBeenCalledWith(`${SHARE_MESSAGE}\n${LANDING_URL}`)
     expect(getByText('Скопировано')).toBeTruthy()
   })
 
@@ -162,7 +163,7 @@ describe('<ShareScreen>', () => {
     await fireEvent.press(getByText('Скопировать ссылку'))
     await act(async () => {})
 
-    expect(Clipboard.setStringAsync).toHaveBeenCalledWith(RELEASE_URL)
+    expect(Clipboard.setStringAsync).toHaveBeenCalledWith(`${SHARE_MESSAGE}\n${RELEASE_URL}`)
     expect(getByText('Скопировано')).toBeTruthy()
   })
 })
