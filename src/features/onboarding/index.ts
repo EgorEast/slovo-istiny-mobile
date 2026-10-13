@@ -1,3 +1,4 @@
+export { registerTourAction, unregisterTourAction } from './lib/tourActions'
 export { useAutoTours } from './lib/useAutoTours'
 export { useOnboardingTargetRef } from './lib/useOnboardingTargetRef'
 export { useTourActionRegistrar } from './lib/useTourActionRegistrar'

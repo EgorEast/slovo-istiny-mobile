@@ -44,6 +44,7 @@ export const useFullscreenHandlers = () => {
   const { startSeek, stopSeek, tapSeek } = useSeekControls({ duration, position, seekTo })
   const {
     handleCollapse,
+    setMenuView,
     setShowDetails,
     setShowMenu,
     setShowPlaylist,
@@ -55,7 +56,7 @@ export const useFullscreenHandlers = () => {
   } = useCollapseCascade()
   const playlistSheetRef = useRef<BottomSheet>(null)
 
-  useFullscreenTourActions({ setShowDetails, setShowMenu })
+  useFullscreenTourActions({ setMenuView, setShowDetails, setShowMenu, setShowSoundSettings })
 
   const isCached = useIsCached(audio?.audioUrl ?? null, cacheTrigger)
   const isCurrentAudioDownloading = isDownloading && downloadingAudioUrl === audio?.audioUrl
