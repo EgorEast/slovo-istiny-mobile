@@ -27,6 +27,7 @@ export const useTargetMeasure = ({ getNode, id }: TargetMeasureInput) => {
     ? scenariosById[tour.scenarioId].steps[tour.stepIndex]?.targetId
     : undefined
   const isActive = activeTargetId === id
+  const isTourActive = tour !== null
 
   const measure = useCallback(() => {
     getNode()?.measureInWindow((x, y, width, height) => {
@@ -34,12 +35,16 @@ export const useTargetMeasure = ({ getNode, id }: TargetMeasureInput) => {
     })
   }, [getNode, id, register])
 
+  // Register every mounted target once the tour starts — a tap hint may reference
+  // a target that is not the active step's own target. Also re-measure when this
+  // target becomes (or stops being) the active step's target so its rect stays
+  // fresh across step changes (needed for auto-scroll in both directions).
   useEffect(() => {
-    if (!isActive) return
+    if (!isTourActive && !isActive) return
 
     const timer = setTimeout(measure, MEASURE_DELAY_MS)
     return () => clearTimeout(timer)
-  }, [isActive, measure])
+  }, [isActive, isTourActive, measure])
 
   useEffect(() => {
     if (!isActive) return

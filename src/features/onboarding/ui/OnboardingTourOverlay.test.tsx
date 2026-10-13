@@ -1,7 +1,12 @@
 import { createCtx } from '@reatom/framework'
-import { fireEvent, waitFor } from '@testing-library/react-native'
+import { act, fireEvent, waitFor } from '@testing-library/react-native'
 import { renderWithProviders } from 'shared/mocks'
-import { type OnboardingTargetRect, onboardingTargetRectsAtom, onboardingTourAtom } from '../model'
+import {
+  endOnboardingTour,
+  type OnboardingTargetRect,
+  onboardingTargetRectsAtom,
+  onboardingTourAtom,
+} from '../model'
 import { OnboardingTourOverlay } from './OnboardingTourOverlay'
 
 jest.mock('react-native-svg', () => {
@@ -15,6 +20,12 @@ jest.mock('react-native-svg', () => {
   }
 })
 
+jest.mock('./TapIndicator', () => {
+  const { Text } = jest.requireActual('react-native')
+
+  return { TapIndicator: () => <Text>tap-indicator</Text> }
+})
+
 const mockNavigate = jest.fn()
 const mockPathname = jest.fn(() => '/listen')
 
@@ -24,9 +35,12 @@ jest.mock('expo-router', () => ({
 }))
 
 const NEXT_LABEL = 'Далее'
+const TAP_INDICATOR = 'tap-indicator'
 const MISSING_TARGET_TIMEOUT_MS = 1200
+const TAP_PHASE_TIMEOUT_MS = 3500
 const SECTIONS_RECT: OnboardingTargetRect = { height: 4, width: 3, x: 1, y: 2 }
 const OFFSCREEN_RECT: OnboardingTargetRect = { height: 60, width: 300, x: 0, y: 99999 }
+const TAB_MORE_RECT: OnboardingTargetRect = { height: 60, width: 90, x: 300, y: 760 }
 
 const renderAtStep = (
   scenarioId: 'listen' | 'playlists' | 'settings',
@@ -115,6 +129,37 @@ describe('<OnboardingTourOverlay>', () => {
 
     await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('/listen/my-playlists'))
     expect(queryByText('Добавить проповедь')).toBeNull()
+  })
+
+  test('blinks the tap hint before navigating to the effective route', async () => {
+    mockPathname.mockReturnValue('/settings')
+
+    const { getByText, queryByText } = await renderAtStep('settings', 0, {
+      'tab.more': TAB_MORE_RECT,
+    })
+
+    expect(getByText(TAP_INDICATOR)).toBeTruthy()
+    expect(queryByText(NEXT_LABEL)).toBeNull()
+
+    await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('/more'), {
+      timeout: TAP_PHASE_TIMEOUT_MS,
+    })
+  })
+
+  test('clears the tap phase when the tour ends', async () => {
+    mockPathname.mockReturnValue('/settings')
+
+    const { ctx, getByText, queryByText } = await renderAtStep('settings', 0, {
+      'tab.more': TAB_MORE_RECT,
+    })
+
+    expect(getByText(TAP_INDICATOR)).toBeTruthy()
+
+    await act(async () => {
+      endOnboardingTour(ctx)
+    })
+
+    await waitFor(() => expect(queryByText(TAP_INDICATOR)).toBeNull())
   })
 
   test('renders a centered card when the registered rect is below the viewport', async () => {

@@ -4,8 +4,8 @@ import { Modal, StyleSheet, useWindowDimensions, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { INDENTS } from 'shared/ui/theme'
 import { scenariosById } from '../lib/scenarios'
-import { computeTooltipLayout } from '../lib/tooltipPosition'
-import { useStepRouteNavigation } from '../lib/useStepRouteNavigation'
+import { resolveTourHole } from '../lib/tourHole'
+import { useStepNavigation } from '../lib/useStepNavigation'
 import {
   endOnboardingTour,
   goToNextOnboardingStep,
@@ -13,10 +13,10 @@ import {
   onboardingTargetRectsAtom,
   onboardingTourAtom,
 } from '../model'
+import { TapIndicator } from './TapIndicator'
 import { TourDim } from './TourDim'
 import { TourTooltip } from './TourTooltip'
 
-const TOOLTIP_ESTIMATED_HEIGHT = 230
 const MISSING_TARGET_TIMEOUT_MS = 1200
 
 export const OnboardingTourOverlay = () => {
@@ -37,7 +37,15 @@ export const OnboardingTourOverlay = () => {
   const step =
     scenario === undefined || stepIndex === undefined ? undefined : scenario.steps[stepIndex]
   const activeTargetId = step?.targetId
-  const { effectiveRoute, pathname } = useStepRouteNavigation(scenario, stepIndex)
+  const { holdNavigation, isNavigatingToStep, tapRect } = useStepNavigation({
+    bottomInset: insets.bottom,
+    isTourActive: tour !== null,
+    scenario,
+    step,
+    stepIndex,
+    stepKey,
+    viewportHeight: height,
+  })
 
   useEffect(() => {
     if (activeTargetId === undefined) return
@@ -60,24 +68,18 @@ export const OnboardingTourOverlay = () => {
   // While the router moves to the step's effective route, hide the whole overlay:
   // the user watches the real tab/stack transition, and the overlay reappears once
   // `pathname` catches up.
-  if (effectiveRoute !== undefined && pathname !== effectiveRoute) return null
+  if (isNavigatingToStep) return null
 
   const isLastStep = tour.stepIndex === scenario.steps.length - 1
-  const hole = activeTargetId === undefined ? null : (rects[activeTargetId] ?? null)
-  // A registered rect can sit entirely outside the viewport (a target scrolled
-  // out of view). Render it as if it were missing: no hole, centered card — but
-  // keep `hole` for the waiting logic so a real registration is not "pending".
-  const isRectOutsideViewport = hole !== null && (hole.y >= height || hole.y + hole.height <= 0)
-  const visibleHole = isRectOutsideViewport ? null : hole
-  const isTargetWaitExpired = expiredStepKey === stepKey
-  const isWaitingForTarget = activeTargetId !== undefined && hole === null && !isTargetWaitExpired
-  const layout = computeTooltipLayout(
-    visibleHole,
-    cardHeight ?? TOOLTIP_ESTIMATED_HEIGHT,
+  const { isWaitingForTarget, tooltipTop, visibleHole } = resolveTourHole({
+    activeTargetId,
+    bottomInset: insets.bottom,
+    cardHeight,
+    expiredStepKey,
     height,
-    insets.bottom,
-    INDENTS.high,
-  )
+    rects,
+    stepKey,
+  })
 
   return (
     <Modal
@@ -89,21 +91,27 @@ export const OnboardingTourOverlay = () => {
       navigationBarTranslucent
     >
       <View style={styles.container}>
-        <TourDim width={width} height={height} hole={visibleHole} />
-        {isWaitingForTarget ? null : (
-          <View
-            style={[styles.tooltip, { top: layout.top }]}
-            onLayout={event => setCardHeight(event.nativeEvent.layout.height)}
-          >
-            <TourTooltip
-              step={step}
-              onClose={end}
-              onPrev={prev}
-              index={tour.stepIndex}
-              total={scenario.steps.length}
-              onNext={isLastStep ? end : next}
-            />
-          </View>
+        {holdNavigation && tapRect !== undefined ? (
+          <TapIndicator rect={tapRect} />
+        ) : (
+          <>
+            <TourDim width={width} height={height} hole={visibleHole} />
+            {isWaitingForTarget ? null : (
+              <View
+                style={[styles.tooltip, { top: tooltipTop }]}
+                onLayout={event => setCardHeight(event.nativeEvent.layout.height)}
+              >
+                <TourTooltip
+                  step={step}
+                  onClose={end}
+                  onPrev={prev}
+                  index={tour.stepIndex}
+                  total={scenario.steps.length}
+                  onNext={isLastStep ? end : next}
+                />
+              </View>
+            )}
+          </>
         )}
       </View>
     </Modal>

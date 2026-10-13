@@ -33,6 +33,7 @@ export type OnboardingScenarioId =
 
 export interface OnboardingStep {
   route?: Href
+  tapTargetId?: string
   targetId?: string
   text: string
   title: string

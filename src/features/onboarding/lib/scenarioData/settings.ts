@@ -7,12 +7,14 @@ export const settingsScenario: OnboardingScenario = {
   steps: [
     {
       route: '/more',
+      tapTargetId: 'tab.more',
       targetId: 'more.settings-item',
       text: 'Все настройки собраны в меню «Ещё».',
       title: 'Настройки',
     },
     {
       route: '/settings',
+      tapTargetId: 'more.settings-item',
       targetId: 'settings.theme',
       text: 'Светлая и тёмная темы, а на Android 12+ — динамические цвета Material You.',
       title: 'Оформление',

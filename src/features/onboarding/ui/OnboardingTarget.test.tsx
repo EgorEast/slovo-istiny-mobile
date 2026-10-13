@@ -66,6 +66,25 @@ describe('<OnboardingTarget>', () => {
     )
   })
 
+  test('registers a mounted non-active target while a tour is active', async () => {
+    mockMeasureInWindow({ height: 4, width: 3, x: 1, y: 2 })
+    const ctx = createCtx()
+    onboardingTourAtom(ctx, { scenarioId: 'listen', stepIndex: 1 })
+
+    await renderWithProviders(
+      <OnboardingTarget id='listen.sections'>
+        <View />
+      </OnboardingTarget>,
+      { ctx },
+    )
+
+    await waitFor(() =>
+      expect(ctx.get(onboardingTargetRectsAtom)).toEqual({
+        'listen.sections': { height: 4, width: 3, x: 1, y: 2 },
+      }),
+    )
+  })
+
   test('does not register a zero-size rect', async () => {
     mockMeasureInWindow({ height: 0, width: 0, x: 0, y: 0 })
     const ctx = createCtx()
