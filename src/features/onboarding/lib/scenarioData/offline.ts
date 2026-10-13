@@ -4,7 +4,7 @@ export const offlineScenario: OnboardingScenario = {
   description: 'Прослушивание без интернета',
   icon: 'cloud-offline-outline',
   id: 'offline',
-  screens: ['/offline'],
+  screens: ['/more', '/offline'],
   steps: [
     {
       route: '/more',

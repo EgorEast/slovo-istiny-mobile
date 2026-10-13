@@ -90,6 +90,25 @@ describe('<ScenarioPickerModal>', () => {
     ])
   })
 
+  test('shows the More screen scenarios local on /more', async () => {
+    mockPathname.mockReturnValue('/more')
+
+    await renderPicker()
+
+    expectRowTitles([
+      'История прослушивания',
+      'Офлайн-режим',
+      'Настройки и резервные копии',
+      'Как слушать проповеди',
+      'Плеер',
+      'Плейлисты',
+      'Читать книги',
+      'Учиться',
+      'Добро пожаловать',
+      'Что нового',
+    ])
+  })
+
   test('skips the screen group when no scenario matches the route', async () => {
     mockPathname.mockReturnValue('/about')
 

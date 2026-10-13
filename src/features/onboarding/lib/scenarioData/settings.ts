@@ -4,7 +4,7 @@ export const settingsScenario: OnboardingScenario = {
   description: 'Оформление, сервер и бэкапы',
   icon: 'settings-outline',
   id: 'settings',
-  screens: ['/settings'],
+  screens: ['/more', '/settings'],
   steps: [
     {
       route: '/more',
