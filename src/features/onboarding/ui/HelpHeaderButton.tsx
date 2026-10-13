@@ -2,16 +2,13 @@ import Ionicons from '@expo/vector-icons/Ionicons'
 import { useAtom } from '@reatom/npm-react'
 import { useState } from 'react'
 import { toursDisabledAtom } from 'shared/model'
-import { ConfirmDialog } from 'shared/ui/confirm-dialog'
 import { IconButton } from 'shared/ui/icon-button'
 import { INDENTS, useTheme } from 'shared/ui/theme'
 import { ScenarioPickerModal } from './ScenarioPickerModal'
 
-type HelpFlowStep = 'idle' | 'offer' | 'picker'
-
 export const HelpHeaderButton = ({ tintColor }: { tintColor?: string }) => {
   const { currentTheme } = useTheme()
-  const [step, setStep] = useState<HelpFlowStep>('idle')
+  const [isPickerOpen, setPickerOpen] = useState(false)
   const [toursDisabled] = useAtom(toursDisabledAtom)
 
   if (toursDisabled) return null
@@ -20,22 +17,13 @@ export const HelpHeaderButton = ({ tintColor }: { tintColor?: string }) => {
     <>
       <IconButton
         hitSlop={INDENTS.low}
-        onPress={() => setStep('offer')}
+        onPress={() => setPickerOpen(true)}
         accessibilityLabel='Онбординг и помощь'
         Icon={
           <Ionicons size={22} name='help-circle-outline' color={tintColor ?? currentTheme.text} />
         }
       />
-      <ConfirmDialog
-        cancelText='Закрыть'
-        title='Обзор приложения'
-        confirmText='Посмотреть'
-        visible={step === 'offer'}
-        onCancel={() => setStep('idle')}
-        onConfirm={() => setStep('picker')}
-        message='Хотите посмотреть, как пользоваться приложением?'
-      />
-      <ScenarioPickerModal visible={step === 'picker'} onClose={() => setStep('idle')} />
+      <ScenarioPickerModal visible={isPickerOpen} onClose={() => setPickerOpen(false)} />
     </>
   )
 }

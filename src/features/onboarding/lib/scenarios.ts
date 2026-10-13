@@ -43,8 +43,6 @@ export interface OnboardingStep {
 }
 
 export const scenarios: OnboardingScenario[] = [
-  welcomeScenario,
-  whatsNewScenario,
   listenScenario,
   playerScenario,
   playlistsScenario,
@@ -53,6 +51,8 @@ export const scenarios: OnboardingScenario[] = [
   settingsScenario,
   readScenario,
   studyScenario,
+  welcomeScenario,
+  whatsNewScenario,
 ]
 
 export const scenariosById: Record<OnboardingScenarioId, OnboardingScenario> = {

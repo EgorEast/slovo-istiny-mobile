@@ -5,10 +5,9 @@ import { toursDisabledAtom } from 'shared/model'
 import { HelpHeaderButton } from './HelpHeaderButton'
 
 const HELP_BUTTON_LABEL = 'Онбординг и помощь'
-const OFFER_TITLE = 'Обзор приложения'
-const CONFIRM_LABEL = 'Посмотреть'
-const CANCEL_LABEL = 'Закрыть'
+const PICKER_TITLE = 'Что посмотреть?'
 const FIRST_SCENARIO_TITLE = 'Как слушать проповеди'
+const BACKDROP_TEST_ID = 'modal-backdrop'
 
 jest.mock('entities/feature-flags', () => ({
   useFeatureFlag: () => true,
@@ -19,30 +18,24 @@ describe('<HelpHeaderButton>', () => {
     jest.clearAllMocks()
   })
 
-  test('opens the offer dialog when pressed', async () => {
+  test('opens the scenario picker directly when pressed', async () => {
     await renderWithProviders(<HelpHeaderButton />)
 
     fireEvent.press(screen.getByRole('button', { name: HELP_BUTTON_LABEL }))
 
-    expect(await screen.findByText(OFFER_TITLE)).toBeTruthy()
-  })
-
-  test('opening the picker lists the scenarios', async () => {
-    await renderWithProviders(<HelpHeaderButton />)
-
-    fireEvent.press(screen.getByRole('button', { name: HELP_BUTTON_LABEL }))
-    fireEvent.press(await screen.findByText(CONFIRM_LABEL))
-
+    expect(await screen.findByText(PICKER_TITLE)).toBeTruthy()
     expect(await screen.findByText(FIRST_SCENARIO_TITLE)).toBeTruthy()
   })
 
-  test('closing the offer dialog hides it', async () => {
+  test('closing the picker hides it', async () => {
     await renderWithProviders(<HelpHeaderButton />)
 
     fireEvent.press(screen.getByRole('button', { name: HELP_BUTTON_LABEL }))
-    fireEvent.press(await screen.findByText(CANCEL_LABEL))
+    await screen.findByText(PICKER_TITLE)
 
-    await waitFor(() => expect(screen.queryByText(OFFER_TITLE)).toBeNull())
+    fireEvent.press(screen.getByTestId(BACKDROP_TEST_ID))
+
+    await waitFor(() => expect(screen.queryByText(PICKER_TITLE)).toBeNull())
   })
 
   test('renders nothing when tours are disabled', async () => {
