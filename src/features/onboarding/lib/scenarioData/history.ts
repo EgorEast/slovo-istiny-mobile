@@ -10,7 +10,7 @@ export const historyScenario: OnboardingScenario = {
       route: '/more',
       tapTargetId: 'tab.more',
       targetId: 'more.history-item',
-      text: 'История открывается на табе «Ещё» — здесь она пополняется автоматически.',
+      text: 'История открывается на экране «Ещё» — здесь она пополняется автоматически.',
       title: 'История прослушивания',
     },
     {

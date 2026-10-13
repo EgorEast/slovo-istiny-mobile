@@ -1,4 +1,4 @@
-# Таб «Ещё»
+# Экран «Ещё»
 
 **Маршрут:** `/more` (таб)
 **Файлы:** `app/(tabs)/more.tsx` → `export { MoreMenu as default }` из `pages/more`

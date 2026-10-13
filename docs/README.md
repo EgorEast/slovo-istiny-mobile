@@ -60,7 +60,7 @@
 | [`screens/search-results.md`](./screens/search-results.md)             | Экран «Результаты поиска» (полные списки групп)                             |
 | [`screens/read.md`](./screens/read.md)                                 | Таб «Читать» (заблокирован)                                                 |
 | [`screens/study.md`](./screens/study.md)                               | Таб «Учиться» (заглушка)                                                    |
-| [`screens/more.md`](./screens/more.md)                                 | Таб «Ещё»                                                                   |
+| [`screens/more.md`](./screens/more.md)                                 | Экран «Ещё»                                                                 |
 | [`screens/settings.md`](./screens/settings.md)                         | Экран «Настройки»                                                           |
 | [`screens/about.md`](./screens/about.md)                               | Экран «О приложении»                                                        |
 | [`screens/admin-login.md`](./screens/admin-login.md)                   | Вход в интерфейс администратора                                             |

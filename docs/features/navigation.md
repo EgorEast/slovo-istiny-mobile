@@ -23,7 +23,7 @@
 
 **Кнопка «Назад» в шапке (`headerLeft`)** — кастомный `HeaderBackButton` (`src/widgets/sub-screen-header-back/ui/HeaderBackButton.tsx`) вместо стандартной кнопки react-navigation, используется в двух местах:
 
-- пять под-экранов корневого стека (`settings`/`history`/`offline`/`about`/`share`, `_RootLayout.tsx`) — фолбэк `/more` (таб «Ещё», логический родитель всех пяти);
+- пять под-экранов корневого стека (`settings`/`history`/`offline`/`about`/`share`, `_RootLayout.tsx`) — фолбэк `/more` (экран «Ещё», логический родитель всех пяти);
 - стек «Слушать» (`search-results`/`playlist`/`playlist-list`/`my-playlists`, `app/(tabs)/listen/_layout.tsx`) — фолбэк `/listen`.
 
 Только иконка (`Ionicons 'chevron-back'`), без текста «Назад» рядом — раньше в стеке «Слушать» использовалась нативная кнопка с `headerBackTitle: 'Назад'` (текст виден только на iOS), теперь оба стека выглядят одинаково. Контейнер 48×48 (без `hitSlop`) даёт полноразмерную область нажатия и frame для скринридеров без изменения размера иконки (24); `marginLeft: -8` сохраняет визуальное положение шеврона.
@@ -104,7 +104,7 @@
 - `app/admin/(tabs)/_layout.tsx` — `Tabs` с `headerShown: false` и тем же `CustomTabBar`, что и публичные табы: `index` (Главная), `sections`, `playlists`, `sermons`, `media`, `users`. Таб `users` скрыт (`href: null`) для роли не-`admin`.
 - Файлы табов: `index.tsx` (admin-home), остальные — экраны отдельных слайсов `pages/admin-sections` / `admin-playlists` / `admin-sermons` / `admin-media` / `admin-users`. Отдельного таба «Загрузить» нет: проповедь создаётся через `/admin/sermons/create` из шапки списка проповедей и быстрых действий главной.
 
-Вход в зону — из шапки «Настроек» (кебаб-меню `SettingsHeaderMenu` через `headerRight` в `app/_RootLayout.tsx`) и с таба «Ещё» (компактная иконка-кнопка «В админ панель» → `AdminPanelButton`). В `SettingsHeaderMenu` используется хук `useAdminEntry` (`entities/auth`): при `idle` восстанавливает сессию (`restoreSession`), затем пушит `/admin` (есть права) или `/admin/login`; для аутентифицированных единственный пункт меню — «Выйти из аккаунта админа» (`signOut`). На табе «Ещё» `AdminPanelButton` рендерится только для аутентифицированных `admin`/`moderator` (проверка `canAccessAdmin`; `MoreScreen` при монтировании вызывает `restoreSession`, если статус `idle`) и пушит `/admin`. После успешного входа на `/admin/login` показывается тост «Вход выполнен» и выполняется `router.replace('/more')`.
+Вход в зону — из шапки «Настроек» (кебаб-меню `SettingsHeaderMenu` через `headerRight` в `app/_RootLayout.tsx`) и с экрана «Ещё» (компактная иконка-кнопка «В админ панель» → `AdminPanelButton`). В `SettingsHeaderMenu` используется хук `useAdminEntry` (`entities/auth`): при `idle` восстанавливает сессию (`restoreSession`), затем пушит `/admin` (есть права) или `/admin/login`; для аутентифицированных единственный пункт меню — «Выйти из аккаунта админа» (`signOut`). На экране «Ещё» `AdminPanelButton` рендерится только для аутентифицированных `admin`/`moderator` (проверка `canAccessAdmin`; `MoreScreen` при монтировании вызывает `restoreSession`, если статус `idle`) и пушит `/admin`. После успешного входа на `/admin/login` показывается тост «Вход выполнен» и выполняется `router.replace('/more')`.
 
 ## Незарегистрированные маршруты
 
