@@ -1,10 +1,10 @@
-import { StyleSheet, View } from 'react-native'
-import { COLORS, INDENTS, useTheme } from 'shared/ui/theme'
+import { COLORS, useTheme } from 'shared/ui/theme'
+import { PlaylistMenuDivider } from './PlaylistMenuDivider'
 import { PlaylistOfflineMenuItem } from './PlaylistOfflineMenuItem'
 
 /**
  * Offline-cache menu rows for the playlist header menu: add/stop caching and
- * clear-cache, with the dividers that separate them.
+ * clear-cache, preceded by the divider that separates them from the batch rows.
  * @param props - Offline menu state and handlers.
  * @param props.allCached - Whether every playable sermon is already cached.
  * @param props.isAddAllToOfflineDisabled - Disables the add-all action (e.g. Empty playlist).
@@ -32,11 +32,10 @@ export const PlaylistOfflineMenuItems = ({
   onStopCaching: () => void
 }) => {
   const { currentTheme } = useTheme()
-  const dividerColor = { backgroundColor: currentTheme.textMuted }
 
   return (
     <>
-      <View style={[styles.dropdownDivider, dividerColor]} />
+      <PlaylistMenuDivider />
 
       {isCaching ? (
         <PlaylistOfflineMenuItem
@@ -53,8 +52,6 @@ export const PlaylistOfflineMenuItems = ({
         />
       )}
 
-      <View style={[styles.dropdownDivider, dividerColor]} />
-
       <PlaylistOfflineMenuItem
         onPress={onClearCache}
         icon='cloud-off-outline'
@@ -66,11 +63,3 @@ export const PlaylistOfflineMenuItems = ({
     </>
   )
 }
-
-const styles = StyleSheet.create({
-  dropdownDivider: {
-    height: 1,
-    marginHorizontal: INDENTS.medium,
-    opacity: 0.3,
-  },
-})
