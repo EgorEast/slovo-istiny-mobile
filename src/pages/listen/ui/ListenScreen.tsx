@@ -68,6 +68,7 @@ export const ListenScreen = () => {
           onPlaylistPress={onPlaylistPress}
           onPreacherPress={onPreacherPress}
           onAddToPlaylist={openAddToPlaylist}
+          sermonGroupTargetId='search-results.group-sermons'
         />
       ) : (
         <PullToRefresh onRefresh={refresh} refreshing={isRefreshing}>

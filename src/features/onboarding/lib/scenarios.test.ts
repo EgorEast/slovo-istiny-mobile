@@ -86,6 +86,14 @@ describe('onboarding scenario data', () => {
     expect(scenariosById['player-speed'].steps[0].targetId).toBe(menuTargetId)
     expect(scenariosById['player-sound'].steps[0].targetId).toBe(menuTargetId)
   })
+
+  test('search scenario groups the results and lives on /listen', () => {
+    const search = scenariosById.search
+
+    expect(search.screens).toEqual(['/listen'])
+    expect(search.steps).toHaveLength(3)
+    expect(search.steps[0].targetId).toBe('search-results.group-sermons')
+  })
 })
 
 describe('resolveStepRoute', () => {

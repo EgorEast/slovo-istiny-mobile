@@ -32,11 +32,13 @@ export const SearchGroupedResults = ({
   onPlaylistPress,
   onPreacherPress,
   onShowAllGroup,
+  sermonGroupTargetId,
 }: {
   onAddToPlaylist?: (sermon: AudioPlayerData) => void
   onPlaylistPress: (playlist: PlaylistData) => void
   onPreacherPress?: (artist: string) => void
   onShowAllGroup?: (group: SearchGroupKey, query: string) => void
+  sermonGroupTargetId?: string
 }) => {
   useDebouncedSearch()
 
@@ -90,6 +92,7 @@ export const SearchGroupedResults = ({
               progressMap={progressMap}
               onAddToPlaylist={onAddToPlaylist}
               historySermonIds={historySermonIds}
+              headerTargetId={sermonGroupTargetId}
               onShowAll={handleShowAllGroup('sermons')}
             />
             <SearchPlaylistGroup

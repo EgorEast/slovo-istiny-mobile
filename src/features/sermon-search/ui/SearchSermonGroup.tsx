@@ -8,6 +8,7 @@ const SERMONS_LABEL = 'Проповеди'
 const MAX_SERMON_RESULTS = 4
 
 export const SearchSermonGroup = ({
+  headerTargetId,
   historySermonIds,
   onAddToPlaylist,
   onPress,
@@ -15,6 +16,7 @@ export const SearchSermonGroup = ({
   progressMap,
   sermons,
 }: {
+  headerTargetId?: string
   historySermonIds: Set<string>
   onAddToPlaylist?: (sermon: AudioPlayerData) => void
   onPress: (sermon: SermonData) => void
@@ -22,7 +24,12 @@ export const SearchSermonGroup = ({
   progressMap: Map<string, number>
   sermons: SermonData[]
 }) => (
-  <SearchGroup onPress={onShowAll} label={SERMONS_LABEL} count={sermons.length}>
+  <SearchGroup
+    onPress={onShowAll}
+    label={SERMONS_LABEL}
+    count={sermons.length}
+    headerTargetId={headerTargetId}
+  >
     {sermons.slice(0, MAX_SERMON_RESULTS).map(sermon => (
       <Fragment key={sermon.id}>
         <SearchResultsRow
