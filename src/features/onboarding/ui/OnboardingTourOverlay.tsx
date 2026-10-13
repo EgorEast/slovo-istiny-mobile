@@ -35,16 +35,15 @@ export const OnboardingTourOverlay = () => {
   const step =
     scenario === undefined || stepIndex === undefined ? undefined : scenario.steps[stepIndex]
   const activeTargetId = step?.targetId
-  const { holdNavigation, isNavigatingToStep, isPerformingAction, isWaitSatisfied, tapRect } =
-    useStepNavigation({
-      bottomInset: insets.bottom,
-      isTourActive: tour !== null,
-      scenario,
-      step,
-      stepIndex,
-      stepKey,
-      viewportHeight: height,
-    })
+  const { holdNavigation, isOverlayHidden, isWaitSatisfied, tapRect } = useStepNavigation({
+    bottomInset: insets.bottom,
+    isTourActive: tour !== null,
+    scenario,
+    step,
+    stepIndex,
+    stepKey,
+    viewportHeight: height,
+  })
 
   useEffect(() => {
     if (activeTargetId === undefined) return
@@ -63,8 +62,9 @@ export const OnboardingTourOverlay = () => {
   if (tour === null || scenario === undefined || step === undefined) return null
 
   // Hide the overlay while the router plays the real transition to the step's route,
-  // and while an action step performs its action (the live UI is the show then).
-  if (isNavigatingToStep || isPerformingAction) return null
+  // while an action step performs its action (the live UI is the show then), and while
+  // a `skipIfMissing` step waits to see whether its target registers at all.
+  if (isOverlayHidden) return null
 
   // The tap hint is a pass-through layer, not a modal: a modal would swallow every
   // touch and freeze the screen the tour is "pressing".

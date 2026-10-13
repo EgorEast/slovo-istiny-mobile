@@ -1,8 +1,8 @@
 import { createCtx } from '@reatom/framework'
-import { waitFor } from '@testing-library/react-native'
+import { act, waitFor } from '@testing-library/react-native'
 import { renderHookWithProviders } from 'shared/mocks/renderWithProviders'
 import { type OnboardingTargetRect, onboardingTargetRectsAtom, onboardingTourAtom } from '../model'
-import { type OnboardingScenario, type OnboardingStep } from './scenarios'
+import { type OnboardingScenario, type OnboardingStep, scenariosById } from './scenarios'
 import { registerTourAction, unregisterTourAction } from './tourActions'
 import { useStepNavigation } from './useStepNavigation'
 
@@ -131,6 +131,74 @@ describe('useStepNavigation action steps', () => {
       () =>
         expect(ctx.get(onboardingTourAtom)).toEqual({
           scenarioId: 'player-description',
+          stepIndex: 1,
+        }),
+      { timeout: 2000 },
+    )
+  })
+})
+
+const PLAYLIST_MENU_SCENARIO = scenariosById['playlist-menu']
+
+const renderPlaylistMenuStep = async (
+  stepIndex: number,
+  rects: Record<string, OnboardingTargetRect> = {},
+) => {
+  const ctx = createCtx()
+  onboardingTourAtom(ctx, { scenarioId: 'playlist-menu', stepIndex })
+  onboardingTargetRectsAtom(ctx, rects)
+
+  return renderHookWithProviders(
+    ({ index }: { index: number }) =>
+      useStepNavigation({
+        bottomInset: 0,
+        isTourActive: true,
+        scenario: PLAYLIST_MENU_SCENARIO,
+        step: PLAYLIST_MENU_SCENARIO.steps[index],
+        stepIndex: index,
+        stepKey: `playlist-menu:${index}`,
+        viewportHeight: 800,
+      }),
+    { ctx, initialProps: { index: stepIndex } },
+  )
+}
+
+describe('useStepNavigation skipIfMissing steps', () => {
+  test('skips forward a missing step whose target never registers', async () => {
+    const { ctx } = await renderPlaylistMenuStep(2)
+
+    await waitFor(
+      () =>
+        expect(ctx.get(onboardingTourAtom)).toEqual({
+          scenarioId: 'playlist-menu',
+          stepIndex: 3,
+        }),
+      { timeout: 2000 },
+    )
+  })
+
+  test('does not skip a missing-capable step whose target is registered', async () => {
+    const { ctx } = await renderPlaylistMenuStep(2, { 'playlist.menu-share': TARGET_RECT })
+
+    await act(async () => {
+      await new Promise(resolve => setTimeout(resolve, 800))
+    })
+
+    expect(ctx.get(onboardingTourAtom)).toEqual({ scenarioId: 'playlist-menu', stepIndex: 2 })
+  })
+
+  test('skips backwards when the user navigated back onto a missing step', async () => {
+    const { ctx, rerender } = await renderPlaylistMenuStep(2)
+
+    // Move forward to step 3 and back to 2: the direction ref records «backward»,
+    // so the missing step 2 skips to step 1, not forward.
+    await rerender({ index: 3 })
+    await rerender({ index: 2 })
+
+    await waitFor(
+      () =>
+        expect(ctx.get(onboardingTourAtom)).toEqual({
+          scenarioId: 'playlist-menu',
           stepIndex: 1,
         }),
       { timeout: 2000 },

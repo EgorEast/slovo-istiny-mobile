@@ -60,16 +60,16 @@ describe('<ScenarioPickerModal>', () => {
     ])
   })
 
-  test('keeps the playlists and playlist-menu scenarios local on the playlist screen', async () => {
+  test('keeps only the playlist-menu scenario local on the playlist screen', async () => {
     mockPathname.mockReturnValue('/listen/playlist')
 
     await renderPicker()
 
     expectRowTitles([
-      'Плейлисты',
       'Меню плейлиста',
       'Как слушать проповеди',
       'Плеер',
+      'Плейлисты',
       'Результаты поиска',
       'История прослушивания',
       'Офлайн-режим',

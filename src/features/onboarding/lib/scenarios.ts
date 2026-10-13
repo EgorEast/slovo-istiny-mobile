@@ -63,8 +63,9 @@ export interface OnboardingStep {
   // Pass-through card over the live UI, no spotlight modal.
   interactive?: boolean
   route?: Href
-  // Registered action the tour performs itself and then auto-advances (see
-  // lib/tourActions.ts); an action step is demonstrative and never navigates.
+  // Target may be absent (admin/local/flag row): skip the step when its rect never registers.
+  skipIfMissing?: boolean
+  // Registered action the tour performs itself, then auto-advances (lib/tourActions.ts).
   tapActionId?: string
   tapTargetId?: string
   targetId?: string

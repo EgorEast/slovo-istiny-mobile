@@ -175,6 +175,17 @@ describe('onboarding scenario data', () => {
       'playlist.menu-clear',
       'playlist.menu-delete',
     ])
+    // Every menu item may be absent (admin/local-only/feature-gated): the tour
+    // drops its step instead of spotlighting a hidden row.
+    expect(playlistMenu.steps.slice(2).every(step => step.skipIfMissing === true)).toBe(true)
+  })
+
+  test('playlists scenario no longer claims the single-playlist screen', () => {
+    expect(scenariosById.playlists.screens).toEqual([
+      '/listen',
+      '/listen/my-playlists',
+      '/listen/playlist-list',
+    ])
   })
 })
 

@@ -19,36 +19,43 @@ export const playlistMenuScenario: OnboardingScenario = {
       title: 'Меню плейлиста',
     },
     {
+      skipIfMissing: true,
       targetId: 'playlist.menu-share',
       text: 'Отправьте плейлист ссылкой — например, в мессенджер.',
       title: 'Поделиться',
     },
     {
+      skipIfMissing: true,
       targetId: 'playlist.menu-add-all',
       text: 'Добавьте все проповеди плейлиста в другой ваш плейлист.',
       title: 'Добавить все проповеди',
     },
     {
+      skipIfMissing: true,
       targetId: 'playlist.menu-publish',
       text: 'Опубликуйте плейлист в общих — доступно администраторам для локальных плейлистов.',
       title: 'Опубликовать',
     },
     {
+      skipIfMissing: true,
       targetId: 'playlist.menu-offline-add',
       text: 'Скачайте все проповеди плейлиста для офлайна; когда плейлист полностью в офлайне — пункт уберёт его из офлайна.',
       title: 'Офлайн',
     },
     {
+      skipIfMissing: true,
       targetId: 'playlist.menu-history-mark',
       text: 'Пометить все проповеди прослушанными или удалить плейлист из истории прослушивания.',
       title: 'История',
     },
     {
+      skipIfMissing: true,
       targetId: 'playlist.menu-clear',
       text: 'Убрать все проповеди из плейлиста, не удаляя сам плейлист.',
       title: 'Очистка',
     },
     {
+      skipIfMissing: true,
       targetId: 'playlist.menu-delete',
       text: 'Удалить плейлист целиком. Эти действия необратимы — действует подтверждающий диалог.',
       title: 'Удаление',

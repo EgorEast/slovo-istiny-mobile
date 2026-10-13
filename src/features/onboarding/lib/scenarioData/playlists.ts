@@ -4,7 +4,7 @@ export const playlistsScenario: OnboardingScenario = {
   description: 'Создание и управление подборками',
   icon: 'albums-outline',
   id: 'playlists',
-  screens: ['/listen', '/listen/my-playlists', '/listen/playlist-list', '/listen/playlist'],
+  screens: ['/listen', '/listen/my-playlists', '/listen/playlist-list'],
   steps: [
     {
       route: '/listen',

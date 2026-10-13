@@ -3,6 +3,7 @@ import { usePathname, useRouter } from 'expo-router'
 import { useEffect } from 'react'
 import { onboardingTargetRectsAtom } from '../model'
 import { type OnboardingScenario, type OnboardingStep, resolveStepRoute } from './scenarios'
+import { useSkipMissingStep } from './useSkipMissingStep'
 import { useTourActionStep } from './useTourActionStep'
 import { useTourTapFlow } from './useTourTapFlow'
 import { useWaitForSatisfied } from './useWaitForSatisfied'
@@ -19,7 +20,8 @@ interface StepNavigationInput {
 
 // Resolves the active step's effective route, holds navigation while a tap hint blinks
 // on the element the tour "presses", then navigates — or, for a demonstrative action
-// step, performs the registered action and advances on its own.
+// step, performs the registered action and advances on its own. A `skipIfMissing`
+// step whose target never registers is dropped by useSkipMissingStep.
 export const useStepNavigation = ({
   bottomInset,
   isTourActive,
@@ -70,6 +72,18 @@ export const useStepNavigation = ({
     stepKey,
   })
 
+  const skipTargetId = step?.targetId
+  const isSkippingStep = useSkipMissingStep({
+    lastStepIndex: scenario === undefined ? undefined : scenario.steps.length - 1,
+    stepIndex,
+    waitingForTarget:
+      isTourActive &&
+      step?.skipIfMissing === true &&
+      skipTargetId !== undefined &&
+      !needsNavigation &&
+      rects[skipTargetId] === undefined,
+  })
+
   useEffect(() => {
     if (holdNavigation) return
     if (effectiveRoute === undefined) return
@@ -77,10 +91,12 @@ export const useStepNavigation = ({
     if (pathname !== effectiveRoute) router.navigate(effectiveRoute)
   }, [effectiveRoute, holdNavigation, pathname, router])
 
-  // The overlay hides while the router moves to the route, except during the tap
-  // phase (the pass-through hint replaces it) and while the blink is about to start.
+  // The overlay hides while the router moves to the route, while an action step
+  // performs its action, and while a `skipIfMissing` step waits to see whether its
+  // target registers at all.
   const isNavigatingToStep = needsNavigation && !isTapPending
+  const isOverlayHidden = isNavigatingToStep || isPerformingAction || isSkippingStep
   const isWaitSatisfied = useWaitForSatisfied(step?.waitFor)
 
-  return { holdNavigation, isNavigatingToStep, isPerformingAction, isWaitSatisfied, tapRect }
+  return { holdNavigation, isOverlayHidden, isWaitSatisfied, tapRect }
 }
