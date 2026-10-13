@@ -19,10 +19,11 @@ interface TourActionStepInput {
 }
 
 // A demonstrative action step performs its registered action once the blink is done
-// (or its tap target never registered), then advances on its own. A missing action is
-// not an error: the tour still advances. `isPerformingAction` tells the overlay to hide
-// while the step holds for its rect or performs the action (the live UI is the show);
-// the pending advance clears when the step changes or the tour ends.
+// (or its tap target never registered, or the step declares no tap target), then
+// advances on its own. A missing action is not an error: the tour still advances.
+// `isPerformingAction` tells the overlay to hide while the step holds for its rect
+// or performs the action (the live UI is the show); the pending advance clears when
+// the step changes or the tour ends.
 export const useTourActionStep = ({
   blinkedStepKey,
   holdExpiredStepKey,
@@ -33,14 +34,15 @@ export const useTourActionStep = ({
   stepKey,
 }: TourActionStepInput) => {
   const next = useAction(goToNextOnboardingStep)
-  const isBlinkDone = blinkedStepKey === stepKey && !isTapPhase
+  const isBlinkDone = (step?.tapTargetId === undefined || blinkedStepKey === stepKey) && !isTapPhase
   const isPerformingAction =
     isActionStep && (isHoldingForTapRect || holdExpiredStepKey === stepKey || isBlinkDone)
 
   useEffect(() => {
     if (!isActionStep) return
     if (isTapPhase) return
-    if (blinkedStepKey !== stepKey && holdExpiredStepKey !== stepKey) return
+    const hasTapTarget = step?.tapTargetId !== undefined
+    if (hasTapTarget && blinkedStepKey !== stepKey && holdExpiredStepKey !== stepKey) return
 
     const action = step?.tapActionId === undefined ? undefined : getTourAction(step.tapActionId)
     action?.()

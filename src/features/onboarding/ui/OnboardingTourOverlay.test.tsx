@@ -64,7 +64,7 @@ const EDGE_FORWARD_RECT: OnboardingTargetRect = { height: 400, width: 64, x: 336
 const AREA_HIGHLIGHT = 'onboarding-area-highlight'
 
 const renderAtStep = (
-  scenarioId: 'listen' | 'player-intro' | 'player' | 'playlists' | 'settings',
+  scenarioId: 'listen' | 'player-intro' | 'player' | 'playlists' | 'search' | 'settings',
   stepIndex: number,
   rects: Record<string, OnboardingTargetRect> = {},
   setup?: (ctx: ReturnType<typeof createCtx>) => void,
@@ -264,6 +264,14 @@ describe('<OnboardingTourOverlay>', () => {
 
     expect(queryAllByTestId(AREA_HIGHLIGHT)).toHaveLength(0)
     expect(getByText('Края экрана')).toBeTruthy()
+    expect(queryByText(DIM)).toBeNull()
+  })
+
+  test('renders an interactive step as a pass-through card without a spotlight modal', async () => {
+    const { getByText, queryByText } = await renderAtStep('search', 4)
+
+    expect(getByText('Выберите плейлист')).toBeTruthy()
+    expect(getByText(NEXT_LABEL)).toBeTruthy()
     expect(queryByText(DIM)).toBeNull()
   })
 

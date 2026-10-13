@@ -70,7 +70,7 @@ export interface OnboardingStep {
   targetId?: string
   text: string
   title: string
-  waitFor?: 'paused' | 'searchActive' | 'sermonSelected'
+  waitFor?: 'paused' | 'sermonSelected'
 }
 
 export const scenarios: OnboardingScenario[] = [

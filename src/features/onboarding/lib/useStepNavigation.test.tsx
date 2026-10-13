@@ -30,6 +30,18 @@ const SCENARIO: OnboardingScenario = {
   title: '',
 }
 
+// A demonstrative step without a tap target: no blink to hold on, so the action
+// must run on step activation.
+const TARGETLESS_STEP: OnboardingStep = {
+  tapActionId: ACTION_ID,
+  text: '',
+  title: '',
+}
+const TARGETLESS_SCENARIO: OnboardingScenario = {
+  ...SCENARIO,
+  steps: [TARGETLESS_STEP],
+}
+
 const renderNavigation = (rects: Record<string, OnboardingTargetRect> = {}) => {
   const ctx = createCtx()
   onboardingTourAtom(ctx, { scenarioId: 'player-description', stepIndex: 0 })
@@ -42,6 +54,25 @@ const renderNavigation = (rects: Record<string, OnboardingTargetRect> = {}) => {
         isTourActive: true,
         scenario: SCENARIO,
         step: ACTION_STEP,
+        stepIndex: 0,
+        stepKey: STEP_KEY,
+        viewportHeight: 800,
+      }),
+    { ctx },
+  )
+}
+
+const renderTargetlessNavigation = () => {
+  const ctx = createCtx()
+  onboardingTourAtom(ctx, { scenarioId: 'player-description', stepIndex: 0 })
+
+  return renderHookWithProviders(
+    () =>
+      useStepNavigation({
+        bottomInset: 0,
+        isTourActive: true,
+        scenario: TARGETLESS_SCENARIO,
+        step: TARGETLESS_STEP,
         stepIndex: 0,
         stepKey: STEP_KEY,
         viewportHeight: 800,
@@ -86,6 +117,23 @@ describe('useStepNavigation action steps', () => {
           stepIndex: 1,
         }),
       { timeout: 4500 },
+    )
+  })
+
+  test('performs and advances immediately when the step declares no tap target', async () => {
+    const action = jest.fn()
+    registerTourAction(ACTION_ID, action)
+
+    const { ctx } = await renderTargetlessNavigation()
+
+    await waitFor(() => expect(action).toHaveBeenCalledTimes(1), { timeout: 2000 })
+    await waitFor(
+      () =>
+        expect(ctx.get(onboardingTourAtom)).toEqual({
+          scenarioId: 'player-description',
+          stepIndex: 1,
+        }),
+      { timeout: 2000 },
     )
   })
 })

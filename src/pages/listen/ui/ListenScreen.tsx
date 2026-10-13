@@ -12,6 +12,7 @@ import {
   useIsSearchOpen,
   useOpenSearch,
   useSearchUrlSync,
+  useSermonPlayback,
 } from 'features/sermon-search'
 import { authStatusAtom, authUserAtom, canAccessAdmin, restoreSession } from 'entities/auth'
 import { createRefreshControl, PullToRefresh } from 'shared/ui'
@@ -20,10 +21,12 @@ import { PLAYER_SIZES, useTheme } from 'shared/ui/theme'
 import { useListenSearchNavigation } from '../lib/useListenSearchNavigation'
 import { usePullToRefresh } from '../lib/usePullToRefresh'
 import { useScrollActivity } from '../lib/useScrollActivity'
+import { useSearchTourActions } from '../lib/useSearchTourActions'
 import { ContinueListeningButton } from './ContinueListeningButton'
 import { DynamicSectionsSlider } from './DynamicSectionsSlider'
 import { ListenTopRow } from './ListenTopRow'
 import { MyPlaylistsSlider } from './MyPlaylistsSlider'
+import { wrapFirstSearchRow, wrapSearchGroupHeader } from './searchResultTargets'
 
 const OPEN_SEARCH_ACTION_ID = 'open-listen-search'
 
@@ -41,6 +44,8 @@ export const ListenScreen = () => {
   const restore = useAction(restoreSession)
   const { onScroll } = useScrollActivity()
   const { modal, openAddToPlaylist } = useAddToPlaylistModal()
+  const { modal: sermonPlaybackModal, onSermonPress } = useSermonPlayback()
+  useSearchTourActions({ onPressFirstSermon: onSermonPress })
   const { isRefreshing, refresh } = usePullToRefresh()
   const { onPlaylistPress, onPreacherPress, onShowAllGroup } = useListenSearchNavigation()
   const tourScrollableRef = useTourScrollable()
@@ -73,7 +78,8 @@ export const ListenScreen = () => {
           onPlaylistPress={onPlaylistPress}
           onPreacherPress={onPreacherPress}
           onAddToPlaylist={openAddToPlaylist}
-          sermonGroupTargetId='search-results.group-sermons'
+          firstRowWrapper={wrapFirstSearchRow}
+          groupHeaderWrapper={wrapSearchGroupHeader}
         />
       ) : (
         <PullToRefresh onRefresh={refresh} refreshing={isRefreshing}>
@@ -103,6 +109,7 @@ export const ListenScreen = () => {
         </PullToRefresh>
       )}
       {modal}
+      {sermonPlaybackModal}
     </SafeAreaView>
   )
 }

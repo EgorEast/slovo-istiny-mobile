@@ -1,5 +1,7 @@
 import { createCtx } from '@reatom/framework'
 import { fireEvent, screen } from '@testing-library/react-native'
+import { type ReactElement } from 'react'
+import { View as RNView } from 'react-native'
 import {
   FAVORITES_PLAYLIST,
   type LocalPlaylistData,
@@ -176,6 +178,32 @@ describe('<SearchGroupedResults>', () => {
     expect(screen.getByRole('button', { name: `${SERMONS_LABEL}, 1` })).toBeTruthy()
     expect(screen.getByRole('button', { name: `${PLAYLISTS_LABEL}, 2` })).toBeTruthy()
     expect(screen.getByRole('button', { name: `${PREACHERS_LABEL}, 3` })).toBeTruthy()
+  })
+
+  test('applies the page-owned wrappers around the sermon header and first row only', async () => {
+    const groupHeaderWrapper = jest.fn((header: ReactElement) => (
+      <RNView testID='wrapped-header'>{header}</RNView>
+    ))
+    const firstRowWrapper = jest.fn((row: ReactElement) => (
+      <RNView testID='wrapped-row'>{row}</RNView>
+    ))
+    const ctx = createCtx()
+    searchQueryAtom(ctx, ACTIVE_QUERY)
+    searchResultsAtom(ctx, [buildSermon(1), buildSermon(2)])
+
+    await renderWithProviders(
+      <SearchGroupedResults
+        onPlaylistPress={jest.fn()}
+        firstRowWrapper={firstRowWrapper}
+        groupHeaderWrapper={groupHeaderWrapper}
+      />,
+      { ctx },
+    )
+
+    expect(groupHeaderWrapper).toHaveBeenCalledTimes(1)
+    expect(firstRowWrapper).toHaveBeenCalledTimes(1)
+    expect(screen.getByTestId('wrapped-header')).toBeTruthy()
+    expect(screen.getByTestId('wrapped-row')).toHaveTextContent('Проповедь 1', { exact: false })
   })
 
   test('caps the sermons group at four rows', async () => {

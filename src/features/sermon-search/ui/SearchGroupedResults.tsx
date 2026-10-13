@@ -1,5 +1,5 @@
 import { useAtom } from '@reatom/npm-react'
-import { useCallback } from 'react'
+import { type ReactElement, type ReactNode, useCallback } from 'react'
 import { ScrollView, StyleSheet } from 'react-native'
 import { useHistoryProgressMap, useHistorySermonIds } from 'entities/listening-history'
 import { type PlaylistData } from 'entities/playlist'
@@ -28,17 +28,20 @@ const NO_RESULTS_MESSAGE = 'Ничего не найдено'
 type SearchGroupKey = 'playlists' | 'preachers' | 'sermons'
 
 export const SearchGroupedResults = ({
+  firstRowWrapper,
+  groupHeaderWrapper,
   onAddToPlaylist,
   onPlaylistPress,
   onPreacherPress,
   onShowAllGroup,
-  sermonGroupTargetId,
 }: {
+  // Page-owned wrappers (dependency inversion): this feature never imports onboarding.
+  firstRowWrapper?: (row: ReactElement) => ReactNode
+  groupHeaderWrapper?: (header: ReactElement) => ReactNode
   onAddToPlaylist?: (sermon: AudioPlayerData) => void
   onPlaylistPress: (playlist: PlaylistData) => void
   onPreacherPress?: (artist: string) => void
   onShowAllGroup?: (group: SearchGroupKey, query: string) => void
-  sermonGroupTargetId?: string
 }) => {
   useDebouncedSearch()
 
@@ -52,7 +55,6 @@ export const SearchGroupedResults = ({
   const { modal, onSermonPress } = useSermonPlayback()
   const progressMap = useHistoryProgressMap()
   const historySermonIds = useHistorySermonIds()
-
   const trimmedQuery = query.trim()
 
   const handlePreacherPress = useCallback(
@@ -91,8 +93,9 @@ export const SearchGroupedResults = ({
               onPress={onSermonPress}
               progressMap={progressMap}
               onAddToPlaylist={onAddToPlaylist}
+              firstRowWrapper={firstRowWrapper}
               historySermonIds={historySermonIds}
-              headerTargetId={sermonGroupTargetId}
+              groupHeaderWrapper={groupHeaderWrapper}
               onShowAll={handleShowAllGroup('sermons')}
             />
             <SearchPlaylistGroup

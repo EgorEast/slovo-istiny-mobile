@@ -13,9 +13,9 @@ export const searchScenario: OnboardingScenario = {
       title: 'Открываем поиск',
     },
     {
-      text: 'Введите любой запрос — например, «молитва».',
-      title: 'Введите запрос',
-      waitFor: 'searchActive',
+      tapActionId: 'type-search-query',
+      text: 'Вводим «лицемерие»…',
+      title: 'Вводим запрос',
     },
     {
       targetId: 'search-results.group-sermons',
@@ -23,11 +23,20 @@ export const searchScenario: OnboardingScenario = {
       title: 'Группы результатов',
     },
     {
-      text: 'Если проповедь входит в несколько плейлистов, при нажатии приложение спросит, из какого плейлиста воспроизвести.',
-      title: 'Открыть в нужном плейлисте',
+      tapActionId: 'press-first-sermon',
+      tapTargetId: 'search-results.first-sermon',
+      targetId: 'search-results.first-sermon',
+      text: 'Выбираем проповедь, которая входит в несколько плейлистов…',
+      title: 'Выбираем проповедь',
     },
     {
-      text: 'Через меню строки (⋯ или долгое нажатие) добавьте проповедь в плейлист или управляйте историей.',
+      interactive: true,
+      text: 'В окне «Выберите плейлист» нажмите на плейлист — проповедь заиграет из него. Если окно не появилось, проповедь уже играет из своего плейлиста.',
+      title: 'Выберите плейлист',
+    },
+    {
+      interactive: true,
+      text: 'Зажмите строку проповеди или нажмите «⋯» — меню: добавить в плейлист, отметить прослушанной, удалить из истории.',
       title: 'Меню проповеди',
     },
   ],
