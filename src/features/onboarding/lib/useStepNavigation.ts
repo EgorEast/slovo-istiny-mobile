@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { onboardingTargetRectsAtom } from '../model'
 import { type OnboardingScenario, type OnboardingStep, resolveStepRoute } from './scenarios'
 import { isRectOutsideViewport } from './tourScrollable'
+import { useWaitForSatisfied } from './useWaitForSatisfied'
 
 // A tap hint blinks three times (~800ms each) before the tour navigates.
 const TAP_PHASE_MS = 2400
@@ -81,6 +82,7 @@ export const useStepNavigation = ({
 
   const isNavigatingToStep =
     !holdNavigation && effectiveRoute !== undefined && pathname !== effectiveRoute
+  const isWaitSatisfied = useWaitForSatisfied(step?.waitFor)
 
-  return { holdNavigation, isNavigatingToStep, tapRect }
+  return { holdNavigation, isNavigatingToStep, isWaitSatisfied, tapRect }
 }

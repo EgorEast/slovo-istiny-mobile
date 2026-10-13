@@ -7,12 +7,14 @@ export const offlineScenario: OnboardingScenario = {
   steps: [
     {
       route: '/more',
+      tapTargetId: 'tab.more',
       targetId: 'more.offline-item',
       text: 'Раздел офлайн-кэша доступен из меню «Ещё».',
       title: 'Офлайн-режим',
     },
     {
       route: '/offline',
+      tapTargetId: 'more.offline-item',
       targetId: 'offline.caching-switch',
       text: 'Переключатель включает автоматическое сохранение проповедей на устройство.',
       title: 'Автокэширование',

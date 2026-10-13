@@ -13,6 +13,7 @@ export const playlistsScenario: OnboardingScenario = {
     },
     {
       route: '/listen/my-playlists',
+      tapTargetId: 'listen.my-playlists',
       targetId: 'playlists.create',
       text: 'Нажмите кнопку создания — плейлист появится в списке. Имя можно изменить в любой момент.',
       title: 'Создать плейлист',

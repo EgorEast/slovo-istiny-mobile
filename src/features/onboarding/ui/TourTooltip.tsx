@@ -5,8 +5,11 @@ import { PressableButton } from 'shared/ui/pressable-button/PressableButton'
 import { COLORS, FONT_SIZES, INDENTS, RADIUSES, useTheme } from 'shared/ui/theme'
 import { type OnboardingStep } from '../lib/scenarios'
 
+const WAIT_HINT = 'Выполните действие, чтобы продолжить'
+
 export const TourTooltip = ({
   index,
+  isWaitSatisfied,
   onClose,
   onNext,
   onPrev,
@@ -14,6 +17,7 @@ export const TourTooltip = ({
   total,
 }: {
   index: number
+  isWaitSatisfied: boolean
   onClose: () => void
   onNext: () => void
   onPrev: () => void
@@ -22,6 +26,7 @@ export const TourTooltip = ({
 }) => {
   const { currentTheme } = useTheme()
   const isLast = index === total - 1
+  const isWaiting = step.waitFor !== undefined && !isWaitSatisfied
 
   return (
     <View style={[styles.card, { backgroundColor: currentTheme.surface }]}>
@@ -43,12 +48,16 @@ export const TourTooltip = ({
             <Text style={[styles.secondaryText, { color: currentTheme.text }]}>Назад</Text>
           </PressableButton>
         ) : null}
-        <PressableButton
-          onPress={onNext}
-          style={[styles.primaryButton, { backgroundColor: currentTheme.primary }]}
-        >
-          <Text style={styles.primaryText}>{isLast ? 'Готово' : 'Далее'}</Text>
-        </PressableButton>
+        {isWaiting ? (
+          <Text style={[styles.hint, { color: currentTheme.textMuted }]}>{WAIT_HINT}</Text>
+        ) : (
+          <PressableButton
+            onPress={onNext}
+            style={[styles.primaryButton, { backgroundColor: currentTheme.primary }]}
+          >
+            <Text style={styles.primaryText}>{isLast ? 'Готово' : 'Далее'}</Text>
+          </PressableButton>
+        )}
       </View>
     </View>
   )
@@ -73,6 +82,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flexDirection: 'row',
     justifyContent: 'space-between',
+  },
+  hint: {
+    flexShrink: 1,
+    fontSize: FONT_SIZES.sm,
+    textAlign: 'right',
   },
   primaryButton: {
     alignItems: 'center',

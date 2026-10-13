@@ -27,18 +27,15 @@ export const welcomeScenario: OnboardingScenario = {
       title: 'Мои плейлисты',
     },
     {
-      targetId: 'player.mini',
-      text: 'Управляйте воспроизведением с любого экрана. Нажмите на него, чтобы открыть полный плеер.',
-      title: 'Мини-плеер',
-    },
-    {
       route: '/more',
+      tapTargetId: 'tab.more',
       targetId: 'more.menu',
       text: 'Здесь история прослушивания, офлайн-режим и настройки.',
       title: 'Меню «Ещё»',
     },
     {
       route: '/settings',
+      tapTargetId: 'more.settings-item',
       targetId: 'settings.theme',
       text: 'Светлая и тёмная темы, а на Android 12+ — динамические цвета Material You.',
       title: 'Оформление',

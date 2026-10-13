@@ -37,7 +37,7 @@ export const OnboardingTourOverlay = () => {
   const step =
     scenario === undefined || stepIndex === undefined ? undefined : scenario.steps[stepIndex]
   const activeTargetId = step?.targetId
-  const { holdNavigation, isNavigatingToStep, tapRect } = useStepNavigation({
+  const { holdNavigation, isNavigatingToStep, isWaitSatisfied, tapRect } = useStepNavigation({
     bottomInset: insets.bottom,
     isTourActive: tour !== null,
     scenario,
@@ -65,9 +65,7 @@ export const OnboardingTourOverlay = () => {
 
   if (tour === null || scenario === undefined || step === undefined) return null
 
-  // While the router moves to the step's effective route, hide the whole overlay:
-  // the user watches the real tab/stack transition, and the overlay reappears once
-  // `pathname` catches up.
+  // Hide the overlay while the router plays the real transition to the step's route.
   if (isNavigatingToStep) return null
 
   const isLastStep = tour.stepIndex === scenario.steps.length - 1
@@ -108,6 +106,7 @@ export const OnboardingTourOverlay = () => {
                   index={tour.stepIndex}
                   total={scenario.steps.length}
                   onNext={isLastStep ? end : next}
+                  isWaitSatisfied={isWaitSatisfied}
                 />
               </View>
             )}

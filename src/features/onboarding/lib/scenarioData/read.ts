@@ -8,6 +8,7 @@ export const readScenario: OnboardingScenario = {
   steps: [
     {
       route: '/read',
+      tapTargetId: 'tab.read',
       text: 'Книги для чтения прямо в приложении: три подборки на любой этап подготовки.',
       title: 'Библиотека книг',
     },

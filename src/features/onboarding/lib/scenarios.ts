@@ -3,6 +3,7 @@ import { type Href } from 'expo-router'
 import { historyScenario } from './scenarioData/history'
 import { listenScenario } from './scenarioData/listen'
 import { offlineScenario } from './scenarioData/offline'
+import { playerScenario } from './scenarioData/player'
 import { playlistsScenario } from './scenarioData/playlists'
 import { readScenario } from './scenarioData/read'
 import { settingsScenario } from './scenarioData/settings'
@@ -24,6 +25,7 @@ export type OnboardingScenarioId =
   | 'history'
   | 'listen'
   | 'offline'
+  | 'player'
   | 'playlists'
   | 'read'
   | 'settings'
@@ -37,12 +39,14 @@ export interface OnboardingStep {
   targetId?: string
   text: string
   title: string
+  waitFor?: 'paused' | 'sermonSelected'
 }
 
 export const scenarios: OnboardingScenario[] = [
   welcomeScenario,
   whatsNewScenario,
   listenScenario,
+  playerScenario,
   playlistsScenario,
   historyScenario,
   offlineScenario,
@@ -55,6 +59,7 @@ export const scenariosById: Record<OnboardingScenarioId, OnboardingScenario> = {
   history: historyScenario,
   listen: listenScenario,
   offline: offlineScenario,
+  player: playerScenario,
   playlists: playlistsScenario,
   read: readScenario,
   settings: settingsScenario,

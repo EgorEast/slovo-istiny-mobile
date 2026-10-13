@@ -7,6 +7,7 @@ export const listenScenario: OnboardingScenario = {
   steps: [
     {
       route: '/listen',
+      tapTargetId: 'tab.listen',
       targetId: 'listen.sections',
       text: 'Горизонтальные подборки: разделы, проповедники и рекомендации. Листайте вбок.',
       title: 'Разделы проповедей',
