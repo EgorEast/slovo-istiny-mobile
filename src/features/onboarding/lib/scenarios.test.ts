@@ -100,12 +100,15 @@ describe('onboarding scenario data', () => {
     expect(description.steps[2].tapActionId).toBeUndefined()
   })
 
-  test('search scenario groups the results and lives on /listen', () => {
+  test('search scenario opens the search, waits for a query and groups the results', () => {
     const search = scenariosById.search
 
     expect(search.screens).toEqual(['/listen'])
-    expect(search.steps).toHaveLength(3)
-    expect(search.steps[0].targetId).toBe('search-results.group-sermons')
+    expect(search.steps).toHaveLength(5)
+    expect(search.steps[0].tapTargetId).toBe('listen.search-toggle')
+    expect(search.steps[0].tapActionId).toBe('open-listen-search')
+    expect(search.steps[1].waitFor).toBe('searchActive')
+    expect(search.steps[2].targetId).toBe('search-results.group-sermons')
   })
 
   test('playlist-menu scenario targets playback and the header menu', () => {

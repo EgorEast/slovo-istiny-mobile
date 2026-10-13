@@ -3,13 +3,14 @@ import { useEffect } from 'react'
 import { ScrollView, StyleSheet, View } from 'react-native'
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useAddToPlaylistModal } from 'features/add-to-playlist'
-import { useTourScrollable } from 'features/onboarding'
+import { useTourActionRegistrar, useTourScrollable } from 'features/onboarding'
 import {
   SEARCH_HEADER_HEIGHT,
   SearchBar,
   SearchGroupedResults,
   useIsSearchActive,
   useIsSearchOpen,
+  useOpenSearch,
   useSearchUrlSync,
 } from 'features/sermon-search'
 import { authStatusAtom, authUserAtom, canAccessAdmin, restoreSession } from 'entities/auth'
@@ -24,12 +25,16 @@ import { DynamicSectionsSlider } from './DynamicSectionsSlider'
 import { ListenTopRow } from './ListenTopRow'
 import { MyPlaylistsSlider } from './MyPlaylistsSlider'
 
+const OPEN_SEARCH_ACTION_ID = 'open-listen-search'
+
 export const ListenScreen = () => {
   const insets = useSafeAreaInsets()
   const { currentTheme } = useTheme()
   const isSearchOpen = useIsSearchOpen()
   const isSearchActive = useIsSearchActive()
+  const openSearch = useOpenSearch()
   useSearchUrlSync()
+  useTourActionRegistrar(OPEN_SEARCH_ACTION_ID, openSearch)
   const [tabBarHeight] = useAtom(tabBarHeightAtom)
   const [authStatus] = useAtom(authStatusAtom)
   const [authUser] = useAtom(authUserAtom)

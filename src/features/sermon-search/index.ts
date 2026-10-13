@@ -9,6 +9,7 @@ export {
 } from './lib/searchSources'
 export { useIsSearchActive } from './lib/useIsSearchActive'
 export { useIsSearchOpen } from './lib/useIsSearchOpen'
+export { useOpenSearch } from './lib/useOpenSearch'
 export { useSearchUrlSync } from './lib/useSearchUrlSync'
 export { useSermonPlayback } from './lib/useSermonPlayback'
 export { SearchBar } from './ui/SearchBar'

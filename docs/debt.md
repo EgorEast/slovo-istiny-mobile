@@ -170,7 +170,4 @@
 
 - [ ] **Persistent SAF-style folder on iOS not implemented.** Экспорт/импорт резервной копии на iOS идут через системный share sheet («Сохранить в Файлы», `expo-sharing`) и документ-пикер (`expo-document-picker`), поэтому строка выбора папки и автосинхронизация на iOS скрыты (`supportsFolderSync()` = `Platform.OS === 'android'`). Постоянный доступ к папке (security-scoped bookmarks / `enableFileSharing`) не реализован. — `src/features/settings-backup/lib/fileIo/index.native.ts`, `app.config.ts` — вернуться, когда появятся iOS-сборки (сейчас релизится только Android, см. `.forgejo/workflows/release.yml`): добавить bookmark-based доступ и включить автосинхронизацию.
 
-## Онбординг
-
-- [ ] **Сценарий `search` на `/listen` не открывает поиск сам.** Цель `search-results.group-sermons` существует только когда поиск открыт и активен (`isSearchOpen && isSearchActive`, запрос ≥ `MIN_QUERY_LENGTH`), а сценарий стартует с закрытым поиском — шаг «Группы результатов» деградирует в карточку по центру без подсветки. — `src/features/onboarding/lib/scenarioData/search.ts`, `src/pages/listen/ui/ListenScreen.tsx` — вернуться, если понадобится интерактивный первый шаг (открыть поиск через `tapTargetId` + `waitFor`) или цель на постоянно видимом элементе.
 
