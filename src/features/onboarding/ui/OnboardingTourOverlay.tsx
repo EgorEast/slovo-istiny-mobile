@@ -69,10 +69,15 @@ export const OnboardingTourOverlay = () => {
   const step = scenario.steps[tour.stepIndex]
   const isLastStep = tour.stepIndex === scenario.steps.length - 1
   const hole = activeTargetId === undefined ? null : (rects[activeTargetId] ?? null)
+  // A registered rect can sit entirely outside the viewport (a target scrolled
+  // out of view). Render it as if it were missing: no hole, centered card — but
+  // keep `hole` for the waiting logic so a real registration is not "pending".
+  const isRectOutsideViewport = hole !== null && (hole.y >= height || hole.y + hole.height <= 0)
+  const visibleHole = isRectOutsideViewport ? null : hole
   const isTargetWaitExpired = expiredStepKey === stepKey
   const isWaitingForTarget = activeTargetId !== undefined && hole === null && !isTargetWaitExpired
   const layout = computeTooltipLayout(
-    hole,
+    visibleHole,
     cardHeight ?? TOOLTIP_ESTIMATED_HEIGHT,
     height,
     insets.bottom,
@@ -89,7 +94,7 @@ export const OnboardingTourOverlay = () => {
       navigationBarTranslucent
     >
       <View style={styles.container}>
-        <TourDim hole={hole} width={width} height={height} />
+        <TourDim width={width} height={height} hole={visibleHole} />
         {isWaitingForTarget ? null : (
           <View
             style={[styles.tooltip, { top: layout.top }]}

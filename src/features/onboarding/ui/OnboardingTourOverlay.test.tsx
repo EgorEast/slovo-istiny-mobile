@@ -26,6 +26,7 @@ jest.mock('expo-router', () => ({
 const NEXT_LABEL = 'Далее'
 const MISSING_TARGET_TIMEOUT_MS = 1200
 const SECTIONS_RECT: OnboardingTargetRect = { height: 4, width: 3, x: 1, y: 2 }
+const OFFSCREEN_RECT: OnboardingTargetRect = { height: 60, width: 300, x: 0, y: 99999 }
 
 const renderAtStep = (
   scenarioId: 'listen' | 'playlists' | 'settings',
@@ -99,6 +100,14 @@ describe('<OnboardingTourOverlay>', () => {
     await renderAtStep('settings', 0)
 
     await waitFor(() => expect(mockPush).toHaveBeenCalledWith('/more'))
+  })
+
+  test('renders a centered card when the registered rect is below the viewport', async () => {
+    const { getByText } = await renderAtStep('listen', 3, {
+      'listen.my-playlists': OFFSCREEN_RECT,
+    })
+
+    expect(getByText('Мои плейлисты')).toBeTruthy()
   })
 
   test('keeps the tooltip hidden until the missing-target timeout expires', async () => {

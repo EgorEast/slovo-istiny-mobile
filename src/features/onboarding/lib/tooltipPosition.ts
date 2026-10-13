@@ -11,12 +11,17 @@ export const computeTooltipLayout = (
   bottomInset: number,
   margin: number,
 ): TooltipLayout => {
-  if (hole === null) return { top: (windowHeight - bottomInset - tooltipHeight) / 2 }
+  const maxTop = windowHeight - bottomInset - tooltipHeight - margin
+  const clampToViewport = (top: number) => Math.max(margin, Math.min(top, maxTop))
+
+  if (hole === null) {
+    const centered = (windowHeight - bottomInset - tooltipHeight) / 2
+    return { top: clampToViewport(centered) }
+  }
 
   const above = hole.y - margin - tooltipHeight
-  if (above >= margin) return { top: above }
+  if (above >= margin) return { top: clampToViewport(above) }
 
   const below = hole.y + hole.height + margin
-  const maxTop = windowHeight - bottomInset - tooltipHeight - margin
-  return { top: Math.max(margin, Math.min(below, maxTop)) }
+  return { top: clampToViewport(below) }
 }
