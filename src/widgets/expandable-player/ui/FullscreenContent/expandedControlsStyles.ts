@@ -56,7 +56,9 @@ export const expandedControlsStyles = StyleSheet.create({
   },
 
   menuIcon: {
-    color: '#9ca3af',
+    // Same white as the neighboring fullscreen controls (close/transport/stop):
+    // the trigger must not read as disabled against the dark player backdrop.
+    color: '#fff',
     fontSize: FONT_SIZES.lg,
   },
 

@@ -1,13 +1,14 @@
 import { createCtx } from '@reatom/framework'
 import { act, fireEvent, waitFor } from '@testing-library/react-native'
 import { useState } from 'react'
-import { View } from 'react-native'
+import { StyleSheet, View } from 'react-native'
 import { onboardingTargetRectsAtom, onboardingTourAtom } from 'features/onboarding/model'
 import { currentPlaylistAtom } from 'entities/player'
 import { myPlaylistsAtom } from 'entities/playlist'
 import { type AudioPlayerData } from 'entities/sermon'
 import { renderWithProviders } from 'shared/mocks/renderWithProviders'
 import { type createStyles } from '../ExpandablePlayer/styles'
+import { expandedControlsStyles } from './expandedControlsStyles'
 import { PlayerMenuAnchor } from './PlayerMenuAnchor'
 
 jest.mock('expo-router', () => ({
@@ -287,5 +288,15 @@ describe('<PlayerMenuAnchor>', () => {
     )
 
     await waitFor(() => expect(ctx.get(onboardingTargetRectsAtom)).toEqual({ [TARGET_ID]: RECT }))
+  })
+})
+
+describe('<PlayerMenuAnchor> menu icon', () => {
+  test('tints the trigger like the neighboring fullscreen controls', () => {
+    const menuIcon = StyleSheet.flatten(expandedControlsStyles.menuIcon)
+    const controlIcon = StyleSheet.flatten(expandedControlsStyles.controlIcon)
+
+    expect(menuIcon?.color).toBe(controlIcon?.color)
+    expect(menuIcon?.color).toBe('#fff')
   })
 })
