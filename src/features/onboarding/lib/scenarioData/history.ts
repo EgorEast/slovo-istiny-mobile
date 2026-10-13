@@ -4,6 +4,7 @@ export const historyScenario: OnboardingScenario = {
   description: 'Что вы слушали и когда',
   icon: 'time-outline',
   id: 'history',
+  screens: ['/history'],
   steps: [
     {
       route: '/more',

@@ -9,6 +9,10 @@ const PICKER_TITLE = 'Что посмотреть?'
 const FIRST_SCENARIO_TITLE = 'Как слушать проповеди'
 const BACKDROP_TEST_ID = 'modal-backdrop'
 
+jest.mock('expo-router', () => ({
+  usePathname: () => '/listen',
+}))
+
 jest.mock('entities/feature-flags', () => ({
   useFeatureFlag: () => true,
 }))

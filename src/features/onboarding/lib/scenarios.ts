@@ -16,6 +16,9 @@ export interface OnboardingScenario {
   featureFlag?: 'read' | 'study'
   icon: keyof typeof Ionicons.glyphMap
   id: OnboardingScenarioId
+  // Exact routes the scenario belongs to; `undefined` means it is global and
+  // offered on every screen. The picker splits its list by exact pathname match.
+  screens?: Href[]
   sinceVersion?: string
   steps: OnboardingStep[]
   title: string

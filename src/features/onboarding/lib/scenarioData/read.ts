@@ -5,6 +5,7 @@ export const readScenario: OnboardingScenario = {
   featureFlag: 'read',
   icon: 'book-outline',
   id: 'read',
+  screens: ['/read'],
   steps: [
     {
       route: '/read',

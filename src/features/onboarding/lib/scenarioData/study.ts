@@ -5,6 +5,7 @@ export const studyScenario: OnboardingScenario = {
   featureFlag: 'study',
   icon: 'school-outline',
   id: 'study',
+  screens: ['/study'],
   steps: [
     {
       route: '/study',

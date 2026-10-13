@@ -4,6 +4,7 @@ export const listenScenario: OnboardingScenario = {
   description: 'Поиск, разделы и плеер',
   icon: 'headset-outline',
   id: 'listen',
+  screens: ['/listen'],
   steps: [
     {
       route: '/listen',
