@@ -1,11 +1,11 @@
 import { useAction, useAtom } from '@reatom/npm-react'
-import { usePathname, useRouter } from 'expo-router'
 import { useEffect, useState } from 'react'
 import { Modal, StyleSheet, useWindowDimensions, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { INDENTS } from 'shared/ui/theme'
 import { scenariosById } from '../lib/scenarios'
 import { computeTooltipLayout } from '../lib/tooltipPosition'
+import { useStepRouteNavigation } from '../lib/useStepRouteNavigation'
 import {
   endOnboardingTour,
   goToNextOnboardingStep,
@@ -27,25 +27,17 @@ export const OnboardingTourOverlay = () => {
   const prev = useAction(goToPrevOnboardingStep)
   const { height, width } = useWindowDimensions()
   const insets = useSafeAreaInsets()
-  const router = useRouter()
-  const pathname = usePathname()
   const [expiredStepKey, setExpiredStepKey] = useState<null | string>(null)
   const [cardHeight, setCardHeight] = useState<null | number>(null)
 
   const scenarioId = tour?.scenarioId
   const stepIndex = tour?.stepIndex
   const stepKey = `${scenarioId ?? ''}:${stepIndex ?? ''}`
-  const activeTargetId =
-    scenarioId === undefined || stepIndex === undefined
-      ? undefined
-      : scenariosById[scenarioId].steps[stepIndex].targetId
-
-  useEffect(() => {
-    if (scenarioId === undefined || stepIndex === undefined) return
-
-    const route = scenariosById[scenarioId].steps[stepIndex].route
-    if (route && pathname !== route) router.push(route)
-  }, [scenarioId, stepIndex, pathname, router])
+  const scenario = scenarioId === undefined ? undefined : scenariosById[scenarioId]
+  const step =
+    scenario === undefined || stepIndex === undefined ? undefined : scenario.steps[stepIndex]
+  const activeTargetId = step?.targetId
+  const { effectiveRoute, pathname } = useStepRouteNavigation(scenario, stepIndex)
 
   useEffect(() => {
     if (activeTargetId === undefined) return
@@ -63,10 +55,13 @@ export const OnboardingTourOverlay = () => {
     setCardHeight(null)
   }, [tour])
 
-  if (!tour) return null
+  if (tour === null || scenario === undefined || step === undefined) return null
 
-  const scenario = scenariosById[tour.scenarioId]
-  const step = scenario.steps[tour.stepIndex]
+  // While the router moves to the step's effective route, hide the whole overlay:
+  // the user watches the real tab/stack transition, and the overlay reappears once
+  // `pathname` catches up.
+  if (effectiveRoute !== undefined && pathname !== effectiveRoute) return null
+
   const isLastStep = tour.stepIndex === scenario.steps.length - 1
   const hole = activeTargetId === undefined ? null : (rects[activeTargetId] ?? null)
   // A registered rect can sit entirely outside the viewport (a target scrolled

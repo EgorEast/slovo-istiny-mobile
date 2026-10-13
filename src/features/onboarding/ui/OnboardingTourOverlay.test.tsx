@@ -15,12 +15,12 @@ jest.mock('react-native-svg', () => {
   }
 })
 
-const mockPush = jest.fn()
+const mockNavigate = jest.fn()
 const mockPathname = jest.fn(() => '/listen')
 
 jest.mock('expo-router', () => ({
   usePathname: () => mockPathname(),
-  useRouter: () => ({ push: mockPush }),
+  useRouter: () => ({ navigate: mockNavigate }),
 }))
 
 const NEXT_LABEL = 'Далее'
@@ -62,7 +62,9 @@ describe('<OnboardingTourOverlay>', () => {
     expect(getByRole('button', { name: 'Завершить обзор' })).toBeTruthy()
   })
 
-  test('renders a targetless step as a card with a back button', async () => {
+  test('renders a targetless step as a card with a back button on its inherited route', async () => {
+    mockPathname.mockReturnValue('/listen/my-playlists')
+
     const { getByText } = await renderAtStep('playlists', 2)
 
     expect(getByText('Добавить проповедь')).toBeTruthy()
@@ -70,6 +72,8 @@ describe('<OnboardingTourOverlay>', () => {
   })
 
   test('shows the done label on the last step', async () => {
+    mockPathname.mockReturnValue('/listen/my-playlists')
+
     const { getByText, queryByText } = await renderAtStep('playlists', 2)
 
     expect(getByText('Готово')).toBeTruthy()
@@ -77,6 +81,8 @@ describe('<OnboardingTourOverlay>', () => {
   })
 
   test('ends the tour when the primary button is pressed on the last step', async () => {
+    mockPathname.mockReturnValue('/listen/my-playlists')
+
     const { ctx, getByText } = await renderAtStep('playlists', 2)
 
     fireEvent.press(getByText('Готово'))
@@ -99,7 +105,16 @@ describe('<OnboardingTourOverlay>', () => {
 
     await renderAtStep('settings', 0)
 
-    await waitFor(() => expect(mockPush).toHaveBeenCalledWith('/more'))
+    await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('/more'))
+  })
+
+  test('renders nothing while the router is moving to the effective route', async () => {
+    mockPathname.mockReturnValue('/listen')
+
+    const { queryByText } = await renderAtStep('playlists', 2)
+
+    await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('/listen/my-playlists'))
+    expect(queryByText('Добавить проповедь')).toBeNull()
   })
 
   test('renders a centered card when the registered rect is below the viewport', async () => {
