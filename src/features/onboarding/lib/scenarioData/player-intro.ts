@@ -8,7 +8,7 @@ export const playerIntroScenario: OnboardingScenario = {
   steps: [
     {
       areaTargetIds: ['player-fullscreen.edge-back', 'player-fullscreen.edge-forward'],
-      text: 'Подсвеченные полосы у краёв кликабельны: тап — шаг назад/вперёд; зажмите и держите — непрерывная перемотка.',
+      text: 'Двойной тап у левого или правого края — шаг назад/вперёд. Зажмите и держите край — непрерывная перемотка.',
       title: 'Края экрана',
     },
     {
