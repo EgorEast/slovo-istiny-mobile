@@ -24,8 +24,7 @@ export interface OnboardingScenario {
   icon: keyof typeof Ionicons.glyphMap
   id: OnboardingScenarioId
   scope?: ScenarioScope
-  // Exact routes the scenario belongs to; `undefined` means it is global and
-  // offered on every screen. The picker splits its list by exact pathname match.
+  // Exact routes the scenario belongs to; `undefined` = global (offered everywhere).
   screens?: Href[]
   sinceVersion?: string
   steps: OnboardingStep[]
@@ -33,8 +32,7 @@ export interface OnboardingScenario {
 }
 
 // Which picker offers the scenario. `default` scenarios belong to the screen
-// pickers (the header «?»); `player` scenarios belong only to the fullscreen
-// player picker, so they never leak into the screen pickers.
+// pickers (the header «?»); `player` scenarios belong only to the fullscreen picker.
 export type ScenarioScope = 'default' | 'player'
 
 export const resolveScenarioScope = (scenario: OnboardingScenario): ScenarioScope =>
@@ -60,10 +58,13 @@ export type OnboardingScenarioId =
   | 'whatsNew'
 
 export interface OnboardingStep {
+  // Highlighted target rects (no dim) — see ui/TourWaitLayer.tsx.
+  areaTargetIds?: string[]
+  // Pass-through card over the live UI, no spotlight modal.
+  interactive?: boolean
   route?: Href
-  // Registered action the tour performs itself (see lib/tourActions.ts). An action
-  // step is demonstrative: after blinking on `tapTargetId` the tour runs the action
-  // and advances on its own — it never navigates.
+  // Registered action the tour performs itself and then auto-advances (see
+  // lib/tourActions.ts); an action step is demonstrative and never navigates.
   tapActionId?: string
   tapTargetId?: string
   targetId?: string

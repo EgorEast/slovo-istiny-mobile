@@ -20,12 +20,14 @@ export const PlayerEdgeSeekZones = ({
         onHoldEnd={stopSeek}
         onHoldStart={startSeek}
         onTapEdge={handleEdgeTap}
+        targetId='player-fullscreen.edge-back'
       />
       <EdgeSeekZone
         direction='forward'
         onHoldEnd={stopSeek}
         onHoldStart={startSeek}
         onTapEdge={handleEdgeTap}
+        targetId='player-fullscreen.edge-forward'
       />
     </>
   )

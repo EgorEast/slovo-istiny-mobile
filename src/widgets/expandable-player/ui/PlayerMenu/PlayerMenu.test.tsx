@@ -396,17 +396,16 @@ describe('<PlayerMenuItems>', () => {
     expect(mockOnToggleCache).toHaveBeenCalledTimes(1)
   })
 
-  test('registers the details target rect while its tour step is active', async () => {
+  const mockMeasureInWindow = () =>
     jest
       .spyOn(View.prototype, 'measureInWindow')
       .mockImplementation((cb: (x: number, y: number, width: number, height: number) => void) => {
         cb(RECT.x, RECT.y, RECT.width, RECT.height)
         return undefined
       })
-    const ctx = createCtx()
-    onboardingTourAtom(ctx, { scenarioId: 'player-description', stepIndex: 1 })
 
-    await renderWithProviders(
+  const renderMenuItems = (ctx: ReturnType<typeof createCtx>) =>
+    renderWithProviders(
       <PlayerMenuItems
         rate={1}
         visualState={CLOUD_STATE}
@@ -418,8 +417,37 @@ describe('<PlayerMenuItems>', () => {
       { ctx },
     )
 
+  test('registers the details target rect while its tour step is active', async () => {
+    mockMeasureInWindow()
+    const ctx = createCtx()
+    onboardingTourAtom(ctx, { scenarioId: 'player-description', stepIndex: 1 })
+
+    await renderMenuItems(ctx)
+
+    await waitFor(() => expect(ctx.get(onboardingTargetRectsAtom)[DETAILS_TARGET_ID]).toEqual(RECT))
+  })
+
+  test('registers the speed menu target rect while its tour step is active', async () => {
+    mockMeasureInWindow()
+    const ctx = createCtx()
+    onboardingTourAtom(ctx, { scenarioId: 'player-speed', stepIndex: 1 })
+
+    await renderMenuItems(ctx)
+
     await waitFor(() =>
-      expect(ctx.get(onboardingTargetRectsAtom)).toEqual({ [DETAILS_TARGET_ID]: RECT }),
+      expect(ctx.get(onboardingTargetRectsAtom)['player-fullscreen.menu-speed']).toEqual(RECT),
+    )
+  })
+
+  test('registers the sound menu target rect while its tour step is active', async () => {
+    mockMeasureInWindow()
+    const ctx = createCtx()
+    onboardingTourAtom(ctx, { scenarioId: 'player-sound', stepIndex: 1 })
+
+    await renderMenuItems(ctx)
+
+    await waitFor(() =>
+      expect(ctx.get(onboardingTargetRectsAtom)['player-fullscreen.menu-sound']).toEqual(RECT),
     )
   })
 })

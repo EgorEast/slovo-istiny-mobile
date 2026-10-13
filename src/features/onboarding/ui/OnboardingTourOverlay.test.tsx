@@ -59,9 +59,12 @@ const HOLD_TIMEOUT_MS = 1200
 const SECTIONS_RECT: OnboardingTargetRect = { height: 4, width: 3, x: 1, y: 2 }
 const OFFSCREEN_RECT: OnboardingTargetRect = { height: 60, width: 300, x: 0, y: 99999 }
 const TAB_MORE_RECT: OnboardingTargetRect = { height: 60, width: 90, x: 300, y: 760 }
+const EDGE_BACK_RECT: OnboardingTargetRect = { height: 400, width: 64, x: 0, y: 100 }
+const EDGE_FORWARD_RECT: OnboardingTargetRect = { height: 400, width: 64, x: 336, y: 100 }
+const AREA_HIGHLIGHT = 'onboarding-area-highlight'
 
 const renderAtStep = (
-  scenarioId: 'listen' | 'player' | 'playlists' | 'settings',
+  scenarioId: 'listen' | 'player-intro' | 'player' | 'playlists' | 'settings',
   stepIndex: number,
   rects: Record<string, OnboardingTargetRect> = {},
   setup?: (ctx: ReturnType<typeof createCtx>) => void,
@@ -242,6 +245,26 @@ describe('<OnboardingTourOverlay>', () => {
     })
 
     expect(getByText('Мои плейлисты')).toBeTruthy()
+  })
+
+  test('highlights registered clickable areas in a pass-through layer without a dim', async () => {
+    const { getAllByTestId, getByText, queryByText } = await renderAtStep('player-intro', 0, {
+      'player-fullscreen.edge-back': EDGE_BACK_RECT,
+      'player-fullscreen.edge-forward': EDGE_FORWARD_RECT,
+    })
+
+    expect(getAllByTestId(AREA_HIGHLIGHT)).toHaveLength(2)
+    expect(getByText('Края экрана')).toBeTruthy()
+    expect(getByText(NEXT_LABEL)).toBeTruthy()
+    expect(queryByText(DIM)).toBeNull()
+  })
+
+  test('renders the area step card centered while no area rect has registered', async () => {
+    const { getByText, queryAllByTestId, queryByText } = await renderAtStep('player-intro', 0)
+
+    expect(queryAllByTestId(AREA_HIGHLIGHT)).toHaveLength(0)
+    expect(getByText('Края экрана')).toBeTruthy()
+    expect(queryByText(DIM)).toBeNull()
   })
 
   test('keeps the tooltip hidden until the missing-target timeout expires', async () => {

@@ -79,6 +79,16 @@ describe('onboarding scenario data', () => {
     expect(intro.steps[4].targetId).toBe('player-fullscreen.menu')
   })
 
+  test('player-intro makes the edge zones a highlighted area step', () => {
+    const intro = scenariosById['player-intro']
+
+    expect(intro.steps[0].targetId).toBeUndefined()
+    expect(intro.steps[0].areaTargetIds).toEqual([
+      'player-fullscreen.edge-back',
+      'player-fullscreen.edge-forward',
+    ])
+  })
+
   test('menu-driven player scenarios open the player menu first', () => {
     const menuTargetId = 'player-fullscreen.menu'
 
@@ -98,6 +108,29 @@ describe('onboarding scenario data', () => {
     expect(description.steps[1].tapActionId).toBe('show-player-details')
     expect(description.steps[2].targetId).toBe('player-fullscreen.details')
     expect(description.steps[2].tapActionId).toBeUndefined()
+  })
+
+  test('player-speed performs the menu and speed-menu actions itself', () => {
+    const speed = scenariosById['player-speed']
+
+    expect(speed.steps).toHaveLength(3)
+    expect(speed.steps[0].tapActionId).toBe('open-player-menu')
+    expect(speed.steps[1].targetId).toBe('player-fullscreen.menu-speed')
+    expect(speed.steps[1].tapTargetId).toBe('player-fullscreen.menu-speed')
+    expect(speed.steps[1].tapActionId).toBe('open-player-speed-menu')
+    expect(speed.steps[2].targetId).toBe('player-fullscreen.speed-menu')
+    expect(speed.steps[2].tapActionId).toBeUndefined()
+  })
+
+  test('player-sound performs the menu and sound-settings actions itself', () => {
+    const sound = scenariosById['player-sound']
+
+    expect(sound.steps).toHaveLength(3)
+    expect(sound.steps[0].tapActionId).toBe('open-player-menu')
+    expect(sound.steps[1].targetId).toBe('player-fullscreen.menu-sound')
+    expect(sound.steps[1].tapActionId).toBe('open-player-sound-settings')
+    expect(sound.steps[2].targetId).toBe('player-fullscreen.sound-sheet')
+    expect(sound.steps[2].tapActionId).toBeUndefined()
   })
 
   test('search scenario opens the search, waits for a query and groups the results', () => {

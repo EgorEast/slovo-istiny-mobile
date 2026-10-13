@@ -34,6 +34,10 @@ export const OnboardingTourOverlay = () => {
   const step =
     scenario === undefined || stepIndex === undefined ? undefined : scenario.steps[stepIndex]
   const activeTargetId = step?.targetId
+  const areaRects = (step?.areaTargetIds ?? []).flatMap(id => {
+    const rect = rects[id]
+    return rect === undefined ? [] : [{ id, rect }]
+  })
   const { holdNavigation, isNavigatingToStep, isPerformingAction, isWaitSatisfied, tapRect } =
     useStepNavigation({
       bottomInset: insets.bottom,
@@ -72,10 +76,12 @@ export const OnboardingTourOverlay = () => {
   const isLastStep = tour.stepIndex === scenario.steps.length - 1
   const onPrimary = isLastStep ? end : next
 
-  // While an interactive step's condition is unmet, keep the modal unmounted so the
-  // user can actually perform the action on the live UI; the card floats in a
-  // pass-through layer and only the card itself is touchable.
-  if (!isWaitSatisfied)
+  // Pass-through steps keep the modal unmounted so the live UI stays interactive:
+  // an interactive step the user must act on, or an area step highlighting
+  // clickable zones. The card floats in a pass-through layer; only it is touchable.
+  const isPassThrough =
+    step.interactive === true || step.areaTargetIds !== undefined || !isWaitSatisfied
+  if (isPassThrough)
     return (
       <TourWaitLayer
         step={step}
@@ -83,9 +89,11 @@ export const OnboardingTourOverlay = () => {
         onPrev={prev}
         onNext={onPrimary}
         windowHeight={height}
+        areaRects={areaRects}
         index={tour.stepIndex}
         bottomInset={insets.bottom}
         total={scenario.steps.length}
+        isWaitSatisfied={isWaitSatisfied}
         hole={activeTargetId === undefined ? null : (rects[activeTargetId] ?? null)}
       />
     )

@@ -7,13 +7,23 @@ export const playerSpeedScenario: OnboardingScenario = {
   scope: 'player',
   steps: [
     {
+      tapActionId: 'open-player-menu',
+      tapTargetId: 'player-fullscreen.menu',
       targetId: 'player-fullscreen.menu',
-      text: 'Нажмите кнопку с точками над описанием проповеди.',
-      title: 'Откройте меню',
+      text: 'Открываем меню плеера…',
+      title: 'Меню',
     },
     {
-      text: 'Пункт «Скорость воспроизведения» открывает выбор от 0,75× до 2×. Выбранная скорость сохраняется для последующих проповедей.',
+      tapActionId: 'open-player-speed-menu',
+      tapTargetId: 'player-fullscreen.menu-speed',
+      targetId: 'player-fullscreen.menu-speed',
+      text: 'Выбираем пункт «Скорость воспроизведения»…',
       title: 'Скорость воспроизведения',
+    },
+    {
+      targetId: 'player-fullscreen.speed-menu',
+      text: 'Доступные скорости — от 0,75× до 2×. Выбранная скорость сохраняется для следующих проповедей.',
+      title: 'Выберите скорость',
     },
   ],
   title: 'Скорость прослушивания',

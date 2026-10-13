@@ -4,6 +4,10 @@ import { type ReactNode } from 'react'
 import { renderWithProviders } from 'shared/mocks/renderWithProviders'
 import { SoundSettingsBottomSheet } from './SoundSettingsBottomSheet'
 
+jest.mock('expo-router', () => ({
+  useNavigation: () => ({ addListener: jest.fn() }),
+}))
+
 jest.mock('@gorhom/bottom-sheet', () => {
   const { View } = jest.requireActual('react-native')
   const BottomSheet = ({ children }: { children: ReactNode }) => <View>{children}</View>

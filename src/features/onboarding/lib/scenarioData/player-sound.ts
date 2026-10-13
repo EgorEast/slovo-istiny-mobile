@@ -7,13 +7,23 @@ export const playerSoundScenario: OnboardingScenario = {
   scope: 'player',
   steps: [
     {
+      tapActionId: 'open-player-menu',
+      tapTargetId: 'player-fullscreen.menu',
       targetId: 'player-fullscreen.menu',
-      text: 'Нажмите кнопку с точками над описанием проповеди.',
-      title: 'Откройте меню',
+      text: 'Открываем меню плеера…',
+      title: 'Меню',
     },
     {
-      text: 'Пункт «Настройки звука» открывает нижнюю шторку: эквалайзер, громкость и баланс каналов.',
+      tapActionId: 'open-player-sound-settings',
+      tapTargetId: 'player-fullscreen.menu-sound',
+      targetId: 'player-fullscreen.menu-sound',
+      text: 'Выбираем пункт «Настройки звука»…',
       title: 'Настройки звука',
+    },
+    {
+      targetId: 'player-fullscreen.sound-sheet',
+      text: 'В нижней шторке — эквалайзер, громкость и баланс каналов. Настройте звук под себя.',
+      title: 'Эквалайзер и баланс',
     },
   ],
   title: 'Настройка звука',

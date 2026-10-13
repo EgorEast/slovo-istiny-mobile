@@ -66,18 +66,20 @@ export const PlayerMenuItems = ({
           </Text>
         </PressableButton>
       )}
-      <PressableButton
-        onPress={onShowSpeed}
-        style={styles.menuItemRow}
-        accessibilityLabel='Скорость воспроизведения'
-      >
-        <Text style={[styles.menuItemText, { color: currentTheme.text, flexShrink: 1 }]}>
-          Скорость воспроизведения
-        </Text>
-        <Text style={[styles.menuItemValue, { color: currentTheme.textMuted, flexShrink: 0 }]}>
-          {formatPlaybackRate(rate)}
-        </Text>
-      </PressableButton>
+      <OnboardingTarget id='player-fullscreen.menu-speed'>
+        <PressableButton
+          onPress={onShowSpeed}
+          style={styles.menuItemRow}
+          accessibilityLabel='Скорость воспроизведения'
+        >
+          <Text style={[styles.menuItemText, { color: currentTheme.text, flexShrink: 1 }]}>
+            Скорость воспроизведения
+          </Text>
+          <Text style={[styles.menuItemValue, { color: currentTheme.textMuted, flexShrink: 0 }]}>
+            {formatPlaybackRate(rate)}
+          </Text>
+        </PressableButton>
+      </OnboardingTarget>
       {onAddToPlaylist ? (
         <PressableButton style={styles.menuItem} onPress={onAddToPlaylist}>
           <Text style={[styles.menuItemText, { color: currentTheme.text }]}>
@@ -98,15 +100,17 @@ export const PlayerMenuItems = ({
           </Text>
         </PressableButton>
       )}
-      <PressableButton
-        style={styles.menuItemRow}
-        onPress={onOpenSoundSettings}
-        accessibilityLabel={SOUND_SETTINGS_TEXT}
-      >
-        <Text style={[styles.menuItemText, { color: currentTheme.text, flexShrink: 1 }]}>
-          {SOUND_SETTINGS_TEXT}
-        </Text>
-      </PressableButton>
+      <OnboardingTarget id='player-fullscreen.menu-sound'>
+        <PressableButton
+          style={styles.menuItemRow}
+          onPress={onOpenSoundSettings}
+          accessibilityLabel={SOUND_SETTINGS_TEXT}
+        >
+          <Text style={[styles.menuItemText, { color: currentTheme.text, flexShrink: 1 }]}>
+            {SOUND_SETTINGS_TEXT}
+          </Text>
+        </PressableButton>
+      </OnboardingTarget>
       <Pressable style={[styles.menuItem, styles.menuItemDisabled]}>
         <Text style={[styles.menuItemTextDisabled, { color: currentTheme.textMuted }]}>
           Поделиться
