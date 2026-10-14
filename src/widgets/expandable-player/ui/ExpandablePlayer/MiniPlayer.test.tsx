@@ -1,12 +1,19 @@
-import { fireEvent } from '@testing-library/react-native'
+import { createCtx } from '@reatom/framework'
+import { fireEvent, waitFor } from '@testing-library/react-native'
 import { type ComponentProps } from 'react'
+import { View } from 'react-native'
 import { type GestureType } from 'react-native-gesture-handler'
+import { onboardingTargetRectsAtom, onboardingTourAtom } from 'features/onboarding'
 import { type PlaylistData } from 'entities/playlist'
 import { type AudioPlayerData } from 'entities/sermon'
 import { renderWithProviders } from 'shared/mocks/renderWithProviders'
 import { LightTheme } from 'shared/ui/theme'
 import { MiniPlayer } from './MiniPlayer'
 import { createMiniStyles } from './miniStyles'
+
+jest.mock('expo-router', () => ({
+  useNavigation: () => ({ addListener: jest.fn() }),
+}))
 
 jest.mock('@expo/vector-icons', () => {
   const { Text } = jest.requireActual('react-native')
@@ -190,5 +197,28 @@ describe('<MiniPlayer>', () => {
 
     expect(getByTestId(BUFFERING_INDICATOR_TEST_ID)).toBeTruthy()
     expect(queryByRole('button', { name: new RegExp(`${PLAY_LABEL}|${PAUSE_LABEL}`) })).toBeNull()
+  })
+
+  test('registers the play/pause onboarding target while the pause step is active', async () => {
+    const measureSpy = jest
+      .spyOn(View.prototype, 'measureInWindow')
+      .mockImplementation(
+        (callback: (x: number, y: number, width: number, height: number) => void) => {
+          callback(1, 2, 3, 4)
+          return undefined
+        },
+      )
+    const ctx = createCtx()
+    onboardingTourAtom(ctx, { scenarioId: 'player', skippedIndexes: [], stepIndex: 2 })
+
+    await renderWithProviders(<MiniPlayer {...baseProps} />, { ctx })
+
+    await waitFor(() =>
+      expect(ctx.get(onboardingTargetRectsAtom)).toEqual({
+        'player.mini-play-pause': { height: 4, width: 3, x: 1, y: 2 },
+      }),
+    )
+
+    measureSpy.mockRestore()
   })
 })

@@ -3,9 +3,10 @@ import { usePathname, useRouter } from 'expo-router'
 import { useEffect } from 'react'
 import { isEmpty } from 'shared/lib/utils/isEmpty'
 import { onboardingTargetRectsAtom } from '../model/targets'
-import { onboardingStepDirectionAtom } from '../model/tour'
+import { onboardingStepDirectionAtom, onboardingTourAtom } from '../model/tour'
 import { resolveStepRoute } from './resolveStepRoute'
 import { type OnboardingScenario, type OnboardingStep } from './scenarios'
+import { resolveTourProgress } from './tourProgress'
 import { useSkipMissingStep } from './useSkipMissingStep'
 import { useStepEnterAction } from './useStepEnterAction'
 import { useTourActionStep } from './useTourActionStep'
@@ -39,6 +40,7 @@ export const useStepNavigation = ({
   const pathname = usePathname()
   const [rects] = useAtom(onboardingTargetRectsAtom)
   const [stepDirection] = useAtom(onboardingStepDirectionAtom)
+  const [tour] = useAtom(onboardingTourAtom)
 
   const effectiveRoute =
     scenario === undefined || stepIndex === undefined
@@ -52,6 +54,12 @@ export const useStepNavigation = ({
   const isBackwardActionEntry = isActionStep && stepDirection === 'backward'
   const isTapFlow = isActionStep || needsNavigation
   const tapRect = step?.tapTargetId === undefined ? undefined : rects[step.tapTargetId]
+  // The last visible step closes the tour (the deck skips dropped steps), so an action
+  // step there ends it instead of advancing — mirroring the overlay's «Готово» button.
+  const isLastVisible =
+    scenario !== undefined && stepIndex !== undefined
+      ? resolveTourProgress(scenario.steps, tour?.skippedIndexes ?? [], stepIndex).isLastVisible
+      : false
   const {
     blinkedStepKey,
     holdExpiredStepKey,
@@ -76,6 +84,7 @@ export const useStepNavigation = ({
     isActionStep,
     isBackwardActionEntry,
     isHoldingForTapRect,
+    isLastVisible,
     isTapPhase,
     step,
     stepKey,

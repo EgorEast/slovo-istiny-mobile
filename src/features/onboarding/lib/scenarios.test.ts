@@ -27,12 +27,20 @@ describe('onboarding scenario data', () => {
   test('player scenario waits for the user to select a sermon and pause', () => {
     const player = scenariosById.player
 
-    expect(player.steps).toHaveLength(3)
+    expect(player.steps).toHaveLength(4)
     expect(player.steps[0].waitFor).toBe('sermonSelected')
     expect(player.steps[0].tapTargetId).toBe('tab.listen')
     expect(player.steps[1].targetId).toBe('player.mini')
-    expect(player.steps[2].targetId).toBe('player.mini')
+    expect(player.steps[2].targetId).toBe('player.mini-play-pause')
     expect(player.steps[2].waitFor).toBe('paused')
+  })
+
+  test('player scenario ends by expanding the mini player to fullscreen itself', () => {
+    const expandStep = scenariosById.player.steps[3]
+
+    expect(expandStep.targetId).toBe('player.mini')
+    expect(expandStep.tapTargetId).toBe('player.mini')
+    expect(expandStep.tapActionId).toBe('expand-player')
   })
 
   test('whats-new is a release scenario pinned to a version', () => {

@@ -23,11 +23,14 @@ const ACTION_STEP: OnboardingStep = {
   text: '',
   title: '',
 }
+// A trailing card so the action step is not the last visible one: a non-last action
+// step advances to it, while a last-step action ends the tour (covered separately).
+const FOLLOW_UP_STEP: OnboardingStep = { text: '', title: '' }
 const SCENARIO: OnboardingScenario = {
   description: '',
   icon: 'information-circle-outline',
   id: 'player-description',
-  steps: [ACTION_STEP],
+  steps: [ACTION_STEP, FOLLOW_UP_STEP],
   title: '',
 }
 
@@ -40,7 +43,13 @@ const TARGETLESS_STEP: OnboardingStep = {
 }
 const TARGETLESS_SCENARIO: OnboardingScenario = {
   ...SCENARIO,
-  steps: [TARGETLESS_STEP],
+  steps: [TARGETLESS_STEP, FOLLOW_UP_STEP],
+}
+
+// A one-step deck: its only (action) step is the last visible one.
+const LAST_ACTION_SCENARIO: OnboardingScenario = {
+  ...SCENARIO,
+  steps: [ACTION_STEP],
 }
 
 const renderNavigation = (
@@ -78,6 +87,27 @@ const renderTargetlessNavigation = () => {
         isTourActive: true,
         scenario: TARGETLESS_SCENARIO,
         step: TARGETLESS_STEP,
+        stepIndex: 0,
+        stepKey: STEP_KEY,
+        viewportHeight: 800,
+      }),
+    { ctx },
+  )
+}
+
+const renderLastStepNavigation = (rects: Record<string, OnboardingTargetRect> = {}) => {
+  const ctx = createCtx()
+  onboardingTourAtom(ctx, { scenarioId: 'player-description', skippedIndexes: [], stepIndex: 0 })
+  onboardingStepDirectionAtom(ctx, 'forward')
+  onboardingTargetRectsAtom(ctx, rects)
+
+  return renderHookWithProviders(
+    () =>
+      useStepNavigation({
+        bottomInset: 0,
+        isTourActive: true,
+        scenario: LAST_ACTION_SCENARIO,
+        step: ACTION_STEP,
         stepIndex: 0,
         stepKey: STEP_KEY,
         viewportHeight: 800,
@@ -143,6 +173,16 @@ describe('useStepNavigation action steps', () => {
         }),
       { timeout: 2000 },
     )
+  })
+
+  test('ends the tour when the action step is the last visible one', async () => {
+    const action = jest.fn()
+    registerTourAction(ACTION_ID, action)
+
+    const { ctx } = await renderLastStepNavigation({ [TARGET_ID]: TARGET_RECT })
+
+    await waitFor(() => expect(action).toHaveBeenCalledTimes(1), { timeout: 4500 })
+    await waitFor(() => expect(ctx.get(onboardingTourAtom)).toBeNull(), { timeout: 4500 })
   })
 })
 

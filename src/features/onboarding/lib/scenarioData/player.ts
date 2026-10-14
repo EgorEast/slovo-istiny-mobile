@@ -19,10 +19,17 @@ export const playerScenario: OnboardingScenario = {
       title: 'Мини-плеер',
     },
     {
-      targetId: 'player.mini',
+      targetId: 'player.mini-play-pause',
       text: 'Нажмите на кнопку паузы в мини-плеере.',
       title: 'Поставьте на паузу',
       waitFor: 'paused',
+    },
+    {
+      tapActionId: 'expand-player',
+      tapTargetId: 'player.mini',
+      targetId: 'player.mini',
+      text: 'Тап или свайп вверх по мини-плееру разворачивает его на весь экран. Показываем…',
+      title: 'Полноэкранный плеер',
     },
   ],
   title: 'Плеер',

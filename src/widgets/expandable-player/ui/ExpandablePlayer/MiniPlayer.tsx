@@ -2,6 +2,7 @@ import { forwardRef } from 'react'
 import { ActivityIndicator, Platform, Text, View, type ViewStyle } from 'react-native'
 import { GestureDetector, type GestureType } from 'react-native-gesture-handler'
 import Animated, { type AnimatedStyle } from 'react-native-reanimated'
+import { OnboardingTarget } from 'features/onboarding'
 import { PlayerControlButton, PlayerControlButtonType } from 'entities/player'
 import { type PlaylistData } from 'entities/playlist'
 import { type AudioPlayerData } from 'entities/sermon'
@@ -70,12 +71,14 @@ export const MiniPlayer = forwardRef<View, MiniPlayerProps>(
             {showSpinner ? (
               <ActivityIndicator size={36} color={currentTheme.text} testID='buffering-indicator' />
             ) : (
-              <PlayerControlButton
-                size={36}
-                onPress={onPlayPause}
-                color={currentTheme.text}
-                type={playing ? PlayerControlButtonType.Pause : PlayerControlButtonType.Play}
-              />
+              <OnboardingTarget id='player.mini-play-pause'>
+                <PlayerControlButton
+                  size={36}
+                  onPress={onPlayPause}
+                  color={currentTheme.text}
+                  type={playing ? PlayerControlButtonType.Pause : PlayerControlButtonType.Play}
+                />
+              </OnboardingTarget>
             )}
           </View>
           <MiniDownloadProgress miniStyles={miniStyles} audioUrl={audio.audioUrl} />

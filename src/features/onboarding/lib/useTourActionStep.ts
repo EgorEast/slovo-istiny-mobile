@@ -1,6 +1,6 @@
 import { useAction } from '@reatom/npm-react'
 import { useEffect } from 'react'
-import { goToNextOnboardingStep } from '../model/tour'
+import { endOnboardingTour, goToNextOnboardingStep } from '../model/tour'
 import { type OnboardingStep } from './scenarios'
 import { getTourAction } from './tourActions'
 
@@ -14,6 +14,7 @@ interface TourActionStepInput {
   isActionStep: boolean
   isBackwardActionEntry: boolean
   isHoldingForTapRect: boolean
+  isLastVisible: boolean
   isTapPhase: boolean
   step: OnboardingStep | undefined
   stepKey: string
@@ -21,7 +22,8 @@ interface TourActionStepInput {
 
 // A demonstrative action step performs its registered action once the blink is done
 // (or its tap target never registered, or the step declares no tap target), then
-// advances on its own. A missing action is not an error: the tour still advances.
+// advances on its own — or, when it is the last visible step, ends the tour, mirroring
+// the «Готово» button. A missing action is not an error: the tour still advances.
 // Entered backward the step is static: no action is performed and no auto-advance,
 // so «Назад» can never replay the demonstration. `isPerformingAction` tells the overlay
 // to hide while the step holds for its rect or performs the action (the live UI is the
@@ -32,11 +34,14 @@ export const useTourActionStep = ({
   isActionStep,
   isBackwardActionEntry,
   isHoldingForTapRect,
+  isLastVisible,
   isTapPhase,
   step,
   stepKey,
 }: TourActionStepInput) => {
   const next = useAction(goToNextOnboardingStep)
+  const end = useAction(endOnboardingTour)
+  const advance = isLastVisible ? end : next
   const isBlinkDone = (step?.tapTargetId === undefined || blinkedStepKey === stepKey) && !isTapPhase
   const isPerformingAction =
     isActionStep &&
@@ -53,15 +58,15 @@ export const useTourActionStep = ({
     const action = step?.tapActionId === undefined ? undefined : getTourAction(step.tapActionId)
     action?.()
 
-    const timer = setTimeout(next, ACTION_ADVANCE_DELAY_MS)
+    const timer = setTimeout(advance, ACTION_ADVANCE_DELAY_MS)
     return () => clearTimeout(timer)
   }, [
+    advance,
     blinkedStepKey,
     holdExpiredStepKey,
     isActionStep,
     isBackwardActionEntry,
     isTapPhase,
-    next,
     step,
     stepKey,
   ])

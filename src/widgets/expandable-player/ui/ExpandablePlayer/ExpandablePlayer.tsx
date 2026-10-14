@@ -3,6 +3,7 @@ import { type StyleProp, View } from 'react-native'
 import Animated from 'react-native-reanimated'
 import { useAddToPlaylistModal } from 'features/add-to-playlist'
 import { closePlayerSheetAction, openPlayerSheetAction } from 'entities/player'
+import { useExpandPlayerTourAction } from '../../lib/useExpandPlayerTourAction'
 import { showMenuAtom } from '../../model/showMenuAtom'
 import { useBackgroundRecovery } from '../../model/useBackgroundRecovery'
 import { useContainerGeometryGuard } from '../../model/useContainerGeometryGuard'
@@ -64,6 +65,8 @@ export const ExpandablePlayer = ({
     screenHeight,
     tabBarHeight,
   })
+
+  useExpandPlayerTourAction({ expand: gesture.handleMiniTap, hasAudio: audio !== null })
 
   const recoveryKey = useBackgroundRecovery()
 
