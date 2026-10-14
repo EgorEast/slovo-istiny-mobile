@@ -77,6 +77,7 @@ const PLAYLIST_ROW_MENU_ADD = 'playlist.row-menu-add'
 const PLAYLIST_ADD_ROW_ACTION = 'open-playlist-row-menu'
 const AREA_HIGHLIGHT = 'onboarding-area-highlight'
 const TOUR_MODAL = 'onboarding-tour-modal'
+const TAP_MODAL = 'onboarding-tap-modal'
 
 // Walks up from a card node to the absolutely-positioned pass-through card and
 // reads the `top` anchoring offset set from the active target's hole.
@@ -197,14 +198,16 @@ describe('<OnboardingTourOverlay>', () => {
     expect(queryByText('Добавить проповедь')).toBeNull()
   })
 
-  test('blinks the tap hint before navigating to the effective route', async () => {
+  test('blinks the tap hint inside its own modal before navigating', async () => {
     mockPathname.mockReturnValue('/settings')
 
-    const { getByText, queryByText } = await renderAtStep('settings', 0, {
+    const { getByTestId, getByText, queryByText } = await renderAtStep('settings', 0, {
       'tab.more': TAB_MORE_RECT,
     })
 
-    // The tap phase is a pass-through layer: the hint shows, the dim/tooltip do not.
+    // The blink is presented in a Modal (a fresh native window above app overlays):
+    // the hint shows inside it, the dim/tooltip do not.
+    expect(getByTestId(TAP_MODAL)).toBeTruthy()
     expect(getByText(TAP_INDICATOR)).toBeTruthy()
     expect(queryByText(NEXT_LABEL)).toBeNull()
 
@@ -213,19 +216,30 @@ describe('<OnboardingTourOverlay>', () => {
     })
   })
 
+  test('presents an action step blink inside the keyed modal', async () => {
+    const { getByTestId, getByText } = await renderAtStep('playlist-add', 1, {
+      [PLAYLIST_FIRST_ROW]: PLAYLIST_ROW_RECT,
+    })
+
+    expect(getByTestId(TAP_MODAL)).toBeTruthy()
+    expect(getByText(TAP_INDICATOR)).toBeTruthy()
+  })
+
   test('holds navigation for a declared tap target until its rect registers, then blinks', async () => {
     mockPathname.mockReturnValue('/settings')
 
-    const { ctx, queryByText } = await renderAtStep('settings', 0)
+    const { ctx, queryByTestId, queryByText } = await renderAtStep('settings', 0)
 
     // No rect yet: navigation is held and no blink plays.
     expect(mockNavigate).not.toHaveBeenCalled()
     expect(queryByText(TAP_INDICATOR)).toBeNull()
+    expect(queryByTestId(TAP_MODAL)).toBeNull()
 
     await act(async () => {
       registerOnboardingTargetRect(ctx, { id: 'tab.more', rect: TAB_MORE_RECT })
     })
 
+    await waitFor(() => expect(queryByTestId(TAP_MODAL)).toBeTruthy())
     await waitFor(() => expect(queryByText(TAP_INDICATOR)).toBeTruthy())
     await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('/more'), {
       timeout: TAP_PHASE_TIMEOUT_MS,

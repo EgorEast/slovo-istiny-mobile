@@ -55,9 +55,9 @@ export const OnboardingTourOverlay = () => {
   // a `skipIfMissing` step waits to see whether its target registers at all.
   if (isOverlayHidden) return null
 
-  // The tap hint is a pass-through layer, not a modal: a modal would swallow every
-  // touch and freeze the screen the tour is "pressing".
-  if (holdNavigation && tapRect !== undefined) return <TourTapLayer rect={tapRect} />
+  // The tap hint is presented in its own native window (a Modal keyed per step).
+  if (holdNavigation && tapRect !== undefined)
+    return <TourTapLayer onClose={end} rect={tapRect} stepKey={stepKey} />
 
   const hiddenIndexes = resolveHiddenStepIndexes(scenario.steps, Object.keys(rects))
   const deckSkippedIndexes = Array.from(new Set([...tour.skippedIndexes, ...hiddenIndexes]))
