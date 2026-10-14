@@ -16,6 +16,13 @@ import { OfflineRow } from './OfflineRow'
 import { OfflineSeparator } from './OfflineSeparator'
 import { SermonCachingHeaderSwitch } from './SermonCachingHeaderSwitch'
 
+// Cap the rows mounted on first paint and per batch: every mounted row runs its
+// own cache/history subscriptions and a native file-system check, so a large
+// default window (21 viewports) makes the list land in one expensive wave.
+const INITIAL_ROWS_TO_RENDER = 8
+const ROWS_PER_BATCH = 8
+const LIST_WINDOW_SIZE = 7
+
 const styles = StyleSheet.create({
   headerActions: {
     alignItems: 'center',
@@ -72,8 +79,11 @@ export const OfflineScreen = () => {
         <FlatList
           data={items}
           ref={tourScrollableRef}
+          windowSize={LIST_WINDOW_SIZE}
+          maxToRenderPerBatch={ROWS_PER_BATCH}
           keyExtractor={item => item.sermon.id}
           ItemSeparatorComponent={OfflineSeparator}
+          initialNumToRender={INITIAL_ROWS_TO_RENDER}
           ListEmptyComponent={<OfflineEmptyState isCachingEnabled={isCachingEnabled} />}
           renderItem={({ item }) => (
             <OfflineRow item={item} isPlaying={isPlaying} onAddToPlaylist={openAddToPlaylist} />

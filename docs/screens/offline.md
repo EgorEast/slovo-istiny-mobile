@@ -10,7 +10,7 @@
 
 ## Что показывается
 
-- `FlatList` офлайн-проповедей; каждая строка — `OfflineRow` (`src/pages/offline/ui/OfflineRow.tsx`), рендерящий `TracksListItem` (`entities/track-list`):
+- `FlatList` офлайн-проповедей; каждая строка — `OfflineRow` (`src/pages/offline/ui/OfflineRow.tsx`), рендерящий `TracksListItem` (`entities/track-list`). Список виртуализирован с явными лимитами окна (`initialNumToRender: 8`, `maxToRenderPerBatch: 8`, `windowSize: 7`): каждая смонтированная строка держит свои подписки (кэш, история) и нативный `File.exists`, поэтому дефолтное окно (21 вьюпорт) выливалось в дорогую волну монтирований при появлении списка:
   - заголовок — название проповеди;
   - сабтайтл — название плейлиста, из которого проповедь попала в список (для проповедей без плейлиста — синтетический плейлист с тем же названием, что и проповедь);
   - обложка — через `CoverImage` с фолбэком `IMAGE_PLACEHOLDER`;
@@ -35,7 +35,7 @@
   4. **персистентный реестр офлайн-проповедей** (`offlineRegistryAtom`, `entities/offline-cache`) — авторитетный источник: переживает рестарты и не зависит от наличия метаданных в остальных источниках;
   5. кэш поиска (`AsyncStorage.getAllKeys` по префиксу `cachedSermonSearch:` + `getCachedJson`, `shared/lib/cache`).
 - Кандидаты объединяются `mergeSermonCandidates` (дедупликация по `sermon.id`; приоритет у кандидата с реальным плейлистом; без плейлиста — синтетический через `buildManualPlaylist` из `entities/listening-history`: `{ id, title, artwork, description: '', sermons: [санитизированная проповедь] }`). Порядок мержа `[currentPlayer, sections, history, registry, search]` кодирует качество данных: свежие полные плейлисты (плеер, секции) бьют реестр; реестр (полные плейлисты) бьёт синтетические плейлисты поиска.
-- Фильтр `filterCachedSermons` (`src/features/offline-sermons/lib/filterCachedSermons.ts`): сужение до `AudioPlayerData` через `toAudioPlayerData` (проповеди без `audioUrl` отбрасываются) + `audioCacheService.isCached(audioUrl)` для каждого (ошибка проверки = «не скачано»).
+- Фильтр `filterCachedSermons` (`src/features/offline-sermons/lib/filterCachedSermons.ts`): сужение до `AudioPlayerData` через `toAudioPlayerData` (проповеди без `audioUrl` отбрасываются) + `audioCacheService.isCached(audioUrl)` для каждого (ошибка проверки = «не скачано»). Проверки идут через `mapWithYields` (`shared/lib/utils/mapWithYields`): `isCached` выполняет синхронный нативный `File.exists`, и проверка всех кандидатов в одном тике (`Promise.all` по массиву) замораживала JS-поток при появлении списка — батчи с уступкой событийному циклу между ними держат поток отзывчивым (важно и для замеров rect'ов онбординг-туром).
 - Состояние: `offlineSermonsAtom` (`OfflineSermonItem[]`), `isLoadingOfflineSermonsAtom`. При ошибке загрузки — `reportError(error, 'Не удалось загрузить список офлайн-проповедей')`, предыдущий список сохраняется.
 - Переключатель шапки: `sermonCachingEnabledAtom` + `setSermonCachingEnabled` (из `entities/offline-cache`, файл `src/entities/offline-cache/lib/sermonCachingSetting.ts`); очистка кэша при выключении — `cancelDownloadsAndClearCache` (`src/pages/offline/lib/cancelDownloadsAndClearCache.ts`) через `cancelAllCacheDownloads` / `clearAudioCacheAction` (`entities/offline-cache`).
 
