@@ -139,6 +139,7 @@ const renderMenu = async () => {
 
 const MENU_BUTTON_LABEL = 'Меню плейлиста'
 const OPEN_MENU_ACTION = 'open-playlist-menu'
+const CLOSE_MENU_ACTION = 'close-playlist-menu'
 const SHARE_ROW_TEXT = 'Поделиться плейлистом'
 
 const openMenu = async () => {
@@ -200,6 +201,22 @@ describe('<PlaylistHeaderMenu>', () => {
     })
 
     expect(screen.getByText(SHARE_ROW_TEXT)).toBeTruthy()
+  })
+
+  test('registers the close-menu tour action, which closes the dropdown', async () => {
+    await openMenu()
+
+    const action = jest
+      .mocked(useTourActionRegistrar)
+      .mock.calls.find(([id]) => id === CLOSE_MENU_ACTION)?.[1]
+    expect(action).toBeDefined()
+    expect(screen.getByText(SHARE_ROW_TEXT)).toBeTruthy()
+
+    await act(async () => {
+      action?.()
+    })
+
+    expect(screen.queryByText(SHARE_ROW_TEXT)).toBeNull()
   })
 
   test('mark-all flow: confirm calls markSermonsListenedAction with all playable audios + playlist', async () => {

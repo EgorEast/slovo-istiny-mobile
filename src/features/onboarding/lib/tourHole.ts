@@ -34,13 +34,20 @@ export const resolveTourHole = ({
   return { holes: visibleHole === null ? [] : [visibleHole], isWaitingForTarget }
 }
 
+// A highlighted zone's registered rect paired with its target id, in declaration
+// order. Shared by the spotlight holes and the pass-through layer's fills.
+export interface AreaRect {
+  id: string
+  rect: OnboardingTargetRect
+}
+
 // The rects of a step's highlighted zones, in declaration order, skipping ids whose
 // target has not registered yet (the caller renders those as fills/holes as they land).
-export const resolveAreaHoles = (
+export const resolveAreaRects = (
   areaTargetIds: string[] | undefined,
   rects: Record<string, OnboardingTargetRect>,
-): OnboardingTargetRect[] =>
+): AreaRect[] =>
   (areaTargetIds ?? []).flatMap(id => {
     const rect = rects[id]
-    return rect === undefined ? [] : [rect]
+    return rect === undefined ? [] : [{ id, rect }]
   })

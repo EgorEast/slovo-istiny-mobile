@@ -67,6 +67,8 @@ export const playlistMenuScenario: OnboardingScenario = {
       title: 'Удаление',
     },
     {
+      actionOnEnterId: 'close-playlist-menu',
+      areaTargetIds: ['playlist.first-row'],
       interactive: true,
       targetId: 'playlist.first-row',
       text: 'Зажмите строку проповеди или нажмите «⋯» — откроется меню: «Добавить в плейлист», «Удалить из плейлиста» (для своих плейлистов), «Пометить прослушанной», «Удалить из истории».',

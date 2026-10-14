@@ -2,7 +2,7 @@ import { useAction, useAtom } from '@reatom/npm-react'
 import { useWindowDimensions } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { scenariosById } from '../lib/scenarios'
-import { resolveAreaHoles, resolveTourHole } from '../lib/tourHole'
+import { resolveAreaRects, resolveTourHole } from '../lib/tourHole'
 import { resolveHiddenStepIndexes, resolveTourProgress } from '../lib/tourProgress'
 import { useExpiredStepKey } from '../lib/useExpiredStepKey'
 import { useStepNavigation } from '../lib/useStepNavigation'
@@ -71,6 +71,9 @@ export const OnboardingTourOverlay = () => {
   // Pass-through steps keep the modal unmounted so the live UI stays interactive:
   // an interactive step the user must act on, or a step whose wait condition is
   // unmet yet. The card floats in a pass-through layer; only it is touchable.
+  // `interactive` wins over `areaTargetIds`: such a step still marks its zones with
+  // the pass-through fills instead of the blocking spotlight.
+  const areaRects = resolveAreaRects(step.areaTargetIds, rects)
   const isPassThrough = step.interactive === true || !isWaitSatisfied
   if (isPassThrough)
     return (
@@ -81,6 +84,7 @@ export const OnboardingTourOverlay = () => {
         onNext={onPrimary}
         windowWidth={width}
         windowHeight={height}
+        areaRects={areaRects}
         displayIndex={displayIndex}
         displayTotal={displayTotal}
         bottomInset={insets.bottom}
@@ -95,7 +99,6 @@ export const OnboardingTourOverlay = () => {
   // ready, or an area step highlighting clickable zones. The app underneath stays
   // blocked — the onboarding owns the touch, not just the visuals.
   const isAreaStep = step.areaTargetIds !== undefined
-  const areaHoles = resolveAreaHoles(step.areaTargetIds, rects)
   const { holes: targetHoles, isWaitingForTarget } = resolveTourHole({
     activeTargetId,
     expiredStepKey,
@@ -103,7 +106,7 @@ export const OnboardingTourOverlay = () => {
     rects,
     stepKey,
   })
-  const holes = isAreaStep ? areaHoles : targetHoles
+  const holes = isAreaStep ? areaRects.map(({ rect }) => rect) : targetHoles
 
   return (
     <TourSpotlight

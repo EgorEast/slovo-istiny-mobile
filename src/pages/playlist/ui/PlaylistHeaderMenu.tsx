@@ -1,10 +1,10 @@
-import { useTourActionRegistrar } from 'features/onboarding'
 import { ErrorModal } from 'shared/ui/error-modal'
 import { buildAddAllToPlaylistHandler } from '../lib/buildAddAllToPlaylistHandler'
 import { useLocalPlaylistPublish } from '../lib/useLocalPlaylistPublish'
 import { usePlaylistCacheError } from '../lib/usePlaylistCacheError'
 import { usePlaylistHistoryMenu } from '../lib/usePlaylistHistoryMenu'
 import { usePlaylistManagementMenu } from '../lib/usePlaylistManagementMenu'
+import { usePlaylistMenuTourActions } from '../lib/usePlaylistMenuTourActions'
 import { usePlaylistOfflineMenu } from '../lib/usePlaylistOfflineMenu'
 import { usePlaylistShare } from '../lib/usePlaylistShare'
 import { PlaylistHeaderActions } from './PlaylistHeaderActions'
@@ -48,9 +48,8 @@ export const PlaylistHeaderMenu = ({
     setMenuVisible,
   } = usePlaylistOfflineMenu(tracksData, playlistTitle)
 
-  useTourActionRegistrar('open-playlist-menu', handleOpenMenu)
+  const closeMenu = usePlaylistMenuTourActions(handleOpenMenu, setMenuVisible)
 
-  const closeMenu = () => setMenuVisible(false)
   const addAllHandler = buildAddAllToPlaylistHandler(onAddAllToPlaylist, playlist, closeMenu)
   const historyMenu = usePlaylistHistoryMenu(playlist, closeMenu)
   const { error, handleErrorClose } = usePlaylistCacheError(cacheDialogVisible)

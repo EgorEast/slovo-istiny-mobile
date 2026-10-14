@@ -5,6 +5,7 @@ import { onboardingTargetRectsAtom } from '../model'
 import { resolveStepRoute } from './resolveStepRoute'
 import { type OnboardingScenario, type OnboardingStep } from './scenarios'
 import { useSkipMissingStep } from './useSkipMissingStep'
+import { useStepEnterAction } from './useStepEnterAction'
 import { useTourActionStep } from './useTourActionStep'
 import { useTourTapFlow } from './useTourTapFlow'
 import { useWaitForSatisfied } from './useWaitForSatisfied'
@@ -70,6 +71,12 @@ export const useStepNavigation = ({
     isHoldingForTapRect,
     isTapPhase,
     step,
+    stepKey,
+  })
+
+  useStepEnterAction({
+    actionOnEnterId: step?.actionOnEnterId,
+    isTourActive,
     stepKey,
   })
 

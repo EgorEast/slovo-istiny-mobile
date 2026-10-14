@@ -3,6 +3,7 @@ import { act, fireEvent, type screen, waitFor } from '@testing-library/react-nat
 import { StyleSheet } from 'react-native'
 import { currentAudioAtom } from 'entities/player/@x/onboarding'
 import { renderWithProviders } from 'shared/mocks'
+import { registerTourAction, unregisterTourAction } from '../lib/tourActions'
 import {
   endOnboardingTour,
   type OnboardingTargetRect,
@@ -362,17 +363,40 @@ describe('<OnboardingTourOverlay>', () => {
   test('keeps an interactive step with a target pass-through and anchors its card to the target', async () => {
     const ROW_RECT: OnboardingTargetRect = { height: 80, width: 320, x: 0, y: 400 }
 
-    const { getByText, queryByTestId, queryByText } = await renderAtStep('playlist-menu', 10, {
-      'playlist.first-row': ROW_RECT,
-    })
+    const { getByTestId, getByText, queryByTestId, queryByText } = await renderAtStep(
+      'playlist-menu',
+      10,
+      { 'playlist.first-row': ROW_RECT },
+    )
 
     // An interactive step owns the pass-through layer even with a targetId: the
     // target only positions the card, no spotlight modal or dim is shown.
     expect(queryByTestId(TOUR_MODAL)).toBeNull()
     expect(queryByText(DIM)).toBeNull()
+    // Its areaTargetIds still mark the zone with the translucent fill.
+    expect(getByTestId(AREA_HIGHLIGHT)).toBeTruthy()
     expect(getByText('Меню проповеди')).toBeTruthy()
     // Anchored above the row instead of centered on the screen.
     expect(findAnchoredCardTop(getByText('Меню проповеди'))).toBeLessThan(ROW_RECT.y)
+  })
+
+  test('performs the step actionOnEnterId once on activation, not on re-render', async () => {
+    const action = jest.fn()
+    registerTourAction('close-playlist-menu', action)
+
+    const ROW_RECT: OnboardingTargetRect = { height: 80, width: 320, x: 0, y: 400 }
+    const { rerender } = await renderAtStep('playlist-menu', 10, {
+      'playlist.first-row': ROW_RECT,
+    })
+
+    await waitFor(() => expect(action).toHaveBeenCalledTimes(1))
+
+    await act(async () => {
+      rerender(<OnboardingTourOverlay />)
+    })
+    expect(action).toHaveBeenCalledTimes(1)
+
+    unregisterTourAction('close-playlist-menu')
   })
 
   test('keeps the tooltip hidden until the missing-target timeout expires', async () => {

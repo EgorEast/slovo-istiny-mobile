@@ -60,6 +60,9 @@ export type OnboardingScenarioId =
   | 'whatsNew'
 
 export interface OnboardingStep {
+  // Registered action performed once on step activation, no blink/auto-advance
+  // (lib/tourActions.ts). Meant for interactive steps needing the live UI prepared.
+  actionOnEnterId?: string
   // Highlighted target rects (background dimmed, zones stay bright) — see ui/TourWaitLayer.tsx.
   areaTargetIds?: string[]
   // Pass-through card over the live UI, no spotlight modal.

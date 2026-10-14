@@ -1,6 +1,8 @@
 import { resolveStepRoute } from './resolveStepRoute'
 import { scenariosById } from './scenarios'
 
+const FIRST_ROW_TARGET_ID = 'playlist.first-row'
+
 describe('onboarding scenario data', () => {
   test('welcome runs eight steps and ends on the tours setting', () => {
     const welcome = scenariosById.welcome
@@ -189,7 +191,9 @@ describe('onboarding scenario data', () => {
     // drops its step instead of spotlighting a hidden row.
     expect(playlistMenu.steps.slice(2, 10).every(step => step.skipIfMissing === true)).toBe(true)
     expect(playlistMenu.steps[10].interactive).toBe(true)
-    expect(playlistMenu.steps[10].targetId).toBe('playlist.first-row')
+    expect(playlistMenu.steps[10].targetId).toBe(FIRST_ROW_TARGET_ID)
+    expect(playlistMenu.steps[10].areaTargetIds).toEqual([FIRST_ROW_TARGET_ID])
+    expect(playlistMenu.steps[10].actionOnEnterId).toBe('close-playlist-menu')
   })
 
   test('playlist-add teaches adding a sermon to playlists with interactive steps', () => {
@@ -199,7 +203,7 @@ describe('onboarding scenario data', () => {
     expect(playlistAdd.screens).toEqual(['/listen/playlist'])
     expect(playlistAdd.steps).toHaveLength(3)
     expect(playlistAdd.steps.every(step => step.interactive === true)).toBe(true)
-    expect(playlistAdd.steps[0].targetId).toBe('playlist.first-row')
+    expect(playlistAdd.steps[0].targetId).toBe(FIRST_ROW_TARGET_ID)
     expect(playlistAdd.steps[1].title).toBe('Добавить в плейлист')
   })
 

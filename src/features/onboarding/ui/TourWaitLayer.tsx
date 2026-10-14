@@ -3,7 +3,7 @@ import { StyleSheet, View } from 'react-native'
 import { INDENTS } from 'shared/ui/theme'
 import { type OnboardingStep } from '../lib/scenarios'
 import { computeTooltipLayout } from '../lib/tooltipPosition'
-import { TOOLTIP_ESTIMATED_HEIGHT } from '../lib/tourHole'
+import { type AreaRect, TOOLTIP_ESTIMATED_HEIGHT } from '../lib/tourHole'
 import { type OnboardingTargetRect } from '../model'
 import { TourAreaHighlight } from './TourAreaHighlight'
 import { TourDim } from './TourDim'
@@ -31,7 +31,7 @@ export const TourWaitLayer = ({
   windowHeight,
   windowWidth,
 }: {
-  areaRects?: Array<{ id: string; rect: OnboardingTargetRect }>
+  areaRects?: AreaRect[]
   bottomInset: number
   displayIndex: number
   displayTotal: number
@@ -56,11 +56,14 @@ export const TourWaitLayer = ({
     INDENTS.high,
   )
   const isAreaStep = step.areaTargetIds !== undefined
+  // An interactive step marks its zones with the pass-through fills only: dimming
+  // the live UI the user still has to act on would fight the step's purpose.
+  const showDim = isAreaStep && step.interactive !== true
 
   return (
     <>
       <View pointerEvents='none' style={StyleSheet.absoluteFill}>
-        {isAreaStep ? (
+        {showDim ? (
           <TourDim
             width={windowWidth}
             height={windowHeight}
