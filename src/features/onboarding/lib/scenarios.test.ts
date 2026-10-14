@@ -157,16 +157,19 @@ describe('onboarding scenario data', () => {
     expect(search.steps[5].interactive).toBe(true)
   })
 
-  test('playlist-menu opens the menu and walks every item separately', () => {
+  test('playlist-menu walks the header menu and ends on the interactive sermon menu', () => {
     const playlistMenu = scenariosById['playlist-menu']
 
+    expect(playlistMenu.title).toBe('Экран плейлиста')
     expect(playlistMenu.screens).toEqual(['/listen/playlist'])
-    expect(playlistMenu.steps).toHaveLength(10)
+    expect(playlistMenu.steps).toHaveLength(11)
     expect(playlistMenu.steps[0].targetId).toBe('playlist.playback')
     expect(playlistMenu.steps[1].targetId).toBe('playlist.menu')
     expect(playlistMenu.steps[1].tapTargetId).toBe('playlist.menu')
     expect(playlistMenu.steps[1].tapActionId).toBe('open-playlist-menu')
-    expect(playlistMenu.steps.slice(2).map(step => step.targetId)).toEqual([
+    // Steps 2..9 are the header menu items; step 10 is the pass-through card
+    // anchored to the first sermon row.
+    expect(playlistMenu.steps.slice(2, 10).map(step => step.targetId)).toEqual([
       'playlist.menu-share',
       'playlist.menu-add-all',
       'playlist.menu-publish',
@@ -183,7 +186,9 @@ describe('onboarding scenario data', () => {
     expect(playlistMenu.steps[offlineRemoveIndex - 1].targetId).toBe('playlist.menu-offline-add')
     // Every menu item may be absent (admin/local-only/feature-gated): the tour
     // drops its step instead of spotlighting a hidden row.
-    expect(playlistMenu.steps.slice(2).every(step => step.skipIfMissing === true)).toBe(true)
+    expect(playlistMenu.steps.slice(2, 10).every(step => step.skipIfMissing === true)).toBe(true)
+    expect(playlistMenu.steps[10].interactive).toBe(true)
+    expect(playlistMenu.steps[10].targetId).toBe('playlist.first-row')
   })
 
   test('playlists scenario no longer claims the single-playlist screen', () => {

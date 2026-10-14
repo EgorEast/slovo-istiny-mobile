@@ -1,7 +1,7 @@
 import { type OnboardingScenario } from '../scenarios'
 
 export const playlistMenuScenario: OnboardingScenario = {
-  description: 'Пункты и управление',
+  description: 'Управление плейлистом и проповедями',
   icon: 'menu-outline',
   id: 'playlist-menu',
   screens: ['/listen/playlist'],
@@ -66,6 +66,12 @@ export const playlistMenuScenario: OnboardingScenario = {
       text: 'Удалить плейлист целиком. Эти действия необратимы — действует подтверждающий диалог.',
       title: 'Удаление',
     },
+    {
+      interactive: true,
+      targetId: 'playlist.first-row',
+      text: 'Зажмите строку проповеди или нажмите «⋯» — откроется меню: «Добавить в плейлист», «Удалить из плейлиста» (для своих плейлистов), «Пометить прослушанной», «Удалить из истории».',
+      title: 'Меню проповеди',
+    },
   ],
-  title: 'Меню плейлиста',
+  title: 'Экран плейлиста',
 }

@@ -1,5 +1,6 @@
 import { createCtx } from '@reatom/framework'
-import { act, fireEvent, waitFor } from '@testing-library/react-native'
+import { act, fireEvent, type screen, waitFor } from '@testing-library/react-native'
+import { StyleSheet } from 'react-native'
 import { currentAudioAtom } from 'entities/player/@x/onboarding'
 import { renderWithProviders } from 'shared/mocks'
 import {
@@ -72,6 +73,20 @@ const EDGE_BACK_RECT: OnboardingTargetRect = { height: 400, width: 64, x: 0, y: 
 const EDGE_FORWARD_RECT: OnboardingTargetRect = { height: 400, width: 64, x: 336, y: 100 }
 const AREA_HIGHLIGHT = 'onboarding-area-highlight'
 const TOUR_MODAL = 'onboarding-tour-modal'
+
+// Walks up from a card node to the absolutely-positioned pass-through card and
+// reads the `top` anchoring offset set from the active target's hole.
+const findAnchoredCardTop = (node: ReturnType<typeof screen.getByText>) => {
+  let current = node.parent
+
+  while (current !== null) {
+    const style = StyleSheet.flatten(current.props.style)
+    if (style?.position === 'absolute' && typeof style.top === 'number') return style.top
+    current = current.parent
+  }
+
+  return null
+}
 
 const renderAtStep = (
   scenarioId:
@@ -257,9 +272,9 @@ describe('<OnboardingTourOverlay>', () => {
   test('shows the real step count and the done label when trailing menu steps are absent', async () => {
     const MENU_RECT: OnboardingTargetRect = { height: 40, width: 200, x: 10, y: 300 }
 
-    // A server playlist hides publish/clear/delete, so the deck is 7 steps long and
-    // the history-mark step is its last visible one.
-    const { getByText, queryByText } = await renderAtStep('playlist-menu', 7, {
+    // A server playlist hides publish/clear/delete, so the deck is 8 steps long and
+    // the interactive sermon-menu step (index 10) is its last visible one.
+    const { getByText, queryByText } = await renderAtStep('playlist-menu', 10, {
       'playlist.menu-add-all': MENU_RECT,
       'playlist.menu-history-mark': MENU_RECT,
       'playlist.menu-offline-add': MENU_RECT,
@@ -267,7 +282,7 @@ describe('<OnboardingTourOverlay>', () => {
       'playlist.menu-share': MENU_RECT,
     })
 
-    expect(getByText('Шаг 7 из 7')).toBeTruthy()
+    expect(getByText('Шаг 8 из 8')).toBeTruthy()
     expect(getByText('Готово')).toBeTruthy()
     expect(queryByText(NEXT_LABEL)).toBeNull()
   })
@@ -342,6 +357,22 @@ describe('<OnboardingTourOverlay>', () => {
     expect(getByText('Выберите плейлист')).toBeTruthy()
     expect(getByText(NEXT_LABEL)).toBeTruthy()
     expect(queryByText(DIM)).toBeNull()
+  })
+
+  test('keeps an interactive step with a target pass-through and anchors its card to the target', async () => {
+    const ROW_RECT: OnboardingTargetRect = { height: 80, width: 320, x: 0, y: 400 }
+
+    const { getByText, queryByTestId, queryByText } = await renderAtStep('playlist-menu', 10, {
+      'playlist.first-row': ROW_RECT,
+    })
+
+    // An interactive step owns the pass-through layer even with a targetId: the
+    // target only positions the card, no spotlight modal or dim is shown.
+    expect(queryByTestId(TOUR_MODAL)).toBeNull()
+    expect(queryByText(DIM)).toBeNull()
+    expect(getByText('Меню проповеди')).toBeTruthy()
+    // Anchored above the row instead of centered on the screen.
+    expect(findAnchoredCardTop(getByText('Меню проповеди'))).toBeLessThan(ROW_RECT.y)
   })
 
   test('keeps the tooltip hidden until the missing-target timeout expires', async () => {

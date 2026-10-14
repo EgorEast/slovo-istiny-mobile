@@ -1,7 +1,12 @@
 import { useCallback } from 'react'
+import { OnboardingTarget } from 'features/onboarding'
 import { type MenuItem } from 'shared/ui/menu'
 import { PlaylistTrackItem } from './PlaylistTrackItem'
 import { type TracksListData } from './usePlaylistNavigationOptions'
+
+// Only the first sermon row is highlighted: the row menu is identical for every
+// row, so one anchoring target covers the tour's card position.
+const FIRST_ROW_TARGET_ID = 'playlist.first-row'
 
 /**
  * Builds the stable FlatList renderer for the playlist's track rows.
@@ -30,21 +35,26 @@ export const usePlaylistItemRenderer = ({
   progressMap: Map<string, number>
 }) =>
   useCallback(
-    ({ index, item }: { index: number; item: TracksListData[number] }) => (
-      <PlaylistTrackItem
-        id={item.id}
-        index={index}
-        title={item.title}
-        isPlaying={isPlaying}
-        artwork={item.artwork}
-        audioUrl={item.audioUrl}
-        subtitle={item.subtitle}
-        onPress={handlePressItem}
-        cacheTrigger={cacheTrigger}
-        currentAudioId={currentAudioId}
-        menuActions={buildMenuActions(index)}
-        storedProgress={progressMap.get(item.id ?? '')}
-      />
-    ),
+    ({ index, item }: { index: number; item: TracksListData[number] }) => {
+      const row = (
+        <PlaylistTrackItem
+          id={item.id}
+          index={index}
+          title={item.title}
+          isPlaying={isPlaying}
+          artwork={item.artwork}
+          audioUrl={item.audioUrl}
+          subtitle={item.subtitle}
+          onPress={handlePressItem}
+          cacheTrigger={cacheTrigger}
+          currentAudioId={currentAudioId}
+          menuActions={buildMenuActions(index)}
+          storedProgress={progressMap.get(item.id ?? '')}
+        />
+      )
+      if (index !== 0) return row
+
+      return <OnboardingTarget id={FIRST_ROW_TARGET_ID}>{row}</OnboardingTarget>
+    },
     [buildMenuActions, cacheTrigger, currentAudioId, handlePressItem, isPlaying, progressMap],
   )

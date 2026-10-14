@@ -111,7 +111,7 @@ describe('onboarding model skip flow', () => {
 
   test('skip forward rests on the last visible step when nothing follows', () => {
     const ctx = createCtx()
-    onboardingTourAtom(ctx, { scenarioId: PLAYLIST_MENU, skippedIndexes: [8, 9], stepIndex: 7 })
+    onboardingTourAtom(ctx, { scenarioId: PLAYLIST_MENU, skippedIndexes: [8, 9, 10], stepIndex: 7 })
 
     skipOnboardingStep(ctx, 'next')
 
@@ -119,12 +119,12 @@ describe('onboarding model skip flow', () => {
     // visible one, so it stays put and the tour keeps running.
     expect(ctx.get(onboardingTourAtom)).toEqual({
       scenarioId: PLAYLIST_MENU,
-      skippedIndexes: [8, 9],
+      skippedIndexes: [8, 9, 10],
       stepIndex: 7,
     })
-    const progress = resolveTourProgress(PLAYLIST_STEPS, [8, 9], 7)
+    const progress = resolveTourProgress(PLAYLIST_STEPS, [8, 9, 10], 7)
     expect(progress.isLastVisible).toBe(true)
-    expect(progress.displayTotal).toBe(PLAYLIST_STEPS.length - 2)
+    expect(progress.displayTotal).toBe(PLAYLIST_STEPS.length - 3)
   })
 
   test('skip backward crosses a skipped gap', () => {
