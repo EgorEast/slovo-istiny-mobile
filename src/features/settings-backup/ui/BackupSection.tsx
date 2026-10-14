@@ -1,22 +1,18 @@
-import { Checkbox } from 'expo-checkbox'
-import { useState } from 'react'
-import { Text, View } from 'react-native'
+import { useEffect, useState } from 'react'
 import { CollapsibleGroup } from 'shared/ui/collapsible-group'
-import { useTheme } from 'shared/ui/theme'
-import { TouchableItem } from 'shared/ui/touchable-item'
 import { folderLabel } from '../lib/fileIo'
 import { AutosyncConflictDialog } from './AutosyncConflictDialog'
+import { BackupControls } from './BackupControls'
 import { BackupFileChooserDialog } from './BackupFileChooserDialog'
 import { BackupImportModeDialog } from './BackupImportModeDialog'
-import { styles } from './BackupSection.styles'
+import { type BackupSectionBindings } from './backupSectionBindings'
 import { ServerUrlChangeDialog } from './ServerUrlChangeDialog'
 import { useBackupSection } from './useBackupSection'
 
 const UNAVAILABLE_FOLDER_LABEL = 'Папка недоступна — выберите заново'
 const TITLE = 'Резервная копия данных'
 
-export const BackupSection = () => {
-  const { currentTheme } = useTheme()
+export const BackupSection = ({ bindControls, renderControlWrapper }: BackupSectionBindings) => {
   const [expanded, setExpanded] = useState(false)
   const {
     applyPending,
@@ -46,8 +42,14 @@ export const BackupSection = () => {
     toggleAutosync,
   } = useBackupSection()
 
-  const actionStyle = [styles.action, { borderColor: currentTheme.textMuted }]
-  const actionTextStyle = [styles.actionText, { color: currentTheme.text }]
+  useEffect(() => {
+    if (bindControls === undefined) return
+
+    bindControls({ expand: () => setExpanded(true) })
+
+    return () => bindControls(null)
+  }, [bindControls])
+
   const folderText = isFolderUsable ? folderLabel(folderUri) : UNAVAILABLE_FOLDER_LABEL
   const subtitle = canFolderSync ? folderText : undefined
 
@@ -63,39 +65,17 @@ export const BackupSection = () => {
         icon='cloud-upload-outline'
         onToggle={() => setExpanded(previous => !previous)}
       >
-        <View style={styles.actions}>
-          {canFolderSync && (
-            <TouchableItem style={actionStyle} onPress={() => void chooseFolder()}>
-              <Text style={actionTextStyle}>
-                {folderUri && isFolderUsable ? 'Сменить папку' : 'Выбрать папку'}
-              </Text>
-            </TouchableItem>
-          )}
-          <TouchableItem style={actionStyle} onPress={handleExport}>
-            <Text style={actionTextStyle}>
-              {canFolderSync ? 'Создать новый экспорт' : 'Скачать копию'}
-            </Text>
-          </TouchableItem>
-          <TouchableItem style={actionStyle} onPress={handleImport}>
-            <Text style={actionTextStyle}>
-              {canFolderSync ? 'Импортировать' : 'Загрузить из файла'}
-            </Text>
-          </TouchableItem>
-        </View>
-        {canFolderSync && (
-          <View style={styles.autosyncRow}>
-            <Text style={[styles.autosyncLabel, { color: currentTheme.text }]}>
-              Автосинхронизация
-            </Text>
-            <Checkbox
-              value={autosyncEnabled}
-              aria-label='Автосинхронизация'
-              onValueChange={toggleAutosync}
-              disabled={!folderUri || !isFolderUsable}
-              color={autosyncEnabled ? currentTheme.primary : undefined}
-            />
-          </View>
-        )}
+        <BackupControls
+          folderUri={folderUri}
+          onExport={handleExport}
+          onImport={handleImport}
+          canFolderSync={canFolderSync}
+          isFolderUsable={isFolderUsable}
+          autosyncEnabled={autosyncEnabled}
+          onToggleAutosync={toggleAutosync}
+          onChooseFolder={() => void chooseFolder()}
+          renderControlWrapper={renderControlWrapper}
+        />
       </CollapsibleGroup>
       <BackupImportModeDialog
         visible={isDialogVisible}

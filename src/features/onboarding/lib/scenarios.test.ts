@@ -89,6 +89,21 @@ describe('onboarding scenario data', () => {
     ])
   })
 
+  test('backup scenario walks the section, folder, export, import and autosync', () => {
+    const backup = scenariosById.backup
+
+    expect(backup.screens).toEqual(['/settings'])
+    expect(backup.steps).toHaveLength(5)
+    expect(backup.steps[0].targetId).toBe('settings.backup')
+    expect(backup.steps[0].route).toBe('/settings')
+    expect(backup.steps[1].targetId).toBe('settings.backup-folder')
+    expect(backup.steps[1].skipIfMissing).toBe(true)
+    expect(backup.steps[2].targetId).toBe('settings.backup-export')
+    expect(backup.steps[3].targetId).toBe('settings.backup-import')
+    expect(backup.steps[4].targetId).toBe('settings.backup-autosync')
+    expect(backup.steps[4].skipIfMissing).toBe(true)
+  })
+
   test('offline caching-switch waits for the list to load before the spotlight lands', () => {
     const switchStep = scenariosById.offline.steps[2]
 

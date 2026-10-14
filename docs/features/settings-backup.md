@@ -4,8 +4,10 @@
 
 **Файлы:**
 
-- `src/features/settings-backup/index.ts` — публичный API (только `BackupSection`)
-- `src/features/settings-backup/ui/BackupSection.tsx` — секция UI: папка, действия, автосинхронизация, диалоги
+- `src/features/settings-backup/index.ts` — публичный API (`BackupSection` + типы `BackupControlKey`/`BackupSectionControls`)
+- `src/features/settings-backup/ui/BackupSection.tsx` — секция UI: заголовок-группа, диалоги, DI-привязки
+- `src/features/settings-backup/ui/BackupControls.tsx` — внутренние контролы (папка, экспорт, импорт, автосинхронизация) с опциональной обёрткой владельца
+- `src/features/settings-backup/ui/backupSectionBindings.ts` — DI-типы секции (`BackupControlKey`, `BackupSectionControls`, `BackupSectionBindings`)
 - `src/features/settings-backup/ui/useBackupSection.ts` — состояние и обработчики секции (выбор папки, экспорт)
 - `src/features/settings-backup/ui/useBackupImport.ts` — импорт: чтение файла, выбор режима, подтверждение смены URL
 - `src/features/settings-backup/ui/BackupImportModeDialog.tsx` — диалог «Объединить / Заменить»
@@ -149,6 +151,10 @@
 - Фактически пишется только при включённом флаге и наличии URI папки.
 
 Ключи `backup_dir_uri` и `backup_autosync` (значения переживают обновления приложения, читаются защищённо) описаны в [contracts/storage.md](../contracts/storage.md).
+
+## Тур «Резервное копирование»
+
+Сценарий онбординга `backup` (см. [onboarding.md](./onboarding.md)) подсвечивает секцию и её контролы. Фича об онбординге не знает: `BackupSection` принимает опциональные DI-пропсы (`BackupSectionBindings`) — `renderControlWrapper(control, controlKey)` оборачивает внутренние контролы (ключи `folder`/`export`/`import`/`autosync`), а `bindControls` отдаёт владельцу `expand()`. Экран [`SettingsScreen`](../screens/settings.md) передаёт обёртки с целями `settings.backup-folder`/`-export`/`-import`/`-autosync` и разворачивает свёрнутую группу, когда активен сценарий `backup` (иначе цели внутри неё не смонтированы). Шаги `folder`/`autosync` помечены `skipIfMissing`: там, где выбор папки недоступен (iOS, браузеры без File System Access API), они выпадают из колоды, и тур показывает только экспорт/импорт.
 
 ## Общий контракт с импортом аудио
 

@@ -1,5 +1,6 @@
 import { type Ionicons } from '@expo/vector-icons'
 import { type Href } from 'expo-router'
+import { backupScenario } from './scenarioData/backup'
 import { historyScenario } from './scenarioData/history'
 import { listenScenario } from './scenarioData/listen'
 import { offlineScenario } from './scenarioData/offline'
@@ -40,6 +41,7 @@ export const resolveScenarioScope = (scenario: OnboardingScenario): ScenarioScop
   scenario.scope ?? 'default'
 
 export type OnboardingScenarioId =
+  | 'backup'
   | 'history'
   | 'listen'
   | 'offline'
@@ -97,6 +99,7 @@ export const scenarios: OnboardingScenario[] = [
   historyScenario,
   offlineScenario,
   settingsScenario,
+  backupScenario,
   readScenario,
   studyScenario,
   shareScenario,
@@ -105,6 +108,7 @@ export const scenarios: OnboardingScenario[] = [
 ]
 
 export const scenariosById: Record<OnboardingScenarioId, OnboardingScenario> = {
+  backup: backupScenario,
   history: historyScenario,
   listen: listenScenario,
   offline: offlineScenario,
