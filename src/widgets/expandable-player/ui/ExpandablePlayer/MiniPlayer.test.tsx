@@ -209,7 +209,7 @@ describe('<MiniPlayer>', () => {
         },
       )
     const ctx = createCtx()
-    onboardingTourAtom(ctx, { scenarioId: 'player', skippedIndexes: [], stepIndex: 2 })
+    onboardingTourAtom(ctx, { deckIndex: 2, scenarioId: 'player', skippedDeckIndexes: [] })
 
     await renderWithProviders(<MiniPlayer {...baseProps} />, { ctx })
 

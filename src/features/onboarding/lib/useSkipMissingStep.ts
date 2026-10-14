@@ -2,43 +2,42 @@ import { useAction } from '@reatom/npm-react'
 import { useEffect, useRef } from 'react'
 import { skipOnboardingStep } from '../model/tour'
 
-// A `skipIfMissing` step whose target never registers is dropped: 600 ms is long
+// A `skipIfMissing` card whose target never registers is dropped: 600 ms is long
 // enough for a mounted row to measure, short enough not to stall the tour when
 // the row is genuinely absent (admin/local-only/feature-gated).
 const SKIP_MISSING_MS = 600
 
 interface SkipMissingStepInput {
-  // True when a target other than this step's own is registered. The step's own rect
+  deckIndex: number | undefined
+  // True when a target other than this card's own is registered. The card's own rect
   // is unregistered (waitingForTarget), so any registered rect proves the surface
   // already rendered its items — the missing target is genuinely absent.
   hasOtherRegisteredRect: boolean
-  stepIndex: number | undefined
-  // True while a `skipIfMissing` step's target is still unregistered.
+  // True while a `skipIfMissing` card's target is still unregistered.
   waitingForTarget: boolean
 }
 
-// Drops a step whose target never registers, in the direction the user arrived:
-// forward for «Далее», backward for «Назад» (so a step entered with «Назад» is
-// dropped backward). The skipped step leaves the deck for good; the tour never ends
-// from a skip. Returns whether the step is currently being skipped — the overlay
-// stays hidden meanwhile.
+// Drops a card whose target never registers, in the direction the user arrived:
+// forward for «Далее», backward for «Назад». The entry leaves the deck for good (its
+// exit visualizations with it); the tour never ends from a skip. Returns whether the
+// card is currently being skipped — the overlay stays hidden meanwhile.
 export const useSkipMissingStep = ({
+  deckIndex,
   hasOtherRegisteredRect,
-  stepIndex,
   waitingForTarget,
 }: SkipMissingStepInput) => {
   const skipStep = useAction(skipOnboardingStep)
   const directionRef = useRef<'backward' | 'forward'>('forward')
-  const previousIndexRef = useRef(stepIndex)
+  const previousIndexRef = useRef(deckIndex)
 
   useEffect(() => {
     const previous = previousIndexRef.current
-    if (stepIndex === undefined || previous === undefined) return
+    if (deckIndex === undefined || previous === undefined) return
 
-    if (stepIndex < previous) directionRef.current = 'backward'
-    else if (stepIndex > previous) directionRef.current = 'forward'
-    previousIndexRef.current = stepIndex
-  }, [stepIndex])
+    if (deckIndex < previous) directionRef.current = 'backward'
+    else if (deckIndex > previous) directionRef.current = 'forward'
+    previousIndexRef.current = deckIndex
+  }, [deckIndex])
 
   useEffect(() => {
     if (!waitingForTarget) return
@@ -54,7 +53,7 @@ export const useSkipMissingStep = ({
 
     const timer = setTimeout(() => skipStep(direction), SKIP_MISSING_MS)
     return () => clearTimeout(timer)
-  }, [hasOtherRegisteredRect, skipStep, stepIndex, waitingForTarget])
+  }, [hasOtherRegisteredRect, skipStep, deckIndex, waitingForTarget])
 
   return waitingForTarget
 }

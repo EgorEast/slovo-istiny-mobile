@@ -2,6 +2,7 @@ import { useAction, useAtom } from '@reatom/npm-react'
 import { useNavigation } from 'expo-router'
 import { useCallback, useEffect } from 'react'
 import { type View } from 'react-native'
+import { onboardingActiveStepIndexAtom } from '../model/derived'
 import { registerOnboardingTargetRect } from '../model/targets'
 import { onboardingTourAtom } from '../model/tour'
 import { scenariosById } from './scenarios'
@@ -27,11 +28,13 @@ interface TransitionEndNavigation {
 export const useTargetMeasure = ({ getNode, id }: TargetMeasureInput) => {
   const navigation = useNavigation<TransitionEndNavigation>()
   const [tour] = useAtom(onboardingTourAtom)
+  const [activeStepIndex] = useAtom(onboardingActiveStepIndexAtom)
   const register = useAction(registerOnboardingTargetRect)
 
-  const activeTargetId = tour
-    ? scenariosById[tour.scenarioId].steps[tour.stepIndex]?.targetId
-    : undefined
+  const activeTargetId =
+    tour !== null && activeStepIndex !== null
+      ? scenariosById[tour.scenarioId].steps[activeStepIndex]?.targetId
+      : undefined
   const isActive = activeTargetId === id
   const isTourActive = tour !== null
 

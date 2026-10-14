@@ -2,7 +2,11 @@ import { createCtx } from '@reatom/framework'
 import { act, fireEvent, waitFor } from '@testing-library/react-native'
 import { View } from 'react-native'
 import { type TestInstance } from 'test-renderer'
-import { onboardingTargetRectsAtom, onboardingTourAtom } from 'features/onboarding'
+import {
+  onboardingExitStepIndexAtom,
+  onboardingTargetRectsAtom,
+  onboardingTourAtom,
+} from 'features/onboarding'
 import { type TrackCacheVisualState } from 'entities/offline-cache'
 import { type PlaybackRate } from 'entities/player'
 import { type AudioPlayerData } from 'entities/sermon'
@@ -420,7 +424,12 @@ describe('<PlayerMenuItems>', () => {
   test('registers the details target rect while its tour step is active', async () => {
     mockMeasureInWindow()
     const ctx = createCtx()
-    onboardingTourAtom(ctx, { scenarioId: 'player-description', skippedIndexes: [], stepIndex: 2 })
+    onboardingTourAtom(ctx, {
+      deckIndex: 0,
+      scenarioId: 'player-description',
+      skippedDeckIndexes: [],
+    })
+    onboardingExitStepIndexAtom(ctx, 1)
 
     await renderMenuItems(ctx)
 
@@ -430,7 +439,8 @@ describe('<PlayerMenuItems>', () => {
   test('registers the speed menu target rect while its tour step is active', async () => {
     mockMeasureInWindow()
     const ctx = createCtx()
-    onboardingTourAtom(ctx, { scenarioId: 'player-speed', skippedIndexes: [], stepIndex: 2 })
+    onboardingTourAtom(ctx, { deckIndex: 0, scenarioId: 'player-speed', skippedDeckIndexes: [] })
+    onboardingExitStepIndexAtom(ctx, 1)
 
     await renderMenuItems(ctx)
 
@@ -442,7 +452,8 @@ describe('<PlayerMenuItems>', () => {
   test('registers the sound menu target rect while its tour step is active', async () => {
     mockMeasureInWindow()
     const ctx = createCtx()
-    onboardingTourAtom(ctx, { scenarioId: 'player-sound', skippedIndexes: [], stepIndex: 2 })
+    onboardingTourAtom(ctx, { deckIndex: 0, scenarioId: 'player-sound', skippedDeckIndexes: [] })
+    onboardingExitStepIndexAtom(ctx, 1)
 
     await renderMenuItems(ctx)
 

@@ -1,20 +1,22 @@
 import { action, atom } from '@reatom/framework'
-import { type OnboardingScenarioId, type OnboardingStep, scenariosById } from '../lib/scenarios'
+import { type OnboardingScenarioId, scenariosById } from '../lib/scenarios'
+import { buildTourDeck, findNearestDeckIndex } from '../lib/tourDeck'
 import { onboardingTargetRectsAtom } from './targets'
 
 export type OnboardingTourState = null | OnboardingTourStateValue
 
 interface OnboardingTourStateValue {
+  // Position of the current card in the deck; visualization steps are not entries.
+  deckIndex: number
   scenarioId: OnboardingScenarioId
-  // Steps dropped from the deck for the rest of the tour (see `skipOnboardingStep`).
-  skippedIndexes: number[]
-  stepIndex: number
+  // Deck entries dropped for the rest of the tour (see `skipOnboardingStep`).
+  skippedDeckIndexes: number[]
 }
 
 type SkipDirection = 'back' | 'next'
 
-// Direction of the last step change. Action steps are demonstrative and forward-only:
-// the tap flow consults this to perform on forward entry and render statically on back.
+// Direction of the last step change. Visualizations are forward-only: the exit
+// transition starts only from `goToNextOnboardingStep`, which sets this to 'forward'.
 export const onboardingStepDirectionAtom = atom<'backward' | 'forward'>(
   'forward',
   'onboardingStepDirectionAtom',
@@ -22,80 +24,93 @@ export const onboardingStepDirectionAtom = atom<'backward' | 'forward'>(
 
 export const onboardingTourAtom = atom<OnboardingTourState>(null, 'onboardingTourAtom')
 
-// The nearest step that is still in the deck, walking `direction` from `fromIndex`.
-// Walking back skips action steps too — «Назад» never lands on a demonstration that
-// would otherwise replay its blink and action. `undefined` means every step that way
-// has been skipped — the deck boundary.
-const findNearestVisibleIndex = (
-  steps: OnboardingStep[],
-  skippedIndexes: number[],
-  fromIndex: number,
-  direction: -1 | 1,
-): number | undefined => {
-  for (let index = fromIndex + direction; index >= 0 && index < steps.length; index += direction) {
-    if (skippedIndexes.includes(index)) continue
-    if (direction === -1 && steps[index].tapActionId !== undefined) continue
+// Position of the visualization currently playing as the current card's exit
+// transition; `null` while the tour rests on a card.
+export const onboardingExitStepIndexAtom = atom<null | number>(null, 'onboardingExitStepIndexAtom')
 
-    return index
-  }
-
-  return undefined
-}
+// The deck is derived from the active scenario's steps; the actions resolve it on
+// demand rather than caching it, so only the position and skipped entries persist.
+const resolveDeck = (scenarioId: OnboardingScenarioId) =>
+  buildTourDeck(scenariosById[scenarioId].steps)
 
 export const startOnboardingTour = action((ctx, scenarioId: OnboardingScenarioId) => {
   onboardingTargetRectsAtom(ctx, {})
   onboardingStepDirectionAtom(ctx, 'forward')
-  onboardingTourAtom(ctx, { scenarioId, skippedIndexes: [], stepIndex: 0 })
+  onboardingExitStepIndexAtom(ctx, null)
+  onboardingTourAtom(ctx, { deckIndex: 0, scenarioId, skippedDeckIndexes: [] })
 }, 'startOnboardingTour')
 
 export const goToNextOnboardingStep = action(ctx => {
   const tour = ctx.get(onboardingTourAtom)
   if (!tour) return
 
-  const steps = scenariosById[tour.scenarioId].steps
-  const nextIndex = findNearestVisibleIndex(steps, tour.skippedIndexes, tour.stepIndex, 1)
+  onboardingStepDirectionAtom(ctx, 'forward')
+  const deck = resolveDeck(tour.scenarioId)
+  const entry = deck[tour.deckIndex]
+
+  // Forward departure from a card plays its visualization steps in order first; each
+  // call advances one exit step, and the last one falls through to the deck advance.
+  if (entry !== undefined && entry.exitStepIndexes.length > 0) {
+    const exitIndex = ctx.get(onboardingExitStepIndexAtom)
+    if (exitIndex === null) {
+      onboardingExitStepIndexAtom(ctx, 0)
+      return
+    }
+    if (exitIndex + 1 < entry.exitStepIndexes.length) {
+      onboardingExitStepIndexAtom(ctx, exitIndex + 1)
+      return
+    }
+  }
+
+  const nextIndex = findNearestDeckIndex(deck, tour.skippedDeckIndexes, tour.deckIndex, 1)
+  onboardingExitStepIndexAtom(ctx, null)
   if (nextIndex === undefined) return
 
-  onboardingStepDirectionAtom(ctx, 'forward')
-  onboardingTourAtom(ctx, { ...tour, stepIndex: nextIndex })
+  onboardingTourAtom(ctx, { ...tour, deckIndex: nextIndex })
 }, 'goToNextOnboardingStep')
 
+// «Назад» always lands on the previous card: visualizations are not entries, so they
+// are never revisited and never replay.
 export const goToPrevOnboardingStep = action(ctx => {
   const tour = ctx.get(onboardingTourAtom)
   if (!tour) return
 
-  const steps = scenariosById[tour.scenarioId].steps
-  const prevIndex = findNearestVisibleIndex(steps, tour.skippedIndexes, tour.stepIndex, -1)
+  const deck = resolveDeck(tour.scenarioId)
+  const prevIndex = findNearestDeckIndex(deck, tour.skippedDeckIndexes, tour.deckIndex, -1)
   if (prevIndex === undefined) return
 
   onboardingStepDirectionAtom(ctx, 'backward')
-  onboardingTourAtom(ctx, { ...tour, stepIndex: prevIndex })
+  onboardingExitStepIndexAtom(ctx, null)
+  onboardingTourAtom(ctx, { ...tour, deckIndex: prevIndex })
 }, 'goToPrevOnboardingStep')
 
-// Drops the current step from the deck and lands on the nearest surviving neighbor
-// in `direction`. When nothing survives that way the current step is already the
-// first/last visible one, so the tour stays put — a skip never ends the tour.
+// Drops the current entry from the deck (its exit visualizations with it) and lands on
+// the nearest surviving neighbor in `direction`. When nothing survives that way the
+// entry is already the first/last visible one, so the tour stays put — a skip never
+// ends the tour.
 export const skipOnboardingStep = action((ctx, direction: SkipDirection) => {
   const tour = ctx.get(onboardingTourAtom)
   if (!tour) return
 
-  const steps = scenariosById[tour.scenarioId].steps
-  const markedIndexes = tour.skippedIndexes.includes(tour.stepIndex)
-    ? tour.skippedIndexes
-    : [...tour.skippedIndexes, tour.stepIndex]
-  const neighbor = findNearestVisibleIndex(
-    steps,
-    markedIndexes,
-    tour.stepIndex,
+  const deck = resolveDeck(tour.scenarioId)
+  const markedDeckIndexes = tour.skippedDeckIndexes.includes(tour.deckIndex)
+    ? tour.skippedDeckIndexes
+    : [...tour.skippedDeckIndexes, tour.deckIndex]
+  const neighbor = findNearestDeckIndex(
+    deck,
+    markedDeckIndexes,
+    tour.deckIndex,
     direction === 'next' ? 1 : -1,
   )
   if (neighbor === undefined) return
 
   onboardingStepDirectionAtom(ctx, direction === 'next' ? 'forward' : 'backward')
-  onboardingTourAtom(ctx, { ...tour, skippedIndexes: markedIndexes, stepIndex: neighbor })
+  onboardingExitStepIndexAtom(ctx, null)
+  onboardingTourAtom(ctx, { ...tour, deckIndex: neighbor, skippedDeckIndexes: markedDeckIndexes })
 }, 'skipOnboardingStep')
 
 export const endOnboardingTour = action(ctx => {
   onboardingTourAtom(ctx, null)
+  onboardingExitStepIndexAtom(ctx, null)
   onboardingTargetRectsAtom(ctx, {})
 }, 'endOnboardingTour')

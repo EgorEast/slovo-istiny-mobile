@@ -1,5 +1,6 @@
 import { resolveStepRoute } from './resolveStepRoute'
-import { scenariosById } from './scenarios'
+import { scenarios, scenariosById } from './scenarios'
+import { buildTourDeck } from './tourDeck'
 
 const FIRST_ROW_TARGET_ID = 'playlist.first-row'
 const ROW_MENU_ADD_TARGET_ID = 'playlist.row-menu-add'
@@ -76,26 +77,23 @@ describe('onboarding scenario data', () => {
     expect(scenariosById.study.steps[0].tapTargetId).toBe('tab.study')
   })
 
-  test('action-first tours start with a plain intro card', () => {
-    const actionFirstIds = [
-      'search',
-      'player-description',
-      'player-speed',
-      'player-sound',
-      'history',
-      'offline',
-      'settings',
-    ] as const
+  test('every scenario starts with a card and action steps directly follow one', () => {
+    const warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined)
 
-    actionFirstIds.forEach(id => {
-      const intro = scenariosById[id].steps[0]
+    scenarios.forEach(scenario => {
+      // No leading action step: the tour always starts on a card.
+      expect(scenario.steps[0].tapActionId).toBeUndefined()
 
-      expect(intro.targetId).toBeUndefined()
-      expect(intro.tapTargetId).toBeUndefined()
-      expect(intro.tapActionId).toBeUndefined()
-      expect(intro.interactive).toBeUndefined()
-      expect(intro.route).toBeUndefined()
+      // Every deck entry has a card, and the build never drops a leading action.
+      const deck = buildTourDeck(scenario.steps)
+      expect(deck.length).toBeGreaterThan(0)
+      deck.forEach(entry => {
+        expect(scenario.steps[entry.cardIndex].tapActionId).toBeUndefined()
+      })
     })
+
+    expect(warn).not.toHaveBeenCalled()
+    warn.mockRestore()
   })
 
   test('player-scope scenarios are scoped to the player and never route-bound', () => {

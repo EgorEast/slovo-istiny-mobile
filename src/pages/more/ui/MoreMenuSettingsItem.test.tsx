@@ -38,7 +38,7 @@ describe('<MoreMenuSettingsItem>', () => {
   test('registers its spotlight rect when given an onboardingTargetId and its step is active', async () => {
     mockMeasureInWindow()
     const ctx = createCtx()
-    onboardingTourAtom(ctx, { scenarioId: 'offline', skippedIndexes: [], stepIndex: 1 })
+    onboardingTourAtom(ctx, { deckIndex: 1, scenarioId: 'offline', skippedDeckIndexes: [] })
 
     await renderItem(ctx, TARGET_ID)
 
@@ -48,7 +48,7 @@ describe('<MoreMenuSettingsItem>', () => {
   test('registers nothing without an onboardingTargetId', async () => {
     mockMeasureInWindow()
     const ctx = createCtx()
-    onboardingTourAtom(ctx, { scenarioId: 'offline', skippedIndexes: [], stepIndex: 1 })
+    onboardingTourAtom(ctx, { deckIndex: 1, scenarioId: 'offline', skippedDeckIndexes: [] })
 
     await renderItem(ctx)
 

@@ -49,7 +49,7 @@ describe('useOnboardingTargetRef', () => {
   test('registers the measured rect of the attached node when its step becomes active', async () => {
     mockMeasureInWindow({ height: 4, width: 3, x: 1, y: 2 })
     const ctx = createCtx()
-    onboardingTourAtom(ctx, { scenarioId: 'listen', skippedIndexes: [], stepIndex: 1 })
+    onboardingTourAtom(ctx, { deckIndex: 1, scenarioId: 'listen', skippedDeckIndexes: [] })
 
     await renderRefTarget(ctx)
 
@@ -63,7 +63,7 @@ describe('useOnboardingTargetRef', () => {
   test('does not register a zero-size rect', async () => {
     mockMeasureInWindow({ height: 0, width: 0, x: 0, y: 0 })
     const ctx = createCtx()
-    onboardingTourAtom(ctx, { scenarioId: 'listen', skippedIndexes: [], stepIndex: 1 })
+    onboardingTourAtom(ctx, { deckIndex: 1, scenarioId: 'listen', skippedDeckIndexes: [] })
 
     await renderRefTarget(ctx)
 

@@ -56,7 +56,7 @@ describe('<OnboardingTarget>', () => {
   test('registers the measured rect when its step becomes active', async () => {
     mockMeasureInWindow({ height: 4, width: 3, x: 1, y: 2 })
     const ctx = createCtx()
-    onboardingTourAtom(ctx, { scenarioId: 'listen', skippedIndexes: [], stepIndex: 1 })
+    onboardingTourAtom(ctx, { deckIndex: 1, scenarioId: 'listen', skippedDeckIndexes: [] })
 
     await renderTarget(ctx)
 
@@ -70,7 +70,7 @@ describe('<OnboardingTarget>', () => {
   test('registers a mounted non-active target while a tour is active', async () => {
     mockMeasureInWindow({ height: 4, width: 3, x: 1, y: 2 })
     const ctx = createCtx()
-    onboardingTourAtom(ctx, { scenarioId: 'listen', skippedIndexes: [], stepIndex: 1 })
+    onboardingTourAtom(ctx, { deckIndex: 1, scenarioId: 'listen', skippedDeckIndexes: [] })
 
     await renderWithProviders(
       <OnboardingTarget id='listen.sections'>
@@ -89,7 +89,7 @@ describe('<OnboardingTarget>', () => {
   test('does not register a zero-size rect', async () => {
     mockMeasureInWindow({ height: 0, width: 0, x: 0, y: 0 })
     const ctx = createCtx()
-    onboardingTourAtom(ctx, { scenarioId: 'listen', skippedIndexes: [], stepIndex: 1 })
+    onboardingTourAtom(ctx, { deckIndex: 1, scenarioId: 'listen', skippedDeckIndexes: [] })
 
     await renderTarget(ctx)
 
@@ -103,7 +103,7 @@ describe('<OnboardingTarget>', () => {
   test('renders children bare and registers nothing without an id', async () => {
     mockMeasureInWindow({ height: 4, width: 3, x: 1, y: 2 })
     const ctx = createCtx()
-    onboardingTourAtom(ctx, { scenarioId: 'listen', skippedIndexes: [], stepIndex: 1 })
+    onboardingTourAtom(ctx, { deckIndex: 1, scenarioId: 'listen', skippedDeckIndexes: [] })
 
     const { getByText } = await renderWithProviders(
       <OnboardingTarget>
@@ -119,7 +119,7 @@ describe('<OnboardingTarget>', () => {
   test('registers a below-fold rect without a scrollable and does not crash', async () => {
     mockMeasureInWindow(BELOW_FOLD_RECT)
     const ctx = createCtx()
-    onboardingTourAtom(ctx, { scenarioId: 'listen', skippedIndexes: [], stepIndex: 1 })
+    onboardingTourAtom(ctx, { deckIndex: 1, scenarioId: 'listen', skippedDeckIndexes: [] })
 
     await renderTarget(ctx)
 
@@ -139,7 +139,7 @@ describe('<OnboardingTarget>', () => {
     const scrollTo = jest.fn()
     registerTourScrollable({ scrollTo })
     const ctx = createCtx()
-    onboardingTourAtom(ctx, { scenarioId: 'listen', skippedIndexes: [], stepIndex: 1 })
+    onboardingTourAtom(ctx, { deckIndex: 1, scenarioId: 'listen', skippedDeckIndexes: [] })
 
     await renderTarget(ctx)
 
@@ -162,7 +162,7 @@ describe('<OnboardingTarget>', () => {
     const scrollTo = jest.fn()
     registerTourScrollable({ scrollTo })
     const ctx = createCtx()
-    onboardingTourAtom(ctx, { scenarioId: 'listen', skippedIndexes: [], stepIndex: 1 })
+    onboardingTourAtom(ctx, { deckIndex: 1, scenarioId: 'listen', skippedDeckIndexes: [] })
 
     await renderTarget(ctx)
 
@@ -182,7 +182,7 @@ describe('<OnboardingTarget>', () => {
     const scrollTo = jest.fn()
     registerTourScrollable({ scrollTo })
     const ctx = createCtx()
-    onboardingTourAtom(ctx, { scenarioId: 'listen', skippedIndexes: [], stepIndex: 1 })
+    onboardingTourAtom(ctx, { deckIndex: 1, scenarioId: 'listen', skippedDeckIndexes: [] })
 
     await renderTarget(ctx)
 

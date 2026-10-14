@@ -12,7 +12,7 @@ const HOLD_FOR_TAP_MS = 500
 
 interface TourTapFlowInput {
   bottomInset: number
-  isBackwardActionEntry: boolean
+  isBlinkAllowed: boolean
   isRouteReached: boolean
   isTapFlow: boolean
   isTourActive: boolean
@@ -24,11 +24,11 @@ interface TourTapFlowInput {
 
 // Holds navigation while a declared tap target's rect registers, blinks three pulses
 // on the live UI, then lets the caller proceed. Route steps navigate once the blink is
-// done; action steps (useTourActionStep) perform their action instead. An action step
-// entered backward is shown statically: no hold and no blink.
+// done; exit visualizations (useTourActionStep) perform their action instead. A
+// visualization whose card was not departed forward is shown without a blink.
 export const useTourTapFlow = ({
   bottomInset,
-  isBackwardActionEntry,
+  isBlinkAllowed,
   isRouteReached,
   isTapFlow,
   isTourActive,
@@ -45,7 +45,7 @@ export const useTourTapFlow = ({
   const shouldBlink =
     isTourActive &&
     isTapFlow &&
-    !isBackwardActionEntry &&
+    isBlinkAllowed &&
     tapRect !== undefined &&
     !isRectOutsideViewport(tapRect, viewportHeight, bottomInset)
   const isTapPhase = phaseStepKey === stepKey
@@ -53,7 +53,7 @@ export const useTourTapFlow = ({
   const isAwaitingTapRect =
     isTourActive &&
     isTapFlow &&
-    !isBackwardActionEntry &&
+    isBlinkAllowed &&
     step?.tapTargetId !== undefined &&
     tapRect === undefined
   const isHoldingForTapRect = isAwaitingTapRect && holdExpiredStepKey !== stepKey

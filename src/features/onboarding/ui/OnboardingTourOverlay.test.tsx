@@ -9,7 +9,7 @@ import {
   onboardingTargetRectsAtom,
   registerOnboardingTargetRect,
 } from '../model/targets'
-import { endOnboardingTour, onboardingStepDirectionAtom, onboardingTourAtom } from '../model/tour'
+import { endOnboardingTour, onboardingTourAtom } from '../model/tour'
 import { OnboardingTourOverlay } from './OnboardingTourOverlay'
 
 jest.mock('react-native-svg', () => {
@@ -60,11 +60,14 @@ const AUDIO = {
   title: 'Проповедь',
 }
 const NEXT_LABEL = 'Далее'
+const DONE_LABEL = 'Готово'
+const BACK_LABEL = 'Назад'
 const HINT = 'Выполните действие, чтобы продолжить'
 const TAP_INDICATOR = 'tap-indicator'
 const DIM = 'tour-dim'
 const MISSING_TARGET_TIMEOUT_MS = 1200
 const TAP_PHASE_TIMEOUT_MS = 3500
+const EXIT_FLOW_TIMEOUT_MS = 5500
 const HOLD_TIMEOUT_MS = 1200
 const SECTIONS_RECT: OnboardingTargetRect = { height: 4, width: 3, x: 1, y: 2 }
 const OFFSCREEN_RECT: OnboardingTargetRect = { height: 60, width: 300, x: 0, y: 99999 }
@@ -75,6 +78,7 @@ const PLAYLIST_ROW_RECT: OnboardingTargetRect = { height: 80, width: 320, x: 0, 
 const PLAYLIST_FIRST_ROW = 'playlist.first-row'
 const PLAYLIST_ROW_MENU_ADD = 'playlist.row-menu-add'
 const PLAYLIST_ADD_ROW_ACTION = 'open-playlist-row-menu'
+const PLAYER_EXPAND_ACTION = 'expand-player'
 const AREA_HIGHLIGHT = 'onboarding-area-highlight'
 const TOUR_MODAL = 'onboarding-tour-modal'
 const TAP_MODAL = 'onboarding-tap-modal'
@@ -93,7 +97,7 @@ const findAnchoredCardTop = (node: ReturnType<typeof screen.getByText>) => {
   return null
 }
 
-const renderAtStep = (
+const renderAtDeck = (
   scenarioId:
     | 'listen'
     | 'player-intro'
@@ -103,12 +107,12 @@ const renderAtStep = (
     | 'playlists'
     | 'search'
     | 'settings',
-  stepIndex: number,
+  deckIndex: number,
   rects: Record<string, OnboardingTargetRect> = {},
   setup?: (ctx: ReturnType<typeof createCtx>) => void,
 ) => {
   const ctx = createCtx()
-  onboardingTourAtom(ctx, { scenarioId, skippedIndexes: [], stepIndex })
+  onboardingTourAtom(ctx, { deckIndex, scenarioId, skippedDeckIndexes: [] })
   onboardingTargetRectsAtom(ctx, rects)
   setup?.(ctx)
 
@@ -127,8 +131,8 @@ describe('<OnboardingTourOverlay>', () => {
     expect(queryByText(NEXT_LABEL)).toBeNull()
   })
 
-  test('renders the current step with next and close controls when the rect is ready', async () => {
-    const { getByRole, getByText } = await renderAtStep('listen', 0, {
+  test('renders the current card with next and close controls when the rect is ready', async () => {
+    const { getByRole, getByText } = await renderAtDeck('listen', 0, {
       'listen.sections': SECTIONS_RECT,
     })
 
@@ -137,52 +141,61 @@ describe('<OnboardingTourOverlay>', () => {
     expect(getByRole('button', { name: 'Завершить обзор' })).toBeTruthy()
   })
 
-  test('renders a targetless step as a card with a back button on its inherited route', async () => {
+  test('renders a targetless card with a back button on its inherited route', async () => {
     mockPathname.mockReturnValue('/listen/my-playlists')
 
-    const { getByText } = await renderAtStep('playlists', 2)
+    const { getByText } = await renderAtDeck('playlists', 2)
 
     expect(getByText('Добавить проповедь')).toBeTruthy()
-    expect(getByText('Назад')).toBeTruthy()
+    expect(getByText(BACK_LABEL)).toBeTruthy()
   })
 
-  test('shows the done label on the last step', async () => {
+  test('shows the done label on the last card', async () => {
     mockPathname.mockReturnValue('/listen/my-playlists')
 
-    const { getByText, queryByText } = await renderAtStep('playlists', 2)
+    const { getByText, queryByText } = await renderAtDeck('playlists', 2)
 
-    expect(getByText('Готово')).toBeTruthy()
+    expect(getByText(DONE_LABEL)).toBeTruthy()
     expect(queryByText(NEXT_LABEL)).toBeNull()
   })
 
-  test('ends the tour when the primary button is pressed on the last step', async () => {
+  test('ends the tour when the primary button is pressed on the last card', async () => {
     mockPathname.mockReturnValue('/listen/my-playlists')
 
-    const { ctx, getByText } = await renderAtStep('playlists', 2)
+    const { ctx, getByText } = await renderAtDeck('playlists', 2)
 
-    fireEvent.press(getByText('Готово'))
+    fireEvent.press(getByText(DONE_LABEL))
 
     expect(ctx.get(onboardingTourAtom)).toBeNull()
   })
 
-  test('advances to the next step when the primary button is pressed on a non-last step', async () => {
-    const { ctx, getByText } = await renderAtStep('listen', 0, {
+  test('advances to the next card when the primary button is pressed on a non-last card', async () => {
+    const { ctx, getByText } = await renderAtDeck('listen', 0, {
       'listen.sections': SECTIONS_RECT,
     })
 
     fireEvent.press(getByText(NEXT_LABEL))
 
     expect(ctx.get(onboardingTourAtom)).toEqual({
+      deckIndex: 1,
       scenarioId: 'listen',
-      skippedIndexes: [],
-      stepIndex: 1,
+      skippedDeckIndexes: [],
     })
   })
 
-  test('navigates to the step route when the pathname differs', async () => {
+  test('counts only cards in the step counter', async () => {
+    // playlist-add has six steps but only four cards (two are exit visualizations).
+    const { getByText } = await renderAtDeck('playlist-add', 0, {
+      [PLAYLIST_FIRST_ROW]: PLAYLIST_ROW_RECT,
+    })
+
+    expect(getByText('Шаг 1 из 4')).toBeTruthy()
+  })
+
+  test('navigates to the card route when the pathname differs', async () => {
     mockPathname.mockReturnValue('/settings')
 
-    await renderAtStep('settings', 1)
+    await renderAtDeck('settings', 1)
 
     await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('/more'), {
       timeout: HOLD_TIMEOUT_MS,
@@ -192,7 +205,7 @@ describe('<OnboardingTourOverlay>', () => {
   test('renders nothing while the router is moving to the effective route', async () => {
     mockPathname.mockReturnValue('/listen')
 
-    const { queryByText } = await renderAtStep('playlists', 2)
+    const { queryByText } = await renderAtDeck('playlists', 2)
 
     await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('/listen/my-playlists'))
     expect(queryByText('Добавить проповедь')).toBeNull()
@@ -201,7 +214,7 @@ describe('<OnboardingTourOverlay>', () => {
   test('blinks the tap hint inside its own modal before navigating', async () => {
     mockPathname.mockReturnValue('/settings')
 
-    const { getByTestId, getByText, queryByText } = await renderAtStep('settings', 1, {
+    const { getByTestId, getByText, queryByText } = await renderAtDeck('settings', 1, {
       'tab.more': TAB_MORE_RECT,
     })
 
@@ -216,19 +229,21 @@ describe('<OnboardingTourOverlay>', () => {
     })
   })
 
-  test('presents an action step blink inside the keyed modal', async () => {
-    const { getByTestId, getByText } = await renderAtStep('playlist-add', 1, {
+  test('presents a card exit visualization blink inside the keyed modal', async () => {
+    const { getByTestId, getByText } = await renderAtDeck('playlist-add', 0, {
       [PLAYLIST_FIRST_ROW]: PLAYLIST_ROW_RECT,
     })
 
-    expect(getByTestId(TAP_MODAL)).toBeTruthy()
+    fireEvent.press(getByText(NEXT_LABEL))
+
+    await waitFor(() => expect(getByTestId(TAP_MODAL)).toBeTruthy())
     expect(getByText(TAP_INDICATOR)).toBeTruthy()
   })
 
   test('holds navigation for a declared tap target until its rect registers, then blinks', async () => {
     mockPathname.mockReturnValue('/settings')
 
-    const { ctx, queryByTestId, queryByText } = await renderAtStep('settings', 1)
+    const { ctx, queryByTestId, queryByText } = await renderAtDeck('settings', 1)
 
     // No rect yet: navigation is held and no blink plays.
     expect(mockNavigate).not.toHaveBeenCalled()
@@ -249,7 +264,7 @@ describe('<OnboardingTourOverlay>', () => {
   test('navigates without a blink when the declared tap target never registers', async () => {
     mockPathname.mockReturnValue('/settings')
 
-    const { queryByText } = await renderAtStep('settings', 1)
+    const { queryByText } = await renderAtDeck('settings', 1)
 
     expect(queryByText(TAP_INDICATOR)).toBeNull()
     expect(mockNavigate).not.toHaveBeenCalled()
@@ -263,7 +278,7 @@ describe('<OnboardingTourOverlay>', () => {
   test('cancels the tap phase without navigating when the user reaches the route first', async () => {
     mockPathname.mockReturnValue('/settings')
 
-    const { getByText, queryByText, rerender } = await renderAtStep('settings', 1, {
+    const { getByText, queryByText, rerender } = await renderAtDeck('settings', 1, {
       'tab.more': TAB_MORE_RECT,
     })
 
@@ -281,7 +296,7 @@ describe('<OnboardingTourOverlay>', () => {
   test('clears the tap phase when the tour ends', async () => {
     mockPathname.mockReturnValue('/settings')
 
-    const { ctx, getByText, queryByText } = await renderAtStep('settings', 1, {
+    const { ctx, getByText, queryByText } = await renderAtDeck('settings', 1, {
       'tab.more': TAB_MORE_RECT,
     })
 
@@ -294,12 +309,12 @@ describe('<OnboardingTourOverlay>', () => {
     await waitFor(() => expect(queryByText(TAP_INDICATOR)).toBeNull())
   })
 
-  test('shows the real step count and the done label when trailing menu steps are absent', async () => {
+  test('shows the real card count and the done label when trailing menu cards are absent', async () => {
     const MENU_RECT: OnboardingTargetRect = { height: 40, width: 200, x: 10, y: 300 }
 
-    // A server playlist hides publish/clear/delete, so the deck is 8 steps long and
-    // the interactive sermon-menu step (index 10) is its last visible one.
-    const { getByText, queryByText } = await renderAtStep('playlist-menu', 10, {
+    // A server playlist hides publish/clear/delete, so three menu cards are dropped and
+    // the interactive sermon-menu card is the last visible one: 7 cards of 7.
+    const { getByText, queryByText } = await renderAtDeck('playlist-menu', 9, {
       'playlist.menu-add-all': MENU_RECT,
       'playlist.menu-history-mark': MENU_RECT,
       'playlist.menu-offline-add': MENU_RECT,
@@ -307,27 +322,25 @@ describe('<OnboardingTourOverlay>', () => {
       'playlist.menu-share': MENU_RECT,
     })
 
-    expect(getByText('Шаг 8 из 8')).toBeTruthy()
-    expect(getByText('Готово')).toBeTruthy()
+    expect(getByText('Шаг 7 из 7')).toBeTruthy()
+    expect(getByText(DONE_LABEL)).toBeTruthy()
     expect(queryByText(NEXT_LABEL)).toBeNull()
   })
 
   test('renders a centered card when the registered rect is below the viewport', async () => {
-    const { getByText } = await renderAtStep('listen', 3, {
+    const { getByText } = await renderAtDeck('listen', 3, {
       'listen.my-playlists': OFFSCREEN_RECT,
     })
 
     expect(getByText('Мои плейлисты')).toBeTruthy()
   })
 
-  test('blocks the app under a registered area step with a spotlight modal', async () => {
-    const { getAllByTestId, getByTestId, getByText } = await renderAtStep('player-intro', 0, {
+  test('blocks the app under a registered area card with a spotlight modal', async () => {
+    const { getAllByTestId, getByTestId, getByText } = await renderAtDeck('player-intro', 0, {
       'player-fullscreen.edge-back': EDGE_BACK_RECT,
       'player-fullscreen.edge-forward': EDGE_FORWARD_RECT,
     })
 
-    // The blocking modal tree is used, not the pass-through TourWaitLayer: the app
-    // underneath is unreachable, so the card buttons cannot fall through.
     expect(getByTestId(TOUR_MODAL)).toBeTruthy()
     expect(getAllByTestId(AREA_HIGHLIGHT)).toHaveLength(2)
     expect(getByText(DIM)).toBeTruthy()
@@ -337,8 +350,8 @@ describe('<OnboardingTourOverlay>', () => {
     expect(getByText(NEXT_LABEL)).toBeTruthy()
   })
 
-  test('advances from an area step when the primary button is pressed', async () => {
-    const { ctx, getByText } = await renderAtStep('player-intro', 0, {
+  test('advances from an area card when the primary button is pressed', async () => {
+    const { ctx, getByText } = await renderAtDeck('player-intro', 0, {
       'player-fullscreen.edge-back': EDGE_BACK_RECT,
       'player-fullscreen.edge-forward': EDGE_FORWARD_RECT,
     })
@@ -346,14 +359,14 @@ describe('<OnboardingTourOverlay>', () => {
     fireEvent.press(getByText(NEXT_LABEL))
 
     expect(ctx.get(onboardingTourAtom)).toEqual({
+      deckIndex: 1,
       scenarioId: 'player-intro',
-      skippedIndexes: [],
-      stepIndex: 1,
+      skippedDeckIndexes: [],
     })
   })
 
-  test('renders the area step card centered while no area rect has registered', async () => {
-    const { getByTestId, getByText, queryAllByTestId, queryByText } = await renderAtStep(
+  test('renders the area card centered while no area rect has registered', async () => {
+    const { getByTestId, getByText, queryAllByTestId, queryByText } = await renderAtDeck(
       'player-intro',
       0,
     )
@@ -365,8 +378,8 @@ describe('<OnboardingTourOverlay>', () => {
     expect(queryByText(/^hole:/)).toBeNull()
   })
 
-  test('cuts a hole only for the registered area rects of the step', async () => {
-    const { getAllByTestId, getByText, queryByText } = await renderAtStep('player-intro', 0, {
+  test('cuts a hole only for the registered area rects of the card', async () => {
+    const { getAllByTestId, getByText, queryByText } = await renderAtDeck('player-intro', 0, {
       'player-fullscreen.edge-back': EDGE_BACK_RECT,
     })
 
@@ -375,8 +388,8 @@ describe('<OnboardingTourOverlay>', () => {
     expect(queryByText('hole:336,100')).toBeNull()
   })
 
-  test('renders an interactive step as a pass-through card without a spotlight modal', async () => {
-    const { getByText, queryByTestId, queryByText } = await renderAtStep('search', 5)
+  test('renders an interactive card as a pass-through card without a spotlight modal', async () => {
+    const { getByText, queryByTestId, queryByText } = await renderAtDeck('search', 2)
 
     expect(queryByTestId(TOUR_MODAL)).toBeNull()
     expect(getByText('Выберите плейлист')).toBeTruthy()
@@ -384,34 +397,28 @@ describe('<OnboardingTourOverlay>', () => {
     expect(queryByText(DIM)).toBeNull()
   })
 
-  test('keeps an interactive step with a target pass-through and anchors its card to the target', async () => {
+  test('keeps an interactive card with a target pass-through and anchors its card to the target', async () => {
     const ROW_RECT: OnboardingTargetRect = { height: 80, width: 320, x: 0, y: 400 }
 
-    const { getByTestId, getByText, queryByTestId, queryByText } = await renderAtStep(
+    const { getByTestId, getByText, queryByTestId, queryByText } = await renderAtDeck(
       'playlist-menu',
-      10,
+      9,
       { 'playlist.first-row': ROW_RECT },
     )
 
-    // An interactive step owns the pass-through layer even with a targetId: the
-    // target only positions the card, no spotlight modal or dim is shown.
     expect(queryByTestId(TOUR_MODAL)).toBeNull()
     expect(queryByText(DIM)).toBeNull()
-    // Its areaTargetIds still mark the zone with the translucent fill.
     expect(getByTestId(AREA_HIGHLIGHT)).toBeTruthy()
     expect(getByText('Меню проповеди')).toBeTruthy()
-    // Anchored above the row instead of centered on the screen.
     expect(findAnchoredCardTop(getByText('Меню проповеди'))).toBeLessThan(ROW_RECT.y)
   })
 
-  test('performs the step actionOnEnterId once on activation, not on re-render', async () => {
+  test('performs the card actionOnEnterId once on activation, not on re-render', async () => {
     const action = jest.fn()
     registerTourAction('close-playlist-menu', action)
 
     const ROW_RECT: OnboardingTargetRect = { height: 80, width: 320, x: 0, y: 400 }
-    const { rerender } = await renderAtStep('playlist-menu', 10, {
-      'playlist.first-row': ROW_RECT,
-    })
+    const { rerender } = await renderAtDeck('playlist-menu', 9, { 'playlist.first-row': ROW_RECT })
 
     await waitFor(() => expect(action).toHaveBeenCalledTimes(1))
 
@@ -424,7 +431,7 @@ describe('<OnboardingTourOverlay>', () => {
   })
 
   test('keeps the tooltip hidden until the missing-target timeout expires', async () => {
-    const { getByText, queryByText } = await renderAtStep('listen', 0)
+    const { getByText, queryByText } = await renderAtDeck('listen', 0)
 
     expect(queryByText(NEXT_LABEL)).toBeNull()
 
@@ -434,7 +441,7 @@ describe('<OnboardingTourOverlay>', () => {
   })
 
   test('shows the wait card without a modal dim while the condition is unmet', async () => {
-    const { getByRole, getByText, queryByText } = await renderAtStep('player', 0, {
+    const { getByRole, getByText, queryByText } = await renderAtDeck('player', 0, {
       'listen.sections': SECTIONS_RECT,
     })
 
@@ -445,7 +452,7 @@ describe('<OnboardingTourOverlay>', () => {
   })
 
   test('returns the modal with the primary button once the wait condition is satisfied', async () => {
-    const { getByText, queryByText } = await renderAtStep(
+    const { getByText, queryByText } = await renderAtDeck(
       'player',
       0,
       { 'listen.sections': SECTIONS_RECT },
@@ -457,79 +464,71 @@ describe('<OnboardingTourOverlay>', () => {
     expect(getByText(DIM)).toBeTruthy()
   })
 
-  test('returns to the intro card when going back from the row-menu step', async () => {
+  test('returns to the intro card when going back from the row-menu card', async () => {
     const action = jest.fn()
     registerTourAction(PLAYLIST_ADD_ROW_ACTION, action)
 
-    const { ctx, getByText } = await renderAtStep('playlist-add', 2, {
+    const { ctx, getByText } = await renderAtDeck('playlist-add', 1, {
       [PLAYLIST_FIRST_ROW]: PLAYLIST_ROW_RECT,
       [PLAYLIST_ROW_MENU_ADD]: PLAYLIST_ROW_RECT,
     })
 
-    fireEvent.press(getByText('Назад'))
+    fireEvent.press(getByText(BACK_LABEL))
 
-    // Step 1 is the forward-only action step: «Назад» steps over it to the intro.
     await waitFor(() => expect(getByText('Добавление в плейлист')).toBeTruthy())
     expect(ctx.get(onboardingTourAtom)).toEqual({
+      deckIndex: 0,
       scenarioId: 'playlist-add',
-      skippedIndexes: [],
-      stepIndex: 0,
+      skippedDeckIndexes: [],
     })
     expect(action).not.toHaveBeenCalled()
     unregisterTourAction(PLAYLIST_ADD_ROW_ACTION)
   })
 
-  test('performs the row-menu action after the intro step and advances', async () => {
+  test('plays the card exit visualization after «Далее» and advances to the next card', async () => {
     const action = jest.fn()
     registerTourAction(PLAYLIST_ADD_ROW_ACTION, action)
 
-    const { ctx, getByText } = await renderAtStep('playlist-add', 0, {
+    const { ctx, getByText } = await renderAtDeck('playlist-add', 0, {
       [PLAYLIST_FIRST_ROW]: PLAYLIST_ROW_RECT,
     })
 
     fireEvent.press(getByText(NEXT_LABEL))
 
     await waitFor(() => expect(action).toHaveBeenCalledTimes(1), {
-      timeout: TAP_PHASE_TIMEOUT_MS + 1500,
+      timeout: EXIT_FLOW_TIMEOUT_MS,
     })
     await waitFor(
       () =>
         expect(ctx.get(onboardingTourAtom)).toEqual({
+          deckIndex: 1,
           scenarioId: 'playlist-add',
-          skippedIndexes: [],
-          stepIndex: 2,
+          skippedDeckIndexes: [],
         }),
-      { timeout: TAP_PHASE_TIMEOUT_MS + 1500 },
+      { timeout: EXIT_FLOW_TIMEOUT_MS },
     )
     unregisterTourAction(PLAYLIST_ADD_ROW_ACTION)
   })
 
-  test('shows an action step entered backward statically and advances without re-performing', async () => {
+  test('plays the last card exit visualization and then ends the tour', async () => {
     const action = jest.fn()
-    registerTourAction(PLAYLIST_ADD_ROW_ACTION, action)
+    registerTourAction(PLAYER_EXPAND_ACTION, action)
 
-    const { ctx, getByText } = await renderAtStep(
-      'playlist-add',
-      1,
-      { [PLAYLIST_FIRST_ROW]: PLAYLIST_ROW_RECT },
-      setupCtx => onboardingStepDirectionAtom(setupCtx, 'backward'),
+    const { ctx, getByText } = await renderAtDeck(
+      'player',
+      2,
+      { 'player.mini': PLAYLIST_ROW_RECT, 'player.mini-play-pause': PLAYLIST_ROW_RECT },
+      setupCtx => currentAudioAtom(setupCtx, AUDIO),
     )
 
-    // A backward entry shows the static card: no blink, no action, no auto-advance.
-    expect(getByText('Меню проповеди')).toBeTruthy()
-    await act(async () => {
-      await new Promise(resolve => setTimeout(resolve, 800))
-    })
-    expect(action).not.toHaveBeenCalled()
+    fireEvent.press(getByText(DONE_LABEL))
 
-    fireEvent.press(getByText(NEXT_LABEL))
-
-    expect(ctx.get(onboardingTourAtom)).toEqual({
-      scenarioId: 'playlist-add',
-      skippedIndexes: [],
-      stepIndex: 2,
+    await waitFor(() => expect(action).toHaveBeenCalledTimes(1), {
+      timeout: EXIT_FLOW_TIMEOUT_MS,
     })
-    expect(action).not.toHaveBeenCalled()
-    unregisterTourAction(PLAYLIST_ADD_ROW_ACTION)
+    await waitFor(() => expect(ctx.get(onboardingTourAtom)).toBeNull(), {
+      timeout: EXIT_FLOW_TIMEOUT_MS,
+    })
+    unregisterTourAction(PLAYER_EXPAND_ACTION)
   })
 })

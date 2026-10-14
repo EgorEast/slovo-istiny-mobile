@@ -56,9 +56,9 @@ describe('useAutoTours', () => {
 
     await waitFor(() =>
       expect(ctx.get(onboardingTourAtom)).toEqual({
+        deckIndex: 0,
         scenarioId: 'welcome',
-        skippedIndexes: [],
-        stepIndex: 0,
+        skippedDeckIndexes: [],
       }),
     )
 
@@ -86,9 +86,9 @@ describe('useAutoTours', () => {
 
     await waitFor(() =>
       expect(ctx.get(onboardingTourAtom)).toEqual({
+        deckIndex: 0,
         scenarioId: 'whatsNew',
-        skippedIndexes: [],
-        stepIndex: 0,
+        skippedDeckIndexes: [],
       }),
     )
 
@@ -101,16 +101,16 @@ describe('useAutoTours', () => {
   test('still writes the seen version but skips start when a tour is already active', async () => {
     mockGetItem.mockResolvedValue(null)
     const ctx = createCtx()
-    onboardingTourAtom(ctx, { scenarioId: 'listen', skippedIndexes: [], stepIndex: 0 })
+    onboardingTourAtom(ctx, { deckIndex: 0, scenarioId: 'listen', skippedDeckIndexes: [] })
 
     await renderAutoTours(ctx)
 
     await waitFor(() => expect(mockSetItem).toHaveBeenCalledWith(SEEN_KEY, APP_VERSION))
     expect(mockStartTour).not.toHaveBeenCalled()
     expect(ctx.get(onboardingTourAtom)).toEqual({
+      deckIndex: 0,
       scenarioId: 'listen',
-      skippedIndexes: [],
-      stepIndex: 0,
+      skippedDeckIndexes: [],
     })
   })
 })

@@ -1,129 +1,128 @@
-import { useAtom } from '@reatom/npm-react'
-import { usePathname, useRouter } from 'expo-router'
-import { useEffect } from 'react'
+import { useAction, useAtom } from '@reatom/npm-react'
+import { useCallback } from 'react'
 import { isEmpty } from 'shared/lib/utils/isEmpty'
 import { onboardingTargetRectsAtom } from '../model/targets'
-import { onboardingStepDirectionAtom, onboardingTourAtom } from '../model/tour'
-import { resolveStepRoute } from './resolveStepRoute'
+import {
+  endOnboardingTour,
+  goToNextOnboardingStep,
+  onboardingStepDirectionAtom,
+} from '../model/tour'
 import { type OnboardingScenario, type OnboardingStep } from './scenarios'
-import { resolveTourProgress } from './tourProgress'
+import { type TourDeckEntry } from './tourDeck'
+import { useActiveTourStep } from './useActiveTourStep'
 import { useSkipMissingStep } from './useSkipMissingStep'
 import { useStepEnterAction } from './useStepEnterAction'
-import { useTourActionStep } from './useTourActionStep'
-import { useTourTapFlow } from './useTourTapFlow'
+import { useRouteNavigation, useStepRoute } from './useStepRoute'
+import { useTourVisuals } from './useTourVisuals'
 import { useWaitForSatisfied } from './useWaitForSatisfied'
 
 interface StepNavigationInput {
   bottomInset: number
+  cardStep: OnboardingStep | undefined
+  deckIndex: number | undefined
+  entry: TourDeckEntry | undefined
+  isLastVisible: boolean
   isTourActive: boolean
   scenario: OnboardingScenario | undefined
-  step: OnboardingStep | undefined
-  stepIndex: number | undefined
   stepKey: string
   viewportHeight: number
 }
 
-// Resolves the active step's effective route, holds navigation while a tap hint blinks
-// on the element the tour "presses", then navigates — or, for a demonstrative action
-// step, performs the registered action and advances on its own. A `skipIfMissing`
-// step whose target never registers is dropped by useSkipMissingStep.
+// Resolves the active card's effective route, holds navigation while a tap hint blinks
+// on the element the tour "presses", then navigates — or, during a card's exit
+// transition, plays each visualization (blink + action) and advances the deck itself.
+// A `skipIfMissing` card whose target never registers is dropped by useSkipMissingStep.
 export const useStepNavigation = ({
   bottomInset,
+  cardStep,
+  deckIndex,
+  entry,
+  isLastVisible,
   isTourActive,
   scenario,
-  step,
-  stepIndex,
   stepKey,
   viewportHeight,
 }: StepNavigationInput) => {
-  const router = useRouter()
-  const pathname = usePathname()
   const [rects] = useAtom(onboardingTargetRectsAtom)
   const [stepDirection] = useAtom(onboardingStepDirectionAtom)
-  const [tour] = useAtom(onboardingTourAtom)
+  const next = useAction(goToNextOnboardingStep)
+  const end = useAction(endOnboardingTour)
+  const { activeStep, activeStepKey, exitIndex, isExitPhase } = useActiveTourStep({
+    entry,
+    scenario,
+    stepKey,
+  })
+  const { effectiveRoute, isRouteReached, needsNavigation } = useStepRoute({
+    cardIndex: entry?.cardIndex,
+    isExitPhase,
+    scenario,
+  })
 
-  const effectiveRoute =
-    scenario === undefined || stepIndex === undefined
-      ? undefined
-      : resolveStepRoute(scenario, stepIndex)
-  const needsNavigation = effectiveRoute !== undefined && pathname !== effectiveRoute
-  const isActionStep = step?.tapActionId !== undefined
-  // An action step is demonstrative: it never navigates, so the tap flow (blink on
-  // the target, then perform the action and advance) is driven by the action itself.
-  // Entered backward it is shown statically: no blink, no action, no auto-advance.
-  const isBackwardActionEntry = isActionStep && stepDirection === 'backward'
+  const isActionStep = activeStep?.tapActionId !== undefined
+  // Visualizations are forward-only: the exit blink plays only when the deck departed
+  // its card forward (`onboardingStepDirectionAtom` is set by goToNextOnboardingStep).
+  const isBlinkAllowed = !isExitPhase || stepDirection === 'forward'
   const isTapFlow = isActionStep || needsNavigation
-  const tapRect = step?.tapTargetId === undefined ? undefined : rects[step.tapTargetId]
-  // The last visible step closes the tour (the deck skips dropped steps), so an action
-  // step there ends it instead of advancing — mirroring the overlay's «Готово» button.
-  const isLastVisible =
-    scenario !== undefined && stepIndex !== undefined
-      ? resolveTourProgress(scenario.steps, tour?.skippedIndexes ?? [], stepIndex).isLastVisible
-      : false
-  const {
-    blinkedStepKey,
-    holdExpiredStepKey,
-    holdNavigation,
-    isHoldingForTapRect,
-    isTapPending,
-    isTapPhase,
-  } = useTourTapFlow({
+  const tapRect = activeStep?.tapTargetId === undefined ? undefined : rects[activeStep.tapTargetId]
+  const isFinalExit =
+    isExitPhase && isLastVisible && exitIndex === (entry?.exitStepIndexes.length ?? 1) - 1
+  const { holdNavigation, isPerformingAction, isTapPending } = useTourVisuals({
+    activeStep,
+    activeStepKey,
     bottomInset,
-    isBackwardActionEntry,
-    isRouteReached: effectiveRoute !== undefined && !needsNavigation,
+    isActionStep,
+    isBlinkAllowed,
+    isFinalExit,
+    isRouteReached,
     isTapFlow,
     isTourActive,
-    step,
-    stepKey,
     tapRect,
     viewportHeight,
   })
-  const { isPerformingAction } = useTourActionStep({
-    blinkedStepKey,
-    holdExpiredStepKey,
-    isActionStep,
-    isBackwardActionEntry,
-    isHoldingForTapRect,
-    isLastVisible,
-    isTapPhase,
-    step,
-    stepKey,
-  })
-
+  useRouteNavigation({ effectiveRoute, holdNavigation })
   useStepEnterAction({
-    actionOnEnterId: step?.actionOnEnterId,
+    actionOnEnterId: activeStep?.actionOnEnterId,
     isTourActive,
-    stepKey,
+    stepKey: activeStepKey,
   })
 
-  const skipTargetId = step?.targetId
-  // A `skipIfMissing` step's own target is unregistered, so any registered rect
+  const skipTargetId = cardStep?.targetId
+  // A `skipIfMissing` card's own target is unregistered, so any registered rect
   // belongs to another target on the surface — proof the surface rendered its items.
-  const hasOtherRegisteredRect = !isEmpty(rects)
   const isSkippingStep = useSkipMissingStep({
-    hasOtherRegisteredRect,
-    stepIndex,
+    deckIndex,
+    hasOtherRegisteredRect: !isEmpty(rects),
     waitingForTarget:
       isTourActive &&
-      step?.skipIfMissing === true &&
+      !isExitPhase &&
+      cardStep?.skipIfMissing === true &&
       skipTargetId !== undefined &&
       !needsNavigation &&
       rects[skipTargetId] === undefined,
   })
 
-  useEffect(() => {
-    if (holdNavigation) return
-    if (effectiveRoute === undefined) return
+  // The primary button departs the card forward: an entry with visualizations starts
+  // its exit transition, the last entry without one ends the tour.
+  const goNext = useCallback(() => {
+    if (isLastVisible && (entry?.exitStepIndexes.length ?? 0) === 0) {
+      end()
+      return
+    }
 
-    if (pathname !== effectiveRoute) router.navigate(effectiveRoute)
-  }, [effectiveRoute, holdNavigation, pathname, router])
+    next()
+  }, [end, entry, isLastVisible, next])
 
-  // The overlay hides while the router moves to the route, while an action step
-  // performs its action, and while a `skipIfMissing` step waits to see whether its
-  // target registers at all.
-  const isNavigatingToStep = needsNavigation && !isTapPending
-  const isOverlayHidden = isNavigatingToStep || isPerformingAction || isSkippingStep
-  const isWaitSatisfied = useWaitForSatisfied(step?.waitFor)
+  // The overlay hides while the router moves to the route, while an exit visualization
+  // performs its action, and while a `skipIfMissing` card waits for its target.
+  const isOverlayHidden = (needsNavigation && !isTapPending) || isPerformingAction || isSkippingStep
+  const isWaitSatisfied = useWaitForSatisfied(cardStep?.waitFor)
 
-  return { holdNavigation, isOverlayHidden, isWaitSatisfied, tapRect }
+  return {
+    goNext,
+    holdNavigation,
+    isOverlayHidden,
+    isWaitSatisfied,
+    tapRect,
+    tapStepKey: activeStepKey,
+  }
 }
