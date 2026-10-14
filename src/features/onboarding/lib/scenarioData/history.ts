@@ -7,6 +7,10 @@ export const historyScenario: OnboardingScenario = {
   screens: ['/more', '/history'],
   steps: [
     {
+      text: 'Сейчас перейдём на экран «Ещё» и откроем историю прослушивания — нажмите «Далее».',
+      title: 'История прослушивания',
+    },
+    {
       route: '/more',
       tapTargetId: 'tab.more',
       targetId: 'more.history-item',

@@ -7,6 +7,10 @@ export const playerSoundScenario: OnboardingScenario = {
   scope: 'player',
   steps: [
     {
+      text: 'Покажем, где настройки звука: тур сам откроет меню — нажмите «Далее».',
+      title: 'Настройка звука',
+    },
+    {
       tapActionId: 'open-player-menu',
       tapTargetId: 'player-fullscreen.menu',
       targetId: 'player-fullscreen.menu',

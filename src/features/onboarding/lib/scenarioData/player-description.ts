@@ -7,6 +7,10 @@ export const playerDescriptionScenario: OnboardingScenario = {
   scope: 'player',
   steps: [
     {
+      text: 'Покажем, где описание проповеди с кликабельными таймкодами: тур сам откроет меню — нажмите «Далее».',
+      title: 'Подробнее и таймкоды',
+    },
+    {
       tapActionId: 'open-player-menu',
       tapTargetId: 'player-fullscreen.menu',
       targetId: 'player-fullscreen.menu',

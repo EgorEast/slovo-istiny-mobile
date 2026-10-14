@@ -66,14 +66,36 @@ describe('onboarding scenario data', () => {
   test('each scenario wires the tab or row it taps when navigating', () => {
     expect(scenariosById.listen.steps[0].tapTargetId).toBe('tab.listen')
     expect(scenariosById.playlists.steps[1].tapTargetId).toBe('listen.my-playlists')
-    expect(scenariosById.history.steps[0].tapTargetId).toBe('tab.more')
-    expect(scenariosById.history.steps[1].tapTargetId).toBe('more.history-item')
-    expect(scenariosById.offline.steps[0].tapTargetId).toBe('tab.more')
-    expect(scenariosById.offline.steps[1].tapTargetId).toBe('more.offline-item')
-    expect(scenariosById.settings.steps[0].tapTargetId).toBe('tab.more')
-    expect(scenariosById.settings.steps[1].tapTargetId).toBe('more.settings-item')
+    expect(scenariosById.history.steps[1].tapTargetId).toBe('tab.more')
+    expect(scenariosById.history.steps[2].tapTargetId).toBe('more.history-item')
+    expect(scenariosById.offline.steps[1].tapTargetId).toBe('tab.more')
+    expect(scenariosById.offline.steps[2].tapTargetId).toBe('more.offline-item')
+    expect(scenariosById.settings.steps[1].tapTargetId).toBe('tab.more')
+    expect(scenariosById.settings.steps[2].tapTargetId).toBe('more.settings-item')
     expect(scenariosById.read.steps[0].tapTargetId).toBe('tab.read')
     expect(scenariosById.study.steps[0].tapTargetId).toBe('tab.study')
+  })
+
+  test('action-first tours start with a plain intro card', () => {
+    const actionFirstIds = [
+      'search',
+      'player-description',
+      'player-speed',
+      'player-sound',
+      'history',
+      'offline',
+      'settings',
+    ] as const
+
+    actionFirstIds.forEach(id => {
+      const intro = scenariosById[id].steps[0]
+
+      expect(intro.targetId).toBeUndefined()
+      expect(intro.tapTargetId).toBeUndefined()
+      expect(intro.tapActionId).toBeUndefined()
+      expect(intro.interactive).toBeUndefined()
+      expect(intro.route).toBeUndefined()
+    })
   })
 
   test('player-scope scenarios are scoped to the player and never route-bound', () => {
@@ -116,61 +138,65 @@ describe('onboarding scenario data', () => {
   test('menu-driven player scenarios open the player menu first', () => {
     const menuTargetId = 'player-fullscreen.menu'
 
-    expect(scenariosById['player-description'].steps[0].targetId).toBe(menuTargetId)
-    expect(scenariosById['player-speed'].steps[0].targetId).toBe(menuTargetId)
-    expect(scenariosById['player-sound'].steps[0].targetId).toBe(menuTargetId)
+    expect(scenariosById['player-description'].steps[1].targetId).toBe(menuTargetId)
+    expect(scenariosById['player-speed'].steps[1].targetId).toBe(menuTargetId)
+    expect(scenariosById['player-sound'].steps[1].targetId).toBe(menuTargetId)
   })
 
   test('player-description performs the menu and details actions itself', () => {
     const description = scenariosById['player-description']
 
-    expect(description.steps).toHaveLength(3)
-    expect(description.steps[0].tapTargetId).toBe('player-fullscreen.menu')
-    expect(description.steps[0].tapActionId).toBe('open-player-menu')
-    expect(description.steps[1].targetId).toBe('player-fullscreen.menu-details')
-    expect(description.steps[1].tapTargetId).toBe('player-fullscreen.menu-details')
-    expect(description.steps[1].tapActionId).toBe('show-player-details')
-    expect(description.steps[2].targetId).toBe('player-fullscreen.details')
-    expect(description.steps[2].tapActionId).toBeUndefined()
+    expect(description.steps).toHaveLength(4)
+    expect(description.steps[0].title).toBe('Подробнее и таймкоды')
+    expect(description.steps[1].tapTargetId).toBe('player-fullscreen.menu')
+    expect(description.steps[1].tapActionId).toBe('open-player-menu')
+    expect(description.steps[2].targetId).toBe('player-fullscreen.menu-details')
+    expect(description.steps[2].tapTargetId).toBe('player-fullscreen.menu-details')
+    expect(description.steps[2].tapActionId).toBe('show-player-details')
+    expect(description.steps[3].targetId).toBe('player-fullscreen.details')
+    expect(description.steps[3].tapActionId).toBeUndefined()
   })
 
   test('player-speed performs the menu and speed-menu actions itself', () => {
     const speed = scenariosById['player-speed']
 
-    expect(speed.steps).toHaveLength(3)
-    expect(speed.steps[0].tapActionId).toBe('open-player-menu')
-    expect(speed.steps[1].targetId).toBe('player-fullscreen.menu-speed')
-    expect(speed.steps[1].tapTargetId).toBe('player-fullscreen.menu-speed')
-    expect(speed.steps[1].tapActionId).toBe('open-player-speed-menu')
-    expect(speed.steps[2].targetId).toBe('player-fullscreen.speed-menu')
-    expect(speed.steps[2].tapActionId).toBeUndefined()
+    expect(speed.steps).toHaveLength(4)
+    expect(speed.steps[0].title).toBe('Скорость прослушивания')
+    expect(speed.steps[1].tapActionId).toBe('open-player-menu')
+    expect(speed.steps[2].targetId).toBe('player-fullscreen.menu-speed')
+    expect(speed.steps[2].tapTargetId).toBe('player-fullscreen.menu-speed')
+    expect(speed.steps[2].tapActionId).toBe('open-player-speed-menu')
+    expect(speed.steps[3].targetId).toBe('player-fullscreen.speed-menu')
+    expect(speed.steps[3].tapActionId).toBeUndefined()
   })
 
   test('player-sound performs the menu and sound-settings actions itself', () => {
     const sound = scenariosById['player-sound']
 
-    expect(sound.steps).toHaveLength(3)
-    expect(sound.steps[0].tapActionId).toBe('open-player-menu')
-    expect(sound.steps[1].targetId).toBe('player-fullscreen.menu-sound')
-    expect(sound.steps[1].tapActionId).toBe('open-player-sound-settings')
-    expect(sound.steps[2].targetId).toBe('player-fullscreen.sound-sheet')
-    expect(sound.steps[2].tapActionId).toBeUndefined()
+    expect(sound.steps).toHaveLength(4)
+    expect(sound.steps[0].title).toBe('Настройка звука')
+    expect(sound.steps[1].tapActionId).toBe('open-player-menu')
+    expect(sound.steps[2].targetId).toBe('player-fullscreen.menu-sound')
+    expect(sound.steps[2].tapActionId).toBe('open-player-sound-settings')
+    expect(sound.steps[3].targetId).toBe('player-fullscreen.sound-sheet')
+    expect(sound.steps[3].tapActionId).toBeUndefined()
   })
 
   test('search scenario opens the search, types the query and presses the first sermon', () => {
     const search = scenariosById.search
 
     expect(search.screens).toEqual(['/listen'])
-    expect(search.steps).toHaveLength(6)
-    expect(search.steps[0].tapTargetId).toBe('listen.search-toggle')
-    expect(search.steps[0].tapActionId).toBe('open-listen-search')
-    expect(search.steps[1].tapActionId).toBe('type-search-query')
-    expect(search.steps[1].waitFor).toBeUndefined()
-    expect(search.steps[2].targetId).toBe('search-results.group-sermons')
-    expect(search.steps[3].targetId).toBe('search-results.first-sermon')
-    expect(search.steps[3].tapActionId).toBe('press-first-sermon')
-    expect(search.steps[4].interactive).toBe(true)
+    expect(search.steps).toHaveLength(7)
+    expect(search.steps[0].title).toBe('Результаты поиска')
+    expect(search.steps[1].tapTargetId).toBe('listen.search-toggle')
+    expect(search.steps[1].tapActionId).toBe('open-listen-search')
+    expect(search.steps[2].tapActionId).toBe('type-search-query')
+    expect(search.steps[2].waitFor).toBeUndefined()
+    expect(search.steps[3].targetId).toBe('search-results.group-sermons')
+    expect(search.steps[4].targetId).toBe('search-results.first-sermon')
+    expect(search.steps[4].tapActionId).toBe('press-first-sermon')
     expect(search.steps[5].interactive).toBe(true)
+    expect(search.steps[6].interactive).toBe(true)
   })
 
   test('playlist-menu walks the header menu and ends on the interactive sermon menu', () => {
@@ -248,7 +274,7 @@ describe('onboarding scenario data', () => {
 
 describe('resolveStepRoute', () => {
   test('returns the step route when the step declares one', () => {
-    expect(resolveStepRoute(scenariosById.settings, 1)).toBe('/settings')
+    expect(resolveStepRoute(scenariosById.settings, 2)).toBe('/settings')
   })
 
   test('inherits the nearest previous route for a routeless step', () => {

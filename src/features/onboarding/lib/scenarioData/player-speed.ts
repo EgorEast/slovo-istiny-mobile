@@ -7,6 +7,10 @@ export const playerSpeedScenario: OnboardingScenario = {
   scope: 'player',
   steps: [
     {
+      text: 'Покажем, где менять скорость прослушивания: тур сам откроет меню — нажмите «Далее».',
+      title: 'Скорость прослушивания',
+    },
+    {
       tapActionId: 'open-player-menu',
       tapTargetId: 'player-fullscreen.menu',
       targetId: 'player-fullscreen.menu',

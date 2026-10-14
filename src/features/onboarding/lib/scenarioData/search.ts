@@ -7,6 +7,10 @@ export const searchScenario: OnboardingScenario = {
   screens: ['/listen'],
   steps: [
     {
+      text: 'Покажем, как устроены результаты поиска. Сначала откроем поиск — нажмите «Далее».',
+      title: 'Результаты поиска',
+    },
+    {
       tapActionId: 'open-listen-search',
       tapTargetId: 'listen.search-toggle',
       text: 'Открываем поиск…',

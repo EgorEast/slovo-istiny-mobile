@@ -182,7 +182,7 @@ describe('<OnboardingTourOverlay>', () => {
   test('navigates to the step route when the pathname differs', async () => {
     mockPathname.mockReturnValue('/settings')
 
-    await renderAtStep('settings', 0)
+    await renderAtStep('settings', 1)
 
     await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('/more'), {
       timeout: HOLD_TIMEOUT_MS,
@@ -201,7 +201,7 @@ describe('<OnboardingTourOverlay>', () => {
   test('blinks the tap hint inside its own modal before navigating', async () => {
     mockPathname.mockReturnValue('/settings')
 
-    const { getByTestId, getByText, queryByText } = await renderAtStep('settings', 0, {
+    const { getByTestId, getByText, queryByText } = await renderAtStep('settings', 1, {
       'tab.more': TAB_MORE_RECT,
     })
 
@@ -228,7 +228,7 @@ describe('<OnboardingTourOverlay>', () => {
   test('holds navigation for a declared tap target until its rect registers, then blinks', async () => {
     mockPathname.mockReturnValue('/settings')
 
-    const { ctx, queryByTestId, queryByText } = await renderAtStep('settings', 0)
+    const { ctx, queryByTestId, queryByText } = await renderAtStep('settings', 1)
 
     // No rect yet: navigation is held and no blink plays.
     expect(mockNavigate).not.toHaveBeenCalled()
@@ -249,7 +249,7 @@ describe('<OnboardingTourOverlay>', () => {
   test('navigates without a blink when the declared tap target never registers', async () => {
     mockPathname.mockReturnValue('/settings')
 
-    const { queryByText } = await renderAtStep('settings', 0)
+    const { queryByText } = await renderAtStep('settings', 1)
 
     expect(queryByText(TAP_INDICATOR)).toBeNull()
     expect(mockNavigate).not.toHaveBeenCalled()
@@ -263,7 +263,7 @@ describe('<OnboardingTourOverlay>', () => {
   test('cancels the tap phase without navigating when the user reaches the route first', async () => {
     mockPathname.mockReturnValue('/settings')
 
-    const { getByText, queryByText, rerender } = await renderAtStep('settings', 0, {
+    const { getByText, queryByText, rerender } = await renderAtStep('settings', 1, {
       'tab.more': TAB_MORE_RECT,
     })
 
@@ -281,7 +281,7 @@ describe('<OnboardingTourOverlay>', () => {
   test('clears the tap phase when the tour ends', async () => {
     mockPathname.mockReturnValue('/settings')
 
-    const { ctx, getByText, queryByText } = await renderAtStep('settings', 0, {
+    const { ctx, getByText, queryByText } = await renderAtStep('settings', 1, {
       'tab.more': TAB_MORE_RECT,
     })
 
@@ -376,7 +376,7 @@ describe('<OnboardingTourOverlay>', () => {
   })
 
   test('renders an interactive step as a pass-through card without a spotlight modal', async () => {
-    const { getByText, queryByTestId, queryByText } = await renderAtStep('search', 4)
+    const { getByText, queryByTestId, queryByText } = await renderAtStep('search', 5)
 
     expect(queryByTestId(TOUR_MODAL)).toBeNull()
     expect(getByText('Выберите плейлист')).toBeTruthy()
