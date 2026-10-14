@@ -1,7 +1,12 @@
-import { act } from '@testing-library/react-native'
+import { act, screen } from '@testing-library/react-native'
+import { StyleSheet } from 'react-native'
 import { renderWithProviders } from 'shared/mocks'
 import { type OnboardingStep } from '../lib/scenarios'
 import { TourSpotlight } from './TourSpotlight'
+
+// Pin the desktop cap to a numeric value (Platform.OS is read once at module load).
+const DESKTOP_COLUMN_WIDTH = 600
+jest.mock('shared/ui/layout', () => ({ APP_MAX_CONTENT_WIDTH: DESKTOP_COLUMN_WIDTH }))
 
 const mockTooltipMounts = jest.fn()
 
@@ -85,5 +90,16 @@ describe('<TourSpotlight>', () => {
 
     // The single Modal persists across steps — no per-step remount flicker.
     expect(mockTooltipMounts).toHaveBeenCalledTimes(1)
+  })
+
+  test('caps the tooltip to the shared desktop column and centers it', async () => {
+    await renderWithProviders(spotlightElement(STEP, 'a'))
+
+    const tooltip = screen.getByText('tour-tooltip').parent
+    const style = StyleSheet.flatten(tooltip?.props.style)
+
+    expect(style.maxWidth).toBe(DESKTOP_COLUMN_WIDTH)
+    expect(style.width).toBe('100%')
+    expect(style.alignSelf).toBe('center')
   })
 })

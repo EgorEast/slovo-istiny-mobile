@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Modal, StyleSheet, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { APP_MAX_CONTENT_WIDTH } from 'shared/ui/layout'
 import { INDENTS } from 'shared/ui/theme'
 import { type OnboardingStep } from '../lib/scenarios'
 import { computeTooltipLayout } from '../lib/tooltipPosition'
@@ -78,21 +79,23 @@ export const TourSpotlight = ({
           ? holes.map(rect => <TourAreaHighlight rect={rect} key={`${rect.x}-${rect.y}`} />)
           : null}
         {isWaitingForTarget ? null : (
-          <View
-            style={[styles.tooltip, { top }]}
-            onLayout={event => setCardHeight(event.nativeEvent.layout.height)}
-          >
-            <TourTooltip
-              step={step}
-              onPrev={onPrev}
-              onNext={onNext}
-              onClose={onClose}
-              displayIndex={displayIndex}
-              displayTotal={displayTotal}
-              isLastVisible={isLastVisible}
-              isFirstVisible={isFirstVisible}
-              isWaitSatisfied={isWaitSatisfied}
-            />
+          <View style={[styles.tooltipAnchor, { top }]}>
+            <View
+              style={styles.tooltip}
+              onLayout={event => setCardHeight(event.nativeEvent.layout.height)}
+            >
+              <TourTooltip
+                step={step}
+                onPrev={onPrev}
+                onNext={onNext}
+                onClose={onClose}
+                displayIndex={displayIndex}
+                displayTotal={displayTotal}
+                isLastVisible={isLastVisible}
+                isFirstVisible={isFirstVisible}
+                isWaitSatisfied={isWaitSatisfied}
+              />
+            </View>
           </View>
         )}
       </View>
@@ -105,6 +108,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   tooltip: {
+    // Desktop-web: cap the card to the shared centered column (undefined on native,
+    // so phones keep the full width between the margins).
+    alignSelf: 'center',
+    maxWidth: APP_MAX_CONTENT_WIDTH,
+    width: '100%',
+  },
+  tooltipAnchor: {
     left: INDENTS.high,
     position: 'absolute',
     right: INDENTS.high,

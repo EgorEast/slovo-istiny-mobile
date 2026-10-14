@@ -1,7 +1,12 @@
 import { fireEvent, screen } from '@testing-library/react-native'
+import { StyleSheet } from 'react-native'
 import { renderWithProviders } from 'shared/mocks'
 import { type OnboardingStep } from '../lib/scenarios'
 import { TourWaitLayer } from './TourWaitLayer'
+
+// Pin the desktop cap to a numeric value (Platform.OS is read once at module load).
+const DESKTOP_COLUMN_WIDTH = 600
+jest.mock('shared/ui/layout', () => ({ APP_MAX_CONTENT_WIDTH: DESKTOP_COLUMN_WIDTH }))
 
 jest.mock('./TourDim', () => {
   const { View } = jest.requireActual('react-native')
@@ -72,5 +77,16 @@ describe('<TourWaitLayer>', () => {
     await renderLayer()
 
     expect(screen.getAllByTestId(AREA_HIGHLIGHT)).toHaveLength(1)
+  })
+
+  test('caps the card to the shared desktop column and centers it', async () => {
+    await renderLayer()
+
+    const card = findPointerAncestor(screen.getByText(NEXT_LABEL), 'auto')
+    const style = StyleSheet.flatten(card?.props.style)
+
+    expect(style.maxWidth).toBe(DESKTOP_COLUMN_WIDTH)
+    expect(style.width).toBe('100%')
+    expect(style.alignSelf).toBe('center')
   })
 })

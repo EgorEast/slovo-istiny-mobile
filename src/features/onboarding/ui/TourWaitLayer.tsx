@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { StyleSheet, View } from 'react-native'
+import { APP_MAX_CONTENT_WIDTH } from 'shared/ui/layout'
 import { INDENTS } from 'shared/ui/theme'
 import { type OnboardingStep } from '../lib/scenarios'
 import { computeTooltipLayout } from '../lib/tooltipPosition'
@@ -76,22 +77,24 @@ export const TourWaitLayer = ({
       </View>
 
       <View pointerEvents='box-none' style={StyleSheet.absoluteFill}>
-        <View
-          pointerEvents='auto'
-          style={[styles.card, { top }]}
-          onLayout={event => setCardHeight(event.nativeEvent.layout.height)}
-        >
-          <TourTooltip
-            step={step}
-            onPrev={onPrev}
-            onNext={onNext}
-            onClose={onClose}
-            displayIndex={displayIndex}
-            displayTotal={displayTotal}
-            isLastVisible={isLastVisible}
-            isFirstVisible={isFirstVisible}
-            isWaitSatisfied={isWaitSatisfied}
-          />
+        <View pointerEvents='box-none' style={[styles.cardAnchor, { top }]}>
+          <View
+            style={styles.card}
+            pointerEvents='auto'
+            onLayout={event => setCardHeight(event.nativeEvent.layout.height)}
+          >
+            <TourTooltip
+              step={step}
+              onPrev={onPrev}
+              onNext={onNext}
+              onClose={onClose}
+              displayIndex={displayIndex}
+              displayTotal={displayTotal}
+              isLastVisible={isLastVisible}
+              isFirstVisible={isFirstVisible}
+              isWaitSatisfied={isWaitSatisfied}
+            />
+          </View>
         </View>
       </View>
     </>
@@ -100,6 +103,13 @@ export const TourWaitLayer = ({
 
 const styles = StyleSheet.create({
   card: {
+    // Desktop-web: cap the card to the shared centered column (undefined on native,
+    // so phones keep the full width between the margins).
+    alignSelf: 'center',
+    maxWidth: APP_MAX_CONTENT_WIDTH,
+    width: '100%',
+  },
+  cardAnchor: {
     left: INDENTS.high,
     position: 'absolute',
     right: INDENTS.high,
