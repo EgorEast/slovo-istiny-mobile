@@ -55,7 +55,11 @@ describe('useAutoTours', () => {
     const { ctx } = await renderAutoTours()
 
     await waitFor(() =>
-      expect(ctx.get(onboardingTourAtom)).toEqual({ scenarioId: 'welcome', stepIndex: 0 }),
+      expect(ctx.get(onboardingTourAtom)).toEqual({
+        scenarioId: 'welcome',
+        skippedIndexes: [],
+        stepIndex: 0,
+      }),
     )
 
     expect(mockSetItem).toHaveBeenCalledWith(SEEN_KEY, APP_VERSION)
@@ -81,7 +85,11 @@ describe('useAutoTours', () => {
     const { ctx } = await renderAutoTours()
 
     await waitFor(() =>
-      expect(ctx.get(onboardingTourAtom)).toEqual({ scenarioId: 'whatsNew', stepIndex: 0 }),
+      expect(ctx.get(onboardingTourAtom)).toEqual({
+        scenarioId: 'whatsNew',
+        skippedIndexes: [],
+        stepIndex: 0,
+      }),
     )
 
     expect(mockSetItem).toHaveBeenCalledWith(SEEN_KEY, APP_VERSION)
@@ -93,12 +101,16 @@ describe('useAutoTours', () => {
   test('still writes the seen version but skips start when a tour is already active', async () => {
     mockGetItem.mockResolvedValue(null)
     const ctx = createCtx()
-    onboardingTourAtom(ctx, { scenarioId: 'listen', stepIndex: 0 })
+    onboardingTourAtom(ctx, { scenarioId: 'listen', skippedIndexes: [], stepIndex: 0 })
 
     await renderAutoTours(ctx)
 
     await waitFor(() => expect(mockSetItem).toHaveBeenCalledWith(SEEN_KEY, APP_VERSION))
     expect(mockStartTour).not.toHaveBeenCalled()
-    expect(ctx.get(onboardingTourAtom)).toEqual({ scenarioId: 'listen', stepIndex: 0 })
+    expect(ctx.get(onboardingTourAtom)).toEqual({
+      scenarioId: 'listen',
+      skippedIndexes: [],
+      stepIndex: 0,
+    })
   })
 })

@@ -1,9 +1,10 @@
 import { useAction, useAtom } from '@reatom/npm-react'
-import { useEffect, useState } from 'react'
 import { useWindowDimensions } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { scenariosById } from '../lib/scenarios'
 import { resolveAreaHoles, resolveTourHole } from '../lib/tourHole'
+import { resolveHiddenStepIndexes, resolveTourProgress } from '../lib/tourProgress'
+import { useExpiredStepKey } from '../lib/useExpiredStepKey'
 import { useStepNavigation } from '../lib/useStepNavigation'
 import {
   endOnboardingTour,
@@ -16,8 +17,6 @@ import { TourSpotlight } from './TourSpotlight'
 import { TourTapLayer } from './TourTapLayer'
 import { TourWaitLayer } from './TourWaitLayer'
 
-const MISSING_TARGET_TIMEOUT_MS = 1200
-
 export const OnboardingTourOverlay = () => {
   const [tour] = useAtom(onboardingTourAtom)
   const [rects] = useAtom(onboardingTargetRectsAtom)
@@ -26,7 +25,6 @@ export const OnboardingTourOverlay = () => {
   const prev = useAction(goToPrevOnboardingStep)
   const { height, width } = useWindowDimensions()
   const insets = useSafeAreaInsets()
-  const [expiredStepKey, setExpiredStepKey] = useState<null | string>(null)
 
   const scenarioId = tour?.scenarioId
   const stepIndex = tour?.stepIndex
@@ -44,20 +42,11 @@ export const OnboardingTourOverlay = () => {
     stepKey,
     viewportHeight: height,
   })
-
-  useEffect(() => {
-    if (activeTargetId === undefined) return
-
-    const timer = setTimeout(() => setExpiredStepKey(stepKey), MISSING_TARGET_TIMEOUT_MS)
-    return () => clearTimeout(timer)
-  }, [activeTargetId, stepKey])
-
-  useEffect(() => {
-    if (tour) return
-
-    // eslint-disable-next-line react-hooks/set-state-in-effect, react-hooks-extra/no-direct-set-state-in-use-effect -- reset stale per-tour UI state when the tour ends
-    setExpiredStepKey(null)
-  }, [tour])
+  const expiredStepKey = useExpiredStepKey({
+    activeTargetId,
+    isTourActive: tour !== null,
+    stepKey,
+  })
 
   if (tour === null || scenario === undefined || step === undefined) return null
 
@@ -70,8 +59,14 @@ export const OnboardingTourOverlay = () => {
   // touch and freeze the screen the tour is "pressing".
   if (holdNavigation && tapRect !== undefined) return <TourTapLayer rect={tapRect} />
 
-  const isLastStep = tour.stepIndex === scenario.steps.length - 1
-  const onPrimary = isLastStep ? end : next
+  const hiddenIndexes = resolveHiddenStepIndexes(scenario.steps, Object.keys(rects))
+  const deckSkippedIndexes = Array.from(new Set([...tour.skippedIndexes, ...hiddenIndexes]))
+  const { displayIndex, displayTotal, isFirstVisible, isLastVisible } = resolveTourProgress(
+    scenario.steps,
+    deckSkippedIndexes,
+    tour.stepIndex,
+  )
+  const onPrimary = isLastVisible ? end : next
 
   // Pass-through steps keep the modal unmounted so the live UI stays interactive:
   // an interactive step the user must act on, or a step whose wait condition is
@@ -86,9 +81,11 @@ export const OnboardingTourOverlay = () => {
         onNext={onPrimary}
         windowWidth={width}
         windowHeight={height}
-        index={tour.stepIndex}
+        displayIndex={displayIndex}
+        displayTotal={displayTotal}
         bottomInset={insets.bottom}
-        total={scenario.steps.length}
+        isLastVisible={isLastVisible}
+        isFirstVisible={isFirstVisible}
         isWaitSatisfied={isWaitSatisfied}
         hole={activeTargetId === undefined ? null : (rects[activeTargetId] ?? null)}
       />
@@ -117,10 +114,12 @@ export const OnboardingTourOverlay = () => {
       holes={holes}
       height={height}
       onNext={onPrimary}
-      stepIndex={tour.stepIndex}
+      displayIndex={displayIndex}
+      displayTotal={displayTotal}
       highlightAreas={isAreaStep}
-      total={scenario.steps.length}
+      isLastVisible={isLastVisible}
       anchorRect={holes[0] ?? null}
+      isFirstVisible={isFirstVisible}
       isWaitSatisfied={isWaitSatisfied}
       isWaitingForTarget={isWaitingForTarget}
     />

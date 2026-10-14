@@ -269,7 +269,7 @@ describe('<PlayerMenuAnchor>', () => {
         return undefined
       })
     const ctx = createCtx()
-    onboardingTourAtom(ctx, { scenarioId: 'player-intro', stepIndex: 4 })
+    onboardingTourAtom(ctx, { scenarioId: 'player-intro', skippedIndexes: [], stepIndex: 4 })
 
     await renderWithProviders(
       <PlayerMenuAnchor

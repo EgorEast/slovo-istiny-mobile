@@ -25,7 +25,7 @@ const renderMeasure = (getNode: () => null | View, ctx: ReturnType<typeof create
   renderHookWithProviders(() => useTargetMeasure({ getNode, id: TARGET_ID }), { ctx })
 
 const activateTarget = (ctx: ReturnType<typeof createCtx>) => {
-  onboardingTourAtom(ctx, { scenarioId: 'listen', stepIndex: 1 })
+  onboardingTourAtom(ctx, { scenarioId: 'listen', skippedIndexes: [], stepIndex: 1 })
 }
 
 const flush = (ms: number) =>

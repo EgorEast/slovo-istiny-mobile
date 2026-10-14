@@ -74,13 +74,14 @@ const AREA_HIGHLIGHT = 'onboarding-area-highlight'
 const TOUR_MODAL = 'onboarding-tour-modal'
 
 const renderAtStep = (
-  scenarioId: 'listen' | 'player-intro' | 'player' | 'playlists' | 'search' | 'settings',
+  scenarioId:
+    'listen' | 'player-intro' | 'player' | 'playlist-menu' | 'playlists' | 'search' | 'settings',
   stepIndex: number,
   rects: Record<string, OnboardingTargetRect> = {},
   setup?: (ctx: ReturnType<typeof createCtx>) => void,
 ) => {
   const ctx = createCtx()
-  onboardingTourAtom(ctx, { scenarioId, stepIndex })
+  onboardingTourAtom(ctx, { scenarioId, skippedIndexes: [], stepIndex })
   onboardingTargetRectsAtom(ctx, rects)
   setup?.(ctx)
 
@@ -144,7 +145,11 @@ describe('<OnboardingTourOverlay>', () => {
 
     fireEvent.press(getByText(NEXT_LABEL))
 
-    expect(ctx.get(onboardingTourAtom)).toEqual({ scenarioId: 'listen', stepIndex: 1 })
+    expect(ctx.get(onboardingTourAtom)).toEqual({
+      scenarioId: 'listen',
+      skippedIndexes: [],
+      stepIndex: 1,
+    })
   })
 
   test('navigates to the step route when the pathname differs', async () => {
@@ -249,6 +254,24 @@ describe('<OnboardingTourOverlay>', () => {
     await waitFor(() => expect(queryByText(TAP_INDICATOR)).toBeNull())
   })
 
+  test('shows the real step count and the done label when trailing menu steps are absent', async () => {
+    const MENU_RECT: OnboardingTargetRect = { height: 40, width: 200, x: 10, y: 300 }
+
+    // A server playlist hides publish/clear/delete, so the deck is 7 steps long and
+    // the history-mark step is its last visible one.
+    const { getByText, queryByText } = await renderAtStep('playlist-menu', 7, {
+      'playlist.menu-add-all': MENU_RECT,
+      'playlist.menu-history-mark': MENU_RECT,
+      'playlist.menu-offline-add': MENU_RECT,
+      'playlist.menu-offline-remove': MENU_RECT,
+      'playlist.menu-share': MENU_RECT,
+    })
+
+    expect(getByText('Шаг 7 из 7')).toBeTruthy()
+    expect(getByText('Готово')).toBeTruthy()
+    expect(queryByText(NEXT_LABEL)).toBeNull()
+  })
+
   test('renders a centered card when the registered rect is below the viewport', async () => {
     const { getByText } = await renderAtStep('listen', 3, {
       'listen.my-playlists': OFFSCREEN_RECT,
@@ -282,7 +305,11 @@ describe('<OnboardingTourOverlay>', () => {
 
     fireEvent.press(getByText(NEXT_LABEL))
 
-    expect(ctx.get(onboardingTourAtom)).toEqual({ scenarioId: 'player-intro', stepIndex: 1 })
+    expect(ctx.get(onboardingTourAtom)).toEqual({
+      scenarioId: 'player-intro',
+      skippedIndexes: [],
+      stepIndex: 1,
+    })
   })
 
   test('renders the area step card centered while no area rect has registered', async () => {

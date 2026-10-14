@@ -18,31 +18,35 @@ const MODAL_TEST_ID = 'onboarding-tour-modal'
 // the app, owns the touch while a step is shown.
 export const TourSpotlight = ({
   anchorRect,
+  displayIndex,
+  displayTotal,
   height,
   highlightAreas,
   holes,
+  isFirstVisible,
+  isLastVisible,
   isWaitingForTarget,
   isWaitSatisfied,
   onClose,
   onNext,
   onPrev,
   step,
-  stepIndex,
-  total,
   width,
 }: {
   anchorRect: null | OnboardingTargetRect
+  displayIndex: number
+  displayTotal: number
   height: number
   highlightAreas: boolean
   holes: OnboardingTargetRect[]
+  isFirstVisible: boolean
+  isLastVisible: boolean
   isWaitingForTarget: boolean
   isWaitSatisfied: boolean
   onClose: () => void
   onNext: () => void
   onPrev: () => void
   step: OnboardingStep
-  stepIndex: number
-  total: number
   width: number
 }) => {
   const insets = useSafeAreaInsets()
@@ -77,11 +81,13 @@ export const TourSpotlight = ({
           >
             <TourTooltip
               step={step}
-              total={total}
               onPrev={onPrev}
               onNext={onNext}
               onClose={onClose}
-              index={stepIndex}
+              displayIndex={displayIndex}
+              displayTotal={displayTotal}
+              isLastVisible={isLastVisible}
+              isFirstVisible={isFirstVisible}
               isWaitSatisfied={isWaitSatisfied}
             />
           </View>

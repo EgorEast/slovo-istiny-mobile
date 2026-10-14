@@ -1,6 +1,6 @@
 import { useAction } from '@reatom/npm-react'
 import { useEffect, useRef } from 'react'
-import { endOnboardingTour, goToNextOnboardingStep, goToPrevOnboardingStep } from '../model'
+import { skipOnboardingStep } from '../model'
 
 // A `skipIfMissing` step whose target never registers is dropped: 600 ms is long
 // enough for a mounted row to measure, short enough not to stall the tour when
@@ -8,25 +8,18 @@ import { endOnboardingTour, goToNextOnboardingStep, goToPrevOnboardingStep } fro
 const SKIP_MISSING_MS = 600
 
 interface SkipMissingStepInput {
-  lastStepIndex: number | undefined
   stepIndex: number | undefined
   // True while a `skipIfMissing` step's target is still unregistered.
   waitingForTarget: boolean
 }
 
-// Skips a step whose target never registers, in the direction the user arrived:
+// Drops a step whose target never registers, in the direction the user arrived:
 // forward for «Далее», backward for «Назад» (so a step entered with «Назад» is
-// skipped backwards). On the first/last step the skip ends the tour, so a cascade
-// of missing targets never loops. Returns whether the step is currently being
-// skipped — the overlay stays hidden meanwhile.
-export const useSkipMissingStep = ({
-  lastStepIndex,
-  stepIndex,
-  waitingForTarget,
-}: SkipMissingStepInput) => {
-  const nextStep = useAction(goToNextOnboardingStep)
-  const prevStep = useAction(goToPrevOnboardingStep)
-  const endTour = useAction(endOnboardingTour)
+// dropped backward). The skipped step leaves the deck for good; the tour never ends
+// from a skip. Returns whether the step is currently being skipped — the overlay
+// stays hidden meanwhile.
+export const useSkipMissingStep = ({ stepIndex, waitingForTarget }: SkipMissingStepInput) => {
+  const skipStep = useAction(skipOnboardingStep)
   const directionRef = useRef<'backward' | 'forward'>('forward')
   const previousIndexRef = useRef(stepIndex)
 
@@ -43,18 +36,11 @@ export const useSkipMissingStep = ({
     if (!waitingForTarget) return
 
     const timer = setTimeout(() => {
-      if (directionRef.current === 'backward') {
-        if (stepIndex === 0) endTour()
-        else prevStep()
-        return
-      }
-
-      if (stepIndex === lastStepIndex) endTour()
-      else nextStep()
+      skipStep(directionRef.current === 'backward' ? 'back' : 'next')
     }, SKIP_MISSING_MS)
 
     return () => clearTimeout(timer)
-  }, [endTour, lastStepIndex, nextStep, prevStep, stepIndex, waitingForTarget])
+  }, [skipStep, stepIndex, waitingForTarget])
 
   return waitingForTarget
 }

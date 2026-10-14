@@ -10,13 +10,37 @@ const WAIT_STEP: OnboardingStep = { text: 'текст', title: 'Заголово
 const renderTooltip = (step: OnboardingStep, isWaitSatisfied: boolean) =>
   renderWithProviders(
     <TourTooltip
-      index={1}
-      total={3}
       step={step}
+      displayIndex={1}
+      displayTotal={3}
       onNext={jest.fn()}
       onPrev={jest.fn()}
       onClose={jest.fn()}
+      isLastVisible={false}
+      isFirstVisible={false}
       isWaitSatisfied={isWaitSatisfied}
+    />,
+  )
+
+const renderTooltipDeck = (
+  overrides: Partial<{
+    displayIndex: number
+    displayTotal: number
+    isFirstVisible: boolean
+    isLastVisible: boolean
+  }>,
+) =>
+  renderWithProviders(
+    <TourTooltip
+      isWaitSatisfied
+      step={PLAIN_STEP}
+      onNext={jest.fn()}
+      onPrev={jest.fn()}
+      onClose={jest.fn()}
+      displayIndex={overrides.displayIndex ?? 0}
+      displayTotal={overrides.displayTotal ?? 3}
+      isLastVisible={overrides.isLastVisible ?? false}
+      isFirstVisible={overrides.isFirstVisible ?? false}
     />,
   )
 
@@ -41,5 +65,23 @@ describe('<TourTooltip>', () => {
 
     expect(getByText(NEXT_LABEL)).toBeTruthy()
     expect(queryByText(HINT)).toBeNull()
+  })
+
+  test('shows the real step numbers of the surviving deck', async () => {
+    const { getByText } = await renderTooltipDeck({
+      displayIndex: 6,
+      displayTotal: 7,
+      isLastVisible: true,
+    })
+
+    expect(getByText('Шаг 7 из 7')).toBeTruthy()
+    expect(getByText('Готово')).toBeTruthy()
+  })
+
+  test('hides the back button on the first visible step', async () => {
+    const { getByText, queryByText } = await renderTooltipDeck({ isFirstVisible: true })
+
+    expect(queryByText('Назад')).toBeNull()
+    expect(getByText(NEXT_LABEL)).toBeTruthy()
   })
 })

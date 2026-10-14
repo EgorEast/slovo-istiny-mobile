@@ -420,7 +420,7 @@ describe('<PlayerMenuItems>', () => {
   test('registers the details target rect while its tour step is active', async () => {
     mockMeasureInWindow()
     const ctx = createCtx()
-    onboardingTourAtom(ctx, { scenarioId: 'player-description', stepIndex: 1 })
+    onboardingTourAtom(ctx, { scenarioId: 'player-description', skippedIndexes: [], stepIndex: 1 })
 
     await renderMenuItems(ctx)
 
@@ -430,7 +430,7 @@ describe('<PlayerMenuItems>', () => {
   test('registers the speed menu target rect while its tour step is active', async () => {
     mockMeasureInWindow()
     const ctx = createCtx()
-    onboardingTourAtom(ctx, { scenarioId: 'player-speed', stepIndex: 1 })
+    onboardingTourAtom(ctx, { scenarioId: 'player-speed', skippedIndexes: [], stepIndex: 1 })
 
     await renderMenuItems(ctx)
 
@@ -442,7 +442,7 @@ describe('<PlayerMenuItems>', () => {
   test('registers the sound menu target rect while its tour step is active', async () => {
     mockMeasureInWindow()
     const ctx = createCtx()
-    onboardingTourAtom(ctx, { scenarioId: 'player-sound', stepIndex: 1 })
+    onboardingTourAtom(ctx, { scenarioId: 'player-sound', skippedIndexes: [], stepIndex: 1 })
 
     await renderMenuItems(ctx)
 

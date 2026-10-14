@@ -18,27 +18,31 @@ import { TourTooltip } from './TourTooltip'
 export const TourWaitLayer = ({
   areaRects = [],
   bottomInset,
+  displayIndex,
+  displayTotal,
   hole,
-  index,
+  isFirstVisible,
+  isLastVisible,
   isWaitSatisfied,
   onClose,
   onNext,
   onPrev,
   step,
-  total,
   windowHeight,
   windowWidth,
 }: {
   areaRects?: Array<{ id: string; rect: OnboardingTargetRect }>
   bottomInset: number
+  displayIndex: number
+  displayTotal: number
   hole: null | OnboardingTargetRect
-  index: number
+  isFirstVisible: boolean
+  isLastVisible: boolean
   isWaitSatisfied: boolean
   onClose: () => void
   onNext: () => void
   onPrev: () => void
   step: OnboardingStep
-  total: number
   windowHeight: number
   windowWidth: number
 }) => {
@@ -76,11 +80,13 @@ export const TourWaitLayer = ({
         >
           <TourTooltip
             step={step}
-            index={index}
-            total={total}
             onPrev={onPrev}
             onNext={onNext}
             onClose={onClose}
+            displayIndex={displayIndex}
+            displayTotal={displayTotal}
+            isLastVisible={isLastVisible}
+            isFirstVisible={isFirstVisible}
             isWaitSatisfied={isWaitSatisfied}
           />
         </View>

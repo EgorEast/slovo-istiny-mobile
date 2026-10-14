@@ -31,17 +31,19 @@ const findPointerAncestor = (node: QueryNode, pointerEvents: PointerEvents) => {
 const renderLayer = async (onNext = jest.fn()) => {
   const utils = await renderWithProviders(
     <TourWaitLayer
-      index={0}
-      total={3}
       hole={null}
+      isFirstVisible
       onNext={onNext}
       bottomInset={0}
       isWaitSatisfied
+      displayIndex={0}
+      displayTotal={3}
       step={AREA_STEP}
       windowWidth={400}
       onPrev={jest.fn()}
       windowHeight={800}
       onClose={jest.fn()}
+      isLastVisible={false}
       areaRects={[{ id: 'zone', rect: AREA }]}
     />,
   )

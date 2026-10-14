@@ -44,7 +44,7 @@ const TARGETLESS_SCENARIO: OnboardingScenario = {
 
 const renderNavigation = (rects: Record<string, OnboardingTargetRect> = {}) => {
   const ctx = createCtx()
-  onboardingTourAtom(ctx, { scenarioId: 'player-description', stepIndex: 0 })
+  onboardingTourAtom(ctx, { scenarioId: 'player-description', skippedIndexes: [], stepIndex: 0 })
   onboardingTargetRectsAtom(ctx, rects)
 
   return renderHookWithProviders(
@@ -64,7 +64,7 @@ const renderNavigation = (rects: Record<string, OnboardingTargetRect> = {}) => {
 
 const renderTargetlessNavigation = () => {
   const ctx = createCtx()
-  onboardingTourAtom(ctx, { scenarioId: 'player-description', stepIndex: 0 })
+  onboardingTourAtom(ctx, { scenarioId: 'player-description', skippedIndexes: [], stepIndex: 0 })
 
   return renderHookWithProviders(
     () =>
@@ -101,6 +101,7 @@ describe('useStepNavigation action steps', () => {
       () =>
         expect(ctx.get(onboardingTourAtom)).toEqual({
           scenarioId: 'player-description',
+          skippedIndexes: [],
           stepIndex: 1,
         }),
       { timeout: 4500 },
@@ -114,6 +115,7 @@ describe('useStepNavigation action steps', () => {
       () =>
         expect(ctx.get(onboardingTourAtom)).toEqual({
           scenarioId: 'player-description',
+          skippedIndexes: [],
           stepIndex: 1,
         }),
       { timeout: 4500 },
@@ -131,6 +133,7 @@ describe('useStepNavigation action steps', () => {
       () =>
         expect(ctx.get(onboardingTourAtom)).toEqual({
           scenarioId: 'player-description',
+          skippedIndexes: [],
           stepIndex: 1,
         }),
       { timeout: 2000 },
@@ -145,7 +148,7 @@ const renderPlaylistMenuStep = async (
   rects: Record<string, OnboardingTargetRect> = {},
 ) => {
   const ctx = createCtx()
-  onboardingTourAtom(ctx, { scenarioId: 'playlist-menu', stepIndex })
+  onboardingTourAtom(ctx, { scenarioId: 'playlist-menu', skippedIndexes: [], stepIndex })
   onboardingTargetRectsAtom(ctx, rects)
 
   return renderHookWithProviders(
@@ -171,6 +174,7 @@ describe('useStepNavigation skipIfMissing steps', () => {
       () =>
         expect(ctx.get(onboardingTourAtom)).toEqual({
           scenarioId: 'playlist-menu',
+          skippedIndexes: [2],
           stepIndex: 3,
         }),
       { timeout: 2000 },
@@ -184,7 +188,11 @@ describe('useStepNavigation skipIfMissing steps', () => {
       await new Promise(resolve => setTimeout(resolve, 800))
     })
 
-    expect(ctx.get(onboardingTourAtom)).toEqual({ scenarioId: 'playlist-menu', stepIndex: 2 })
+    expect(ctx.get(onboardingTourAtom)).toEqual({
+      scenarioId: 'playlist-menu',
+      skippedIndexes: [],
+      stepIndex: 2,
+    })
   })
 
   test('skips backwards when the user navigated back onto a missing step', async () => {
@@ -199,6 +207,7 @@ describe('useStepNavigation skipIfMissing steps', () => {
       () =>
         expect(ctx.get(onboardingTourAtom)).toEqual({
           scenarioId: 'playlist-menu',
+          skippedIndexes: [2],
           stepIndex: 1,
         }),
       { timeout: 2000 },

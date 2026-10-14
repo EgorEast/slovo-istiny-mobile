@@ -74,7 +74,6 @@ export const useStepNavigation = ({
 
   const skipTargetId = step?.targetId
   const isSkippingStep = useSkipMissingStep({
-    lastStepIndex: scenario === undefined ? undefined : scenario.steps.length - 1,
     stepIndex,
     waitingForTarget:
       isTourActive &&

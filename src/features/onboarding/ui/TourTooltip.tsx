@@ -8,24 +8,27 @@ import { type OnboardingStep } from '../lib/scenarios'
 const WAIT_HINT = 'Выполните действие, чтобы продолжить'
 
 export const TourTooltip = ({
-  index,
+  displayIndex,
+  displayTotal,
+  isFirstVisible,
+  isLastVisible,
   isWaitSatisfied,
   onClose,
   onNext,
   onPrev,
   step,
-  total,
 }: {
-  index: number
+  displayIndex: number
+  displayTotal: number
+  isFirstVisible: boolean
+  isLastVisible: boolean
   isWaitSatisfied: boolean
   onClose: () => void
   onNext: () => void
   onPrev: () => void
   step: OnboardingStep
-  total: number
 }) => {
   const { currentTheme } = useTheme()
-  const isLast = index === total - 1
   const isWaiting = step.waitFor !== undefined && !isWaitSatisfied
 
   return (
@@ -40,14 +43,14 @@ export const TourTooltip = ({
       </View>
       <Text style={[styles.text, { color: currentTheme.text }]}>{step.text}</Text>
       <Text style={[styles.counter, { color: currentTheme.textMuted }]}>
-        {`Шаг ${index + 1} из ${total}`}
+        {`Шаг ${displayIndex + 1} из ${displayTotal}`}
       </Text>
       <View style={styles.buttons}>
-        {index > 0 ? (
+        {isFirstVisible ? null : (
           <PressableButton onPress={onPrev} style={styles.secondaryButton}>
             <Text style={[styles.secondaryText, { color: currentTheme.text }]}>Назад</Text>
           </PressableButton>
-        ) : null}
+        )}
         {isWaiting ? (
           <Text style={[styles.hint, { color: currentTheme.textMuted }]}>{WAIT_HINT}</Text>
         ) : (
@@ -55,7 +58,7 @@ export const TourTooltip = ({
             onPress={onNext}
             style={[styles.primaryButton, { backgroundColor: currentTheme.primary }]}
           >
-            <Text style={styles.primaryText}>{isLast ? 'Готово' : 'Далее'}</Text>
+            <Text style={styles.primaryText}>{isLastVisible ? 'Готово' : 'Далее'}</Text>
           </PressableButton>
         )}
       </View>
