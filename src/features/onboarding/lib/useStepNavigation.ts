@@ -1,6 +1,7 @@
 import { useAtom } from '@reatom/npm-react'
 import { usePathname, useRouter } from 'expo-router'
 import { useEffect } from 'react'
+import { isEmpty } from 'shared/lib/utils/isEmpty'
 import { onboardingTargetRectsAtom } from '../model/targets'
 import { onboardingStepDirectionAtom } from '../model/tour'
 import { resolveStepRoute } from './resolveStepRoute'
@@ -87,7 +88,11 @@ export const useStepNavigation = ({
   })
 
   const skipTargetId = step?.targetId
+  // A `skipIfMissing` step's own target is unregistered, so any registered rect
+  // belongs to another target on the surface — proof the surface rendered its items.
+  const hasOtherRegisteredRect = !isEmpty(rects)
   const isSkippingStep = useSkipMissingStep({
+    hasOtherRegisteredRect,
     stepIndex,
     waitingForTarget:
       isTourActive &&

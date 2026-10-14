@@ -214,6 +214,39 @@ describe('useStepNavigation skipIfMissing steps', () => {
     )
   })
 
+  test('skips a missing step instantly when a sibling target has registered', async () => {
+    // Step 2 targets 'playlist.menu-share'; registering a different menu item proves
+    // the open menu rendered its items, so the missing target is dropped at once —
+    // no SKIP_MISSING_MS hold (a 300 ms window would miss the 600 ms hold).
+    const { ctx } = await renderPlaylistMenuStep(2, { 'playlist.menu-add-all': TARGET_RECT })
+
+    await waitFor(
+      () =>
+        expect(ctx.get(onboardingTourAtom)).toEqual({
+          scenarioId: 'playlist-menu',
+          skippedIndexes: [2],
+          stepIndex: 3,
+        }),
+      { timeout: 300 },
+    )
+  })
+
+  test('holds the missing-target window while no target has registered yet', async () => {
+    const { ctx } = await renderPlaylistMenuStep(2)
+
+    // Nothing registered: the surface may still be mounting, so the step waits out
+    // the hold instead of skipping at once.
+    await act(async () => {
+      await new Promise(resolve => setTimeout(resolve, 250))
+    })
+
+    expect(ctx.get(onboardingTourAtom)).toEqual({
+      scenarioId: 'playlist-menu',
+      skippedIndexes: [],
+      stepIndex: 2,
+    })
+  })
+
   test('does not skip a missing-capable step whose target is registered', async () => {
     const { ctx } = await renderPlaylistMenuStep(2, { 'playlist.menu-share': TARGET_RECT })
 
