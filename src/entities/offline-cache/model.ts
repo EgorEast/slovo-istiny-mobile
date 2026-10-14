@@ -10,6 +10,12 @@ export const incrementCacheTrigger = action(ctx => {
   cacheUpdateTriggerAtom(ctx, prev => prev + 1)
 }, 'incrementCacheTrigger')
 
+// Whether the Offline screen's cached-sermons list has settled its first load.
+// A cross-layer coordination atom (same pattern as cacheUpdateTriggerAtom): the
+// offline-sermons feature flips it once aggregation finishes; onboarding reads it
+// through @x/onboarding to hold the tour until the list (and the thread) is calm.
+export const offlineSermonsLoadedAtom = atom(false, 'offlineSermonsLoadedAtom')
+
 // Per-track download progress (0 to 1), keyed by audio URL
 // Shared across the app for tracking individual track download progress
 export const playlistDownloadProgressAtom = atom<Record<string, number>>(

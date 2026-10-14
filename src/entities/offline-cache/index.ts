@@ -50,6 +50,7 @@ export {
   incrementCacheTrigger,
   markUrlCached,
   markUrlEvicted,
+  offlineSermonsLoadedAtom,
   playlistDownloadProgressAtom,
   removeTrackDownloadProgress,
   setTrackDownloadProgress,

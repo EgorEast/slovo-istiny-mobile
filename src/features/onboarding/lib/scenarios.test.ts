@@ -77,6 +77,25 @@ describe('onboarding scenario data', () => {
     expect(scenariosById.study.steps[0].tapTargetId).toBe('tab.study')
   })
 
+  test('offline caching-switch waits for the list to load before the spotlight lands', () => {
+    const switchStep = scenariosById.offline.steps[2]
+
+    expect(switchStep.targetId).toBe('offline.caching-switch')
+    expect(switchStep.waitFor).toBe('offlineLoaded')
+  })
+
+  test('entry-point steps tell the user to tap the item to open the section', () => {
+    expect(scenariosById.offline.steps[1].text).toBe(
+      'Чтобы открыть раздел офлайн-кэша, тапните по этому пункту.',
+    )
+    expect(scenariosById.history.steps[1].text).toBe(
+      'Чтобы открыть историю прослушивания, тапните по этому пункту.',
+    )
+    expect(scenariosById.settings.steps[1].text).toBe(
+      'Чтобы открыть настройки, тапните по этому пункту.',
+    )
+  })
+
   test('every scenario starts with a card and action steps directly follow one', () => {
     const warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined)
 

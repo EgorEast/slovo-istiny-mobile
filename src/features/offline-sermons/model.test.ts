@@ -1,6 +1,10 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { createCtx } from '@reatom/framework'
-import { audioCacheService, offlineRegistryAtom } from 'entities/offline-cache'
+import {
+  audioCacheService,
+  offlineRegistryAtom,
+  offlineSermonsLoadedAtom,
+} from 'entities/offline-cache'
 import { type PlaylistData } from 'entities/playlist'
 import { CACHED_SECTIONS } from 'entities/section'
 import { type AudioPlayerData } from 'entities/sermon'
@@ -12,6 +16,7 @@ jest.mock('entities/offline-cache', () => {
   return {
     audioCacheService: { isCached: jest.fn() },
     offlineRegistryAtom: atom({}, 'testOfflineRegistryAtom'),
+    offlineSermonsLoadedAtom: atom(false, 'testOfflineSermonsLoadedAtom'),
   }
 })
 
@@ -240,5 +245,13 @@ describe('loadOfflineSermons', () => {
       sermons: [mockSermon],
       title: mockSermon.title,
     })
+  })
+
+  test('marks the offline list loaded once the load settles', async () => {
+    const ctx = createCtx()
+
+    await loadOfflineSermons(ctx)
+
+    expect(ctx.get(offlineSermonsLoadedAtom)).toBe(true)
   })
 })

@@ -1,4 +1,5 @@
 import { createCtx } from '@reatom/framework'
+import { offlineSermonsLoadedAtom } from 'entities/offline-cache/@x/onboarding'
 import { currentAudioAtom, isPlayingAtom } from 'entities/player/@x/onboarding'
 import { renderHookWithProviders } from 'shared/mocks'
 import { useWaitForSatisfied } from './useWaitForSatisfied'
@@ -51,6 +52,23 @@ describe('useWaitForSatisfied', () => {
     isPlayingAtom(ctx, false)
 
     const { result } = await renderHookWithProviders(() => useWaitForSatisfied('paused'), { ctx })
+
+    expect(result.current).toBe(true)
+  })
+
+  test('offlineLoaded is unsatisfied until the offline list loads', async () => {
+    const { result } = await renderHookWithProviders(() => useWaitForSatisfied('offlineLoaded'))
+
+    expect(result.current).toBe(false)
+  })
+
+  test('offlineLoaded is satisfied once the offline list loads', async () => {
+    const ctx = createCtx()
+    offlineSermonsLoadedAtom(ctx, true)
+
+    const { result } = await renderHookWithProviders(() => useWaitForSatisfied('offlineLoaded'), {
+      ctx,
+    })
 
     expect(result.current).toBe(true)
   })
