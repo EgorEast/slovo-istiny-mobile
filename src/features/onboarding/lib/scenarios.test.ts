@@ -77,6 +77,18 @@ describe('onboarding scenario data', () => {
     expect(scenariosById.study.steps[0].tapTargetId).toBe('tab.study')
   })
 
+  test('settings tour follows the visual order of the settings rows', () => {
+    const settingsTargets = scenariosById.settings.steps.slice(2).map(step => step.targetId)
+
+    expect(settingsTargets).toEqual([
+      'settings.theme',
+      'settings.haptics',
+      'settings.tours',
+      'settings.backup',
+      'settings.server',
+    ])
+  })
+
   test('offline caching-switch waits for the list to load before the spotlight lands', () => {
     const switchStep = scenariosById.offline.steps[2]
 

@@ -30,14 +30,14 @@ export const settingsScenario: OnboardingScenario = {
       title: 'Виброотклик',
     },
     {
-      targetId: 'settings.backup',
-      text: 'Сохраняйте плейлисты, историю и настройки в файл и переносите между устройствами.',
-      title: 'Резервные копии',
-    },
-    {
       targetId: 'settings.tours',
       text: 'Здесь можно полностью отключить подсказки и автопоказ обзоров.',
       title: 'Обзоры и подсказки',
+    },
+    {
+      targetId: 'settings.backup',
+      text: 'Сохраняйте плейлисты, историю и настройки в файл и переносите между устройствами.',
+      title: 'Резервные копии',
     },
     {
       targetId: 'settings.server',
