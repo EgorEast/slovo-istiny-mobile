@@ -78,6 +78,7 @@ export const MoreScreen = () => {
           <MoreMenuSettingsItem
             icon='share-social-outline'
             title='Поделиться приложением'
+            onboardingTargetId='more.share-item'
             onPress={() => router.push('/share')}
           />
         </OnboardingTarget>

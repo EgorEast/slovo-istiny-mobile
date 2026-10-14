@@ -56,13 +56,20 @@ describe('onboarding scenario data', () => {
     expect(whatsNew.steps[0].title).toBe('Обзоры в приложении')
   })
 
-  test('share scenario walks the QR code, copy button and link contents', () => {
+  test('share scenario leads from «Ещё» into the QR code, copy button and link contents', () => {
     const share = scenariosById.share
 
-    expect(share.screens).toEqual(['/share'])
-    expect(share.steps).toHaveLength(3)
-    expect(share.steps[0].targetId).toBe('share.qr')
-    expect(share.steps[1].targetId).toBe('share.copy')
+    expect(share.screens).toEqual(['/more', '/share'])
+    expect(share.steps).toHaveLength(6)
+    expect(share.steps[0].targetId).toBeUndefined()
+    expect(share.steps[1].route).toBe('/more')
+    expect(share.steps[1].tapTargetId).toBe('tab.more')
+    expect(share.steps[1].targetId).toBe('tab.more')
+    expect(share.steps[2].targetId).toBe('more.share-item')
+    expect(share.steps[2].tapTargetId).toBe('more.share-item')
+    expect(share.steps[3].route).toBe('/share')
+    expect(share.steps[3].targetId).toBe('share.qr')
+    expect(share.steps[4].targetId).toBe('share.copy')
   })
 
   test('each scenario wires the tab or row it taps when navigating', () => {
@@ -378,5 +385,30 @@ describe('backup scenario resume', () => {
     expect(fromMore.displayTotal).toBe(7)
     expect(fromSettings.displayIndex).toBe(0)
     expect(fromSettings.displayTotal).toBe(5)
+  })
+})
+
+describe('share scenario resume', () => {
+  const deck = buildTourDeck(scenariosById.share.steps)
+
+  test('plays the full tour from «Ещё», the scenario first screen', () => {
+    expect(resolveTourStart(scenariosById.share, deck, '/more')).toEqual({
+      deckIndex: 0,
+      skippedDeckIndexes: [],
+    })
+  })
+
+  test('skips the whole lead-up when starting from «Поделиться приложением»', () => {
+    expect(resolveTourStart(scenariosById.share, deck, '/share')).toEqual({
+      deckIndex: 3,
+      skippedDeckIndexes: [0, 1, 2],
+    })
+  })
+
+  test('counts only the remaining cards from «Поделиться приложением»', () => {
+    const fromShare = resolveDeckProgress(deck, [0, 1, 2], 3)
+
+    expect(fromShare.displayIndex).toBe(0)
+    expect(fromShare.displayTotal).toBe(3)
   })
 })
