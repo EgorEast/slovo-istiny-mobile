@@ -45,9 +45,9 @@ describe('<ScenarioPickerModal>', () => {
     expect(screen.getByText(GLOBAL_GROUP_TITLE)).toBeTruthy()
     expectRowTitles([
       'Как слушать проповеди',
-      'Плеер',
       'Плейлисты',
       'Результаты поиска',
+      'Плеер',
       'Экран плейлиста',
       'Добавление в плейлист',
       'История прослушивания',
@@ -172,17 +172,19 @@ describe('<ScenarioPickerModal>', () => {
     })
   })
 
-  test('player scope shows only player scenarios plus the global auto tours', async () => {
+  test('player scope shows the player tours plus the global scenarios', async () => {
     await renderPicker('player')
 
     expect(screen.queryByText(SCREEN_GROUP_TITLE)).toBeNull()
-    expect(screen.getByText(PLAYER_GROUP_TITLE)).toBeTruthy()
+    // The «Плеер» group header shares its text with the global «Плеер» row.
+    expect(screen.getAllByText(PLAYER_GROUP_TITLE)).toHaveLength(2)
     expect(screen.getByText(GLOBAL_GROUP_TITLE)).toBeTruthy()
     expectRowTitles([
       'Экран плеера',
       'Подробнее и таймкоды',
       'Скорость прослушивания',
       'Настройка звука',
+      'Плеер',
       'Добро пожаловать',
       'Что нового',
     ])

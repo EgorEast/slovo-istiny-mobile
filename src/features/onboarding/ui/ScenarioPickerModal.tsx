@@ -42,7 +42,8 @@ export const ScenarioPickerModal = ({
   const screenScenarios = scenarios.filter(scenario => isScenarioOnScreen(scenario, pathname))
   const globalScenarios = scenarios.filter(scenario => !isScenarioOnScreen(scenario, pathname))
   // The player picker is route-agnostic: its «Глобальные» group is every
-  // route-less scenario (welcome/whatsNew), not the screen picker's leftovers.
+  // route-less default scenario (player, welcome/whatsNew), not the screen picker's
+  // leftovers.
   const playerGlobalScenarios = defaultScenarios.filter(scenario => scenario.screens === undefined)
 
   return (
