@@ -161,7 +161,7 @@ describe('onboarding scenario data', () => {
     const playlistMenu = scenariosById['playlist-menu']
 
     expect(playlistMenu.screens).toEqual(['/listen/playlist'])
-    expect(playlistMenu.steps).toHaveLength(9)
+    expect(playlistMenu.steps).toHaveLength(10)
     expect(playlistMenu.steps[0].targetId).toBe('playlist.playback')
     expect(playlistMenu.steps[1].targetId).toBe('playlist.menu')
     expect(playlistMenu.steps[1].tapTargetId).toBe('playlist.menu')
@@ -171,10 +171,16 @@ describe('onboarding scenario data', () => {
       'playlist.menu-add-all',
       'playlist.menu-publish',
       'playlist.menu-offline-add',
+      'playlist.menu-offline-remove',
       'playlist.menu-history-mark',
       'playlist.menu-clear',
       'playlist.menu-delete',
     ])
+    const offlineRemoveIndex = playlistMenu.steps.findIndex(
+      step => step.targetId === 'playlist.menu-offline-remove',
+    )
+    expect(playlistMenu.steps[offlineRemoveIndex].skipIfMissing).toBe(true)
+    expect(playlistMenu.steps[offlineRemoveIndex - 1].targetId).toBe('playlist.menu-offline-add')
     // Every menu item may be absent (admin/local-only/feature-gated): the tour
     // drops its step instead of spotlighting a hidden row.
     expect(playlistMenu.steps.slice(2).every(step => step.skipIfMissing === true)).toBe(true)

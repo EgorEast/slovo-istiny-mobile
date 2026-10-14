@@ -44,6 +44,12 @@ export const playlistMenuScenario: OnboardingScenario = {
     },
     {
       skipIfMissing: true,
+      targetId: 'playlist.menu-offline-remove',
+      text: '«Удалить из офлайн все» освобождает место: убирает все проповеди плейлиста из офлайна. Пункт неактивен, если удалять пока нечего.',
+      title: 'Удалить из офлайна',
+    },
+    {
+      skipIfMissing: true,
       targetId: 'playlist.menu-history-mark',
       text: 'Пометить все проповеди прослушанными или удалить плейлист из истории прослушивания.',
       title: 'История',
