@@ -4,10 +4,28 @@ export const backupScenario: OnboardingScenario = {
   description: 'Копии, автосинхронизация, папка',
   icon: 'save-outline',
   id: 'backup',
-  screens: ['/settings'],
+  screens: ['/listen', '/more', '/settings'],
   steps: [
     {
+      route: '/listen',
+      text: 'Сейчас покажем, где включается резервное копирование: экран «Ещё» → «Настройки». Нажмите «Далее».',
+      title: 'Резервное копирование',
+    },
+    {
+      route: '/more',
+      tapTargetId: 'tab.more',
+      targetId: 'tab.more',
+      text: 'Переходим на экран «Ещё»…',
+      title: 'Экран «Ещё»',
+    },
+    {
+      targetId: 'more.settings-item',
+      text: 'Чтобы открыть настройки, тапните по этому пункту.',
+      title: 'Настройки',
+    },
+    {
       route: '/settings',
+      tapTargetId: 'more.settings-item',
       targetId: 'settings.backup',
       text: 'Секция резервного копирования: плейлисты, история и настройки сохраняются в файл, который можно переносить между устройствами.',
       title: 'Резервное копирование',

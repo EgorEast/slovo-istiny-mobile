@@ -1,6 +1,7 @@
 import { resolveStepRoute } from './resolveStepRoute'
+import { resolveTourStart } from './resolveTourStart'
 import { scenarios, scenariosById } from './scenarios'
-import { buildTourDeck } from './tourDeck'
+import { buildTourDeck, resolveDeckProgress } from './tourDeck'
 
 const FIRST_ROW_TARGET_ID = 'playlist.first-row'
 const ROW_MENU_ADD_TARGET_ID = 'playlist.row-menu-add'
@@ -89,19 +90,31 @@ describe('onboarding scenario data', () => {
     ])
   })
 
+  test('backup scenario opens the full path from «Слушать» into the backup section', () => {
+    const backup = scenariosById.backup
+
+    expect(backup.screens).toEqual(['/listen', '/more', '/settings'])
+    expect(backup.steps).toHaveLength(8)
+    expect(backup.steps[0].route).toBe('/listen')
+    expect(backup.steps[0].targetId).toBeUndefined()
+    expect(backup.steps[1].route).toBe('/more')
+    expect(backup.steps[1].tapTargetId).toBe('tab.more')
+    expect(backup.steps[1].targetId).toBe('tab.more')
+    expect(backup.steps[2].targetId).toBe('more.settings-item')
+    expect(backup.steps[3].route).toBe('/settings')
+    expect(backup.steps[3].tapTargetId).toBe('more.settings-item')
+    expect(backup.steps[3].targetId).toBe('settings.backup')
+  })
+
   test('backup scenario walks the section, folder, export, import and autosync', () => {
     const backup = scenariosById.backup
 
-    expect(backup.screens).toEqual(['/settings'])
-    expect(backup.steps).toHaveLength(5)
-    expect(backup.steps[0].targetId).toBe('settings.backup')
-    expect(backup.steps[0].route).toBe('/settings')
-    expect(backup.steps[1].targetId).toBe('settings.backup-folder')
-    expect(backup.steps[1].skipIfMissing).toBe(true)
-    expect(backup.steps[2].targetId).toBe('settings.backup-export')
-    expect(backup.steps[3].targetId).toBe('settings.backup-import')
-    expect(backup.steps[4].targetId).toBe('settings.backup-autosync')
+    expect(backup.steps[4].targetId).toBe('settings.backup-folder')
     expect(backup.steps[4].skipIfMissing).toBe(true)
+    expect(backup.steps[5].targetId).toBe('settings.backup-export')
+    expect(backup.steps[6].targetId).toBe('settings.backup-import')
+    expect(backup.steps[7].targetId).toBe('settings.backup-autosync')
+    expect(backup.steps[7].skipIfMissing).toBe(true)
   })
 
   test('offline caching-switch waits for the list to load before the spotlight lands', () => {
@@ -330,5 +343,40 @@ describe('resolveStepRoute', () => {
     expect(
       resolveStepRoute({ ...scenariosById.whatsNew, steps: [{ text: '', title: '' }] }, 0),
     ).toBe(undefined)
+  })
+})
+
+describe('backup scenario resume', () => {
+  const deck = buildTourDeck(scenariosById.backup.steps)
+
+  test('plays the full tour from «Слушать», the scenario first screen', () => {
+    expect(resolveTourStart(scenariosById.backup, deck, '/listen')).toEqual({
+      deckIndex: 0,
+      skippedDeckIndexes: [],
+    })
+  })
+
+  test('skips the intro card when starting from «Ещё»', () => {
+    expect(resolveTourStart(scenariosById.backup, deck, '/more')).toEqual({
+      deckIndex: 1,
+      skippedDeckIndexes: [0],
+    })
+  })
+
+  test('skips the lead-up when starting from «Настройки»', () => {
+    expect(resolveTourStart(scenariosById.backup, deck, '/settings')).toEqual({
+      deckIndex: 3,
+      skippedDeckIndexes: [0, 1, 2],
+    })
+  })
+
+  test('counts only the remaining cards from «Ещё» and «Настройки»', () => {
+    const fromMore = resolveDeckProgress(deck, [0], 1)
+    const fromSettings = resolveDeckProgress(deck, [0, 1, 2], 3)
+
+    expect(fromMore.displayIndex).toBe(0)
+    expect(fromMore.displayTotal).toBe(7)
+    expect(fromSettings.displayIndex).toBe(0)
+    expect(fromSettings.displayTotal).toBe(5)
   })
 })
