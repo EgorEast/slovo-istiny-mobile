@@ -1,7 +1,12 @@
 import { createCtx } from '@reatom/framework'
 import { act, waitFor } from '@testing-library/react-native'
 import { renderHookWithProviders } from 'shared/mocks/renderWithProviders'
-import { type OnboardingTargetRect, onboardingTargetRectsAtom, onboardingTourAtom } from '../model'
+import {
+  onboardingStepDirectionAtom,
+  type OnboardingTargetRect,
+  onboardingTargetRectsAtom,
+  onboardingTourAtom,
+} from '../model'
 import { type OnboardingScenario, type OnboardingStep, scenariosById } from './scenarios'
 import { registerTourAction, unregisterTourAction } from './tourActions'
 import { useStepNavigation } from './useStepNavigation'
@@ -42,9 +47,13 @@ const TARGETLESS_SCENARIO: OnboardingScenario = {
   steps: [TARGETLESS_STEP],
 }
 
-const renderNavigation = (rects: Record<string, OnboardingTargetRect> = {}) => {
+const renderNavigation = (
+  rects: Record<string, OnboardingTargetRect> = {},
+  direction: 'backward' | 'forward' = 'forward',
+) => {
   const ctx = createCtx()
   onboardingTourAtom(ctx, { scenarioId: 'player-description', skippedIndexes: [], stepIndex: 0 })
+  onboardingStepDirectionAtom(ctx, direction)
   onboardingTargetRectsAtom(ctx, rects)
 
   return renderHookWithProviders(
@@ -141,6 +150,34 @@ describe('useStepNavigation action steps', () => {
   })
 })
 
+describe('useStepNavigation backward action entries', () => {
+  afterEach(() => {
+    unregisterTourAction(ACTION_ID)
+  })
+
+  test('renders the action step statically without blinking or performing', async () => {
+    const action = jest.fn()
+    registerTourAction(ACTION_ID, action)
+
+    const { ctx, result } = await renderNavigation({ [TARGET_ID]: TARGET_RECT }, 'backward')
+
+    // No blink/hold on a backward entry, so the card is shown at once.
+    expect(result.current.holdNavigation).toBe(false)
+    expect(action).not.toHaveBeenCalled()
+
+    await act(async () => {
+      await new Promise(resolve => setTimeout(resolve, 800))
+    })
+
+    expect(action).not.toHaveBeenCalled()
+    expect(ctx.get(onboardingTourAtom)).toEqual({
+      scenarioId: 'player-description',
+      skippedIndexes: [],
+      stepIndex: 0,
+    })
+  })
+})
+
 const PLAYLIST_MENU_SCENARIO = scenariosById['playlist-menu']
 
 const renderPlaylistMenuStep = async (
@@ -199,7 +236,7 @@ describe('useStepNavigation skipIfMissing steps', () => {
     const { ctx, rerender } = await renderPlaylistMenuStep(2)
 
     // Move forward to step 3 and back to 2: the direction ref records «backward»,
-    // so the missing step 2 skips to step 1, not forward.
+    // so the missing step 2 skips to step 0 — step 1 is a forward-only action step.
     await rerender({ index: 3 })
     await rerender({ index: 2 })
 
@@ -208,7 +245,7 @@ describe('useStepNavigation skipIfMissing steps', () => {
         expect(ctx.get(onboardingTourAtom)).toEqual({
           scenarioId: 'playlist-menu',
           skippedIndexes: [2],
-          stepIndex: 1,
+          stepIndex: 0,
         }),
       { timeout: 2000 },
     )

@@ -9,6 +9,10 @@ export const playlistAddScenario: OnboardingScenario = {
   screens: ['/listen/playlist'],
   steps: [
     {
+      text: 'Чтобы добавить проповедь в плейлист, сначала нужно вызвать меню проповеди — долгим нажатием на строку или тапом по кнопке с тремя точками. Мы сделаем это за вас: нажмите «Далее».',
+      title: 'Добавление в плейлист',
+    },
+    {
       tapActionId: 'open-playlist-row-menu',
       tapTargetId: 'playlist.first-row',
       targetId: 'playlist.first-row',

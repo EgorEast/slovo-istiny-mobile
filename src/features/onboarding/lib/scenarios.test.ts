@@ -202,21 +202,25 @@ describe('onboarding scenario data', () => {
 
     expect(playlistAdd.title).toBe('Добавление в плейлист')
     expect(playlistAdd.screens).toEqual(['/listen/playlist'])
-    expect(playlistAdd.steps).toHaveLength(7)
-    expect(playlistAdd.steps[0].targetId).toBe(FIRST_ROW_TARGET_ID)
-    expect(playlistAdd.steps[0].tapActionId).toBe('open-playlist-row-menu')
-    expect(playlistAdd.steps[0].tapTargetId).toBe(FIRST_ROW_TARGET_ID)
-    expect(playlistAdd.steps[1].targetId).toBe(ROW_MENU_ADD_TARGET_ID)
-    expect(playlistAdd.steps.slice(2, 5).map(step => step.targetId)).toEqual([
+    expect(playlistAdd.steps).toHaveLength(8)
+    expect(playlistAdd.steps[0].targetId).toBeUndefined()
+    expect(playlistAdd.steps[0].tapActionId).toBeUndefined()
+    expect(playlistAdd.steps[0].tapTargetId).toBeUndefined()
+    expect(playlistAdd.steps[0].interactive).toBeUndefined()
+    expect(playlistAdd.steps[1].targetId).toBe(FIRST_ROW_TARGET_ID)
+    expect(playlistAdd.steps[1].tapActionId).toBe('open-playlist-row-menu')
+    expect(playlistAdd.steps[1].tapTargetId).toBe(FIRST_ROW_TARGET_ID)
+    expect(playlistAdd.steps[2].targetId).toBe(ROW_MENU_ADD_TARGET_ID)
+    expect(playlistAdd.steps.slice(3, 6).map(step => step.targetId)).toEqual([
       'playlist.row-menu-remove',
       'playlist.row-menu-mark',
       'playlist.row-menu-history-remove',
     ])
-    expect(playlistAdd.steps.slice(2, 5).every(step => step.skipIfMissing === true)).toBe(true)
-    expect(playlistAdd.steps[5].targetId).toBe(ROW_MENU_ADD_TARGET_ID)
-    expect(playlistAdd.steps[5].tapTargetId).toBe(ROW_MENU_ADD_TARGET_ID)
-    expect(playlistAdd.steps[5].tapActionId).toBe('press-row-menu-add')
-    expect(playlistAdd.steps[6].interactive).toBe(true)
+    expect(playlistAdd.steps.slice(3, 6).every(step => step.skipIfMissing === true)).toBe(true)
+    expect(playlistAdd.steps[6].targetId).toBe(ROW_MENU_ADD_TARGET_ID)
+    expect(playlistAdd.steps[6].tapTargetId).toBe(ROW_MENU_ADD_TARGET_ID)
+    expect(playlistAdd.steps[6].tapActionId).toBe('press-row-menu-add')
+    expect(playlistAdd.steps[7].interactive).toBe(true)
   })
 
   test('playlists scenario no longer claims the single-playlist screen', () => {

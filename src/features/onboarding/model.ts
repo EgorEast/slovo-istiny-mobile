@@ -1,5 +1,5 @@
 import { action, atom } from '@reatom/framework'
-import { type OnboardingScenarioId, scenariosById } from './lib/scenarios'
+import { type OnboardingScenarioId, type OnboardingStep, scenariosById } from './lib/scenarios'
 
 export interface OnboardingTargetRect {
   height: number
@@ -19,6 +19,13 @@ interface OnboardingTourStateValue {
 
 type SkipDirection = 'back' | 'next'
 
+// Direction of the last step change. Action steps are demonstrative and forward-only:
+// the tap flow consults this to perform on forward entry and render statically on back.
+export const onboardingStepDirectionAtom = atom<'backward' | 'forward'>(
+  'forward',
+  'onboardingStepDirectionAtom',
+)
+
 export const onboardingTourAtom = atom<OnboardingTourState>(null, 'onboardingTourAtom')
 
 export const onboardingTargetRectsAtom = atom<Record<string, OnboardingTargetRect>>(
@@ -27,21 +34,28 @@ export const onboardingTargetRectsAtom = atom<Record<string, OnboardingTargetRec
 )
 
 // The nearest step that is still in the deck, walking `direction` from `fromIndex`.
-// `undefined` means every step that way has been skipped — the deck boundary.
+// Walking back skips action steps too — «Назад» never lands on a demonstration that
+// would otherwise replay its blink and action. `undefined` means every step that way
+// has been skipped — the deck boundary.
 const findNearestVisibleIndex = (
-  stepsCount: number,
+  steps: OnboardingStep[],
   skippedIndexes: number[],
   fromIndex: number,
   direction: -1 | 1,
 ): number | undefined => {
-  for (let index = fromIndex + direction; index >= 0 && index < stepsCount; index += direction)
-    if (!skippedIndexes.includes(index)) return index
+  for (let index = fromIndex + direction; index >= 0 && index < steps.length; index += direction) {
+    if (skippedIndexes.includes(index)) continue
+    if (direction === -1 && steps[index].tapActionId !== undefined) continue
+
+    return index
+  }
 
   return undefined
 }
 
 export const startOnboardingTour = action((ctx, scenarioId: OnboardingScenarioId) => {
   onboardingTargetRectsAtom(ctx, {})
+  onboardingStepDirectionAtom(ctx, 'forward')
   onboardingTourAtom(ctx, { scenarioId, skippedIndexes: [], stepIndex: 0 })
 }, 'startOnboardingTour')
 
@@ -50,9 +64,10 @@ export const goToNextOnboardingStep = action(ctx => {
   if (!tour) return
 
   const steps = scenariosById[tour.scenarioId].steps
-  const nextIndex = findNearestVisibleIndex(steps.length, tour.skippedIndexes, tour.stepIndex, 1)
+  const nextIndex = findNearestVisibleIndex(steps, tour.skippedIndexes, tour.stepIndex, 1)
   if (nextIndex === undefined) return
 
+  onboardingStepDirectionAtom(ctx, 'forward')
   onboardingTourAtom(ctx, { ...tour, stepIndex: nextIndex })
 }, 'goToNextOnboardingStep')
 
@@ -61,9 +76,10 @@ export const goToPrevOnboardingStep = action(ctx => {
   if (!tour) return
 
   const steps = scenariosById[tour.scenarioId].steps
-  const prevIndex = findNearestVisibleIndex(steps.length, tour.skippedIndexes, tour.stepIndex, -1)
+  const prevIndex = findNearestVisibleIndex(steps, tour.skippedIndexes, tour.stepIndex, -1)
   if (prevIndex === undefined) return
 
+  onboardingStepDirectionAtom(ctx, 'backward')
   onboardingTourAtom(ctx, { ...tour, stepIndex: prevIndex })
 }, 'goToPrevOnboardingStep')
 
@@ -79,13 +95,14 @@ export const skipOnboardingStep = action((ctx, direction: SkipDirection) => {
     ? tour.skippedIndexes
     : [...tour.skippedIndexes, tour.stepIndex]
   const neighbor = findNearestVisibleIndex(
-    steps.length,
+    steps,
     markedIndexes,
     tour.stepIndex,
     direction === 'next' ? 1 : -1,
   )
   if (neighbor === undefined) return
 
+  onboardingStepDirectionAtom(ctx, direction === 'next' ? 'forward' : 'backward')
   onboardingTourAtom(ctx, { ...tour, skippedIndexes: markedIndexes, stepIndex: neighbor })
 }, 'skipOnboardingStep')
 

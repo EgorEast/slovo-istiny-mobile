@@ -6,6 +6,7 @@ import { renderWithProviders } from 'shared/mocks'
 import { registerTourAction, unregisterTourAction } from '../lib/tourActions'
 import {
   endOnboardingTour,
+  onboardingStepDirectionAtom,
   type OnboardingTargetRect,
   onboardingTargetRectsAtom,
   onboardingTourAtom,
@@ -72,6 +73,10 @@ const OFFSCREEN_RECT: OnboardingTargetRect = { height: 60, width: 300, x: 0, y: 
 const TAB_MORE_RECT: OnboardingTargetRect = { height: 60, width: 90, x: 300, y: 760 }
 const EDGE_BACK_RECT: OnboardingTargetRect = { height: 400, width: 64, x: 0, y: 100 }
 const EDGE_FORWARD_RECT: OnboardingTargetRect = { height: 400, width: 64, x: 336, y: 100 }
+const PLAYLIST_ROW_RECT: OnboardingTargetRect = { height: 80, width: 320, x: 0, y: 400 }
+const PLAYLIST_FIRST_ROW = 'playlist.first-row'
+const PLAYLIST_ROW_MENU_ADD = 'playlist.row-menu-add'
+const PLAYLIST_ADD_ROW_ACTION = 'open-playlist-row-menu'
 const AREA_HIGHLIGHT = 'onboarding-area-highlight'
 const TOUR_MODAL = 'onboarding-tour-modal'
 
@@ -91,7 +96,14 @@ const findAnchoredCardTop = (node: ReturnType<typeof screen.getByText>) => {
 
 const renderAtStep = (
   scenarioId:
-    'listen' | 'player-intro' | 'player' | 'playlist-menu' | 'playlists' | 'search' | 'settings',
+    | 'listen'
+    | 'player-intro'
+    | 'player'
+    | 'playlist-add'
+    | 'playlist-menu'
+    | 'playlists'
+    | 'search'
+    | 'settings',
   stepIndex: number,
   rects: Record<string, OnboardingTargetRect> = {},
   setup?: (ctx: ReturnType<typeof createCtx>) => void,
@@ -431,5 +443,81 @@ describe('<OnboardingTourOverlay>', () => {
     expect(queryByText(HINT)).toBeNull()
     expect(getByText(NEXT_LABEL)).toBeTruthy()
     expect(getByText(DIM)).toBeTruthy()
+  })
+
+  test('returns to the intro card when going back from the row-menu step', async () => {
+    const action = jest.fn()
+    registerTourAction(PLAYLIST_ADD_ROW_ACTION, action)
+
+    const { ctx, getByText } = await renderAtStep('playlist-add', 2, {
+      [PLAYLIST_FIRST_ROW]: PLAYLIST_ROW_RECT,
+      [PLAYLIST_ROW_MENU_ADD]: PLAYLIST_ROW_RECT,
+    })
+
+    fireEvent.press(getByText('Назад'))
+
+    // Step 1 is the forward-only action step: «Назад» steps over it to the intro.
+    await waitFor(() => expect(getByText('Добавление в плейлист')).toBeTruthy())
+    expect(ctx.get(onboardingTourAtom)).toEqual({
+      scenarioId: 'playlist-add',
+      skippedIndexes: [],
+      stepIndex: 0,
+    })
+    expect(action).not.toHaveBeenCalled()
+    unregisterTourAction(PLAYLIST_ADD_ROW_ACTION)
+  })
+
+  test('performs the row-menu action after the intro step and advances', async () => {
+    const action = jest.fn()
+    registerTourAction(PLAYLIST_ADD_ROW_ACTION, action)
+
+    const { ctx, getByText } = await renderAtStep('playlist-add', 0, {
+      [PLAYLIST_FIRST_ROW]: PLAYLIST_ROW_RECT,
+    })
+
+    fireEvent.press(getByText(NEXT_LABEL))
+
+    await waitFor(() => expect(action).toHaveBeenCalledTimes(1), {
+      timeout: TAP_PHASE_TIMEOUT_MS + 1500,
+    })
+    await waitFor(
+      () =>
+        expect(ctx.get(onboardingTourAtom)).toEqual({
+          scenarioId: 'playlist-add',
+          skippedIndexes: [],
+          stepIndex: 2,
+        }),
+      { timeout: TAP_PHASE_TIMEOUT_MS + 1500 },
+    )
+    unregisterTourAction(PLAYLIST_ADD_ROW_ACTION)
+  })
+
+  test('shows an action step entered backward statically and advances without re-performing', async () => {
+    const action = jest.fn()
+    registerTourAction(PLAYLIST_ADD_ROW_ACTION, action)
+
+    const { ctx, getByText } = await renderAtStep(
+      'playlist-add',
+      1,
+      { [PLAYLIST_FIRST_ROW]: PLAYLIST_ROW_RECT },
+      setupCtx => onboardingStepDirectionAtom(setupCtx, 'backward'),
+    )
+
+    // A backward entry shows the static card: no blink, no action, no auto-advance.
+    expect(getByText('Меню проповеди')).toBeTruthy()
+    await act(async () => {
+      await new Promise(resolve => setTimeout(resolve, 800))
+    })
+    expect(action).not.toHaveBeenCalled()
+
+    fireEvent.press(getByText(NEXT_LABEL))
+
+    expect(ctx.get(onboardingTourAtom)).toEqual({
+      scenarioId: 'playlist-add',
+      skippedIndexes: [],
+      stepIndex: 2,
+    })
+    expect(action).not.toHaveBeenCalled()
+    unregisterTourAction(PLAYLIST_ADD_ROW_ACTION)
   })
 })

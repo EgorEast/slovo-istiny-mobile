@@ -12,6 +12,7 @@ interface TourActionStepInput {
   blinkedStepKey: null | string
   holdExpiredStepKey: null | string
   isActionStep: boolean
+  isBackwardActionEntry: boolean
   isHoldingForTapRect: boolean
   isTapPhase: boolean
   step: OnboardingStep | undefined
@@ -21,13 +22,15 @@ interface TourActionStepInput {
 // A demonstrative action step performs its registered action once the blink is done
 // (or its tap target never registered, or the step declares no tap target), then
 // advances on its own. A missing action is not an error: the tour still advances.
-// `isPerformingAction` tells the overlay to hide while the step holds for its rect
-// or performs the action (the live UI is the show); the pending advance clears when
-// the step changes or the tour ends.
+// Entered backward the step is static: no action is performed and no auto-advance,
+// so «Назад» can never replay the demonstration. `isPerformingAction` tells the overlay
+// to hide while the step holds for its rect or performs the action (the live UI is the
+// show); the pending advance clears when the step changes or the tour ends.
 export const useTourActionStep = ({
   blinkedStepKey,
   holdExpiredStepKey,
   isActionStep,
+  isBackwardActionEntry,
   isHoldingForTapRect,
   isTapPhase,
   step,
@@ -36,10 +39,13 @@ export const useTourActionStep = ({
   const next = useAction(goToNextOnboardingStep)
   const isBlinkDone = (step?.tapTargetId === undefined || blinkedStepKey === stepKey) && !isTapPhase
   const isPerformingAction =
-    isActionStep && (isHoldingForTapRect || holdExpiredStepKey === stepKey || isBlinkDone)
+    isActionStep &&
+    !isBackwardActionEntry &&
+    (isHoldingForTapRect || holdExpiredStepKey === stepKey || isBlinkDone)
 
   useEffect(() => {
     if (!isActionStep) return
+    if (isBackwardActionEntry) return
     if (isTapPhase) return
     const hasTapTarget = step?.tapTargetId !== undefined
     if (hasTapTarget && blinkedStepKey !== stepKey && holdExpiredStepKey !== stepKey) return
@@ -49,7 +55,16 @@ export const useTourActionStep = ({
 
     const timer = setTimeout(next, ACTION_ADVANCE_DELAY_MS)
     return () => clearTimeout(timer)
-  }, [blinkedStepKey, holdExpiredStepKey, isActionStep, isTapPhase, next, step, stepKey])
+  }, [
+    blinkedStepKey,
+    holdExpiredStepKey,
+    isActionStep,
+    isBackwardActionEntry,
+    isTapPhase,
+    next,
+    step,
+    stepKey,
+  ])
 
   return { isPerformingAction }
 }

@@ -5,6 +5,7 @@ import {
   endOnboardingTour,
   goToNextOnboardingStep,
   goToPrevOnboardingStep,
+  onboardingStepDirectionAtom,
   onboardingTargetRectsAtom,
   onboardingTourAtom,
   registerOnboardingTargetRect,
@@ -74,6 +75,32 @@ describe('onboarding model', () => {
     })
   })
 
+  test('prev steps over an action step to the nearest card', () => {
+    const ctx = createCtx()
+    // playlist-add: 0 — intro card, 1 — action step (open row menu), 2 — menu-add card.
+    onboardingTourAtom(ctx, { scenarioId: 'playlist-add', skippedIndexes: [], stepIndex: 2 })
+
+    goToPrevOnboardingStep(ctx)
+
+    expect(ctx.get(onboardingTourAtom)).toEqual({
+      scenarioId: 'playlist-add',
+      skippedIndexes: [],
+      stepIndex: 0,
+    })
+  })
+
+  test('records the last step direction for the tap flow', () => {
+    const ctx = createCtx()
+    startOnboardingTour(ctx, 'playlist-add')
+    expect(ctx.get(onboardingStepDirectionAtom)).toBe('forward')
+
+    goToNextOnboardingStep(ctx)
+    expect(ctx.get(onboardingStepDirectionAtom)).toBe('forward')
+
+    goToPrevOnboardingStep(ctx)
+    expect(ctx.get(onboardingStepDirectionAtom)).toBe('backward')
+  })
+
   test('next and prev are no-ops without an active tour', () => {
     const ctx = createCtx()
 
@@ -127,16 +154,17 @@ describe('onboarding model skip flow', () => {
     expect(progress.displayTotal).toBe(PLAYLIST_STEPS.length - 3)
   })
 
-  test('skip backward crosses a skipped gap', () => {
+  test('skip backward crosses a skipped gap and steps over an action step', () => {
     const ctx = createCtx()
     onboardingTourAtom(ctx, { scenarioId: PLAYLIST_MENU, skippedIndexes: [2, 3], stepIndex: 4 })
 
     skipOnboardingStep(ctx, 'back')
 
+    // 3 and 2 are skipped, 1 is the forward-only action step: the tour lands on 0.
     expect(ctx.get(onboardingTourAtom)).toEqual({
       scenarioId: PLAYLIST_MENU,
       skippedIndexes: [2, 3, 4],
-      stepIndex: 1,
+      stepIndex: 0,
     })
   })
 
