@@ -36,7 +36,7 @@ export const ScenarioPickerModal = ({
 
   const handlePick = (scenario: OnboardingScenario) => {
     onClose()
-    startTour(scenario.id)
+    startTour(scenario.id, pathname)
   }
 
   const screenScenarios = scenarios.filter(scenario => isScenarioOnScreen(scenario, pathname))

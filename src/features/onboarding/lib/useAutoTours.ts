@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useAction, useAtom } from '@reatom/npm-react'
+import { usePathname } from 'expo-router'
 import { useEffect, useRef } from 'react'
 import { APP_VERSION } from 'shared/config'
 import { setToursSeenVersion, TOURS_SEEN_VERSION_KEY, toursDisabledAtom } from 'shared/model'
@@ -13,7 +14,14 @@ export const useAutoTours = ({ delayMs = AUTO_TOUR_DELAY_MS }: { delayMs?: numbe
   const [activeTour] = useAtom(onboardingTourAtom)
   const setSeenVersion = useAction(setToursSeenVersion)
   const startTour = useAction(startOnboardingTour)
+  const pathname = usePathname()
   const isDecidedRef = useRef(false)
+  const pathnameRef = useRef(pathname)
+
+  // Keep the latest pathname without re-arming the start timer on every navigation.
+  useEffect(() => {
+    pathnameRef.current = pathname
+  })
 
   useEffect(() => {
     if (isDecidedRef.current) return
@@ -29,7 +37,7 @@ export const useAutoTours = ({ delayMs = AUTO_TOUR_DELAY_MS }: { delayMs?: numbe
         if (decision === null) return
 
         await setSeenVersion(APP_VERSION)
-        if (activeTour === null) startTour(decision)
+        if (activeTour === null) startTour(decision, pathnameRef.current)
       })()
     }, delayMs)
 

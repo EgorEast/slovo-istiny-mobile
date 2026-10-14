@@ -1,8 +1,9 @@
-import { screen } from '@testing-library/react-native'
+import { fireEvent, screen } from '@testing-library/react-native'
 import { StyleSheet } from 'react-native'
 import { renderWithProviders } from 'shared/mocks'
 import { INDENTS } from 'shared/ui/theme'
 import { type ScenarioScope } from '../lib/scenarios'
+import { onboardingTourAtom } from '../model/tour'
 import { ScenarioPickerModal } from './ScenarioPickerModal'
 
 const SCREEN_GROUP_TITLE = 'На этом экране'
@@ -105,6 +106,19 @@ describe('<ScenarioPickerModal>', () => {
       'Добро пожаловать',
       'Что нового',
     ])
+  })
+
+  test('starts a screen tour on the current screen, skipping the lead-up', async () => {
+    mockPathname.mockReturnValue('/settings')
+    const { ctx, getByRole } = await renderPicker()
+
+    await fireEvent.press(getByRole('button', { name: /Настройки и резервные копии/ }))
+
+    expect(ctx.get(onboardingTourAtom)).toEqual({
+      deckIndex: 2,
+      scenarioId: 'settings',
+      skippedDeckIndexes: [0, 1],
+    })
   })
 
   test('keeps only the share scenario local on the share screen', async () => {

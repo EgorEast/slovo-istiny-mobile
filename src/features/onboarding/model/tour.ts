@@ -1,4 +1,5 @@
 import { action, atom } from '@reatom/framework'
+import { resolveTourStart } from '../lib/resolveTourStart'
 import { type OnboardingScenarioId, scenariosById } from '../lib/scenarios'
 import { buildTourDeck, findNearestDeckIndex } from '../lib/tourDeck'
 import { onboardingTargetRectsAtom } from './targets'
@@ -33,12 +34,20 @@ export const onboardingExitStepIndexAtom = atom<null | number>(null, 'onboarding
 const resolveDeck = (scenarioId: OnboardingScenarioId) =>
   buildTourDeck(scenariosById[scenarioId].steps)
 
-export const startOnboardingTour = action((ctx, scenarioId: OnboardingScenarioId) => {
-  onboardingTargetRectsAtom(ctx, {})
-  onboardingStepDirectionAtom(ctx, 'forward')
-  onboardingExitStepIndexAtom(ctx, null)
-  onboardingTourAtom(ctx, { deckIndex: 0, scenarioId, skippedDeckIndexes: [] })
-}, 'startOnboardingTour')
+export const startOnboardingTour = action(
+  (ctx, scenarioId: OnboardingScenarioId, pathname: string) => {
+    onboardingTargetRectsAtom(ctx, {})
+    onboardingStepDirectionAtom(ctx, 'forward')
+    onboardingExitStepIndexAtom(ctx, null)
+
+    const scenario = scenariosById[scenarioId]
+    const deck = resolveDeck(scenarioId)
+    const { deckIndex, skippedDeckIndexes } = resolveTourStart(scenario, deck, pathname)
+
+    onboardingTourAtom(ctx, { deckIndex, scenarioId, skippedDeckIndexes })
+  },
+  'startOnboardingTour',
+)
 
 export const goToNextOnboardingStep = action(ctx => {
   const tour = ctx.get(onboardingTourAtom)

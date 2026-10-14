@@ -23,7 +23,7 @@ describe('onboarding tour model', () => {
     onboardingTargetRectsAtom(ctx, { target: RECT })
     onboardingExitStepIndexAtom(ctx, 0)
 
-    startOnboardingTour(ctx, 'listen')
+    startOnboardingTour(ctx, 'listen', '/')
 
     expect(ctx.get(onboardingTourAtom)).toEqual({
       deckIndex: 0,
@@ -36,7 +36,7 @@ describe('onboarding tour model', () => {
 
   test('next advances the deck and clamps at the last card', () => {
     const ctx = createCtx()
-    startOnboardingTour(ctx, 'listen')
+    startOnboardingTour(ctx, 'listen', '/')
 
     for (let press = 0; press < 8; press += 1) goToNextOnboardingStep(ctx)
 
@@ -49,7 +49,7 @@ describe('onboarding tour model', () => {
 
   test('prev goes back and clamps at the first card', () => {
     const ctx = createCtx()
-    startOnboardingTour(ctx, 'listen')
+    startOnboardingTour(ctx, 'listen', '/')
     goToNextOnboardingStep(ctx)
 
     goToPrevOnboardingStep(ctx)
@@ -78,7 +78,7 @@ describe('onboarding tour model', () => {
 
   test('next starts a card exit transition before moving the deck', () => {
     const ctx = createCtx()
-    startOnboardingTour(ctx, 'playlist-add')
+    startOnboardingTour(ctx, 'playlist-add', '/')
 
     goToNextOnboardingStep(ctx)
 
@@ -103,7 +103,7 @@ describe('onboarding tour model', () => {
   test('plays consecutive exits in order before advancing the deck', () => {
     const ctx = createCtx()
     // search deck: card 0 owns two visualizations (steps 1 and 2).
-    startOnboardingTour(ctx, 'search')
+    startOnboardingTour(ctx, 'search', '/')
 
     goToNextOnboardingStep(ctx)
     expect(ctx.get(onboardingExitStepIndexAtom)).toBe(0)
@@ -118,7 +118,7 @@ describe('onboarding tour model', () => {
 
   test('prev leaves the exit transition and never replays it', () => {
     const ctx = createCtx()
-    startOnboardingTour(ctx, 'playlist-add')
+    startOnboardingTour(ctx, 'playlist-add', '/')
     goToNextOnboardingStep(ctx)
     goToNextOnboardingStep(ctx)
 
@@ -133,7 +133,7 @@ describe('onboarding tour model', () => {
 
   test('records the last step direction for the tap flow', () => {
     const ctx = createCtx()
-    startOnboardingTour(ctx, 'playlist-add')
+    startOnboardingTour(ctx, 'playlist-add', '/')
     expect(ctx.get(onboardingStepDirectionAtom)).toBe('forward')
 
     goToNextOnboardingStep(ctx)
@@ -157,7 +157,7 @@ describe('onboarding tour model', () => {
 
   test('end clears the tour, the exit transition and the rects', () => {
     const ctx = createCtx()
-    startOnboardingTour(ctx, 'listen')
+    startOnboardingTour(ctx, 'listen', '/')
     onboardingExitStepIndexAtom(ctx, 0)
     registerOnboardingTargetRect(ctx, { id: 'a', rect: RECT })
 
@@ -166,6 +166,49 @@ describe('onboarding tour model', () => {
     expect(ctx.get(onboardingTourAtom)).toBeNull()
     expect(ctx.get(onboardingExitStepIndexAtom)).toBeNull()
     expect(ctx.get(onboardingTargetRectsAtom)).toEqual({})
+  })
+})
+
+describe('onboarding tour start resume', () => {
+  test('starts on the screen the user is already on, skipping the lead-up', () => {
+    const ctx = createCtx()
+
+    startOnboardingTour(ctx, 'settings', '/settings')
+
+    expect(ctx.get(onboardingTourAtom)).toEqual({
+      deckIndex: 2,
+      scenarioId: 'settings',
+      skippedDeckIndexes: [0, 1],
+    })
+
+    const deck = buildTourDeck(scenariosById.settings.steps)
+    const progress = resolveDeckProgress(deck, [0, 1], 2)
+    expect(progress.displayIndex).toBe(0)
+    expect(progress.displayTotal).toBe(5)
+  })
+
+  test('starts from the beginning on the first screen of the scenario', () => {
+    const ctx = createCtx()
+
+    startOnboardingTour(ctx, 'settings', '/more')
+
+    expect(ctx.get(onboardingTourAtom)).toEqual({
+      deckIndex: 0,
+      scenarioId: 'settings',
+      skippedDeckIndexes: [],
+    })
+  })
+
+  test('starts from the beginning for a global scenario', () => {
+    const ctx = createCtx()
+
+    startOnboardingTour(ctx, 'welcome', '/settings')
+
+    expect(ctx.get(onboardingTourAtom)).toEqual({
+      deckIndex: 0,
+      scenarioId: 'welcome',
+      skippedDeckIndexes: [],
+    })
   })
 })
 
@@ -235,7 +278,7 @@ describe('onboarding tour model skip flow', () => {
     const ctx = createCtx()
     onboardingTourAtom(ctx, { deckIndex: 5, scenarioId: PLAYLIST_MENU, skippedDeckIndexes: [4, 8] })
 
-    startOnboardingTour(ctx, 'playlist-menu')
+    startOnboardingTour(ctx, 'playlist-menu', '/')
 
     expect(ctx.get(onboardingTourAtom)).toEqual({
       deckIndex: 0,

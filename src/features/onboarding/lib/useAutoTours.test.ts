@@ -7,6 +7,10 @@ import { toursDisabledAtom } from 'shared/model'
 import { onboardingTourAtom, startOnboardingTour } from '../model/tour'
 import { useAutoTours } from './useAutoTours'
 
+const mockPathname = jest.fn(() => '/listen')
+
+jest.mock('expo-router', () => ({ usePathname: () => mockPathname() }))
+
 jest.mock('../model/tour', () => {
   const actual = jest.requireActual('../model/tour')
 
@@ -33,6 +37,7 @@ const flushDelay = async () => {
 describe('useAutoTours', () => {
   beforeEach(async () => {
     jest.clearAllMocks()
+    mockPathname.mockReturnValue('/listen')
     await AsyncStorage.clear()
   })
 
@@ -66,6 +71,9 @@ describe('useAutoTours', () => {
     expect(mockSetItem.mock.invocationCallOrder[0]).toBeLessThan(
       mockStartTour.mock.invocationCallOrder[0],
     )
+    // The auto-start passes the current pathname for uniformity (a no-op: the
+    // auto scenarios are global).
+    expect(mockStartTour).toHaveBeenCalledWith(expect.anything(), 'welcome', '/listen')
   })
 
   test('does nothing when the seen version matches the current one', async () => {
