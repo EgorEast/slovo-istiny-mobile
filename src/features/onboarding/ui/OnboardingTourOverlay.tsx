@@ -95,9 +95,8 @@ export const OnboardingTourOverlay = () => {
       />
     )
 
-  // Every other step is a blocking spotlight modal: a target step whose rect is
-  // ready, or an area step highlighting clickable zones. The app underneath stays
-  // blocked — the onboarding owns the touch, not just the visuals.
+  // Every other step is a blocking spotlight modal: a target step whose rect is ready,
+  // or an area step highlighting zones. The app underneath stays blocked, not just visual.
   const isAreaStep = step.areaTargetIds !== undefined
   const { holes: targetHoles, isWaitingForTarget } = resolveTourHole({
     activeTargetId,
@@ -116,6 +115,7 @@ export const OnboardingTourOverlay = () => {
       width={width}
       holes={holes}
       height={height}
+      stepKey={stepKey}
       onNext={onPrimary}
       displayIndex={displayIndex}
       displayTotal={displayTotal}

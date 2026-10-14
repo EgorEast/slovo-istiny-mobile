@@ -67,6 +67,10 @@ export interface OnboardingStep {
   areaTargetIds?: string[]
   // Pass-through card over the live UI, no spotlight modal.
   interactive?: boolean
+  // Re-present the tour window on this step (a fresh native Modal keyed by the step)
+  // so it lands above app modals presented earlier — for targets that live inside
+  // such a modal (e.g. the AddToPlaylist picker).
+  presentOnTop?: boolean
   route?: Href
   // Target may be absent (admin/local/flag row): skip the step when its rect never registers.
   skipIfMissing?: boolean

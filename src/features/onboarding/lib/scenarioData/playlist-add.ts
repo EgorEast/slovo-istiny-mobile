@@ -35,12 +35,13 @@ export const playlistAddScenario: OnboardingScenario = {
     },
     {
       actionOnEnterId: 'check-add-modal-favorites',
+      presentOnTop: true,
       targetId: ADD_MODAL_FAVORITES_TARGET_ID,
       text: 'Галочка добавляет проповедь в плейлист, снятие — удаляет из него. Отмечаем «Избранные»…',
       title: 'Отметьте «Избранные»',
     },
     {
-      interactive: true,
+      presentOnTop: true,
       targetId: ADD_MODAL_SAVE_TARGET_ID,
       text: 'Кнопка «Сохранить» применит изменения — проповедь появится в «Избранных». Если добавлять не хотите, просто закройте окно.',
       title: 'Сохранить',

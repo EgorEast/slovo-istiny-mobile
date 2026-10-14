@@ -31,6 +31,7 @@ export const TourSpotlight = ({
   onNext,
   onPrev,
   step,
+  stepKey,
   width,
 }: {
   anchorRect: null | OnboardingTargetRect
@@ -47,6 +48,7 @@ export const TourSpotlight = ({
   onNext: () => void
   onPrev: () => void
   step: OnboardingStep
+  stepKey: string
   width: number
 }) => {
   const insets = useSafeAreaInsets()
@@ -68,6 +70,7 @@ export const TourSpotlight = ({
       testID={MODAL_TEST_ID}
       onRequestClose={onClose}
       navigationBarTranslucent
+      key={step.presentOnTop === true ? stepKey : undefined}
     >
       <View style={styles.container}>
         <TourDim width={width} holes={holes} height={height} />

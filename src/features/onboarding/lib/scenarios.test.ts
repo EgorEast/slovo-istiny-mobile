@@ -217,8 +217,12 @@ describe('onboarding scenario data', () => {
     expect(playlistAdd.steps[4].targetId).toBe('playlist.add-modal-favorites')
     expect(playlistAdd.steps[4].actionOnEnterId).toBe('check-add-modal-favorites')
     expect(playlistAdd.steps[4].interactive).toBeUndefined()
+    expect(playlistAdd.steps[4].presentOnTop).toBe(true)
+    // The save step lives inside the AddToPlaylist modal: it is a spotlight step
+    // (not pass-through) that re-presents the tour window above the app modal.
     expect(playlistAdd.steps[5].targetId).toBe('playlist.add-modal-save')
-    expect(playlistAdd.steps[5].interactive).toBe(true)
+    expect(playlistAdd.steps[5].interactive).toBeUndefined()
+    expect(playlistAdd.steps[5].presentOnTop).toBe(true)
   })
 
   test('playlists scenario no longer claims the single-playlist screen', () => {
