@@ -202,7 +202,7 @@ describe('onboarding scenario data', () => {
 
     expect(playlistAdd.title).toBe('Добавление в плейлист')
     expect(playlistAdd.screens).toEqual(['/listen/playlist'])
-    expect(playlistAdd.steps).toHaveLength(8)
+    expect(playlistAdd.steps).toHaveLength(6)
     expect(playlistAdd.steps[0].targetId).toBeUndefined()
     expect(playlistAdd.steps[0].tapActionId).toBeUndefined()
     expect(playlistAdd.steps[0].tapTargetId).toBeUndefined()
@@ -211,16 +211,14 @@ describe('onboarding scenario data', () => {
     expect(playlistAdd.steps[1].tapActionId).toBe('open-playlist-row-menu')
     expect(playlistAdd.steps[1].tapTargetId).toBe(FIRST_ROW_TARGET_ID)
     expect(playlistAdd.steps[2].targetId).toBe(ROW_MENU_ADD_TARGET_ID)
-    expect(playlistAdd.steps.slice(3, 6).map(step => step.targetId)).toEqual([
-      'playlist.row-menu-remove',
-      'playlist.row-menu-mark',
-      'playlist.row-menu-history-remove',
-    ])
-    expect(playlistAdd.steps.slice(3, 6).every(step => step.skipIfMissing === true)).toBe(true)
-    expect(playlistAdd.steps[6].targetId).toBe(ROW_MENU_ADD_TARGET_ID)
-    expect(playlistAdd.steps[6].tapTargetId).toBe(ROW_MENU_ADD_TARGET_ID)
-    expect(playlistAdd.steps[6].tapActionId).toBe('press-row-menu-add')
-    expect(playlistAdd.steps[7].interactive).toBe(true)
+    expect(playlistAdd.steps[3].targetId).toBe(ROW_MENU_ADD_TARGET_ID)
+    expect(playlistAdd.steps[3].tapTargetId).toBe(ROW_MENU_ADD_TARGET_ID)
+    expect(playlistAdd.steps[3].tapActionId).toBe('press-row-menu-add')
+    expect(playlistAdd.steps[4].targetId).toBe('playlist.add-modal-favorites')
+    expect(playlistAdd.steps[4].actionOnEnterId).toBe('check-add-modal-favorites')
+    expect(playlistAdd.steps[4].interactive).toBeUndefined()
+    expect(playlistAdd.steps[5].targetId).toBe('playlist.add-modal-save')
+    expect(playlistAdd.steps[5].interactive).toBe(true)
   })
 
   test('playlists scenario no longer claims the single-playlist screen', () => {

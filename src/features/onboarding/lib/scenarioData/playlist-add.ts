@@ -1,6 +1,8 @@
 import { type OnboardingScenario } from '../scenarios'
 
 const ADD_MENU_TARGET_ID = 'playlist.row-menu-add'
+const ADD_MODAL_FAVORITES_TARGET_ID = 'playlist.add-modal-favorites'
+const ADD_MODAL_SAVE_TARGET_ID = 'playlist.add-modal-save'
 
 export const playlistAddScenario: OnboardingScenario = {
   description: 'Через меню строки проповеди',
@@ -21,26 +23,8 @@ export const playlistAddScenario: OnboardingScenario = {
     },
     {
       targetId: ADD_MENU_TARGET_ID,
-      text: 'Пункт «Добавить в плейлист» открывает выбор плейлистов — им мы воспользуемся в конце.',
+      text: 'Пункт «Добавить в плейлист» открывает выбор плейлистов.',
       title: 'Добавить в плейлист',
-    },
-    {
-      skipIfMissing: true,
-      targetId: 'playlist.row-menu-remove',
-      text: 'Для своих плейлистов — убирает проповедь из этого плейлиста.',
-      title: 'Удалить из плейлиста',
-    },
-    {
-      skipIfMissing: true,
-      targetId: 'playlist.row-menu-mark',
-      text: 'Отмечает проповедь прослушанной.',
-      title: 'Пометить прослушанной',
-    },
-    {
-      skipIfMissing: true,
-      targetId: 'playlist.row-menu-history-remove',
-      text: 'Убирает проповедь из истории прослушивания.',
-      title: 'Удалить из истории',
     },
     {
       tapActionId: 'press-row-menu-add',
@@ -50,9 +34,16 @@ export const playlistAddScenario: OnboardingScenario = {
       title: 'Добавляем',
     },
     {
+      actionOnEnterId: 'check-add-modal-favorites',
+      targetId: ADD_MODAL_FAVORITES_TARGET_ID,
+      text: 'Галочка добавляет проповедь в плейлист, снятие — удаляет из него. Отмечаем «Избранные»…',
+      title: 'Отметьте «Избранные»',
+    },
+    {
       interactive: true,
-      text: 'Отметьте галочками плейлисты и сохраните — проповедь появится в выбранных плейлистах.',
-      title: 'Отметьте плейлисты',
+      targetId: ADD_MODAL_SAVE_TARGET_ID,
+      text: 'Кнопка «Сохранить» применит изменения — проповедь появится в «Избранных». Если добавлять не хотите, просто закройте окно.',
+      title: 'Сохранить',
     },
   ],
   title: 'Добавление в плейлист',

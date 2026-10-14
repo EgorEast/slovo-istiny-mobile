@@ -2,7 +2,6 @@ import { useLocalSearchParams } from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
 import { useMemo } from 'react'
 import { View } from 'react-native'
-import { useAddToPlaylistModal } from 'features/add-to-playlist'
 import { useHistoryProgressMap, useHistorySermonIds } from 'entities/listening-history'
 import { FAVORITES_PLAYLIST } from 'entities/playlist'
 import { createTracksListStyles } from 'entities/track-list'
@@ -10,6 +9,7 @@ import { useTheme } from 'shared/ui/theme'
 import { useCollapsingHeader } from '../lib/useCollapsingHeader'
 import { useCustomPlaylistImport } from '../lib/useCustomPlaylistImport'
 import { useHydrateMyPlaylists } from '../lib/useHydrateMyPlaylists'
+import { usePlaylistAddToPlaylist } from '../lib/usePlaylistAddToPlaylist'
 import { usePlaylistById } from '../lib/usePlaylistById'
 import { usePlaylistHeader } from '../lib/usePlaylistHeader'
 import { usePlaylistPlaybackTarget } from '../lib/usePlaylistPlaybackTarget'
@@ -49,7 +49,7 @@ export const PlaylistScreen = () => {
 
   const progressMap = useHistoryProgressMap()
   const historySermonIds = useHistorySermonIds()
-  const { modal, openAddAllToPlaylist, openAddToPlaylist } = useAddToPlaylistModal()
+  const { modal, openAddAllToPlaylist, openAddToPlaylist } = usePlaylistAddToPlaylist()
   const { bindRowMenu, buildMenuActions, handlePressItem, handlePressPlayAll, renderDialog } =
     usePlaylistTrackActions(list, playlist, historySermonIds, progressMap, openAddToPlaylist)
 

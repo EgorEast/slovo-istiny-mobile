@@ -10,7 +10,8 @@ import { type LocalPlaylistData, myPlaylistsAtom } from 'entities/playlist'
  * (`useAllMembershipDraft`); сохранение каждый хук определяет сам.
  * @param isInitiallyContained - Начальная принадлежность плейлиста (должна быть
  * стабильной по ссылке — оберните в `useCallback`).
- * @returns Значения черновика, его изменённость, переключатель и «сырые» правки.
+ * @returns Значения черновика, его изменённость, переключатель, точечная
+ * установка значения и «сырые» правки.
  */
 export const useMembershipDraftValues = (
   isInitiallyContained: (playlist: LocalPlaylistData) => boolean,
@@ -31,6 +32,20 @@ export const useMembershipDraftValues = (
     [changedValues, initialValues],
   )
 
+  // Точечная установка значения (тур ставит галочку программно): тот же инвариант
+  // «правка живёт только пока отличается от начальной», что и у `toggle`.
+  const setChecked = useCallback(
+    (playlistId: string, checked: boolean) => {
+      setChangedValues(current => {
+        const next = { ...current }
+        if (checked === initialValues[playlistId]) delete next[playlistId]
+        else next[playlistId] = checked
+        return next
+      })
+    },
+    [initialValues],
+  )
+
   const toggle = useCallback(
     (playlistId: string) => {
       setChangedValues(current => {
@@ -47,6 +62,7 @@ export const useMembershipDraftValues = (
   return {
     changedValues,
     isDirty: Object.keys(changedValues).length > 0,
+    setChecked,
     toggle,
     values,
   }

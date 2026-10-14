@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react'
 import { type PlaylistData } from 'entities/playlist'
 import { type SermonData } from 'entities/sermon'
 import { AddToPlaylistModal } from '../ui/AddToPlaylistModal'
+import { type AddToPlaylistBindings } from './addToPlaylistControls'
 import { type AddToPlaylistState } from './addToPlaylistState'
 
 /**
@@ -12,9 +13,12 @@ import { type AddToPlaylistState } from './addToPlaylistState'
  *
  * Использование: `const { openAddToPlaylist, modal } = useAddToPlaylistModal()`,
  * затем `onAddToPlaylist: openAddToPlaylist` в меню и `{modal}` в разметке.
+ * @param bindings - Опциональные DI-пропсы модалки (онбординг-цели и управление
+ * выбором), прокидываются как есть.
  */
-export const useAddToPlaylistModal = () => {
+export const useAddToPlaylistModal = (bindings: AddToPlaylistBindings = {}) => {
   const [state, setState] = useState<AddToPlaylistState | null>(null)
+  const { bindControls, renderRowWrapper, renderSaveWrapper } = bindings
 
   const openAddToPlaylist = useCallback((sermon: SermonData) => {
     // На Android контекст-меню — тоже нативная Modal, и она закрывает свой Modal
@@ -32,7 +36,16 @@ export const useAddToPlaylistModal = () => {
   const closeAddToPlaylist = useCallback(() => setState(null), [])
 
   return {
-    modal: state && <AddToPlaylistModal visible state={state} onClose={closeAddToPlaylist} />,
+    modal: state && (
+      <AddToPlaylistModal
+        visible
+        state={state}
+        bindControls={bindControls}
+        onClose={closeAddToPlaylist}
+        renderRowWrapper={renderRowWrapper}
+        renderSaveWrapper={renderSaveWrapper}
+      />
+    ),
     openAddAllToPlaylist,
     openAddToPlaylist,
   }

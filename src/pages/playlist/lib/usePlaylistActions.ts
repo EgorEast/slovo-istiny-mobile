@@ -8,8 +8,6 @@ import { type MenuItem } from 'shared/ui/menu'
 
 const ADD_TO_PLAYLIST_TEXT = 'Добавить в плейлист'
 const REMOVE_FROM_PLAYLIST_TEXT = 'Удалить из плейлиста'
-const MARK_LISTENED_TEXT = 'Пометить прослушанной'
-const REMOVE_FROM_HISTORY_TEXT = 'Удалить из истории'
 
 // buildHistoryMenuActions pushes «Добавить в плейлист» first, so the removal
 // item slots right after it (or leads when the add item is absent).
@@ -19,15 +17,10 @@ const insertAfterAddToPlaylist = (actions: MenuItem[], item: MenuItem): MenuItem
   return [...actions.slice(0, insertAt), item, ...actions.slice(insertAt)]
 }
 
-// The tour spotlights the first row's dropdown items, so only those rows carry an
-// onboarding target id; other rows' menus stay untargeted.
-const onboardingTargetIdForText = (text: string): string | undefined => {
-  if (text === ADD_TO_PLAYLIST_TEXT) return 'playlist.row-menu-add'
-  if (text === REMOVE_FROM_PLAYLIST_TEXT) return 'playlist.row-menu-remove'
-  if (text === MARK_LISTENED_TEXT) return 'playlist.row-menu-mark'
-  if (text === REMOVE_FROM_HISTORY_TEXT) return 'playlist.row-menu-history-remove'
-  return undefined
-}
+// The tour spotlights the first row's «Добавить в плейлист» item, so only that row
+// carries an onboarding target id; other rows' menus stay untargeted.
+const onboardingTargetIdForText = (text: string): string | undefined =>
+  text === ADD_TO_PLAYLIST_TEXT ? 'playlist.row-menu-add' : undefined
 
 const withOnboardingTargets = (actions: MenuActionItem[]): MenuActionItem[] =>
   actions.map(action => {

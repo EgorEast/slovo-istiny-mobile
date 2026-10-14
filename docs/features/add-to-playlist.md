@@ -10,10 +10,12 @@
 
 - `src/entities/playlist/localPlaylistMembership.ts` — экшен `togglePlaylistSermon`
 - `src/entities/playlist/localPlaylistStorage.ts` — приватный `persistMyPlaylists`
-- `src/features/add-to-playlist/index.ts` — публичный API (`useAddToPlaylistModal`)
+- `src/features/add-to-playlist/index.ts` — публичный API (`useAddToPlaylistModal`, тип `AddToPlaylistControls`)
 - `src/features/add-to-playlist/lib/addToPlaylistState.ts` — тип состояния (`sermon` | `all`)
+- `src/features/add-to-playlist/lib/addToPlaylistControls.ts` — DI-типы (`AddToPlaylistControls` / `AddToPlaylistBindings`)
 - `src/features/add-to-playlist/lib/useAddToPlaylistModal.tsx` — экранный хук: состояние + готовый элемент `modal`
 - `src/features/add-to-playlist/lib/useMembershipDraftValues.ts` — общий черновик (dirty-гейт) для обоих режимов
+- `src/features/add-to-playlist/lib/useAddToPlaylistControls.ts` — отдаёт управление выбором владельцу (DI)
 - `src/features/add-to-playlist/lib/useMembershipDraft.ts` — черновик одной проповеди
 - `src/features/add-to-playlist/lib/useAllMembershipDraft.ts` — черновик батч-режима
 - `src/features/add-to-playlist/lib/applyAllMembership.ts` — применение батч-черновика + тост лимита
@@ -86,7 +88,8 @@
 - `useMembershipDraft(sermon)` (режим одной проповеди) — **черновик**
   принадлежности: `values` (`Record<playlistId, boolean>`, инициализируется из
   `myPlaylistsAtom` по `sermon.id`, «Избранные» включены), `isDirty`,
-  `toggle(playlistId)` и `save()`. `toggle` меняет только черновик
+  `toggle(playlistId)`, `setChecked(playlistId, checked)` (точечная установка —
+  ею пользуется тур) и `save()`. `toggle`/`setChecked` меняют только черновик
   (`myPlaylistsAtom` не трогается); `save` последовательно вызывает
   `togglePlaylistSermon(ctx, id, sermon, value)` **только для изменившихся**
   плейлистов (исход каждого вызова не разбирается — `void`).
@@ -117,6 +120,20 @@
 одном коммите и на Android накладывались бы друг на друга; возвращаемый API хука
 не меняется. Тот же дефер применён и к `openAddAllToPlaylist` (меню шапки — тоже
 нативная `Modal`).
+
+### DI-пропсы (dependency inversion)
+
+Модалка принимает опциональные `AddToPlaylistBindings` (паттерн bind из
+`entities/track-list`): `renderRowWrapper(row, playlistId)` оборачивает строку
+плейлиста, `renderSaveWrapper(save)` — кнопку «Сохранить», а
+`bindControls({ setPlaylistChecked })` отдаёт владельцу управление выбором
+(`null` на анмаунте снимает привязку). `useAddToPlaylistModal` прокидывает их в
+модалку как есть. Фича об онбординге не знает — мост живёт на слое страницы:
+`useAddToPlaylistTour` (`pages/playlist`) оборачивает строку «Избранных» и кнопку
+«Сохранить» в `OnboardingTarget` (`playlist.add-modal-favorites` /
+`playlist.add-modal-save`) и регистрирует действие тура
+`check-add-modal-favorites`, а `usePlaylistAddToPlaylist` связывает его с
+модалкой. См. [features/onboarding.md](./onboarding.md).
 
 ## Батч-режим «Добавить все проповеди в плейлист»
 
