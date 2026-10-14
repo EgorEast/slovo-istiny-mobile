@@ -6,7 +6,7 @@ import { Modal } from 'shared/ui/modal'
 import { FONT_SIZES, INDENTS, useTheme } from 'shared/ui/theme'
 import { type OnboardingScenario, type ScenarioScope } from '../lib/scenarios'
 import { useOnboardingScenarios } from '../lib/useOnboardingScenarios'
-import { startOnboardingTour } from '../model'
+import { startOnboardingTour } from '../model/tour'
 import { ScenarioPickerGroup } from './ScenarioPickerGroup'
 
 const TITLE = 'Что посмотреть?'

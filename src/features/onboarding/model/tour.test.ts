@@ -1,23 +1,22 @@
 import { createCtx } from '@reatom/framework'
-import { scenariosById } from './lib/scenarios'
-import { resolveTourProgress } from './lib/tourProgress'
+import { scenariosById } from '../lib/scenarios'
+import { resolveTourProgress } from '../lib/tourProgress'
+import { onboardingTargetRectsAtom, registerOnboardingTargetRect } from './targets'
 import {
   endOnboardingTour,
   goToNextOnboardingStep,
   goToPrevOnboardingStep,
   onboardingStepDirectionAtom,
-  onboardingTargetRectsAtom,
   onboardingTourAtom,
-  registerOnboardingTargetRect,
   skipOnboardingStep,
   startOnboardingTour,
-} from './model'
+} from './tour'
 
 const RECT = { height: 4, width: 3, x: 1, y: 2 }
 const PLAYLIST_MENU = 'playlist-menu'
 const PLAYLIST_STEPS = scenariosById[PLAYLIST_MENU].steps
 
-describe('onboarding model', () => {
+describe('onboarding tour model', () => {
   test('start sets the first step and wipes previous target rects', () => {
     const ctx = createCtx()
     onboardingTargetRectsAtom(ctx, { target: RECT })
@@ -30,19 +29,6 @@ describe('onboarding model', () => {
       stepIndex: 0,
     })
     expect(ctx.get(onboardingTargetRectsAtom)).toEqual({})
-  })
-
-  test('register adds and overwrites a target rect', () => {
-    const ctx = createCtx()
-
-    registerOnboardingTargetRect(ctx, { id: 'a', rect: RECT })
-    registerOnboardingTargetRect(ctx, { id: 'b', rect: { height: 8, width: 7, x: 5, y: 6 } })
-    registerOnboardingTargetRect(ctx, { id: 'a', rect: { height: 4, width: 3, x: 9, y: 9 } })
-
-    expect(ctx.get(onboardingTargetRectsAtom)).toEqual({
-      a: { height: 4, width: 3, x: 9, y: 9 },
-      b: { height: 8, width: 7, x: 5, y: 6 },
-    })
   })
 
   test('next advances and clamps at the last step', () => {
@@ -122,7 +108,7 @@ describe('onboarding model', () => {
   })
 })
 
-describe('onboarding model skip flow', () => {
+describe('onboarding tour model skip flow', () => {
   test('skip forward drops the current step and lands on the nearest visible one', () => {
     const ctx = createCtx()
     onboardingTourAtom(ctx, { scenarioId: PLAYLIST_MENU, skippedIndexes: [], stepIndex: 4 })

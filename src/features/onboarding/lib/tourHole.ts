@@ -1,4 +1,4 @@
-import { type OnboardingTargetRect } from '../model'
+import { type OnboardingTargetRect } from '../model/targets'
 
 export const TOOLTIP_ESTIMATED_HEIGHT = 230
 

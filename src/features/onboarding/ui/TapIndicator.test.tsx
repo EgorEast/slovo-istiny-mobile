@@ -1,6 +1,6 @@
 import * as Reanimated from 'react-native-reanimated'
 import { renderWithProviders } from 'shared/mocks'
-import { type OnboardingTargetRect } from '../model'
+import { type OnboardingTargetRect } from '../model/targets'
 import { TapIndicator } from './TapIndicator'
 
 const RECT: OnboardingTargetRect = { height: 40, width: 40, x: 100, y: 200 }

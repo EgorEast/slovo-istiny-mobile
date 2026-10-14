@@ -2,7 +2,8 @@ import { useAction, useAtom } from '@reatom/npm-react'
 import { useNavigation } from 'expo-router'
 import { useCallback, useEffect } from 'react'
 import { type View } from 'react-native'
-import { onboardingTourAtom, registerOnboardingTargetRect } from '../model'
+import { registerOnboardingTargetRect } from '../model/targets'
+import { onboardingTourAtom } from '../model/tour'
 import { scenariosById } from './scenarios'
 
 const MEASURE_DELAY_MS = 100

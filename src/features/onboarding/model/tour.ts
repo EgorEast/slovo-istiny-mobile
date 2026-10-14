@@ -1,12 +1,6 @@
 import { action, atom } from '@reatom/framework'
-import { type OnboardingScenarioId, type OnboardingStep, scenariosById } from './lib/scenarios'
-
-export interface OnboardingTargetRect {
-  height: number
-  width: number
-  x: number
-  y: number
-}
+import { type OnboardingScenarioId, type OnboardingStep, scenariosById } from '../lib/scenarios'
+import { onboardingTargetRectsAtom } from './targets'
 
 export type OnboardingTourState = null | OnboardingTourStateValue
 
@@ -27,11 +21,6 @@ export const onboardingStepDirectionAtom = atom<'backward' | 'forward'>(
 )
 
 export const onboardingTourAtom = atom<OnboardingTourState>(null, 'onboardingTourAtom')
-
-export const onboardingTargetRectsAtom = atom<Record<string, OnboardingTargetRect>>(
-  {},
-  'onboardingTargetRectsAtom',
-)
 
 // The nearest step that is still in the deck, walking `direction` from `fromIndex`.
 // Walking back skips action steps too — «Назад» never lands on a demonstration that
@@ -110,19 +99,3 @@ export const endOnboardingTour = action(ctx => {
   onboardingTourAtom(ctx, null)
   onboardingTargetRectsAtom(ctx, {})
 }, 'endOnboardingTour')
-
-const isSameRect = (a: OnboardingTargetRect, b: OnboardingTargetRect) =>
-  a.x === b.x && a.y === b.y && a.width === b.width && a.height === b.height
-
-export const registerOnboardingTargetRect = action(
-  (ctx, payload: { id: string; rect: OnboardingTargetRect }) => {
-    const rects = ctx.get(onboardingTargetRectsAtom)
-    const existing = rects[payload.id]
-    // Repeated measurements of a settled target are the common case (the bounded
-    // re-measure schedule), so skip the write when the rect is unchanged.
-    if (existing !== undefined && isSameRect(existing, payload.rect)) return
-
-    onboardingTargetRectsAtom(ctx, { ...rects, [payload.id]: payload.rect })
-  },
-  'registerOnboardingTargetRect',
-)

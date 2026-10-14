@@ -1,12 +1,8 @@
 import { createCtx } from '@reatom/framework'
 import { act, waitFor } from '@testing-library/react-native'
 import { renderHookWithProviders } from 'shared/mocks/renderWithProviders'
-import {
-  onboardingStepDirectionAtom,
-  type OnboardingTargetRect,
-  onboardingTargetRectsAtom,
-  onboardingTourAtom,
-} from '../model'
+import { type OnboardingTargetRect, onboardingTargetRectsAtom } from '../model/targets'
+import { onboardingStepDirectionAtom, onboardingTourAtom } from '../model/tour'
 import { type OnboardingScenario, type OnboardingStep, scenariosById } from './scenarios'
 import { registerTourAction, unregisterTourAction } from './tourActions'
 import { useStepNavigation } from './useStepNavigation'

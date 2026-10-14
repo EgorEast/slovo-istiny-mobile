@@ -1,7 +1,7 @@
 import { useAtom } from '@reatom/npm-react'
 import { useCallback, useEffect, useRef } from 'react'
 import { Dimensions } from 'react-native'
-import { onboardingTargetRectsAtom } from '../model'
+import { onboardingTargetRectsAtom } from '../model/targets'
 import { getTourScrollable, isRectOutsideViewport, scrollOffsetFor } from './tourScrollable'
 
 // Two bounded re-measure attempts after an auto-scroll; no endless retry loop.

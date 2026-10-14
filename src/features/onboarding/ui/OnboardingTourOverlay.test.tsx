@@ -5,13 +5,11 @@ import { currentAudioAtom } from 'entities/player/@x/onboarding'
 import { renderWithProviders } from 'shared/mocks'
 import { registerTourAction, unregisterTourAction } from '../lib/tourActions'
 import {
-  endOnboardingTour,
-  onboardingStepDirectionAtom,
   type OnboardingTargetRect,
   onboardingTargetRectsAtom,
-  onboardingTourAtom,
   registerOnboardingTargetRect,
-} from '../model'
+} from '../model/targets'
+import { endOnboardingTour, onboardingStepDirectionAtom, onboardingTourAtom } from '../model/tour'
 import { OnboardingTourOverlay } from './OnboardingTourOverlay'
 
 jest.mock('react-native-svg', () => {

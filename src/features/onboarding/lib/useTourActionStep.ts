@@ -1,6 +1,6 @@
 import { useAction } from '@reatom/npm-react'
 import { useEffect } from 'react'
-import { goToNextOnboardingStep } from '../model'
+import { goToNextOnboardingStep } from '../model/tour'
 import { type OnboardingStep } from './scenarios'
 import { getTourAction } from './tourActions'
 

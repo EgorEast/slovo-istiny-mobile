@@ -1,5 +1,5 @@
 import { StyleSheet, View } from 'react-native'
-import { type OnboardingTargetRect } from '../model'
+import { type OnboardingTargetRect } from '../model/targets'
 import { TapIndicator } from './TapIndicator'
 
 // Non-modal layer: paints the pulsing circle above the live UI while every touch

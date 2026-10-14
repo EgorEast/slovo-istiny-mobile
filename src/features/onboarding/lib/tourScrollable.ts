@@ -1,4 +1,4 @@
-import { type OnboardingTargetRect } from '../model'
+import { type OnboardingTargetRect } from '../model/targets'
 
 interface TourScrollable {
   scrollTo: (y: number, animated: boolean) => void

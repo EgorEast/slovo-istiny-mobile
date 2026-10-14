@@ -4,11 +4,11 @@ import { act, waitFor } from '@testing-library/react-native'
 import { APP_VERSION } from 'shared/config'
 import { renderHookWithProviders } from 'shared/mocks'
 import { toursDisabledAtom } from 'shared/model'
-import { onboardingTourAtom, startOnboardingTour } from '../model'
+import { onboardingTourAtom, startOnboardingTour } from '../model/tour'
 import { useAutoTours } from './useAutoTours'
 
-jest.mock('../model', () => {
-  const actual = jest.requireActual('../model')
+jest.mock('../model/tour', () => {
+  const actual = jest.requireActual('../model/tour')
 
   return { ...actual, startOnboardingTour: jest.fn(actual.startOnboardingTour) }
 })

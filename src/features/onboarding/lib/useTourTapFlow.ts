@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { type OnboardingTargetRect } from '../model'
+import { type OnboardingTargetRect } from '../model/targets'
 import { type OnboardingStep } from './scenarios'
 import { isRectOutsideViewport } from './tourScrollable'
 

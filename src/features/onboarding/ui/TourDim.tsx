@@ -1,6 +1,6 @@
 import { StyleSheet } from 'react-native'
 import Svg, { Mask, Rect } from 'react-native-svg'
-import { type OnboardingTargetRect } from '../model'
+import { type OnboardingTargetRect } from '../model/targets'
 
 const MASK_ID = 'onboarding-tour-mask'
 const HOLE_PADDING = 8

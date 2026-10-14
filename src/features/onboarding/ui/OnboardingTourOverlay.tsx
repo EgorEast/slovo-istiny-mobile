@@ -6,13 +6,13 @@ import { resolveAreaRects, resolveTourHole } from '../lib/tourHole'
 import { resolveHiddenStepIndexes, resolveTourProgress } from '../lib/tourProgress'
 import { useExpiredStepKey } from '../lib/useExpiredStepKey'
 import { useStepNavigation } from '../lib/useStepNavigation'
+import { onboardingTargetRectsAtom } from '../model/targets'
 import {
   endOnboardingTour,
   goToNextOnboardingStep,
   goToPrevOnboardingStep,
-  onboardingTargetRectsAtom,
   onboardingTourAtom,
-} from '../model'
+} from '../model/tour'
 import { TourSpotlight } from './TourSpotlight'
 import { TourTapLayer } from './TourTapLayer'
 import { TourWaitLayer } from './TourWaitLayer'

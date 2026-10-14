@@ -1,7 +1,7 @@
 import { createCtx } from '@reatom/framework'
 import { waitFor } from '@testing-library/react-native'
 import { View } from 'react-native'
-import { onboardingTargetRectsAtom, onboardingTourAtom } from 'features/onboarding/model'
+import { onboardingTargetRectsAtom, onboardingTourAtom } from 'features/onboarding'
 import { renderWithProviders } from 'shared/mocks'
 import { MoreMenuSettingsItem } from './MoreMenuSettingsItem'
 

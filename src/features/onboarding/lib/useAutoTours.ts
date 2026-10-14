@@ -3,7 +3,7 @@ import { useAction, useAtom } from '@reatom/npm-react'
 import { useEffect, useRef } from 'react'
 import { APP_VERSION } from 'shared/config'
 import { setToursSeenVersion, TOURS_SEEN_VERSION_KEY, toursDisabledAtom } from 'shared/model'
-import { onboardingTourAtom, startOnboardingTour } from '../model'
+import { onboardingTourAtom, startOnboardingTour } from '../model/tour'
 import { type AutoTourDecision, resolveAutoTour } from './resolveAutoTour'
 
 const AUTO_TOUR_DELAY_MS = 2500

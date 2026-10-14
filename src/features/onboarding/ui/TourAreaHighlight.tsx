@@ -1,6 +1,6 @@
 import { StyleSheet, View } from 'react-native'
 import { useTheme, withAlpha } from 'shared/ui/theme'
-import { type OnboardingTargetRect } from '../model'
+import { type OnboardingTargetRect } from '../model/targets'
 
 const AREA_BORDER_OPACITY = 0.6
 const AREA_BORDER_WIDTH = 1.5

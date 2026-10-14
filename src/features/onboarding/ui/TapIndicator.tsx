@@ -9,7 +9,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated'
 import { useTheme } from 'shared/ui/theme'
-import { type OnboardingTargetRect } from '../model'
+import { type OnboardingTargetRect } from '../model/targets'
 
 const TAP_DIAMETER = 56
 const PULSE_MS = 800
