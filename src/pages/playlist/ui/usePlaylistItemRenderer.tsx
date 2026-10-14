@@ -1,6 +1,6 @@
-import { useCallback } from 'react'
+import { type ReactElement, useCallback } from 'react'
 import { OnboardingTarget } from 'features/onboarding'
-import { type MenuItem } from 'shared/ui/menu'
+import { type MenuActionItem, type TrackListMenuControls } from 'entities/track-list'
 import { PlaylistTrackItem } from './PlaylistTrackItem'
 import { type TracksListData } from './usePlaylistNavigationOptions'
 
@@ -8,9 +8,19 @@ import { type TracksListData } from './usePlaylistNavigationOptions'
 // row, so one anchoring target covers the tour's card position.
 const FIRST_ROW_TARGET_ID = 'playlist.first-row'
 
+// Only menu actions carrying an onboarding target id are wrapped; the rest render
+// bare, so the tour spotlights just the first row's dropdown items.
+const renderMenuRow = (row: ReactElement, item: MenuActionItem) =>
+  item.onboardingTargetId === undefined ? (
+    row
+  ) : (
+    <OnboardingTarget id={item.onboardingTargetId}>{row}</OnboardingTarget>
+  )
+
 /**
  * Builds the stable FlatList renderer for the playlist's track rows.
  * @param props - Row dependencies from the screen (actions and player state).
+ * @param props.bindRowMenu - Hands the first row's dropdown controls to the screen.
  * @param props.buildMenuActions - Builds the per-row context menu, if playable.
  * @param props.cacheTrigger - Offline-cache change counter to re-render rows.
  * @param props.currentAudioId - Id of the currently playing sermon, if any.
@@ -20,6 +30,7 @@ const FIRST_ROW_TARGET_ID = 'playlist.first-row'
  * @returns A memoized row renderer.
  */
 export const usePlaylistItemRenderer = ({
+  bindRowMenu,
   buildMenuActions,
   cacheTrigger,
   currentAudioId,
@@ -27,7 +38,8 @@ export const usePlaylistItemRenderer = ({
   isPlaying,
   progressMap,
 }: {
-  buildMenuActions: (index: number) => MenuItem[] | undefined
+  bindRowMenu: (controls: TrackListMenuControls) => void
+  buildMenuActions: (index: number) => MenuActionItem[] | undefined
   cacheTrigger?: number
   currentAudioId?: string
   handlePressItem: (index: number) => void
@@ -50,11 +62,21 @@ export const usePlaylistItemRenderer = ({
           currentAudioId={currentAudioId}
           menuActions={buildMenuActions(index)}
           storedProgress={progressMap.get(item.id ?? '')}
+          bindMenuOpener={index === 0 ? bindRowMenu : undefined}
+          renderMenuItem={index === 0 ? renderMenuRow : undefined}
         />
       )
       if (index !== 0) return row
 
       return <OnboardingTarget id={FIRST_ROW_TARGET_ID}>{row}</OnboardingTarget>
     },
-    [buildMenuActions, cacheTrigger, currentAudioId, handlePressItem, isPlaying, progressMap],
+    [
+      bindRowMenu,
+      buildMenuActions,
+      cacheTrigger,
+      currentAudioId,
+      handlePressItem,
+      isPlaying,
+      progressMap,
+    ],
   )

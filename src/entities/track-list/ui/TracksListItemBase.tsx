@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Platform, type View } from 'react-native'
 import { type AnchorRect } from 'shared/ui/menu'
 import { PressableButton } from 'shared/ui/pressable-button'
@@ -16,12 +16,14 @@ const ROW_ACCESSIBILITY_ROLE = Platform.OS === 'web' ? 'link' : 'button'
 export const TracksListItemBase = ({
   artwork,
   audioUrl,
+  bindMenuOpener,
   cacheState,
   isAudioPlaying = false,
   isPlaying,
   menuActions,
   onPress,
   progress,
+  renderMenuItem,
   style,
   subtitle,
   title,
@@ -46,16 +48,28 @@ export const TracksListItemBase = ({
   // The menu renders in a viewport-fixed Modal portal, so the anchor must be
   // measured in viewport coords. measure() returns page coords on web (offset
   // by scroll) and would fly the menu away on a scrolled page.
-  const measureButton = () => {
+  const measureButton = useCallback(() => {
     dotsButtonRef.current?.measureInWindow((x, y, width, height) =>
       setMenuAnchor({ height, width, x, y }),
     )
-  }
+  }, [])
+
+  const openMenu = useCallback(() => {
+    if (!audioUrl) return
+    measureButton()
+    setIsMenuOpen(true)
+  }, [audioUrl, measureButton])
+
+  const closeMenu = useCallback(() => setIsMenuOpen(false), [])
+
+  // Hand the dropdown controls to the owner (the tour drives the live menu).
+  useEffect(() => {
+    bindMenuOpener?.({ close: closeMenu, open: openMenu })
+  }, [bindMenuOpener, closeMenu, openMenu])
 
   const handleToggleMenu = () => {
-    if (!audioUrl) return
-    if (!isMenuOpen) measureButton()
-    setIsMenuOpen(!isMenuOpen)
+    if (isMenuOpen) closeMenu()
+    else openMenu()
   }
 
   const handleToggleCache = async () => {
@@ -64,7 +78,7 @@ export const TracksListItemBase = ({
   }
 
   const handleItemPress = () => {
-    if (isMenuOpen) setIsMenuOpen(false)
+    if (isMenuOpen) closeMenu()
     onPress()
   }
 
@@ -105,6 +119,7 @@ export const TracksListItemBase = ({
         menuActions={menuActions}
         visualState={visualState}
         onClose={handleToggleMenu}
+        renderMenuItem={renderMenuItem}
         isCacheDisabled={isCacheDisabled}
         onToggleCache={handleToggleCache}
         isSermonCachingEnabled={isSermonCachingEnabled}

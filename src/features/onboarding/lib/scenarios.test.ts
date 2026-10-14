@@ -2,6 +2,7 @@ import { resolveStepRoute } from './resolveStepRoute'
 import { scenariosById } from './scenarios'
 
 const FIRST_ROW_TARGET_ID = 'playlist.first-row'
+const ROW_MENU_ADD_TARGET_ID = 'playlist.row-menu-add'
 
 describe('onboarding scenario data', () => {
   test('welcome runs eight steps and ends on the tours setting', () => {
@@ -196,15 +197,26 @@ describe('onboarding scenario data', () => {
     expect(playlistMenu.steps[10].actionOnEnterId).toBe('close-playlist-menu')
   })
 
-  test('playlist-add teaches adding a sermon to playlists with interactive steps', () => {
+  test('playlist-add walks the row menu and ends on the playlist picker', () => {
     const playlistAdd = scenariosById['playlist-add']
 
     expect(playlistAdd.title).toBe('Добавление в плейлист')
     expect(playlistAdd.screens).toEqual(['/listen/playlist'])
-    expect(playlistAdd.steps).toHaveLength(3)
-    expect(playlistAdd.steps.every(step => step.interactive === true)).toBe(true)
+    expect(playlistAdd.steps).toHaveLength(7)
     expect(playlistAdd.steps[0].targetId).toBe(FIRST_ROW_TARGET_ID)
-    expect(playlistAdd.steps[1].title).toBe('Добавить в плейлист')
+    expect(playlistAdd.steps[0].tapActionId).toBe('open-playlist-row-menu')
+    expect(playlistAdd.steps[0].tapTargetId).toBe(FIRST_ROW_TARGET_ID)
+    expect(playlistAdd.steps[1].targetId).toBe(ROW_MENU_ADD_TARGET_ID)
+    expect(playlistAdd.steps.slice(2, 5).map(step => step.targetId)).toEqual([
+      'playlist.row-menu-remove',
+      'playlist.row-menu-mark',
+      'playlist.row-menu-history-remove',
+    ])
+    expect(playlistAdd.steps.slice(2, 5).every(step => step.skipIfMissing === true)).toBe(true)
+    expect(playlistAdd.steps[5].targetId).toBe(ROW_MENU_ADD_TARGET_ID)
+    expect(playlistAdd.steps[5].tapTargetId).toBe(ROW_MENU_ADD_TARGET_ID)
+    expect(playlistAdd.steps[5].tapActionId).toBe('press-row-menu-add')
+    expect(playlistAdd.steps[6].interactive).toBe(true)
   })
 
   test('playlists scenario no longer claims the single-playlist screen', () => {

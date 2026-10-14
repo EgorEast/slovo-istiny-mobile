@@ -1,8 +1,9 @@
-import { fireEvent, screen, waitFor } from '@testing-library/react-native'
+import { act, fireEvent, screen, waitFor } from '@testing-library/react-native'
 import { Text as MockText, View } from 'react-native'
 import { renderWithProviders } from 'shared/mocks/renderWithProviders'
 import { type TrackCacheState } from './trackCacheState'
 import { TracksListItem } from './TracksListItem'
+import { type TrackListMenuControls } from './types'
 
 const createCacheState = (overrides: Partial<TrackCacheState> = {}): TrackCacheState => ({
   isCached: false,
@@ -160,6 +161,30 @@ describe('<TracksListItem>', () => {
     fireEvent.press(screen.getByRole('button', { name: DOTS_BUTTON_LABEL }))
 
     expect(screen.queryByTestId(CONTEXT_MENU_TEST_ID)).toBeNull()
+  })
+
+  test('hands the dropdown open/close controls to bindMenuOpener', async () => {
+    const bindMenuOpener = jest.fn<void, [TrackListMenuControls]>()
+    await renderItem({ audioUrl: AUDIO_URL, bindMenuOpener })
+
+    await waitFor(() => expect(bindMenuOpener).toHaveBeenCalled())
+
+    const controls = bindMenuOpener.mock.calls.at(-1)?.[0]
+    expect(typeof controls?.close).toBe('function')
+    expect(typeof controls?.open).toBe('function')
+  })
+
+  test('opening through the handed controls opens the context menu', async () => {
+    const bindMenuOpener = jest.fn<void, [TrackListMenuControls]>()
+    await renderItem({ audioUrl: AUDIO_URL, bindMenuOpener })
+
+    expect(screen.queryByTestId(CONTEXT_MENU_TEST_ID)).toBeNull()
+
+    await act(async () => {
+      bindMenuOpener.mock.calls.at(-1)?.[0].open()
+    })
+
+    await waitFor(() => expect(screen.getByTestId(CONTEXT_MENU_TEST_ID)).toBeTruthy())
   })
 
   test('passes isCacheDisabled from cacheState to context menu when offline and uncached', async () => {

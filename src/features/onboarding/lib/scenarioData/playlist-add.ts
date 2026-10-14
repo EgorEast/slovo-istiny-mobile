@@ -1,5 +1,7 @@
 import { type OnboardingScenario } from '../scenarios'
 
+const ADD_MENU_TARGET_ID = 'playlist.row-menu-add'
+
 export const playlistAddScenario: OnboardingScenario = {
   description: 'Через меню строки проповеди',
   icon: 'add-circle-outline',
@@ -7,15 +9,41 @@ export const playlistAddScenario: OnboardingScenario = {
   screens: ['/listen/playlist'],
   steps: [
     {
-      interactive: true,
+      tapActionId: 'open-playlist-row-menu',
+      tapTargetId: 'playlist.first-row',
       targetId: 'playlist.first-row',
-      text: 'Зажмите строку любой проповеди или нажмите «⋯» — откроется меню.',
+      text: 'Открываем меню строки…',
       title: 'Меню проповеди',
     },
     {
-      interactive: true,
-      text: 'Выберите пункт «Добавить в плейлист».',
+      targetId: ADD_MENU_TARGET_ID,
+      text: 'Пункт «Добавить в плейлист» открывает выбор плейлистов — им мы воспользуемся в конце.',
       title: 'Добавить в плейлист',
+    },
+    {
+      skipIfMissing: true,
+      targetId: 'playlist.row-menu-remove',
+      text: 'Для своих плейлистов — убирает проповедь из этого плейлиста.',
+      title: 'Удалить из плейлиста',
+    },
+    {
+      skipIfMissing: true,
+      targetId: 'playlist.row-menu-mark',
+      text: 'Отмечает проповедь прослушанной.',
+      title: 'Пометить прослушанной',
+    },
+    {
+      skipIfMissing: true,
+      targetId: 'playlist.row-menu-history-remove',
+      text: 'Убирает проповедь из истории прослушивания.',
+      title: 'Удалить из истории',
+    },
+    {
+      tapActionId: 'press-row-menu-add',
+      tapTargetId: ADD_MENU_TARGET_ID,
+      targetId: ADD_MENU_TARGET_ID,
+      text: 'Выбираем «Добавить в плейлист»…',
+      title: 'Добавляем',
     },
     {
       interactive: true,

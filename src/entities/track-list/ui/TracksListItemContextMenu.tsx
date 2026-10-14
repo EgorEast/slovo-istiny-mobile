@@ -1,5 +1,7 @@
+import { type ReactElement } from 'react'
 import { type AnchorRect, MenuDropdown, type MenuItem } from 'shared/ui/menu'
 import { type TrackCacheVisualState } from './trackCacheState'
+import { type MenuActionItem } from './types'
 
 export interface TracksListItemContextMenuProps {
   anchor: AnchorRect | null
@@ -11,6 +13,8 @@ export interface TracksListItemContextMenuProps {
   menuActions?: MenuItem[]
   onClose: () => void
   onToggleCache: () => void
+  /** Wraps each rendered dropdown row (e.g. In an onboarding target). */
+  renderMenuItem?: (row: ReactElement, item: MenuActionItem) => ReactElement
   visualState: TrackCacheVisualState
 }
 
@@ -47,6 +51,7 @@ export const TracksListItemContextMenu = ({
   menuActions,
   onClose,
   onToggleCache,
+  renderMenuItem,
   visualState,
 }: TracksListItemContextMenuProps) => {
   const cacheAction = getCacheActionItem(visualState, isCached)
@@ -66,5 +71,13 @@ export const TracksListItemContextMenu = ({
     ...(menuActions ?? []),
   ]
 
-  return <MenuDropdown items={items} anchor={anchor} onClose={onClose} visible={isMenuOpen} />
+  return (
+    <MenuDropdown
+      items={items}
+      anchor={anchor}
+      onClose={onClose}
+      visible={isMenuOpen}
+      renderItem={renderMenuItem}
+    />
+  )
 }

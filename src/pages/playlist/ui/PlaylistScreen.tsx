@@ -50,7 +50,7 @@ export const PlaylistScreen = () => {
   const progressMap = useHistoryProgressMap()
   const historySermonIds = useHistorySermonIds()
   const { modal, openAddAllToPlaylist, openAddToPlaylist } = useAddToPlaylistModal()
-  const { buildMenuActions, handlePressItem, handlePressPlayAll, renderDialog } =
+  const { bindRowMenu, buildMenuActions, handlePressItem, handlePressPlayAll, renderDialog } =
     usePlaylistTrackActions(list, playlist, historySermonIds, progressMap, openAddToPlaylist)
 
   const { cacheTrigger, currentAudio, isPlaying } = usePlaylistPlayerState()
@@ -69,6 +69,7 @@ export const PlaylistScreen = () => {
   const tracksListData = useMemo(() => buildTracksListData(list, artwork), [list, artwork])
 
   const renderItem = usePlaylistItemRenderer({
+    bindRowMenu,
     buildMenuActions,
     cacheTrigger,
     currentAudioId: currentAudio?.id,
@@ -86,7 +87,6 @@ export const PlaylistScreen = () => {
   })
 
   const tracksListStyles = useMemo(() => createTracksListStyles(currentTheme), [currentTheme])
-
   const styles = useMemo(() => createStyles(currentTheme), [currentTheme])
 
   if (isImportingCustomPlaylist || isLoading || notFound)
