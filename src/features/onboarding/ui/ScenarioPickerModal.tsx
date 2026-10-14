@@ -40,10 +40,13 @@ export const ScenarioPickerModal = ({
   }
 
   const screenScenarios = scenarios.filter(scenario => isScenarioOnScreen(scenario, pathname))
-  const globalScenarios = scenarios.filter(scenario => !isScenarioOnScreen(scenario, pathname))
+  // «Глобальные» is truly global: only scenarios without `screens` (welcome/whatsNew,
+  // player). A scenario bound to other screens is reachable from those screens and is
+  // not offered here at all — otherwise its cards would show on a screen where its
+  // targets are absent.
+  const globalScenarios = scenarios.filter(scenario => scenario.screens === undefined)
   // The player picker is route-agnostic: its «Глобальные» group is every
-  // route-less default scenario (player, welcome/whatsNew), not the screen picker's
-  // leftovers.
+  // route-less default scenario (player, welcome/whatsNew).
   const playerGlobalScenarios = defaultScenarios.filter(scenario => scenario.screens === undefined)
 
   return (
