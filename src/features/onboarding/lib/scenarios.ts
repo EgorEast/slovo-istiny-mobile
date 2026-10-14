@@ -8,6 +8,7 @@ import { playerDescriptionScenario } from './scenarioData/player-description'
 import { playerIntroScenario } from './scenarioData/player-intro'
 import { playerSoundScenario } from './scenarioData/player-sound'
 import { playerSpeedScenario } from './scenarioData/player-speed'
+import { playlistAddScenario } from './scenarioData/playlist-add'
 import { playlistMenuScenario } from './scenarioData/playlist-menu'
 import { playlistsScenario } from './scenarioData/playlists'
 import { readScenario } from './scenarioData/read'
@@ -47,6 +48,7 @@ export type OnboardingScenarioId =
   | 'player-sound'
   | 'player-speed'
   | 'player'
+  | 'playlist-add'
   | 'playlist-menu'
   | 'playlists'
   | 'read'
@@ -84,6 +86,7 @@ export const scenarios: OnboardingScenario[] = [
   playlistsScenario,
   searchScenario,
   playlistMenuScenario,
+  playlistAddScenario,
   historyScenario,
   offlineScenario,
   settingsScenario,
@@ -103,6 +106,7 @@ export const scenariosById: Record<OnboardingScenarioId, OnboardingScenario> = {
   'player-intro': playerIntroScenario,
   'player-sound': playerSoundScenario,
   'player-speed': playerSpeedScenario,
+  'playlist-add': playlistAddScenario,
   'playlist-menu': playlistMenuScenario,
   playlists: playlistsScenario,
   read: readScenario,
@@ -112,19 +116,4 @@ export const scenariosById: Record<OnboardingScenarioId, OnboardingScenario> = {
   study: studyScenario,
   welcome: welcomeScenario,
   whatsNew: whatsNewScenario,
-}
-
-// A step without its own `route` stays on the screen of the nearest preceding
-// step that has one — the tour keeps the user on the screen the step belongs to.
-// Returns `undefined` when no step up to `stepIndex` declares a route.
-export const resolveStepRoute = (
-  scenario: OnboardingScenario,
-  stepIndex: number,
-): Href | undefined => {
-  for (let index = stepIndex; index >= 0; index -= 1) {
-    const route = scenario.steps[index].route
-    if (route !== undefined) return route
-  }
-
-  return undefined
 }

@@ -1,4 +1,5 @@
-import { resolveStepRoute, scenariosById } from './scenarios'
+import { resolveStepRoute } from './resolveStepRoute'
+import { scenariosById } from './scenarios'
 
 describe('onboarding scenario data', () => {
   test('welcome runs eight steps and ends on the tours setting', () => {
@@ -189,6 +190,17 @@ describe('onboarding scenario data', () => {
     expect(playlistMenu.steps.slice(2, 10).every(step => step.skipIfMissing === true)).toBe(true)
     expect(playlistMenu.steps[10].interactive).toBe(true)
     expect(playlistMenu.steps[10].targetId).toBe('playlist.first-row')
+  })
+
+  test('playlist-add teaches adding a sermon to playlists with interactive steps', () => {
+    const playlistAdd = scenariosById['playlist-add']
+
+    expect(playlistAdd.title).toBe('Добавление в плейлист')
+    expect(playlistAdd.screens).toEqual(['/listen/playlist'])
+    expect(playlistAdd.steps).toHaveLength(3)
+    expect(playlistAdd.steps.every(step => step.interactive === true)).toBe(true)
+    expect(playlistAdd.steps[0].targetId).toBe('playlist.first-row')
+    expect(playlistAdd.steps[1].title).toBe('Добавить в плейлист')
   })
 
   test('playlists scenario no longer claims the single-playlist screen', () => {

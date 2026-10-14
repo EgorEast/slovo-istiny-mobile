@@ -49,6 +49,7 @@ describe('<ScenarioPickerModal>', () => {
       'Плейлисты',
       'Результаты поиска',
       'Экран плейлиста',
+      'Добавление в плейлист',
       'История прослушивания',
       'Офлайн-режим',
       'Настройки и резервные копии',
@@ -60,13 +61,14 @@ describe('<ScenarioPickerModal>', () => {
     ])
   })
 
-  test('keeps only the playlist-menu scenario local on the playlist screen', async () => {
+  test('keeps both playlist tours local on the playlist screen', async () => {
     mockPathname.mockReturnValue('/listen/playlist')
 
     await renderPicker()
 
     expectRowTitles([
       'Экран плейлиста',
+      'Добавление в плейлист',
       'Как слушать проповеди',
       'Плеер',
       'Плейлисты',
@@ -94,6 +96,7 @@ describe('<ScenarioPickerModal>', () => {
       'Плейлисты',
       'Результаты поиска',
       'Экран плейлиста',
+      'Добавление в плейлист',
       'История прослушивания',
       'Офлайн-режим',
       'Читать книги',
@@ -116,6 +119,7 @@ describe('<ScenarioPickerModal>', () => {
       'Плейлисты',
       'Результаты поиска',
       'Экран плейлиста',
+      'Добавление в плейлист',
       'История прослушивания',
       'Офлайн-режим',
       'Настройки и резервные копии',
@@ -140,6 +144,7 @@ describe('<ScenarioPickerModal>', () => {
       'Плейлисты',
       'Результаты поиска',
       'Экран плейлиста',
+      'Добавление в плейлист',
       'Читать книги',
       'Учиться',
       'Поделиться приложением',
