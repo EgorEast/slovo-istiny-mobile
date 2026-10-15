@@ -177,7 +177,6 @@ describe('useStepNavigation return entries', () => {
   test.each([
     ['search', '/listen'],
     ['share', '/more'],
-    ['backup', '/more'],
   ] as const)(
     'returns to %s from a nested screen before the tab card',
     async (scenarioId, returnRoute) => {
@@ -187,6 +186,20 @@ describe('useStepNavigation return entries', () => {
         timeout: 2000,
       })
       expect(mockCurrentPathname).toBe(returnRoute)
+      expect(ctx.get(onboardingTourAtom)?.deckIndex).toBe(1)
+    },
+    BLINK_BUDGET_MS,
+  )
+
+  test(
+    'blinks the More tab entry and lands on the settings card from a nested screen',
+    async () => {
+      const { ctx } = await renderNavigation(scenariosById.backup, 1, '/history')
+
+      await waitFor(() => expect(ctx.get(onboardingEntryStepIndexAtom)).toBeNull(), {
+        timeout: 8000,
+      })
+      expect(mockCurrentPathname).toBe('/more')
       expect(ctx.get(onboardingTourAtom)?.deckIndex).toBe(1)
     },
     BLINK_BUDGET_MS,

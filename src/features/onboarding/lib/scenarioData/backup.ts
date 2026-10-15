@@ -8,21 +8,14 @@ export const backupScenario: OnboardingScenario = {
   screens: ['/more', '/settings'],
   steps: [
     {
-      route: '/listen',
-      text: 'Сейчас покажем, где включается резервное копирование: экран «Ещё» → «Настройки». Нажмите «Далее».',
+      text: 'Сейчас покажем, где включается резервное копирование: тапнем по табу «Ещё», затем по пункту «Настройки». Нажмите «Далее».',
       title: 'Резервное копирование',
     },
     {
-      // Pure navigation: from a nested screen without a tab bar this returns to
-      // «Ещё» first, so the tab card below can register and spotlight the tab.
-      route: '/more',
-      text: 'Возвращаемся на экран «Ещё»…',
-      title: 'Экран «Ещё»',
-    },
-    {
+      // Entry transition: blinks the «Ещё» tab and navigates there (auto-skipped when
+      // already on «Ещё»), so no separate pure-navigation return is needed.
       route: '/more',
       tapTargetId: 'tab.more',
-      targetId: 'tab.more',
       text: 'Переходим на экран «Ещё»…',
       title: 'Экран «Ещё»',
     },
@@ -30,7 +23,7 @@ export const backupScenario: OnboardingScenario = {
       route: '/more',
       tapTargetId: 'more.settings-item',
       targetId: 'more.settings-item',
-      text: 'Чтобы открыть настройки, тапните по этому пункту.',
+      text: 'Открываем настройки.',
       title: 'Настройки',
     },
     {

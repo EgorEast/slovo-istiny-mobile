@@ -120,30 +120,28 @@ describe('onboarding scenario data', () => {
 
     expect(backup.screens).toEqual(['/more', '/settings'])
     expect(backup.globalFallback).toBe(true)
-    expect(backup.steps).toHaveLength(9)
-    expect(backup.steps[0].route).toBe('/listen')
+    expect(backup.steps).toHaveLength(8)
+    // The opening description card is routeless, so the tour always starts with it.
+    expect(backup.steps[0].route).toBeUndefined()
     expect(backup.steps[0].targetId).toBeUndefined()
-    // Pure-navigation return entry: no tap target, only a route.
+    // The «Ещё» tab is an entry transition (blink + navigation), not a spotlight card.
     expect(backup.steps[1].route).toBe('/more')
-    expect(backup.steps[1].tapTargetId).toBeUndefined()
-    // The «Ещё» tab card: the return above lands here first from a nested screen.
+    expect(backup.steps[1].tapTargetId).toBe('tab.more')
+    expect(backup.steps[1].targetId).toBeUndefined()
     expect(backup.steps[2].route).toBe('/more')
-    expect(backup.steps[2].tapTargetId).toBe('tab.more')
-    expect(backup.steps[2].targetId).toBe('tab.more')
-    expect(backup.steps[3].route).toBe('/more')
+    expect(backup.steps[2].tapTargetId).toBe('more.settings-item')
+    expect(backup.steps[2].targetId).toBe('more.settings-item')
+    expect(backup.steps[3].route).toBe('/settings')
     expect(backup.steps[3].tapTargetId).toBe('more.settings-item')
-    expect(backup.steps[3].targetId).toBe('more.settings-item')
-    expect(backup.steps[4].route).toBe('/settings')
-    expect(backup.steps[4].tapTargetId).toBe('more.settings-item')
-    expect(backup.steps[4].targetId).toBe('settings.backup')
+    expect(backup.steps[3].targetId).toBe('settings.backup')
   })
 
-  test('backup folds the More tab return into the tab card as an entry transition', () => {
+  test('backup folds the More tab blink into the entry transition of the settings card', () => {
     const backup = scenariosById.backup
     const deck = buildTourDeck(backup.steps)
 
-    expect(deck).toHaveLength(8)
-    expect(deck.map(entry => entry.cardIndex)).toEqual([0, 2, 3, 4, 5, 6, 7, 8])
+    expect(deck).toHaveLength(7)
+    expect(deck.map(entry => entry.cardIndex)).toEqual([0, 2, 3, 4, 5, 6, 7])
     expect(deck[1].entryStepIndexes).toEqual([1])
     expect(deck.filter(entry => entry.entryStepIndexes.length > 0)).toHaveLength(1)
   })
@@ -151,12 +149,12 @@ describe('onboarding scenario data', () => {
   test('backup scenario walks the section, folder, export, import and autosync', () => {
     const backup = scenariosById.backup
 
-    expect(backup.steps[5].targetId).toBe('settings.backup-folder')
-    expect(backup.steps[5].skipIfMissing).toBe(true)
-    expect(backup.steps[6].targetId).toBe('settings.backup-export')
-    expect(backup.steps[7].targetId).toBe('settings.backup-import')
-    expect(backup.steps[8].targetId).toBe('settings.backup-autosync')
-    expect(backup.steps[8].skipIfMissing).toBe(true)
+    expect(backup.steps[4].targetId).toBe('settings.backup-folder')
+    expect(backup.steps[4].skipIfMissing).toBe(true)
+    expect(backup.steps[5].targetId).toBe('settings.backup-export')
+    expect(backup.steps[6].targetId).toBe('settings.backup-import')
+    expect(backup.steps[7].targetId).toBe('settings.backup-autosync')
+    expect(backup.steps[7].skipIfMissing).toBe(true)
   })
 
   test('offline caching-switch waits for the list to load before the spotlight lands', () => {
@@ -457,10 +455,10 @@ describe('share scenario resume', () => {
     })
   })
 
-  test('resumes on the tab card from «Ещё» (the return entry skips itself)', () => {
+  test('plays from the intro on «Ещё», the scenario first screen', () => {
     expect(resolveTourStart(scenariosById.share, deck, '/more')).toEqual({
-      deckIndex: 1,
-      skippedDeckIndexes: [0],
+      deckIndex: 0,
+      skippedDeckIndexes: [],
     })
   })
 
@@ -482,10 +480,10 @@ describe('share scenario resume', () => {
 describe('search scenario resume', () => {
   const deck = buildTourDeck(scenariosById.search.steps)
 
-  test('resumes on the tab card from «Слушать» (the return entry skips itself)', () => {
+  test('plays from the intro on «Слушать», the scenario first screen', () => {
     expect(resolveTourStart(scenariosById.search, deck, '/listen')).toEqual({
-      deckIndex: 1,
-      skippedDeckIndexes: [0],
+      deckIndex: 0,
+      skippedDeckIndexes: [],
     })
   })
 
@@ -501,5 +499,37 @@ describe('search scenario resume', () => {
 
     expect(progress.displayIndex).toBe(0)
     expect(progress.displayTotal).toBe(5)
+  })
+})
+
+describe('backup scenario resume', () => {
+  const deck = buildTourDeck(scenariosById.backup.steps)
+
+  test('plays the full tour from «Слушать», where no card routes', () => {
+    expect(resolveTourStart(scenariosById.backup, deck, '/listen')).toEqual({
+      deckIndex: 0,
+      skippedDeckIndexes: [],
+    })
+  })
+
+  test('plays from the intro on «Ещё», the scenario first screen (the tab entry auto-skips)', () => {
+    expect(resolveTourStart(scenariosById.backup, deck, '/more')).toEqual({
+      deckIndex: 0,
+      skippedDeckIndexes: [],
+    })
+  })
+
+  test('resumes on the backup section from «Настройки»', () => {
+    expect(resolveTourStart(scenariosById.backup, deck, '/settings')).toEqual({
+      deckIndex: 2,
+      skippedDeckIndexes: [0, 1],
+    })
+  })
+
+  test('counts all seven cards from the intro', () => {
+    const progress = resolveDeckProgress(deck, [], 0)
+
+    expect(progress.displayIndex).toBe(0)
+    expect(progress.displayTotal).toBe(7)
   })
 })
