@@ -102,8 +102,13 @@ describe('onboarding tour model', () => {
 
   test('plays consecutive exits in order before advancing the deck', () => {
     const ctx = createCtx()
-    // search deck: card 0 owns two visualizations (steps 1 and 2).
+    // search deck: the «tab.listen» card (entry 1) owns two visualizations (steps 2 and 3).
     startOnboardingTour(ctx, 'search', '/')
+
+    // entry 0 (the intro card) has no visualizations: the first next lands on the tab-blink card.
+    goToNextOnboardingStep(ctx)
+    expect(ctx.get(onboardingTourAtom)?.deckIndex).toBe(1)
+    expect(ctx.get(onboardingExitStepIndexAtom)).toBeNull()
 
     goToNextOnboardingStep(ctx)
     expect(ctx.get(onboardingExitStepIndexAtom)).toBe(0)
@@ -113,7 +118,7 @@ describe('onboarding tour model', () => {
 
     goToNextOnboardingStep(ctx)
     expect(ctx.get(onboardingExitStepIndexAtom)).toBeNull()
-    expect(ctx.get(onboardingTourAtom)?.deckIndex).toBe(1)
+    expect(ctx.get(onboardingTourAtom)?.deckIndex).toBe(2)
   })
 
   test('prev leaves the exit transition and never replays it', () => {

@@ -110,6 +110,7 @@ describe('<ScenarioPickerModal>', () => {
     await renderPicker()
 
     expectRowTitles([
+      'Результаты поиска',
       'История прослушивания',
       'Офлайн-режим',
       'Настройки и резервные копии',

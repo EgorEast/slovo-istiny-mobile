@@ -389,7 +389,7 @@ describe('<OnboardingTourOverlay>', () => {
   })
 
   test('renders an interactive card as a pass-through card without a spotlight modal', async () => {
-    const { getByText, queryByTestId, queryByText } = await renderAtDeck('search', 2)
+    const { getByText, queryByTestId, queryByText } = await renderAtDeck('search', 3)
 
     expect(queryByTestId(TOUR_MODAL)).toBeNull()
     expect(getByText('Выберите плейлист')).toBeTruthy()

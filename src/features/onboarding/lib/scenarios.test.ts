@@ -246,21 +246,24 @@ describe('onboarding scenario data', () => {
     expect(sound.steps[3].tapActionId).toBeUndefined()
   })
 
-  test('search scenario opens the search, types the query and presses the first sermon', () => {
+  test('search scenario leads from «Ещё» into the search results', () => {
     const search = scenariosById.search
 
-    expect(search.screens).toEqual(['/listen'])
-    expect(search.steps).toHaveLength(7)
-    expect(search.steps[0].title).toBe('Результаты поиска')
-    expect(search.steps[1].tapTargetId).toBe('listen.search-toggle')
-    expect(search.steps[1].tapActionId).toBe('open-listen-search')
-    expect(search.steps[2].tapActionId).toBe('type-search-query')
-    expect(search.steps[2].waitFor).toBeUndefined()
-    expect(search.steps[3].targetId).toBe('search-results.group-sermons')
-    expect(search.steps[4].targetId).toBe('search-results.first-sermon')
-    expect(search.steps[4].tapActionId).toBe('press-first-sermon')
-    expect(search.steps[5].interactive).toBe(true)
+    expect(search.screens).toEqual(['/listen', '/more'])
+    expect(search.steps).toHaveLength(8)
+    expect(search.steps[0].targetId).toBeUndefined()
+    expect(search.steps[1].route).toBe('/listen')
+    expect(search.steps[1].tapTargetId).toBe('tab.listen')
+    expect(search.steps[1].targetId).toBe('tab.listen')
+    expect(search.steps[2].tapTargetId).toBe('listen.search-toggle')
+    expect(search.steps[2].tapActionId).toBe('open-listen-search')
+    expect(search.steps[3].tapActionId).toBe('type-search-query')
+    expect(search.steps[3].waitFor).toBeUndefined()
+    expect(search.steps[4].targetId).toBe('search-results.group-sermons')
+    expect(search.steps[5].targetId).toBe('search-results.first-sermon')
+    expect(search.steps[5].tapActionId).toBe('press-first-sermon')
     expect(search.steps[6].interactive).toBe(true)
+    expect(search.steps[7].interactive).toBe(true)
   })
 
   test('playlist-menu walks the header menu and ends on the interactive sermon menu', () => {
@@ -410,5 +413,30 @@ describe('share scenario resume', () => {
 
     expect(fromShare.displayIndex).toBe(0)
     expect(fromShare.displayTotal).toBe(3)
+  })
+})
+
+describe('search scenario resume', () => {
+  const deck = buildTourDeck(scenariosById.search.steps)
+
+  test('plays the full tour from «Слушать», the scenario first screen', () => {
+    expect(resolveTourStart(scenariosById.search, deck, '/listen')).toEqual({
+      deckIndex: 0,
+      skippedDeckIndexes: [],
+    })
+  })
+
+  test('plays the full lead-up from «Ещё», where no card routes yet', () => {
+    expect(resolveTourStart(scenariosById.search, deck, '/more')).toEqual({
+      deckIndex: 0,
+      skippedDeckIndexes: [],
+    })
+  })
+
+  test('counts every card when the lead-up is not skipped', () => {
+    const progress = resolveDeckProgress(deck, [], 0)
+
+    expect(progress.displayIndex).toBe(0)
+    expect(progress.displayTotal).toBe(5)
   })
 })

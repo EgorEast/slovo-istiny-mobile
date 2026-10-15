@@ -4,11 +4,18 @@ export const searchScenario: OnboardingScenario = {
   description: 'Группы и плейлисты',
   icon: 'search-outline',
   id: 'search',
-  screens: ['/listen'],
+  screens: ['/listen', '/more'],
   steps: [
     {
-      text: 'Покажем, как устроены результаты поиска. Сначала откроем поиск — нажмите «Далее».',
+      text: 'Сейчас перейдём на экран «Слушать» и откроем поиск — нажмите «Далее».',
       title: 'Результаты поиска',
+    },
+    {
+      route: '/listen',
+      tapTargetId: 'tab.listen',
+      targetId: 'tab.listen',
+      text: 'Переходим на экран «Слушать»…',
+      title: 'Экран «Слушать»',
     },
     {
       tapActionId: 'open-listen-search',
