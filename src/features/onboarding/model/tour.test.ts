@@ -104,8 +104,8 @@ describe('onboarding tour model', () => {
 
   test('plays consecutive exits in order before advancing the deck', () => {
     const ctx = createCtx()
-    // search deck: the intro card (entry 0) owns two visualizations (steps 2 and 3).
-    startOnboardingTour(ctx, 'search', '/')
+    // player-description deck: the intro card (entry 0) owns two visualizations.
+    startOnboardingTour(ctx, 'player-description', '/')
 
     // The first next starts the intro card's exit transition, not the deck advance.
     goToNextOnboardingStep(ctx)

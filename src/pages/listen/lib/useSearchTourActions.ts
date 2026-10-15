@@ -4,22 +4,27 @@ import { useTourActionRegistrar } from 'features/onboarding'
 import { searchQueryAtom, searchResultsAtom } from 'features/sermon-search'
 import { type SermonData } from 'entities/sermon'
 
-const TYPE_SEARCH_QUERY_ACTION_ID = 'type-search-query'
+const OPEN_SEARCH_ACTION_ID = 'open-listen-search'
 const PRESS_FIRST_SERMON_ACTION_ID = 'press-first-sermon'
 const SEARCH_QUERY = 'лицемерие'
 const TYPE_STEP_MS = 120
 
 /**
- * Registers the search tour's actions on behalf of the page: the tour types the
- * demo query into the real search atom (prefix by prefix, cancellable) and presses
- * the first rendered sermon. The page owns these because `features/sermon-search`
- * must not import `features/onboarding` (dependency inversion).
+ * Registers the search tour's actions on behalf of the page: the tour opens the
+ * search overlay and types the demo query into the real search atom (prefix by
+ * prefix, cancellable) so the grouped-results card has a target to spotlight, then
+ * presses the first rendered sermon. The page owns these because
+ * `features/sermon-search` must not import `features/onboarding` (dependency
+ * inversion).
  * @param root0 - Hook input.
+ * @param root0.onOpenSearch - Page-owned handler that opens the search overlay.
  * @param root0.onPressFirstSermon - Page-owned handler that starts playback of a sermon.
  */
 export const useSearchTourActions = ({
+  onOpenSearch,
   onPressFirstSermon,
 }: {
+  onOpenSearch: () => void
   onPressFirstSermon: (sermon: SermonData) => void
 }) => {
   const [, setQuery] = useAtom(searchQueryAtom)
@@ -40,6 +45,11 @@ export const useSearchTourActions = ({
     typeNextChar()
   }, [setQuery])
 
+  const openSearchAndType = useCallback(() => {
+    onOpenSearch()
+    typeQuery()
+  }, [onOpenSearch, typeQuery])
+
   const pressFirstSermon = useCallback(() => {
     const firstSermon = sermons[0]
     if (firstSermon === undefined) return
@@ -54,6 +64,6 @@ export const useSearchTourActions = ({
     [],
   )
 
-  useTourActionRegistrar(TYPE_SEARCH_QUERY_ACTION_ID, typeQuery)
+  useTourActionRegistrar(OPEN_SEARCH_ACTION_ID, openSearchAndType)
   useTourActionRegistrar(PRESS_FIRST_SERMON_ACTION_ID, pressFirstSermon)
 }

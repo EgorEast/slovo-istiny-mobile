@@ -22,15 +22,16 @@ export const searchScenario: OnboardingScenario = {
       title: 'Экран «Слушать»',
     },
     {
+      text: 'Чтобы открыть поиск, тапните по кнопке с лупой.',
+      title: 'Кнопка поиска',
+    },
+    {
+      // Opens the search overlay and types the demo query, so the grouped results
+      // card below has a target to spotlight.
       tapActionId: 'open-listen-search',
       tapTargetId: 'listen.search-toggle',
       text: 'Открываем поиск…',
       title: 'Открываем поиск',
-    },
-    {
-      tapActionId: 'type-search-query',
-      text: 'Вводим «лицемерие»…',
-      title: 'Вводим запрос',
     },
     {
       targetId: 'search-results.group-sermons',
@@ -38,9 +39,12 @@ export const searchScenario: OnboardingScenario = {
       title: 'Группы результатов',
     },
     {
+      text: 'Чтобы включить проповедь — тапните по ней.',
+      title: 'Включить проповедь',
+    },
+    {
       tapActionId: 'press-first-sermon',
       tapTargetId: 'search-results.first-sermon',
-      targetId: 'search-results.first-sermon',
       text: 'Выбираем проповедь, которая входит в несколько плейлистов…',
       title: 'Выбираем проповедь',
     },
@@ -50,12 +54,15 @@ export const searchScenario: OnboardingScenario = {
       areaTargetIds: ['search.picker-modal'],
       cardPosition: 'bottom',
       presentOnTop: true,
-      text: 'В окне «Выберите плейлист» нажмите на плейлист — проповедь заиграет из него. Если окно не появилось, проповедь уже играет из своего плейлиста. Если передумали — закройте окно после тура.',
+      text: 'Если проповедь находится сразу в нескольких плейлистах — можно выбрать плейлист, в котором открыть.',
       title: 'Выберите плейлист',
     },
     {
-      interactive: true,
-      text: 'Зажмите строку проповеди или нажмите «⋯» — меню: добавить в плейлист, отметить прослушанной, удалить из истории.',
+      // Closes the picker on enter (the live UI is prepared), then spotlights the
+      // sermon row's ⋯ menu button.
+      actionOnEnterId: 'close-sermon-playlist-picker',
+      targetId: 'search-results.first-sermon-menu',
+      text: 'Через меню строки (⋯ или долгое нажатие) добавьте проповедь в плейлист или управляйте историей.',
       title: 'Меню проповеди',
     },
   ],

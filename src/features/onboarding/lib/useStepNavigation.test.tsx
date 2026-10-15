@@ -87,15 +87,32 @@ describe('useStepNavigation exit transitions', () => {
     const action = jest.fn()
     registerTourAction('type-search-query', action)
 
-    // search intro card (deck entry 0) owns exits [2, 3]; exit 1 is the targetless «type query».
-    const { ctx } = await renderNavigation(scenariosById.search, 0, {}, setupCtx =>
-      onboardingExitStepIndexAtom(setupCtx, 1),
-    )
+    // A synthetic scenario whose card owns a targetless visualization (no blink).
+    const targetlessScenario: OnboardingScenario = {
+      description: '',
+      icon: 'information-circle-outline',
+      id: 'share',
+      steps: [
+        { text: '', title: 'Интро' },
+        { tapActionId: 'type-search-query', text: '', title: 'Без цели' },
+        { targetId: 'listen.sections', text: '', title: 'Карточка' },
+      ],
+      title: '',
+    }
+    const originalScenario = scenariosById.share
+    scenariosById.share = targetlessScenario
 
-    await waitFor(() => expect(action).toHaveBeenCalledTimes(1), { timeout: 2000 })
-    await waitFor(() => expect(ctx.get(onboardingTourAtom)?.deckIndex).toBe(1), { timeout: 2000 })
+    try {
+      const { ctx } = await renderNavigation(targetlessScenario, 0, {}, setupCtx =>
+        onboardingExitStepIndexAtom(setupCtx, 0),
+      )
 
-    unregisterTourAction('type-search-query')
+      await waitFor(() => expect(action).toHaveBeenCalledTimes(1), { timeout: 2000 })
+      await waitFor(() => expect(ctx.get(onboardingTourAtom)?.deckIndex).toBe(1), { timeout: 2000 })
+    } finally {
+      scenariosById.share = originalScenario
+      unregisterTourAction('type-search-query')
+    }
   })
 })
 

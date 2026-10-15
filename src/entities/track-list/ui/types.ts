@@ -34,6 +34,11 @@ export interface TracksListItemProps {
   onPress: () => void
   /** Listening progress 0..1, renders a thin bar along the row bottom edge. A value of 1 dims the row (listened). */
   progress?: number
+  /**
+   * Wraps the row's ⋯ menu trigger (e.g. In an onboarding target); falls back to the
+   * bare trigger. Generic, so the entity never imports features/onboarding.
+   */
+  renderMenuButton?: (button: ReactElement) => ReactElement
   /** Wraps each rendered dropdown row (e.g. In an onboarding target); falls back to the bare row. */
   renderMenuItem?: (row: ReactElement, item: MenuActionItem) => ReactElement
   style?: StyleProp<ViewStyle>

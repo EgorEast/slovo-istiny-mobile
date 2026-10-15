@@ -1,22 +1,30 @@
 import { useState } from 'react'
 import { Modal, StyleSheet, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { APP_MAX_CONTENT_WIDTH } from 'shared/ui/layout'
 import { INDENTS } from 'shared/ui/theme'
 import { type OnboardingStep } from '../lib/scenarios'
 import { computeTooltipLayout } from '../lib/tooltipPosition'
 import { TOOLTIP_ESTIMATED_HEIGHT } from '../lib/tourHole'
 import { type OnboardingTargetRect } from '../model/targets'
+import { TapIndicator } from './TapIndicator'
 import { TourAreaHighlight } from './TourAreaHighlight'
 import { TourDim } from './TourDim'
+import { styles } from './TourSpotlight.styles'
 import { TourTooltip } from './TourTooltip'
 
 const MODAL_TEST_ID = 'onboarding-tour-modal'
+const TAP_MODAL_TEST_ID = 'onboarding-tap-modal'
 
-// The spotlight phase: a modal dim with one or more holes and the step card next to
-// the first hole (centered when there is none). A RN Modal always blocks the app
+// The blocking tour window: a modal dim with one or more holes and the step card next
+// to the first hole (centered when there is none). A RN Modal always blocks the app
 // beneath — the requested behavior for target and area steps alike: the tour, not
 // the app, owns the touch while a step is shown.
+//
+// When `tapRect` is set the same Modal window shows the blinking tap hint instead of
+// the dim and card. Reusing one Modal (rather than swapping to a second one) keeps the
+// native window presented across a card → hint handoff: dismissing one Modal and
+// presenting another in the same commit drops the new presentation on iOS, which made
+// every blink that followed a card invisible.
 export const TourSpotlight = ({
   anchorRect,
   displayIndex,
@@ -33,6 +41,7 @@ export const TourSpotlight = ({
   onPrev,
   step,
   stepKey,
+  tapRect,
   width,
 }: {
   anchorRect: null | OnboardingTargetRect
@@ -50,6 +59,8 @@ export const TourSpotlight = ({
   onPrev: () => void
   step: OnboardingStep
   stepKey: string
+  /** The rect the tour "presses": when set, the window blinks a tap hint instead. */
+  tapRect?: OnboardingTargetRect
   width: number
 }) => {
   const insets = useSafeAreaInsets()
@@ -70,57 +81,45 @@ export const TourSpotlight = ({
     <Modal
       visible
       transparent
-      animationType='fade'
       statusBarTranslucent
-      testID={MODAL_TEST_ID}
       onRequestClose={onClose}
       navigationBarTranslucent
       key={step.presentOnTop === true ? stepKey : undefined}
+      animationType={tapRect === undefined ? 'fade' : 'none'}
+      testID={tapRect === undefined ? MODAL_TEST_ID : TAP_MODAL_TEST_ID}
     >
-      <View style={styles.container}>
-        <TourDim width={width} holes={holes} height={height} />
-        {highlightAreas
-          ? holes.map(rect => <TourAreaHighlight rect={rect} key={`${rect.x}-${rect.y}`} />)
-          : null}
-        {isWaitingForTarget ? null : (
-          <View style={[styles.tooltipAnchor, anchorOffset]}>
-            <View
-              style={styles.tooltip}
-              onLayout={event => setCardHeight(event.nativeEvent.layout.height)}
-            >
-              <TourTooltip
-                step={step}
-                onPrev={onPrev}
-                onNext={onNext}
-                onClose={onClose}
-                displayIndex={displayIndex}
-                displayTotal={displayTotal}
-                isLastVisible={isLastVisible}
-                isFirstVisible={isFirstVisible}
-                isWaitSatisfied={isWaitSatisfied}
-              />
+      {tapRect !== undefined ? (
+        <View pointerEvents='none' style={StyleSheet.absoluteFill}>
+          <TapIndicator rect={tapRect} />
+        </View>
+      ) : (
+        <View style={styles.container}>
+          <TourDim width={width} holes={holes} height={height} />
+          {highlightAreas
+            ? holes.map(rect => <TourAreaHighlight rect={rect} key={`${rect.x}-${rect.y}`} />)
+            : null}
+          {isWaitingForTarget ? null : (
+            <View style={[styles.tooltipAnchor, anchorOffset]}>
+              <View
+                style={styles.tooltip}
+                onLayout={event => setCardHeight(event.nativeEvent.layout.height)}
+              >
+                <TourTooltip
+                  step={step}
+                  onPrev={onPrev}
+                  onNext={onNext}
+                  onClose={onClose}
+                  displayIndex={displayIndex}
+                  displayTotal={displayTotal}
+                  isLastVisible={isLastVisible}
+                  isFirstVisible={isFirstVisible}
+                  isWaitSatisfied={isWaitSatisfied}
+                />
+              </View>
             </View>
-          </View>
-        )}
-      </View>
+          )}
+        </View>
+      )}
     </Modal>
   )
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  tooltip: {
-    // Desktop-web: cap the card to the shared centered column (undefined on native,
-    // so phones keep the full width between the margins).
-    alignSelf: 'center',
-    maxWidth: APP_MAX_CONTENT_WIDTH,
-    width: '100%',
-  },
-  tooltipAnchor: {
-    left: INDENTS.high,
-    position: 'absolute',
-    right: INDENTS.high,
-  },
-})

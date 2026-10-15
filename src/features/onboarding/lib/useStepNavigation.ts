@@ -121,6 +121,5 @@ export const useStepNavigation = ({
     isOverlayHidden,
     isWaitSatisfied,
     tapRect: phase.tapRect,
-    tapStepKey: phase.activeStepKey,
   }
 }

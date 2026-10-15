@@ -32,7 +32,8 @@ const containsSermon = (playlist: LocalPlaylistData, sermonId: string): boolean 
  * «Избранные»), a picker opens and playback waits for the choice; otherwise it
  * plays immediately. The built-in favorites playlist is the default context and
  * does not by itself make the choice ambiguous. Returns the modal element to
- * render on the screen, mirroring `useAddToPlaylistModal`.
+ * render on the screen, mirroring `useAddToPlaylistModal`, plus the picker's
+ * dismiss handler so an owner (the onboarding tour) can close it.
  * @param root0 - Hook options.
  * @param root0.pickerWrapper - Page-owned wrapper around the picker dialog (baked
  * into the modal element so the tour can spotlight the picker window).
@@ -88,5 +89,5 @@ export const useSermonPlayback = ({
     />
   ) : null
 
-  return { modal, onSermonPress }
+  return { closePicker, modal, onSermonPress }
 }

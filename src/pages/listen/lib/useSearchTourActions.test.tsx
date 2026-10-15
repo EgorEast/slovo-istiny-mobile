@@ -21,7 +21,7 @@ jest.mock('features/sermon-search', () => {
   }
 })
 
-const TYPE_SEARCH_QUERY = 'type-search-query'
+const OPEN_SEARCH = 'open-listen-search'
 const PRESS_FIRST_SERMON = 'press-first-sermon'
 const FULL_QUERY = 'лицемерие'
 
@@ -44,11 +44,14 @@ const getRegisteredAction = (id: string) => {
 const renderActions = async (
   onPressFirstSermon: (sermon: SermonData) => void,
   sermons: SermonData[] = [],
+  onOpenSearch: () => void = jest.fn(),
 ) => {
   const ctx = createCtx()
   searchResultsAtom(ctx, sermons)
 
-  await renderHookWithProviders(() => useSearchTourActions({ onPressFirstSermon }), { ctx })
+  await renderHookWithProviders(() => useSearchTourActions({ onOpenSearch, onPressFirstSermon }), {
+    ctx,
+  })
 
   return ctx
 }
@@ -58,13 +61,15 @@ describe('useSearchTourActions', () => {
     jest.clearAllMocks()
   })
 
-  test('types the demo query into the search atom prefix by prefix', async () => {
-    const ctx = await renderActions(jest.fn())
+  test('opens the search and types the demo query prefix by prefix', async () => {
+    const onOpenSearch = jest.fn()
+    const ctx = await renderActions(jest.fn(), [], onOpenSearch)
 
     await act(async () => {
-      getRegisteredAction(TYPE_SEARCH_QUERY)?.()
+      getRegisteredAction(OPEN_SEARCH)?.()
     })
 
+    expect(onOpenSearch).toHaveBeenCalledTimes(1)
     // The first character lands synchronously; the rest follow on real delays.
     expect(ctx.get(searchQueryAtom)).toBe('л')
 
@@ -74,12 +79,12 @@ describe('useSearchTourActions', () => {
   test('stops typing when the sequence is cancelled on unmount', async () => {
     const ctx = createCtx()
     const { unmount } = await renderHookWithProviders(
-      () => useSearchTourActions({ onPressFirstSermon: jest.fn() }),
+      () => useSearchTourActions({ onOpenSearch: jest.fn(), onPressFirstSermon: jest.fn() }),
       { ctx },
     )
 
     await act(async () => {
-      getRegisteredAction(TYPE_SEARCH_QUERY)?.()
+      getRegisteredAction(OPEN_SEARCH)?.()
     })
 
     const typedBeforeUnmount = ctx.get(searchQueryAtom)

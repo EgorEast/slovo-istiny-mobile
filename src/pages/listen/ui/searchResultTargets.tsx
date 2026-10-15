@@ -15,6 +15,10 @@ export const wrapFirstSearchRow = (row: ReactElement) => (
   <OnboardingTarget id='search-results.first-sermon'>{row}</OnboardingTarget>
 )
 
+export const wrapSearchRowMenuButton = (button: ReactElement) => (
+  <OnboardingTarget id='search-results.first-sermon-menu'>{button}</OnboardingTarget>
+)
+
 export const wrapSearchPicker = (dialog: ReactElement) => (
   <OnboardingTarget id='search.picker-modal' style={PICKER_TARGET_STYLE}>
     {dialog}

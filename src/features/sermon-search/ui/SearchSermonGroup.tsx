@@ -8,6 +8,7 @@ const SERMONS_LABEL = 'Проповеди'
 const MAX_SERMON_RESULTS = 4
 
 export const SearchSermonGroup = ({
+  firstRowMenuButtonWrapper,
   firstRowWrapper,
   groupHeaderWrapper,
   historySermonIds,
@@ -17,6 +18,7 @@ export const SearchSermonGroup = ({
   progressMap,
   sermons,
 }: {
+  firstRowMenuButtonWrapper?: (button: ReactElement) => ReactElement
   firstRowWrapper?: (row: ReactElement) => ReactNode
   groupHeaderWrapper?: (header: ReactElement) => ReactNode
   historySermonIds: Set<string>
@@ -40,6 +42,7 @@ export const SearchSermonGroup = ({
           onAddToPlaylist={onAddToPlaylist}
           progress={progressMap.get(sermon.id)}
           inHistory={historySermonIds.has(sermon.id)}
+          menuButtonWrapper={index === 0 ? firstRowMenuButtonWrapper : undefined}
         />
       )
 

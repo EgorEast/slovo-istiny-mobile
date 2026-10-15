@@ -8,7 +8,6 @@ import { useTourDeckProgress } from '../lib/useTourDeckProgress'
 import { onboardingTargetRectsAtom } from '../model/targets'
 import { endOnboardingTour, goToPrevOnboardingStep, onboardingTourAtom } from '../model/tour'
 import { TourSpotlight } from './TourSpotlight'
-import { TourTapLayer } from './TourTapLayer'
 import { TourWaitLayer } from './TourWaitLayer'
 
 export const OnboardingTourOverlay = () => {
@@ -23,25 +22,18 @@ export const OnboardingTourOverlay = () => {
   const { displayIndex, displayTotal, isFirstVisible, isLastVisible } = progress
   const activeTargetId = cardStep?.targetId
 
-  const {
-    goNext,
-    holdNavigation,
-    isEntryPhase,
-    isOverlayHidden,
-    isWaitSatisfied,
-    tapRect,
-    tapStepKey,
-  } = useStepNavigation({
-    bottomInset: insets.bottom,
-    cardStep,
-    deckIndex,
-    entry,
-    isLastVisible,
-    isTourActive: tour !== null,
-    scenario,
-    stepKey,
-    viewportHeight: height,
-  })
+  const { goNext, holdNavigation, isEntryPhase, isOverlayHidden, isWaitSatisfied, tapRect } =
+    useStepNavigation({
+      bottomInset: insets.bottom,
+      cardStep,
+      deckIndex,
+      entry,
+      isLastVisible,
+      isTourActive: tour !== null,
+      scenario,
+      stepKey,
+      viewportHeight: height,
+    })
   // An entry transition plays before the card lands, so the card's missing-target
   // timer must not start until the phase is over (otherwise it expires mid-lead-up).
   const expiredStepKey = useExpiredStepKey({
@@ -58,16 +50,16 @@ export const OnboardingTourOverlay = () => {
   // and while a `skipIfMissing` card waits to see whether its target registers at all.
   if (isOverlayHidden) return null
 
-  // The tap hint (route navigation or exit visualization) is presented in its own
-  // native window, a Modal keyed per step.
-  if (holdNavigation && tapRect !== undefined)
-    return <TourTapLayer onClose={end} rect={tapRect} stepKey={tapStepKey} />
+  // A tap hint (route navigation or exit visualization) shows inside the blocking
+  // window: the same Modal that would show the card blinks the circle instead, so the
+  // native window is never dismissed and re-presented in one commit.
+  const isTapHint = holdNavigation && tapRect !== undefined
 
   // Pass-through steps keep the modal unmounted so the live UI stays interactive:
   // an interactive card the user must act on, or a card whose wait condition is unmet
   // yet. The card floats in a pass-through layer; only it is touchable.
   const areaRects = resolveAreaRects(cardStep.areaTargetIds, rects)
-  const isPassThrough = cardStep.interactive === true || !isWaitSatisfied
+  const isPassThrough = !isTapHint && (cardStep.interactive === true || !isWaitSatisfied)
   if (isPassThrough)
     return (
       <TourWaitLayer
@@ -118,6 +110,7 @@ export const OnboardingTourOverlay = () => {
       isFirstVisible={isFirstVisible}
       isWaitSatisfied={isWaitSatisfied}
       isWaitingForTarget={isWaitingForTarget}
+      tapRect={isTapHint ? tapRect : undefined}
     />
   )
 }

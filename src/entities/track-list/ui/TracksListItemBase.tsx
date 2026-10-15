@@ -1,12 +1,11 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { Platform, type View } from 'react-native'
-import { type AnchorRect } from 'shared/ui/menu'
+import { Platform } from 'react-native'
 import { PressableButton } from 'shared/ui/pressable-button'
 import { useTheme } from 'shared/ui/theme/ThemeContext/useTheme'
 import { createTracksListStyles } from './styles'
 import { TracksListItemContent } from './TracksListItemContent'
 import { TracksListItemContextMenu } from './TracksListItemContextMenu'
 import { type TracksListItemProps } from './types'
+import { useTrackListItemMenu } from './useTrackListItemMenu'
 
 // Web: the row renders as <div role="link" tabindex=0> so Vimium hints work and
 // Enter activates while Space scrolls — link semantics. Native keeps the button role.
@@ -23,6 +22,7 @@ export const TracksListItemBase = ({
   menuActions,
   onPress,
   progress,
+  renderMenuButton,
   renderMenuItem,
   style,
   subtitle,
@@ -30,10 +30,6 @@ export const TracksListItemBase = ({
 }: TracksListItemProps) => {
   const { currentTheme } = useTheme()
   const tracksListStyles = createTracksListStyles(currentTheme)
-  const [isMenuOpen, setIsMenuOpen] = useState(false)
-  const [menuAnchor, setMenuAnchor] = useState<AnchorRect | null>(null)
-  const dotsButtonRef = useRef<View>(null)
-
   const {
     isCached,
     isCacheDisabled,
@@ -44,43 +40,14 @@ export const TracksListItemBase = ({
     toggleCache,
     visualState,
   } = cacheState
-
-  // The menu renders in a viewport-fixed Modal portal, so the anchor must be
-  // measured in viewport coords. measure() returns page coords on web (offset
-  // by scroll) and would fly the menu away on a scrolled page.
-  const measureButton = useCallback(() => {
-    dotsButtonRef.current?.measureInWindow((x, y, width, height) =>
-      setMenuAnchor({ height, width, x, y }),
-    )
-  }, [])
-
-  const openMenu = useCallback(() => {
-    if (!audioUrl) return
-    measureButton()
-    setIsMenuOpen(true)
-  }, [audioUrl, measureButton])
-
-  const closeMenu = useCallback(() => setIsMenuOpen(false), [])
-
-  // Hand the dropdown controls to the owner (the tour drives the live menu).
-  useEffect(() => {
-    bindMenuOpener?.({ close: closeMenu, open: openMenu })
-  }, [bindMenuOpener, closeMenu, openMenu])
-
-  const handleToggleMenu = () => {
-    if (isMenuOpen) closeMenu()
-    else openMenu()
-  }
-
-  const handleToggleCache = async () => {
-    setIsMenuOpen(false)
-    await toggleCache()
-  }
-
-  const handleItemPress = () => {
-    if (isMenuOpen) closeMenu()
-    onPress()
-  }
+  const {
+    dotsButtonRef,
+    handleItemPress,
+    handleToggleCache,
+    handleToggleMenu,
+    isMenuOpen,
+    menuAnchor,
+  } = useTrackListItemMenu({ audioUrl, bindMenuOpener, onPress, toggleCache })
 
   return (
     <>
@@ -108,6 +75,7 @@ export const TracksListItemBase = ({
           progressValue={progressValue}
           dotsOnPress={handleToggleMenu}
           isAudioPlaying={isAudioPlaying}
+          renderMenuButton={renderMenuButton}
           isSermonCachingEnabled={isSermonCachingEnabled}
         />
       </PressableButton>

@@ -1,4 +1,4 @@
-import { memo } from 'react'
+import { memo, type ReactElement } from 'react'
 import { buildHistoryMenuActions } from 'entities/listening-history'
 import { useTrackItemCache } from 'entities/offline-cache'
 import { type AudioPlayerData, type SermonData, toAudioPlayerData } from 'entities/sermon'
@@ -8,12 +8,14 @@ import { formatScripture } from '../lib/formatScripture'
 export const SermonSearchRow = memo(
   ({
     inHistory = false,
+    menuButtonWrapper,
     onAddToPlaylist,
     onPress,
     progress,
     sermon,
   }: {
     inHistory?: boolean
+    menuButtonWrapper?: (button: ReactElement) => ReactElement
     onAddToPlaylist?: (sermon: AudioPlayerData) => void
     onPress: () => void
     progress?: number
@@ -44,6 +46,7 @@ export const SermonSearchRow = memo(
         artwork={sermon.artwork}
         menuActions={menuActions}
         audioUrl={audio?.audioUrl}
+        renderMenuButton={menuButtonWrapper}
       />
     )
   },

@@ -388,18 +388,35 @@ describe('<OnboardingTourOverlay>', () => {
     expect(queryByText('hole:336,100')).toBeNull()
   })
 
-  test('renders an interactive card as a pass-through card without a spotlight modal', async () => {
-    const { getByText, queryByTestId, queryByText } = await renderAtDeck('search', 3)
+  test('spotlights the sermon-row ⋯ menu on the final search card', async () => {
+    const MENU_RECT: OnboardingTargetRect = { height: 40, width: 40, x: 300, y: 400 }
+    const { getByTestId, getByText, queryByTestId, queryByText } = await renderAtDeck('search', 5, {
+      'search-results.first-sermon-menu': MENU_RECT,
+    })
 
-    expect(queryByTestId(TOUR_MODAL)).toBeNull()
+    expect(getByTestId(TOUR_MODAL)).toBeTruthy()
     expect(getByText('Меню проповеди')).toBeTruthy()
     expect(getByText(DONE_LABEL)).toBeTruthy()
-    expect(queryByText(DIM)).toBeNull()
+    expect(getByText(DIM)).toBeTruthy()
+    expect(getByText('hole:300,400')).toBeTruthy()
+    expect(queryByTestId(TAP_MODAL)).toBeNull()
+    expect(queryByText(TAP_INDICATOR)).toBeNull()
+  })
+
+  test('closes the playlist picker on entering the final search card', async () => {
+    const action = jest.fn()
+    registerTourAction('close-sermon-playlist-picker', action)
+
+    const MENU_RECT: OnboardingTargetRect = { height: 40, width: 40, x: 300, y: 400 }
+    await renderAtDeck('search', 5, { 'search-results.first-sermon-menu': MENU_RECT })
+
+    await waitFor(() => expect(action).toHaveBeenCalledTimes(1))
+    unregisterTourAction('close-sermon-playlist-picker')
   })
 
   test('presents the playlist-picker card as a spotlight above the app modal', async () => {
     const PICKER_RECT: OnboardingTargetRect = { height: 200, width: 320, x: 40, y: 300 }
-    const { getAllByTestId, getByTestId, getByText } = await renderAtDeck('search', 2, {
+    const { getAllByTestId, getByTestId, getByText } = await renderAtDeck('search', 4, {
       'search.picker-modal': PICKER_RECT,
     })
 
@@ -444,8 +461,27 @@ describe('<OnboardingTourOverlay>', () => {
     expect(queryByText(TAP_INDICATOR)).toBeNull()
   })
 
+  test('blinks the tab entry in the same window after departing the intro card on /more', async () => {
+    // Regression: the card → hint handoff must not swap native Modals, or the blink is
+    // dropped and the user only sees the navigation. Departing the intro card forward
+    // starts the tab entry phase directly (no intermediate hidden render).
+    mockPathname.mockReturnValue('/more')
+
+    const { getByTestId, getByText, queryByTestId } = await renderAtDeck('search', 0, {
+      'tab.listen': SECTIONS_RECT,
+    })
+
+    expect(getByTestId(TOUR_MODAL)).toBeTruthy()
+
+    fireEvent.press(getByText(NEXT_LABEL))
+
+    await waitFor(() => expect(getByTestId(TAP_MODAL)).toBeTruthy())
+    expect(getByText(TAP_INDICATOR)).toBeTruthy()
+    expect(queryByTestId(TOUR_MODAL)).toBeNull()
+  })
+
   test('blinks the search-toggle exit visualization before opening the search', async () => {
-    const { getByTestId, getByText } = await renderAtDeck('search', 0, {
+    const { getByTestId, getByText } = await renderAtDeck('search', 1, {
       'listen.search-toggle': SECTIONS_RECT,
       'tab.listen': SECTIONS_RECT,
     })
@@ -456,8 +492,8 @@ describe('<OnboardingTourOverlay>', () => {
     expect(getByText(TAP_INDICATOR)).toBeTruthy()
   })
 
-  test('blinks the first-sermon exit visualization after the results card', async () => {
-    const { getByTestId, getByText } = await renderAtDeck('search', 1, {
+  test('blinks the first-sermon exit visualization after the «Включить проповедь» card', async () => {
+    const { getByTestId, getByText } = await renderAtDeck('search', 3, {
       'search-results.first-sermon': SECTIONS_RECT,
       'search-results.group-sermons': SECTIONS_RECT,
     })

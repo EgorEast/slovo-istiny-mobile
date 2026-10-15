@@ -1,6 +1,6 @@
 import { useAction, useAtom } from '@reatom/npm-react'
 import { useEffect } from 'react'
-import { ScrollView, StyleSheet } from 'react-native'
+import { ScrollView } from 'react-native'
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useAddToPlaylistModal } from 'features/add-to-playlist'
 import { useTourActionRegistrar, useTourScrollable } from 'features/onboarding'
@@ -22,12 +22,18 @@ import { useScrollActivity } from '../lib/useScrollActivity'
 import { useSearchTourActions } from '../lib/useSearchTourActions'
 import { ContinueListeningButton } from './ContinueListeningButton'
 import { DynamicSectionsSlider } from './DynamicSectionsSlider'
+import { styles } from './ListenScreen.styles'
 import { ListenSearchHeader } from './ListenSearchHeader'
 import { ListenTopRow } from './ListenTopRow'
 import { MyPlaylistsSlider } from './MyPlaylistsSlider'
-import { wrapFirstSearchRow, wrapSearchGroupHeader, wrapSearchPicker } from './searchResultTargets'
+import {
+  wrapFirstSearchRow,
+  wrapSearchGroupHeader,
+  wrapSearchPicker,
+  wrapSearchRowMenuButton,
+} from './searchResultTargets'
 
-const OPEN_SEARCH_ACTION_ID = 'open-listen-search'
+const CLOSE_SERMON_PICKER_ACTION_ID = 'close-sermon-playlist-picker'
 
 export const ListenScreen = () => {
   const insets = useSafeAreaInsets()
@@ -36,17 +42,21 @@ export const ListenScreen = () => {
   const isSearchActive = useIsSearchActive()
   const openSearch = useOpenSearch()
   useSearchUrlSync()
-  useTourActionRegistrar(OPEN_SEARCH_ACTION_ID, openSearch)
   const [tabBarHeight] = useAtom(tabBarHeightAtom)
   const [authStatus] = useAtom(authStatusAtom)
   const [authUser] = useAtom(authUserAtom)
   const restore = useAction(restoreSession)
   const { onScroll } = useScrollActivity()
   const { modal, openAddToPlaylist } = useAddToPlaylistModal()
-  const { modal: sermonPlaybackModal, onSermonPress } = useSermonPlayback({
+  const {
+    closePicker,
+    modal: sermonPlaybackModal,
+    onSermonPress,
+  } = useSermonPlayback({
     pickerWrapper: wrapSearchPicker,
   })
-  useSearchTourActions({ onPressFirstSermon: onSermonPress })
+  useSearchTourActions({ onOpenSearch: openSearch, onPressFirstSermon: onSermonPress })
+  useTourActionRegistrar(CLOSE_SERMON_PICKER_ACTION_ID, closePicker)
   const { isRefreshing, refresh } = usePullToRefresh()
   const { onPlaylistPress, onPreacherPress, onShowAllGroup } = useListenSearchNavigation()
   const tourScrollableRef = useTourScrollable()
@@ -78,6 +88,7 @@ export const ListenScreen = () => {
           onAddToPlaylist={openAddToPlaylist}
           firstRowWrapper={wrapFirstSearchRow}
           groupHeaderWrapper={wrapSearchGroupHeader}
+          firstRowMenuButtonWrapper={wrapSearchRowMenuButton}
         />
       ) : (
         <PullToRefresh onRefresh={refresh} refreshing={isRefreshing}>
@@ -111,12 +122,3 @@ export const ListenScreen = () => {
     </SafeAreaView>
   )
 }
-
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-  },
-  scroll: {
-    flex: 1,
-  },
-})

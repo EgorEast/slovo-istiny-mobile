@@ -1,4 +1,4 @@
-import { memo, type NamedExoticComponent } from 'react'
+import { memo, type NamedExoticComponent, type ReactElement } from 'react'
 import { type AudioPlayerData, type SermonData } from 'entities/sermon'
 import { SermonSearchRow } from './SermonSearchRow'
 
@@ -10,16 +10,18 @@ import { SermonSearchRow } from './SermonSearchRow'
  */
 export const SearchResultsRow: NamedExoticComponent<{
   inHistory: boolean
+  menuButtonWrapper?: (button: ReactElement) => ReactElement
   onAddToPlaylist?: (sermon: AudioPlayerData) => void
   onPress: (sermon: SermonData) => void
   progress?: number
   sermon: SermonData
-}> = memo(({ inHistory, onAddToPlaylist, onPress, progress, sermon }) => (
+}> = memo(({ inHistory, menuButtonWrapper, onAddToPlaylist, onPress, progress, sermon }) => (
   <SermonSearchRow
     sermon={sermon}
     progress={progress}
     inHistory={inHistory}
     onPress={() => onPress(sermon)}
     onAddToPlaylist={onAddToPlaylist}
+    menuButtonWrapper={menuButtonWrapper}
   />
 ))

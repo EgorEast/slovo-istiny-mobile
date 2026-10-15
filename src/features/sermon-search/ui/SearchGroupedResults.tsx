@@ -29,6 +29,7 @@ const NO_RESULTS_MESSAGE = 'Ничего не найдено'
 type SearchGroupKey = 'playlists' | 'preachers' | 'sermons'
 
 export const SearchGroupedResults = ({
+  firstRowMenuButtonWrapper,
   firstRowWrapper,
   groupHeaderWrapper,
   onAddToPlaylist,
@@ -38,6 +39,7 @@ export const SearchGroupedResults = ({
   pickerWrapper,
 }: {
   // Page-owned wrappers (dependency inversion): this feature never imports onboarding.
+  firstRowMenuButtonWrapper?: (button: ReactElement) => ReactElement
   firstRowWrapper?: (row: ReactElement) => ReactNode
   groupHeaderWrapper?: (header: ReactElement) => ReactNode
   onAddToPlaylist?: (sermon: AudioPlayerData) => void
@@ -100,6 +102,7 @@ export const SearchGroupedResults = ({
               historySermonIds={historySermonIds}
               groupHeaderWrapper={groupHeaderWrapper}
               onShowAll={handleShowAllGroup('sermons')}
+              firstRowMenuButtonWrapper={firstRowMenuButtonWrapper}
             />
             <SearchPlaylistGroup
               playlists={playlists}
