@@ -6,20 +6,20 @@ export const searchScenario: OnboardingScenario = {
   id: 'search',
   steps: [
     {
-      text: 'Сейчас перейдём на экран «Слушать» и откроем поиск — нажмите «Далее».',
+      text: 'Сейчас перейдём на экран «Слушать» — тапнем по нему — и откроем поиск. Нажмите «Далее».',
       title: 'Результаты поиска',
     },
     {
       // Pure navigation: from a nested screen without a tab bar this returns to
-      // «Слушать» first, so the tab card below can register and spotlight the tab.
+      // «Слушать» first, so the tab entry below can register and blink the tab.
       route: '/listen',
       text: 'Возвращаемся на экран «Слушать»…',
       title: 'Экран «Слушать»',
     },
     {
+      // The «Слушать» tab is an entry transition (blink + navigation), not a card.
       route: '/listen',
       tapTargetId: 'tab.listen',
-      targetId: 'tab.listen',
       text: 'Переходим на экран «Слушать»…',
       title: 'Экран «Слушать»',
     },

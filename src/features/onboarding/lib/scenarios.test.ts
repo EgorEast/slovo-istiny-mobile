@@ -67,10 +67,10 @@ describe('onboarding scenario data', () => {
     // Pure-navigation return entry: no tap target, only a route.
     expect(share.steps[1].route).toBe('/more')
     expect(share.steps[1].tapTargetId).toBeUndefined()
-    // The «Ещё» tab card: the return above lands here first from a nested screen.
+    // The «Ещё» tab is an entry transition (blink + navigation), not a spotlight card.
     expect(share.steps[2].route).toBe('/more')
     expect(share.steps[2].tapTargetId).toBe('tab.more')
-    expect(share.steps[2].targetId).toBe('tab.more')
+    expect(share.steps[2].targetId).toBeUndefined()
     expect(share.steps[3].route).toBe('/share')
     expect(share.steps[3].tapTargetId).toBe('more.share-item')
     expect(share.steps[3].targetId).toBeUndefined()
@@ -79,15 +79,14 @@ describe('onboarding scenario data', () => {
     expect(share.steps[5].targetId).toBe('share.copy')
   })
 
-  test('share folds its tab card and share-item lead-up into entry transitions', () => {
+  test('share folds its tab and share-item lead-up into entry transitions', () => {
     const share = scenariosById.share
     const deck = buildTourDeck(share.steps)
 
-    expect(deck).toHaveLength(5)
-    expect(deck.map(entry => entry.cardIndex)).toEqual([0, 2, 4, 5, 6])
-    expect(deck[1].entryStepIndexes).toEqual([1])
-    expect(deck[2].entryStepIndexes).toEqual([3])
-    expect(deck.filter(entry => entry.entryStepIndexes.length > 0)).toHaveLength(2)
+    expect(deck).toHaveLength(4)
+    expect(deck.map(entry => entry.cardIndex)).toEqual([0, 4, 5, 6])
+    expect(deck[1].entryStepIndexes).toEqual([1, 2, 3])
+    expect(deck.filter(entry => entry.entryStepIndexes.length > 0)).toHaveLength(1)
   })
 
   test('each scenario wires the tab or row it taps when navigating', () => {
@@ -164,15 +163,27 @@ describe('onboarding scenario data', () => {
     expect(switchStep.waitFor).toBe('offlineLoaded')
   })
 
-  test('entry-point steps tell the user to tap the item to open the section', () => {
-    expect(scenariosById.offline.steps[1].text).toBe(
-      'Чтобы открыть раздел офлайн-кэша, тапните по этому пункту.',
+  test('the tab tap lives in the intro and the item cards just open the section', () => {
+    expect(scenariosById.offline.steps[0].text).toBe(
+      'Сейчас перейдём на экран «Ещё» — тапнем по нему — и откроем офлайн-режим. Нажмите «Далее».',
     )
-    expect(scenariosById.history.steps[1].text).toBe(
-      'Чтобы открыть историю прослушивания, тапните по этому пункту.',
+    expect(scenariosById.offline.steps[1].text).toBe('Открываем раздел офлайн-кэша.')
+    expect(scenariosById.history.steps[0].text).toBe(
+      'Сейчас перейдём на экран «Ещё» — тапнем по нему — и откроем историю прослушивания. Нажмите «Далее».',
     )
-    expect(scenariosById.settings.steps[1].text).toBe(
-      'Чтобы открыть настройки, тапните по этому пункту.',
+    expect(scenariosById.history.steps[1].text).toBe('Открываем историю прослушивания.')
+    expect(scenariosById.settings.steps[0].text).toBe(
+      'Сейчас перейдём на экран «Ещё» — тапнем по нему — и откроем настройки. Нажмите «Далее».',
+    )
+    expect(scenariosById.settings.steps[1].text).toBe('Открываем настройки.')
+  })
+
+  test('the tab-navigation intro cards name the tab tap and the destination', () => {
+    expect(scenariosById.search.steps[0].text).toBe(
+      'Сейчас перейдём на экран «Слушать» — тапнем по нему — и откроем поиск. Нажмите «Далее».',
+    )
+    expect(scenariosById.share.steps[0].text).toBe(
+      'Сейчас перейдём на экран «Ещё» — тапнем по нему — и откроем страницу «Поделиться приложением». Нажмите «Далее».',
     )
   })
 
@@ -288,10 +299,10 @@ describe('onboarding scenario data', () => {
     // Pure-navigation return entry: no tap target, only a route.
     expect(search.steps[1].route).toBe('/listen')
     expect(search.steps[1].tapTargetId).toBeUndefined()
-    // The «Слушать» tab card: the return above lands here first from a nested screen.
+    // The «Слушать» tab is an entry transition (blink + navigation), not a spotlight card.
     expect(search.steps[2].route).toBe('/listen')
     expect(search.steps[2].tapTargetId).toBe('tab.listen')
-    expect(search.steps[2].targetId).toBe('tab.listen')
+    expect(search.steps[2].targetId).toBeUndefined()
     expect(search.steps[3].tapTargetId).toBe('listen.search-toggle')
     expect(search.steps[3].tapActionId).toBe('open-listen-search')
     expect(search.steps[4].tapActionId).toBe('type-search-query')
@@ -305,6 +316,19 @@ describe('onboarding scenario data', () => {
     expect(search.steps[7].cardPosition).toBe('bottom')
     expect(search.steps[7].interactive).toBeUndefined()
     expect(search.steps[8].interactive).toBe(true)
+  })
+
+  test('search folds its tab into the entry transitions of the results card', () => {
+    const search = scenariosById.search
+    const deck = buildTourDeck(search.steps)
+
+    expect(deck).toHaveLength(4)
+    expect(deck.map(entry => entry.cardIndex)).toEqual([0, 5, 7, 8])
+    // The two search-open visualizations leave the intro card; the tab and the
+    // pure-navigation return lead into the results card, which owns the first-sermon exit.
+    expect(deck[0].exitStepIndexes).toEqual([3, 4])
+    expect(deck[1].entryStepIndexes).toEqual([1, 2])
+    expect(deck[1].exitStepIndexes).toEqual([6])
   })
 
   test('playlist-menu walks the header menu and ends on the interactive sermon menu', () => {
@@ -464,13 +488,13 @@ describe('share scenario resume', () => {
 
   test('skips the intro and starts on the QR card from «Поделиться приложением»', () => {
     expect(resolveTourStart(scenariosById.share, deck, '/share')).toEqual({
-      deckIndex: 2,
-      skippedDeckIndexes: [0, 1],
+      deckIndex: 1,
+      skippedDeckIndexes: [0],
     })
   })
 
   test('counts only the remaining cards from the QR card', () => {
-    const fromShare = resolveDeckProgress(deck, [0, 1], 2)
+    const fromShare = resolveDeckProgress(deck, [0], 1)
 
     expect(fromShare.displayIndex).toBe(0)
     expect(fromShare.displayTotal).toBe(3)
@@ -498,7 +522,7 @@ describe('search scenario resume', () => {
     const progress = resolveDeckProgress(deck, [], 0)
 
     expect(progress.displayIndex).toBe(0)
-    expect(progress.displayTotal).toBe(5)
+    expect(progress.displayTotal).toBe(4)
   })
 })
 

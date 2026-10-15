@@ -7,14 +7,14 @@ export const settingsScenario: OnboardingScenario = {
   screens: ['/more', '/settings'],
   steps: [
     {
-      text: 'Сейчас перейдём на экран «Ещё» и откроем настройки — нажмите «Далее».',
+      text: 'Сейчас перейдём на экран «Ещё» — тапнем по нему — и откроем настройки. Нажмите «Далее».',
       title: 'Настройки',
     },
     {
       route: '/more',
       tapTargetId: 'tab.more',
       targetId: 'more.settings-item',
-      text: 'Чтобы открыть настройки, тапните по этому пункту.',
+      text: 'Открываем настройки.',
       title: 'Настройки',
     },
     {

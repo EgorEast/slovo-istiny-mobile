@@ -8,20 +8,20 @@ export const shareScenario: OnboardingScenario = {
   screens: ['/more', '/share'],
   steps: [
     {
-      text: 'Сейчас перейдём на экран «Ещё» и откроем страницу «Поделиться приложением» — нажмите «Далее».',
+      text: 'Сейчас перейдём на экран «Ещё» — тапнем по нему — и откроем страницу «Поделиться приложением». Нажмите «Далее».',
       title: 'Поделиться приложением',
     },
     {
       // Pure navigation: from a nested screen without a tab bar this returns to
-      // «Ещё» first, so the tab card below can register and spotlight the tab.
+      // «Ещё» first, so the tab entry below can register and blink the tab.
       route: '/more',
       text: 'Возвращаемся на экран «Ещё»…',
       title: 'Экран «Ещё»',
     },
     {
+      // The «Ещё» tab is an entry transition (blink + navigation), not a card.
       route: '/more',
       tapTargetId: 'tab.more',
-      targetId: 'tab.more',
       text: 'Переходим на экран «Ещё»…',
       title: 'Экран «Ещё»',
     },

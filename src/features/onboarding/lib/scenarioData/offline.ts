@@ -7,14 +7,14 @@ export const offlineScenario: OnboardingScenario = {
   screens: ['/more', '/offline'],
   steps: [
     {
-      text: 'Сейчас перейдём на экран «Ещё» и откроем офлайн-режим — нажмите «Далее».',
+      text: 'Сейчас перейдём на экран «Ещё» — тапнем по нему — и откроем офлайн-режим. Нажмите «Далее».',
       title: 'Офлайн-режим',
     },
     {
       route: '/more',
       tapTargetId: 'tab.more',
       targetId: 'more.offline-item',
-      text: 'Чтобы открыть раздел офлайн-кэша, тапните по этому пункту.',
+      text: 'Открываем раздел офлайн-кэша.',
       title: 'Офлайн-режим',
     },
     {

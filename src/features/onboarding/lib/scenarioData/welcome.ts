@@ -36,7 +36,7 @@ export const welcomeScenario: OnboardingScenario = {
       tapTargetId: 'tab.more',
       targetId: 'more.menu',
       text: 'Здесь история прослушивания, офлайн-режим и настройки.',
-      title: 'Экран «Ещё»',
+      title: 'Меню «Ещё»',
     },
     {
       route: '/settings',

@@ -389,7 +389,7 @@ describe('<OnboardingTourOverlay>', () => {
   })
 
   test('renders an interactive card as a pass-through card without a spotlight modal', async () => {
-    const { getByText, queryByTestId, queryByText } = await renderAtDeck('search', 4)
+    const { getByText, queryByTestId, queryByText } = await renderAtDeck('search', 3)
 
     expect(queryByTestId(TOUR_MODAL)).toBeNull()
     expect(getByText('Меню проповеди')).toBeTruthy()
@@ -398,7 +398,7 @@ describe('<OnboardingTourOverlay>', () => {
   })
 
   test('presents the playlist-picker card as a spotlight above the app modal', async () => {
-    const { getByTestId, getByText } = await renderAtDeck('search', 3)
+    const { getByTestId, getByText } = await renderAtDeck('search', 2)
 
     expect(getByTestId(TOUR_MODAL)).toBeTruthy()
     expect(getByText('Выберите плейлист')).toBeTruthy()
@@ -407,7 +407,7 @@ describe('<OnboardingTourOverlay>', () => {
   })
 
   test('blinks the search-toggle exit visualization before opening the search', async () => {
-    const { getByTestId, getByText } = await renderAtDeck('search', 1, {
+    const { getByTestId, getByText } = await renderAtDeck('search', 0, {
       'listen.search-toggle': SECTIONS_RECT,
       'tab.listen': SECTIONS_RECT,
     })
@@ -419,7 +419,7 @@ describe('<OnboardingTourOverlay>', () => {
   })
 
   test('blinks the first-sermon exit visualization after the results card', async () => {
-    const { getByTestId, getByText } = await renderAtDeck('search', 2, {
+    const { getByTestId, getByText } = await renderAtDeck('search', 1, {
       'search-results.first-sermon': SECTIONS_RECT,
       'search-results.group-sermons': SECTIONS_RECT,
     })

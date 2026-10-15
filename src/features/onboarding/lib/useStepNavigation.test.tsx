@@ -87,13 +87,13 @@ describe('useStepNavigation exit transitions', () => {
     const action = jest.fn()
     registerTourAction('type-search-query', action)
 
-    // search entry 1 («tab.listen») owns exits [2, 3]; exit 1 is the targetless «type query».
-    const { ctx } = await renderNavigation(scenariosById.search, 1, {}, setupCtx =>
+    // search intro card (deck entry 0) owns exits [3, 4]; exit 1 is the targetless «type query».
+    const { ctx } = await renderNavigation(scenariosById.search, 0, {}, setupCtx =>
       onboardingExitStepIndexAtom(setupCtx, 1),
     )
 
     await waitFor(() => expect(action).toHaveBeenCalledTimes(1), { timeout: 2000 })
-    await waitFor(() => expect(ctx.get(onboardingTourAtom)?.deckIndex).toBe(2), { timeout: 2000 })
+    await waitFor(() => expect(ctx.get(onboardingTourAtom)?.deckIndex).toBe(1), { timeout: 2000 })
 
     unregisterTourAction('type-search-query')
   })
