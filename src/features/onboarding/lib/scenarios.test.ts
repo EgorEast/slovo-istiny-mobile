@@ -321,7 +321,7 @@ describe('onboarding scenario data', () => {
 
     expect(search.screens).toEqual(['/listen'])
     expect(search.globalFallback).toBe(true)
-    expect(search.steps).toHaveLength(9)
+    expect(search.steps).toHaveLength(10)
     expect(search.steps[0].targetId).toBeUndefined()
     // The «Слушать» tab is an entry transition (blink + navigation), not a spotlight
     // card, and it navigates on its own — no separate pure-navigation return, which
@@ -329,24 +329,29 @@ describe('onboarding scenario data', () => {
     expect(search.steps[1].route).toBe('/listen')
     expect(search.steps[1].tapTargetId).toBe('tab.listen')
     expect(search.steps[1].targetId).toBeUndefined()
-    // The search button opens the overlay and types the demo query (one visualization).
+    // The search button opens the overlay; the next exit types the demo query into it.
     expect(search.steps[2].title).toBe('Кнопка поиска')
     expect(search.steps[3].tapTargetId).toBe('listen.search-toggle')
     expect(search.steps[3].tapActionId).toBe('open-listen-search')
-    expect(search.steps[4].targetId).toBe('search-results.group-sermons')
-    expect(search.steps[5].title).toBe('Включить проповедь')
-    expect(search.steps[6].tapTargetId).toBe('search-results.first-sermon')
-    expect(search.steps[6].targetId).toBeUndefined()
-    expect(search.steps[6].tapActionId).toBe('press-first-sermon')
+    expect(search.steps[4].title).toBe('Вводим запрос')
+    expect(search.steps[4].text).toBe('Вводим запрос, например «лицемерие»…')
+    expect(search.steps[4].tapTargetId).toBeUndefined()
+    expect(search.steps[4].targetId).toBeUndefined()
+    expect(search.steps[4].tapActionId).toBe('type-search-query')
+    expect(search.steps[5].targetId).toBe('search-results.group-sermons')
+    expect(search.steps[6].title).toBe('Включить проповедь')
+    expect(search.steps[7].tapTargetId).toBe('search-results.first-sermon')
+    expect(search.steps[7].targetId).toBeUndefined()
+    expect(search.steps[7].tapActionId).toBe('press-first-sermon')
     // The picker card spotlights above the SermonPlaylistPicker modal (presentOnTop)
     // and highlights the picker window itself (areaTargetIds); the sermon-menu card
     // closes the picker on enter and spotlights the row's ⋯ trigger.
-    expect(search.steps[7].presentOnTop).toBe(true)
-    expect(search.steps[7].cardPosition).toBe('bottom')
-    expect(search.steps[7].areaTargetIds).toEqual(['search.picker-modal'])
-    expect(search.steps[7].interactive).toBeUndefined()
-    expect(search.steps[8].actionOnEnterId).toBe('close-sermon-playlist-picker')
-    expect(search.steps[8].targetId).toBe('search-results.first-sermon-menu')
+    expect(search.steps[8].presentOnTop).toBe(true)
+    expect(search.steps[8].cardPosition).toBe('bottom')
+    expect(search.steps[8].areaTargetIds).toEqual(['search.picker-modal'])
+    expect(search.steps[8].interactive).toBeUndefined()
+    expect(search.steps[9].actionOnEnterId).toBe('close-sermon-playlist-picker')
+    expect(search.steps[9].targetId).toBe('search-results.first-sermon-menu')
   })
 
   test('search folds its tab into the entry transitions of the results card', () => {
@@ -354,13 +359,13 @@ describe('onboarding scenario data', () => {
     const deck = buildTourDeck(search.steps)
 
     expect(deck).toHaveLength(6)
-    expect(deck.map(entry => entry.cardIndex)).toEqual([0, 2, 4, 5, 7, 8])
+    expect(deck.map(entry => entry.cardIndex)).toEqual([0, 2, 5, 6, 8, 9])
     // The tab entry leads into the «Кнопка поиска» card, which owns the search-open
-    // exit; the «Включить проповедь» card owns the first-sermon exit.
+    // and query-typing exits; the «Включить проповедь» card owns the first-sermon exit.
     expect(deck[0].exitStepIndexes).toEqual([])
     expect(deck[1].entryStepIndexes).toEqual([1])
-    expect(deck[1].exitStepIndexes).toEqual([3])
-    expect(deck[3].exitStepIndexes).toEqual([6])
+    expect(deck[1].exitStepIndexes).toEqual([3, 4])
+    expect(deck[3].exitStepIndexes).toEqual([7])
   })
 
   test('playlist-menu walks the header menu and ends on the interactive sermon menu', () => {

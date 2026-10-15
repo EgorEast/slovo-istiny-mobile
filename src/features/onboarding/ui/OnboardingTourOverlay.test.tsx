@@ -492,6 +492,30 @@ describe('<OnboardingTourOverlay>', () => {
     expect(getByText(TAP_INDICATOR)).toBeTruthy()
   })
 
+  test('runs the type-query exit after the search-toggle exit and advances to the groups card', async () => {
+    const calls: string[] = []
+    registerTourAction('open-listen-search', () => calls.push('open'))
+    registerTourAction('type-search-query', () => calls.push('type'))
+
+    const { ctx, getByText } = await renderAtDeck('search', 1, {
+      'listen.search-toggle': SECTIONS_RECT,
+      'tab.listen': SECTIONS_RECT,
+    })
+
+    fireEvent.press(getByText(NEXT_LABEL))
+
+    // The search-toggle exit blinks and opens the search first; the query exit then
+    // performs its action without a blink (no tap target), and only after that does the
+    // deck advance to the grouped-results card — the typing is never cut short.
+    await waitFor(() => expect(ctx.get(onboardingTourAtom)?.deckIndex).toBe(2), {
+      timeout: EXIT_FLOW_TIMEOUT_MS,
+    })
+    expect(calls).toEqual(['open', 'type'])
+
+    unregisterTourAction('open-listen-search')
+    unregisterTourAction('type-search-query')
+  })
+
   test('blinks the first-sermon exit visualization after the «Включить проповедь» card', async () => {
     const { getByTestId, getByText } = await renderAtDeck('search', 3, {
       'search-results.first-sermon': SECTIONS_RECT,

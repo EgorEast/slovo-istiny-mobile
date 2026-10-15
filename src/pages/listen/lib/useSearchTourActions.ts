@@ -5,13 +5,16 @@ import { searchQueryAtom, searchResultsAtom } from 'features/sermon-search'
 import { type SermonData } from 'entities/sermon'
 
 const OPEN_SEARCH_ACTION_ID = 'open-listen-search'
+const TYPE_QUERY_ACTION_ID = 'type-search-query'
 const PRESS_FIRST_SERMON_ACTION_ID = 'press-first-sermon'
 const SEARCH_QUERY = 'лицемерие'
-const TYPE_STEP_MS = 120
+// Each prefix lands ~100ms after the previous one, so the whole word (8 prefixes,
+// first one synchronous) types in ~700ms — well under the tour's 1000ms advance.
+const TYPE_STEP_MS = 100
 
 /**
  * Registers the search tour's actions on behalf of the page: the tour opens the
- * search overlay and types the demo query into the real search atom (prefix by
+ * search overlay, then types the demo query into the real search atom (prefix by
  * prefix, cancellable) so the grouped-results card has a target to spotlight, then
  * presses the first rendered sermon. The page owns these because
  * `features/sermon-search` must not import `features/onboarding` (dependency
@@ -45,11 +48,6 @@ export const useSearchTourActions = ({
     typeNextChar()
   }, [setQuery])
 
-  const openSearchAndType = useCallback(() => {
-    onOpenSearch()
-    typeQuery()
-  }, [onOpenSearch, typeQuery])
-
   const pressFirstSermon = useCallback(() => {
     const firstSermon = sermons[0]
     if (firstSermon === undefined) return
@@ -64,6 +62,7 @@ export const useSearchTourActions = ({
     [],
   )
 
-  useTourActionRegistrar(OPEN_SEARCH_ACTION_ID, openSearchAndType)
+  useTourActionRegistrar(OPEN_SEARCH_ACTION_ID, onOpenSearch)
+  useTourActionRegistrar(TYPE_QUERY_ACTION_ID, typeQuery)
   useTourActionRegistrar(PRESS_FIRST_SERMON_ACTION_ID, pressFirstSermon)
 }

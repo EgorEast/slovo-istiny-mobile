@@ -26,12 +26,18 @@ export const searchScenario: OnboardingScenario = {
       title: 'Кнопка поиска',
     },
     {
-      // Opens the search overlay and types the demo query, so the grouped results
-      // card below has a target to spotlight.
+      // Opens the search overlay, so the query step below can type into it.
       tapActionId: 'open-listen-search',
       tapTargetId: 'listen.search-toggle',
       text: 'Открываем поиск…',
       title: 'Открываем поиск',
+    },
+    {
+      // Types the demo query into the live search field, so the grouped results
+      // card below has a target to spotlight.
+      tapActionId: 'type-search-query',
+      text: 'Вводим запрос, например «лицемерие»…',
+      title: 'Вводим запрос',
     },
     {
       targetId: 'search-results.group-sermons',

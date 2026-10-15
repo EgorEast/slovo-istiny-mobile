@@ -22,6 +22,7 @@ jest.mock('features/sermon-search', () => {
 })
 
 const OPEN_SEARCH = 'open-listen-search'
+const TYPE_QUERY = 'type-search-query'
 const PRESS_FIRST_SERMON = 'press-first-sermon'
 const FULL_QUERY = 'лицемерие'
 
@@ -61,7 +62,7 @@ describe('useSearchTourActions', () => {
     jest.clearAllMocks()
   })
 
-  test('opens the search and types the demo query prefix by prefix', async () => {
+  test('opens the search without typing the demo query', async () => {
     const onOpenSearch = jest.fn()
     const ctx = await renderActions(jest.fn(), [], onOpenSearch)
 
@@ -70,6 +71,16 @@ describe('useSearchTourActions', () => {
     })
 
     expect(onOpenSearch).toHaveBeenCalledTimes(1)
+    expect(ctx.get(searchQueryAtom)).toBe('')
+  })
+
+  test('types the full demo query prefix by prefix', async () => {
+    const ctx = await renderActions(jest.fn())
+
+    await act(async () => {
+      getRegisteredAction(TYPE_QUERY)?.()
+    })
+
     // The first character lands synchronously; the rest follow on real delays.
     expect(ctx.get(searchQueryAtom)).toBe('л')
 
@@ -84,7 +95,7 @@ describe('useSearchTourActions', () => {
     )
 
     await act(async () => {
-      getRegisteredAction(OPEN_SEARCH)?.()
+      getRegisteredAction(TYPE_QUERY)?.()
     })
 
     const typedBeforeUnmount = ctx.get(searchQueryAtom)
