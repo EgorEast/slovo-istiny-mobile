@@ -5,6 +5,11 @@ import { type MenuActionItem } from './types'
 
 export interface TracksListItemContextMenuProps {
   anchor: AnchorRect | null
+  /**
+   * Onboarding target ids for the cache action row, keyed by toggle direction: the
+   * `add` id wraps it while the row is not cached, `remove` while it is.
+   */
+  cacheActionOnboardingTargetIds?: { add: string; remove: string }
   isCached: boolean
   isCacheDisabled?: boolean
   isMenuOpen: boolean
@@ -44,6 +49,7 @@ const getCacheActionItem = (
 
 export const TracksListItemContextMenu = ({
   anchor,
+  cacheActionOnboardingTargetIds,
   isCached,
   isCacheDisabled = false,
   isMenuOpen,
@@ -55,14 +61,21 @@ export const TracksListItemContextMenu = ({
   visualState,
 }: TracksListItemContextMenuProps) => {
   const cacheAction = getCacheActionItem(visualState, isCached)
+  const cacheActionTargetId =
+    cacheActionOnboardingTargetIds === undefined
+      ? undefined
+      : isCached
+        ? cacheActionOnboardingTargetIds.remove
+        : cacheActionOnboardingTargetIds.add
   // Caching off in settings: the cache action is meaningless, so the row menu
   // keeps only its non-cache items.
-  const items: MenuItem[] = [
+  const items: MenuActionItem[] = [
     ...(isSermonCachingEnabled
       ? [
           {
             disabled: isCacheDisabled,
             icon: cacheAction.icon,
+            onboardingTargetId: cacheActionTargetId,
             onPress: onToggleCache,
             text: cacheAction.text,
           },

@@ -356,6 +356,52 @@ describe('onboarding scenario data', () => {
     expect(playlistAdd.steps[5].presentOnTop).toBe(true)
   })
 
+  test('playlist-offline walks the playlist cache menus and ends on the offline section', () => {
+    const playlistOffline = scenariosById['playlist-offline']
+
+    expect(playlistOffline.title).toBe('Прослушивание без интернета')
+    expect(playlistOffline.screens).toEqual(['/listen/playlist'])
+    expect(playlistOffline.steps).toHaveLength(10)
+    expect(playlistOffline.steps[0].targetId).toBeUndefined()
+    expect(playlistOffline.steps[0].tapActionId).toBeUndefined()
+    expect(playlistOffline.steps[1].tapTargetId).toBe('playlist.menu')
+    expect(playlistOffline.steps[1].tapActionId).toBe('open-playlist-menu')
+    expect(playlistOffline.steps[2].targetId).toBe('playlist.menu-offline-add')
+    expect(playlistOffline.steps[3].targetId).toBe('playlist.menu-offline-remove')
+    // The row-menu exit closes the header menu opened at step 2, then blinks and
+    // opens the row menu itself.
+    expect(playlistOffline.steps[4].actionOnEnterId).toBe('close-playlist-menu')
+    expect(playlistOffline.steps[4].tapTargetId).toBe(FIRST_ROW_TARGET_ID)
+    expect(playlistOffline.steps[4].tapActionId).toBe('open-playlist-row-menu')
+    expect(playlistOffline.steps[5].targetId).toBe('playlist.row-menu-offline-add')
+    expect(playlistOffline.steps[5].skipIfMissing).toBe(true)
+    expect(playlistOffline.steps[6].targetId).toBe('playlist.row-menu-offline-remove')
+    expect(playlistOffline.steps[6].skipIfMissing).toBe(true)
+    expect(playlistOffline.steps[7].route).toBe('/listen')
+    expect(playlistOffline.steps[7].tapTargetId).toBe('tab.listen')
+    expect(playlistOffline.steps[8].route).toBe('/more')
+    expect(playlistOffline.steps[8].tapTargetId).toBe('tab.more')
+    expect(playlistOffline.steps[9].targetId).toBe('more.offline-item')
+  })
+
+  test('playlist-offline folds its exits and entries into six cards', () => {
+    const deck = buildTourDeck(scenariosById['playlist-offline'].steps)
+
+    expect(deck).toHaveLength(6)
+    expect(deck.map(entry => entry.cardIndex)).toEqual([0, 2, 3, 5, 6, 9])
+    expect(deck[0].exitStepIndexes).toEqual([1])
+    expect(deck[2].exitStepIndexes).toEqual([4])
+    expect(deck[5].entryStepIndexes).toEqual([7, 8])
+  })
+
+  test('the playlist screen offers three local tours', () => {
+    const localIds = scenarios
+      .filter(scenario => scenario.screens?.includes('/listen/playlist') ?? false)
+      .map(scenario => scenario.id)
+
+    expect(localIds).toEqual(['playlist-menu', 'playlist-add', 'playlist-offline'])
+  })
+
   test('playlists scenario no longer claims the single-playlist screen', () => {
     expect(scenariosById.playlists.screens).toEqual([
       '/listen',

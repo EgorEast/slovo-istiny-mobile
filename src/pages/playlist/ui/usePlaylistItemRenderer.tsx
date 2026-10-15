@@ -7,6 +7,14 @@ import { type TracksListData } from './usePlaylistNavigationOptions'
 // Only the first sermon row is highlighted: the row menu is identical for every
 // row, so one anchoring target covers the tour's card position.
 const FIRST_ROW_TARGET_ID = 'playlist.first-row'
+// The offline-cache row of the first row's menu toggles by state: the tour targets
+// the «add» id while the sermon is not cached and the «remove» id while it is.
+const ROW_MENU_OFFLINE_ADD_TARGET_ID = 'playlist.row-menu-offline-add'
+const ROW_MENU_OFFLINE_REMOVE_TARGET_ID = 'playlist.row-menu-offline-remove'
+const FIRST_ROW_CACHE_ACTION_TARGET_IDS = {
+  add: ROW_MENU_OFFLINE_ADD_TARGET_ID,
+  remove: ROW_MENU_OFFLINE_REMOVE_TARGET_ID,
+}
 
 // Only menu actions carrying an onboarding target id are wrapped; the rest render
 // bare, so the tour spotlights just the first row's dropdown items.
@@ -64,6 +72,9 @@ export const usePlaylistItemRenderer = ({
           storedProgress={progressMap.get(item.id ?? '')}
           bindMenuOpener={index === 0 ? bindRowMenu : undefined}
           renderMenuItem={index === 0 ? renderMenuRow : undefined}
+          cacheActionOnboardingTargetIds={
+            index === 0 ? FIRST_ROW_CACHE_ACTION_TARGET_IDS : undefined
+          }
         />
       )
       if (index !== 0) return row

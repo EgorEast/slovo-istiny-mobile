@@ -19,6 +19,12 @@ export interface TracksListItemProps {
   audioUrl?: string
   /** Hands the row's dropdown open/close controls to the owner (stable callback). */
   bindMenuOpener?: (controls: TrackListMenuControls) => void
+  /**
+   * Onboarding target ids for the built-in cache action row, keyed by toggle
+   * direction: `add` while the row is not cached, `remove` while it is. Plain data,
+   * so the entity never imports features/onboarding.
+   */
+  cacheActionOnboardingTargetIds?: { add: string; remove: string }
   /** Кэш-состояние строки, посчитанное вызывающим слоем через entities/offline-cache. */
   cacheState: TrackCacheState
   isAudioPlaying?: boolean

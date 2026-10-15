@@ -13,6 +13,7 @@ export const PlaylistTrackItem = memo(
     artwork,
     audioUrl,
     bindMenuOpener,
+    cacheActionOnboardingTargetIds,
     cacheTrigger,
     currentAudioId,
     id,
@@ -28,6 +29,7 @@ export const PlaylistTrackItem = memo(
     artwork: null | string
     audioUrl?: null | string
     bindMenuOpener?: (controls: TrackListMenuControls) => void
+    cacheActionOnboardingTargetIds?: { add: string; remove: string }
     cacheTrigger?: number
     currentAudioId?: string
     id: string | undefined
@@ -58,6 +60,7 @@ export const PlaylistTrackItem = memo(
         audioUrl={audioUrl ?? undefined}
         isPlaying={currentAudioId === id}
         isAudioPlaying={currentAudioId === id && isPlaying}
+        cacheActionOnboardingTargetIds={cacheActionOnboardingTargetIds}
       />
     )
   },

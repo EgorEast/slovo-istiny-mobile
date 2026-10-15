@@ -11,6 +11,7 @@ import { playerSoundScenario } from './scenarioData/player-sound'
 import { playerSpeedScenario } from './scenarioData/player-speed'
 import { playlistAddScenario } from './scenarioData/playlist-add'
 import { playlistMenuScenario } from './scenarioData/playlist-menu'
+import { playlistOfflineScenario } from './scenarioData/playlist-offline'
 import { playlistsScenario } from './scenarioData/playlists'
 import { readScenario } from './scenarioData/read'
 import { searchScenario } from './scenarioData/search'
@@ -33,8 +34,7 @@ export interface OnboardingScenario {
   title: string
 }
 
-// Which picker offers the scenario. `default` scenarios belong to the screen
-// pickers (the header «?»); `player` scenarios belong only to the fullscreen picker.
+// Which picker offers the scenario: `default` = screen pickers, `player` = fullscreen only.
 export type ScenarioScope = 'default' | 'player'
 
 export const resolveScenarioScope = (scenario: OnboardingScenario): ScenarioScope =>
@@ -52,6 +52,7 @@ export type OnboardingScenarioId =
   | 'player'
   | 'playlist-add'
   | 'playlist-menu'
+  | 'playlist-offline'
   | 'playlists'
   | 'read'
   | 'search'
@@ -62,16 +63,13 @@ export type OnboardingScenarioId =
   | 'whatsNew'
 
 export interface OnboardingStep {
-  // Registered action performed once on step activation, no blink/auto-advance
-  // (lib/tourActions.ts). Meant for interactive steps needing the live UI prepared.
+  // Registered action performed once on activation, no blink/auto-advance (lib/tourActions.ts).
   actionOnEnterId?: string
   // Highlighted target rects (background dimmed, zones stay bright) — see ui/TourWaitLayer.tsx.
   areaTargetIds?: string[]
   // Pass-through card over the live UI, no spotlight modal.
   interactive?: boolean
-  // Re-present the tour window on this step (a fresh native Modal keyed by the step)
-  // so it lands above app modals presented earlier — for targets that live inside
-  // such a modal (e.g. the AddToPlaylist picker).
+  // Re-present the tour window (fresh native Modal keyed by step) above app modals.
   presentOnTop?: boolean
   route?: Href
   // Target may be absent (admin/local/flag row): skip the step when its rect never registers.
@@ -96,6 +94,7 @@ export const scenarios: OnboardingScenario[] = [
   searchScenario,
   playlistMenuScenario,
   playlistAddScenario,
+  playlistOfflineScenario,
   historyScenario,
   offlineScenario,
   settingsScenario,
@@ -119,6 +118,7 @@ export const scenariosById: Record<OnboardingScenarioId, OnboardingScenario> = {
   'player-speed': playerSpeedScenario,
   'playlist-add': playlistAddScenario,
   'playlist-menu': playlistMenuScenario,
+  'playlist-offline': playlistOfflineScenario,
   playlists: playlistsScenario,
   read: readScenario,
   search: searchScenario,

@@ -221,6 +221,44 @@ describe('<TracksListItemContextMenu>', () => {
     )
   })
 
+  test('wraps the cache item with the add target id while the row is not cached', async () => {
+    const renderMenuItem = jest.fn((row: ReactElement) => row)
+
+    await renderWithProviders(
+      <TracksListItemContextMenu
+        {...baseProps}
+        isCached={false}
+        visualState='cloud'
+        renderMenuItem={renderMenuItem}
+        cacheActionOnboardingTargetIds={{ add: 'row.cache-add', remove: 'row.cache-remove' }}
+      />,
+    )
+
+    expect(renderMenuItem).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ onboardingTargetId: 'row.cache-add', text: ADD_TO_OFFLINE_TEXT }),
+    )
+  })
+
+  test('wraps the cache item with the remove target id while the row is cached', async () => {
+    const renderMenuItem = jest.fn((row: ReactElement) => row)
+
+    await renderWithProviders(
+      <TracksListItemContextMenu
+        {...baseProps}
+        isCached={true}
+        visualState='cached'
+        renderMenuItem={renderMenuItem}
+        cacheActionOnboardingTargetIds={{ add: 'row.cache-add', remove: 'row.cache-remove' }}
+      />,
+    )
+
+    expect(renderMenuItem).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ onboardingTargetId: 'row.cache-remove', text: REMOVE_CACHE_TEXT }),
+    )
+  })
+
   test('disables cache item when isCacheDisabled is true', async () => {
     await renderWithProviders(<TracksListItemContextMenu {...baseProps} isCacheDisabled={true} />)
 

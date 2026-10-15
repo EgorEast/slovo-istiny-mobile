@@ -8,15 +8,15 @@ import { TracksListItemContent } from './TracksListItemContent'
 import { TracksListItemContextMenu } from './TracksListItemContextMenu'
 import { type TracksListItemProps } from './types'
 
-// Web: the row renders as <div role="link" tabindex=0> (RNW maps 'link' to the
-// role attribute, no <a> tag) so Vimium hints work and Enter activates while
-// Space scrolls — link semantics. Native keeps the button role.
+// Web: the row renders as <div role="link" tabindex=0> so Vimium hints work and
+// Enter activates while Space scrolls — link semantics. Native keeps the button role.
 const ROW_ACCESSIBILITY_ROLE = Platform.OS === 'web' ? 'link' : 'button'
 
 export const TracksListItemBase = ({
   artwork,
   audioUrl,
   bindMenuOpener,
+  cacheActionOnboardingTargetIds,
   cacheState,
   isAudioPlaying = false,
   isPlaying,
@@ -123,6 +123,7 @@ export const TracksListItemBase = ({
         isCacheDisabled={isCacheDisabled}
         onToggleCache={handleToggleCache}
         isSermonCachingEnabled={isSermonCachingEnabled}
+        cacheActionOnboardingTargetIds={cacheActionOnboardingTargetIds}
       />
     </>
   )
