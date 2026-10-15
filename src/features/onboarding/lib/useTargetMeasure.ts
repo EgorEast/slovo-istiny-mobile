@@ -69,5 +69,10 @@ export const useTargetMeasure = ({ getNode, id }: TargetMeasureInput) => {
     return navigation.addListener('transitionEnd', measure)
   }, [isActive, measure, navigation])
 
+  // Unmount releases the target's rect so the registry only ever reflects mounted
+  // targets: a stale rect from a closed surface would otherwise let the
+  // `skipIfMissing` instant-skip drop a step whose target is merely not measured yet.
+  useEffect(() => () => register({ id, rect: null }), [id, register])
+
   return { isActive, measure }
 }

@@ -101,4 +101,25 @@ describe('useTargetMeasure', () => {
 
     expect(measure.mock.calls.length).toBe(callsAfterFirstSample)
   })
+
+  test('releases the target rect when the target unmounts', async () => {
+    const ctx = createCtx()
+    activateTarget(ctx)
+
+    const { unmount } = await renderMeasure(() => createNode(callback => callback(1, 2, 3, 4)), ctx)
+    await flush(150)
+
+    expect(ctx.get(onboardingTargetRectsAtom)[TARGET_ID]).toEqual({
+      height: 4,
+      width: 3,
+      x: 1,
+      y: 2,
+    })
+
+    await act(async () => {
+      unmount()
+    })
+
+    expect(ctx.get(onboardingTargetRectsAtom)).toEqual({})
+  })
 })
