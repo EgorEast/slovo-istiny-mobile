@@ -62,7 +62,11 @@ export const SettingsScreen = () => {
             setShowThemeDialog(true)
           }}
         />
-        {isMaterialYouSupported() && <DynamicColorsItem />}
+        {isMaterialYouSupported() && (
+          <OnboardingTarget id='settings.dynamic-colors'>
+            <DynamicColorsItem />
+          </OnboardingTarget>
+        )}
         {showHapticsItem && <HapticsSettingsItem onboardingTargetId='settings.haptics' />}
         <ToursSettingsItem onboardingTargetId='settings.tours' />
         <OnboardingTarget id='settings.backup'>

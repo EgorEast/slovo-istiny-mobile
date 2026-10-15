@@ -1,5 +1,7 @@
 import { type OnboardingScenario } from '../scenarios'
 
+const SETTINGS_ITEM_TARGET_ID = 'more.settings-item'
+
 export const settingsScenario: OnboardingScenario = {
   description: 'Оформление, сервер и бэкапы',
   icon: 'settings-outline',
@@ -7,22 +9,24 @@ export const settingsScenario: OnboardingScenario = {
   screens: ['/more', '/settings'],
   steps: [
     {
-      text: 'Сейчас перейдём на экран «Ещё» — тапнем по нему — и откроем настройки. Нажмите «Далее».',
-      title: 'Настройки',
-    },
-    {
       route: '/more',
-      tapTargetId: 'tab.more',
-      targetId: 'more.settings-item',
-      text: 'Открываем настройки.',
+      tapTargetId: SETTINGS_ITEM_TARGET_ID,
+      targetId: SETTINGS_ITEM_TARGET_ID,
+      text: 'Чтобы открыть настройки, тапните по пункту «Настройки». Нажмите «Далее».',
       title: 'Настройки',
     },
     {
       route: '/settings',
-      tapTargetId: 'more.settings-item',
+      tapTargetId: SETTINGS_ITEM_TARGET_ID,
       targetId: 'settings.theme',
-      text: 'Светлая и тёмная темы, а на Android 12+ — динамические цвета Material You.',
+      text: 'Светлая и тёмная темы.',
       title: 'Оформление',
+    },
+    {
+      skipIfMissing: true,
+      targetId: 'settings.dynamic-colors',
+      text: 'На Android 12+ тема может подстраиваться под цвета системы — Material You.',
+      title: 'Динамические цвета',
     },
     {
       targetId: 'settings.haptics',

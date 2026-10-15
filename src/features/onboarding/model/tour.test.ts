@@ -174,21 +174,21 @@ describe('onboarding tour model', () => {
 })
 
 describe('onboarding tour start resume', () => {
-  test('starts on the screen the user is already on, skipping the lead-up', () => {
+  test('starts on the screen the user is already on, skipping the merged lead-up card', () => {
     const ctx = createCtx()
 
     startOnboardingTour(ctx, 'settings', '/settings')
 
     expect(ctx.get(onboardingTourAtom)).toEqual({
-      deckIndex: 2,
+      deckIndex: 1,
       scenarioId: 'settings',
-      skippedDeckIndexes: [0, 1],
+      skippedDeckIndexes: [0],
     })
 
     const deck = buildTourDeck(scenariosById.settings.steps)
-    const progress = resolveDeckProgress(deck, [0, 1], 2)
+    const progress = resolveDeckProgress(deck, [0], 1)
     expect(progress.displayIndex).toBe(0)
-    expect(progress.displayTotal).toBe(5)
+    expect(progress.displayTotal).toBe(6)
   })
 
   test('starts from the beginning on the first screen of the scenario', () => {

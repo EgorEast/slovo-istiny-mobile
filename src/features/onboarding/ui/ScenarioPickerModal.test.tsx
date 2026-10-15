@@ -95,9 +95,9 @@ describe('<ScenarioPickerModal>', () => {
     await fireEvent.press(getByRole('button', { name: /Настройки и резервные копии/ }))
 
     expect(ctx.get(onboardingTourAtom)).toEqual({
-      deckIndex: 2,
+      deckIndex: 1,
       scenarioId: 'settings',
-      skippedDeckIndexes: [0, 1],
+      skippedDeckIndexes: [0],
     })
   })
 

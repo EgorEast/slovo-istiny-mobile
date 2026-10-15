@@ -71,7 +71,7 @@ const EXIT_FLOW_TIMEOUT_MS = 5500
 const HOLD_TIMEOUT_MS = 1200
 const SECTIONS_RECT: OnboardingTargetRect = { height: 4, width: 3, x: 1, y: 2 }
 const OFFSCREEN_RECT: OnboardingTargetRect = { height: 60, width: 300, x: 0, y: 99999 }
-const TAB_MORE_RECT: OnboardingTargetRect = { height: 60, width: 90, x: 300, y: 760 }
+const SETTINGS_ITEM_RECT: OnboardingTargetRect = { height: 60, width: 90, x: 300, y: 760 }
 const EDGE_BACK_RECT: OnboardingTargetRect = { height: 400, width: 64, x: 0, y: 100 }
 const EDGE_FORWARD_RECT: OnboardingTargetRect = { height: 400, width: 64, x: 336, y: 100 }
 const PLAYLIST_ROW_RECT: OnboardingTargetRect = { height: 80, width: 320, x: 0, y: 400 }
@@ -195,7 +195,7 @@ describe('<OnboardingTourOverlay>', () => {
   test('navigates to the card route when the pathname differs', async () => {
     mockPathname.mockReturnValue('/settings')
 
-    await renderAtDeck('settings', 1)
+    await renderAtDeck('settings', 0)
 
     await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('/more'), {
       timeout: HOLD_TIMEOUT_MS,
@@ -214,8 +214,8 @@ describe('<OnboardingTourOverlay>', () => {
   test('blinks the tap hint inside its own modal before navigating', async () => {
     mockPathname.mockReturnValue('/settings')
 
-    const { getByTestId, getByText, queryByText } = await renderAtDeck('settings', 1, {
-      'tab.more': TAB_MORE_RECT,
+    const { getByTestId, getByText, queryByText } = await renderAtDeck('settings', 0, {
+      'more.settings-item': SETTINGS_ITEM_RECT,
     })
 
     // The blink is presented in a Modal (a fresh native window above app overlays):
@@ -243,7 +243,7 @@ describe('<OnboardingTourOverlay>', () => {
   test('holds navigation for a declared tap target until its rect registers, then blinks', async () => {
     mockPathname.mockReturnValue('/settings')
 
-    const { ctx, queryByTestId, queryByText } = await renderAtDeck('settings', 1)
+    const { ctx, queryByTestId, queryByText } = await renderAtDeck('settings', 0)
 
     // No rect yet: navigation is held and no blink plays.
     expect(mockNavigate).not.toHaveBeenCalled()
@@ -251,7 +251,7 @@ describe('<OnboardingTourOverlay>', () => {
     expect(queryByTestId(TAP_MODAL)).toBeNull()
 
     await act(async () => {
-      registerOnboardingTargetRect(ctx, { id: 'tab.more', rect: TAB_MORE_RECT })
+      registerOnboardingTargetRect(ctx, { id: 'more.settings-item', rect: SETTINGS_ITEM_RECT })
     })
 
     await waitFor(() => expect(queryByTestId(TAP_MODAL)).toBeTruthy())
@@ -264,7 +264,7 @@ describe('<OnboardingTourOverlay>', () => {
   test('navigates without a blink when the declared tap target never registers', async () => {
     mockPathname.mockReturnValue('/settings')
 
-    const { queryByText } = await renderAtDeck('settings', 1)
+    const { queryByText } = await renderAtDeck('settings', 0)
 
     expect(queryByText(TAP_INDICATOR)).toBeNull()
     expect(mockNavigate).not.toHaveBeenCalled()
@@ -278,8 +278,8 @@ describe('<OnboardingTourOverlay>', () => {
   test('cancels the tap phase without navigating when the user reaches the route first', async () => {
     mockPathname.mockReturnValue('/settings')
 
-    const { getByText, queryByText, rerender } = await renderAtDeck('settings', 1, {
-      'tab.more': TAB_MORE_RECT,
+    const { getByText, queryByText, rerender } = await renderAtDeck('settings', 0, {
+      'more.settings-item': SETTINGS_ITEM_RECT,
     })
 
     expect(getByText(TAP_INDICATOR)).toBeTruthy()
@@ -296,8 +296,8 @@ describe('<OnboardingTourOverlay>', () => {
   test('clears the tap phase when the tour ends', async () => {
     mockPathname.mockReturnValue('/settings')
 
-    const { ctx, getByText, queryByText } = await renderAtDeck('settings', 1, {
-      'tab.more': TAB_MORE_RECT,
+    const { ctx, getByText, queryByText } = await renderAtDeck('settings', 0, {
+      'more.settings-item': SETTINGS_ITEM_RECT,
     })
 
     expect(getByText(TAP_INDICATOR)).toBeTruthy()

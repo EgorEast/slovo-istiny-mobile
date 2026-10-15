@@ -97,22 +97,40 @@ describe('onboarding scenario data', () => {
     expect(scenariosById.history.steps[2].tapTargetId).toBe('more.history-item')
     expect(scenariosById.offline.steps[0].tapTargetId).toBe(OFFLINE_ITEM_TARGET_ID)
     expect(scenariosById.offline.steps[1].tapTargetId).toBe(OFFLINE_ITEM_TARGET_ID)
-    expect(scenariosById.settings.steps[1].tapTargetId).toBe('tab.more')
-    expect(scenariosById.settings.steps[2].tapTargetId).toBe('more.settings-item')
+    expect(scenariosById.settings.steps[0].tapTargetId).toBe('more.settings-item')
+    expect(scenariosById.settings.steps[1].tapTargetId).toBe('more.settings-item')
     expect(scenariosById.read.steps[0].tapTargetId).toBe('tab.read')
     expect(scenariosById.study.steps[0].tapTargetId).toBe('tab.study')
   })
 
   test('settings tour follows the visual order of the settings rows', () => {
-    const settingsTargets = scenariosById.settings.steps.slice(2).map(step => step.targetId)
+    const settingsTargets = scenariosById.settings.steps.slice(1).map(step => step.targetId)
 
     expect(settingsTargets).toEqual([
       'settings.theme',
+      'settings.dynamic-colors',
       'settings.haptics',
       'settings.tours',
       'settings.backup',
       'settings.server',
     ])
+  })
+
+  test('settings merges the intro into the lead-up card and splits the theme step', () => {
+    const settings = scenariosById.settings
+
+    expect(settings.steps).toHaveLength(7)
+    expect(settings.steps[0]).toEqual({
+      route: '/more',
+      tapTargetId: 'more.settings-item',
+      targetId: 'more.settings-item',
+      text: 'Чтобы открыть настройки, тапните по пункту «Настройки». Нажмите «Далее».',
+      title: 'Настройки',
+    })
+    expect(settings.steps[1].targetId).toBe('settings.theme')
+    expect(settings.steps[1].text).toBe('Светлая и тёмная темы.')
+    expect(settings.steps[2].targetId).toBe('settings.dynamic-colors')
+    expect(settings.steps[2].skipIfMissing).toBe(true)
   })
 
   test('backup scenario falls back globally and opens the path into the backup section', () => {
@@ -184,10 +202,6 @@ describe('onboarding scenario data', () => {
       'Сейчас перейдём на экран «Ещё» — тапнем по нему — и откроем историю прослушивания. Нажмите «Далее».',
     )
     expect(scenariosById.history.steps[1].text).toBe('Открываем историю прослушивания.')
-    expect(scenariosById.settings.steps[0].text).toBe(
-      'Сейчас перейдём на экран «Ещё» — тапнем по нему — и откроем настройки. Нажмите «Далее».',
-    )
-    expect(scenariosById.settings.steps[1].text).toBe('Открываем настройки.')
   })
 
   test('the tab-navigation intro cards name the tab tap and the destination', () => {
