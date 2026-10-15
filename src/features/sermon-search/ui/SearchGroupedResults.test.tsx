@@ -1,7 +1,7 @@
 import { createCtx } from '@reatom/framework'
 import { fireEvent, screen } from '@testing-library/react-native'
 import { type ReactElement } from 'react'
-import { View as RNView } from 'react-native'
+import { Text as RNText, View as RNView } from 'react-native'
 import {
   FAVORITES_PLAYLIST,
   type LocalPlaylistData,
@@ -310,6 +310,33 @@ describe('<SearchGroupedResults>', () => {
     expect(mockPlayNewSermon).toHaveBeenCalledWith(
       expect.objectContaining({ playlist: expect.objectContaining({ id: 'pl-a' }) }),
     )
+  })
+
+  test('threads the page-owned picker wrapper into the picker dialog', async () => {
+    const playlistA = playlistsMocks.getPlaylistControllerCreateResponseMock({ id: 'pl-a' })
+    const playlistB = playlistsMocks.getPlaylistControllerCreateResponseMock({ id: 'pl-b' })
+    const sermon = buildSermonData(
+      sermonsMocks.getSermonControllerFindOneResponseMock({ playlists: [playlistA, playlistB] }),
+    )
+    const pickerWrapper = jest.fn((dialog: ReactElement) => (
+      <RNView>
+        <RNText>wrapped-picker</RNText>
+        {dialog}
+      </RNView>
+    ))
+    const ctx = createCtx()
+    searchQueryAtom(ctx, ACTIVE_QUERY)
+    searchResultsAtom(ctx, [sermon])
+    await renderWithProviders(
+      <SearchGroupedResults onPlaylistPress={jest.fn()} pickerWrapper={pickerWrapper} />,
+      { ctx },
+    )
+
+    await fireEvent.press(screen.getByText(sermon.title))
+
+    expect(pickerWrapper).toHaveBeenCalledTimes(1)
+    expect(screen.getByText('wrapped-picker')).toBeTruthy()
+    expect(screen.getByText(PICKER_TITLE)).toBeTruthy()
   })
 
   test('dismisses the picker without playing when the backdrop is pressed', async () => {

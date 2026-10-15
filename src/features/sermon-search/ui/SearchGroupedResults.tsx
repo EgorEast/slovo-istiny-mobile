@@ -1,6 +1,6 @@
 import { useAtom } from '@reatom/npm-react'
 import { type ReactElement, type ReactNode, useCallback } from 'react'
-import { ScrollView, StyleSheet } from 'react-native'
+import { ScrollView } from 'react-native'
 import { useHistoryProgressMap, useHistorySermonIds } from 'entities/listening-history'
 import { type PlaylistData } from 'entities/playlist'
 import { type AudioPlayerData } from 'entities/sermon'
@@ -17,6 +17,7 @@ import {
   searchQueryAtom,
   searchResultsAtom,
 } from '../model'
+import { styles } from './SearchGroupedResults.styles'
 import { SearchGroupedResultsSkeleton } from './SearchGroupedResultsSkeleton'
 import { SearchGroupSkeleton } from './SearchGroupSkeleton'
 import { SearchPlaylistGroup } from './SearchPlaylistGroup'
@@ -34,6 +35,7 @@ export const SearchGroupedResults = ({
   onPlaylistPress,
   onPreacherPress,
   onShowAllGroup,
+  pickerWrapper,
 }: {
   // Page-owned wrappers (dependency inversion): this feature never imports onboarding.
   firstRowWrapper?: (row: ReactElement) => ReactNode
@@ -42,6 +44,7 @@ export const SearchGroupedResults = ({
   onPlaylistPress: (playlist: PlaylistData) => void
   onPreacherPress?: (artist: string) => void
   onShowAllGroup?: (group: SearchGroupKey, query: string) => void
+  pickerWrapper?: (dialog: ReactElement) => ReactNode
 }) => {
   useDebouncedSearch()
 
@@ -52,7 +55,7 @@ export const SearchGroupedResults = ({
   const [preachers] = useAtom(searchPreachersAtom)
   const [isSearching] = useAtom(isSearchingAtom)
   const [tabBarHeight] = useAtom(tabBarHeightAtom)
-  const { modal, onSermonPress } = useSermonPlayback()
+  const { modal, onSermonPress } = useSermonPlayback({ pickerWrapper })
   const progressMap = useHistoryProgressMap()
   const historySermonIds = useHistorySermonIds()
   const trimmedQuery = query.trim()
@@ -119,12 +122,3 @@ export const SearchGroupedResults = ({
 // Skeletons hang off the public component (Composition API).
 SearchGroupedResults.Skeleton = SearchGroupedResultsSkeleton
 SearchGroupedResults.GroupSkeleton = SearchGroupSkeleton
-
-const styles = StyleSheet.create({
-  listContent: {
-    flexGrow: 1,
-  },
-  scroll: {
-    flex: 1,
-  },
-})

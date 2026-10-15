@@ -398,12 +398,19 @@ describe('<OnboardingTourOverlay>', () => {
   })
 
   test('presents the playlist-picker card as a spotlight above the app modal', async () => {
-    const { getByTestId, getByText } = await renderAtDeck('search', 2)
+    const PICKER_RECT: OnboardingTargetRect = { height: 200, width: 320, x: 40, y: 300 }
+    const { getAllByTestId, getByTestId, getByText } = await renderAtDeck('search', 2, {
+      'search.picker-modal': PICKER_RECT,
+    })
 
     expect(getByTestId(TOUR_MODAL)).toBeTruthy()
     expect(getByText('Выберите плейлист')).toBeTruthy()
     expect(getByText(NEXT_LABEL)).toBeTruthy()
     expect(getByText(DIM)).toBeTruthy()
+    // The picker window is cut out of the dim and marked with a translucent fill,
+    // so the dialog the tour points at stays visible.
+    expect(getByText('hole:40,300')).toBeTruthy()
+    expect(getAllByTestId(AREA_HIGHLIGHT)).toHaveLength(1)
   })
 
   test('blinks the search-toggle exit visualization before opening the search', async () => {

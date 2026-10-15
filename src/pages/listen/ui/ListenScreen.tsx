@@ -1,12 +1,10 @@
 import { useAction, useAtom } from '@reatom/npm-react'
 import { useEffect } from 'react'
-import { ScrollView, StyleSheet, View } from 'react-native'
+import { ScrollView, StyleSheet } from 'react-native'
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useAddToPlaylistModal } from 'features/add-to-playlist'
 import { useTourActionRegistrar, useTourScrollable } from 'features/onboarding'
 import {
-  SEARCH_HEADER_HEIGHT,
-  SearchBar,
   SearchGroupedResults,
   useIsSearchActive,
   useIsSearchOpen,
@@ -24,9 +22,10 @@ import { useScrollActivity } from '../lib/useScrollActivity'
 import { useSearchTourActions } from '../lib/useSearchTourActions'
 import { ContinueListeningButton } from './ContinueListeningButton'
 import { DynamicSectionsSlider } from './DynamicSectionsSlider'
+import { ListenSearchHeader } from './ListenSearchHeader'
 import { ListenTopRow } from './ListenTopRow'
 import { MyPlaylistsSlider } from './MyPlaylistsSlider'
-import { wrapFirstSearchRow, wrapSearchGroupHeader } from './searchResultTargets'
+import { wrapFirstSearchRow, wrapSearchGroupHeader, wrapSearchPicker } from './searchResultTargets'
 
 const OPEN_SEARCH_ACTION_ID = 'open-listen-search'
 
@@ -44,7 +43,9 @@ export const ListenScreen = () => {
   const restore = useAction(restoreSession)
   const { onScroll } = useScrollActivity()
   const { modal, openAddToPlaylist } = useAddToPlaylistModal()
-  const { modal: sermonPlaybackModal, onSermonPress } = useSermonPlayback()
+  const { modal: sermonPlaybackModal, onSermonPress } = useSermonPlayback({
+    pickerWrapper: wrapSearchPicker,
+  })
   useSearchTourActions({ onPressFirstSermon: onSermonPress })
   const { isRefreshing, refresh } = usePullToRefresh()
   const { onPlaylistPress, onPreacherPress, onShowAllGroup } = useListenSearchNavigation()
@@ -67,14 +68,11 @@ export const ListenScreen = () => {
         { backgroundColor: currentTheme.background, paddingTop: insets.top },
       ]}
     >
-      {isSearchOpen && (
-        <View style={styles.searchHeader}>
-          <SearchBar />
-        </View>
-      )}
+      {isSearchOpen && <ListenSearchHeader />}
       {isSearchOpen && isSearchActive ? (
         <SearchGroupedResults
           onShowAllGroup={onShowAllGroup}
+          pickerWrapper={wrapSearchPicker}
           onPlaylistPress={onPlaylistPress}
           onPreacherPress={onPreacherPress}
           onAddToPlaylist={openAddToPlaylist}
@@ -120,11 +118,5 @@ const styles = StyleSheet.create({
   },
   scroll: {
     flex: 1,
-  },
-  searchHeader: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    height: SEARCH_HEADER_HEIGHT,
-    zIndex: 1,
   },
 })

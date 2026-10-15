@@ -49,6 +49,9 @@ export const searchScenario: OnboardingScenario = {
       title: 'Выбираем проповедь',
     },
     {
+      // The picker window is the highlighted zone: the spotlight dims everything
+      // except it, the fill marks it, and the card stays at the bottom.
+      areaTargetIds: ['search.picker-modal'],
       cardPosition: 'bottom',
       presentOnTop: true,
       text: 'В окне «Выберите плейлист» нажмите на плейлист — проповедь заиграет из него. Если окно не появилось, проповедь уже играет из своего плейлиста. Если передумали — закройте окно после тура.',
