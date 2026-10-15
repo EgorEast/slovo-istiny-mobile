@@ -390,7 +390,7 @@ describe('<OnboardingTourOverlay>', () => {
 
   test('spotlights the sermon-row ⋯ menu on the final search card', async () => {
     const MENU_RECT: OnboardingTargetRect = { height: 40, width: 40, x: 300, y: 400 }
-    const { getByTestId, getByText, queryByTestId, queryByText } = await renderAtDeck('search', 5, {
+    const { getByTestId, getByText, queryByTestId, queryByText } = await renderAtDeck('search', 6, {
       'search-results.first-sermon-menu': MENU_RECT,
     })
 
@@ -408,7 +408,7 @@ describe('<OnboardingTourOverlay>', () => {
     registerTourAction('close-sermon-playlist-picker', action)
 
     const MENU_RECT: OnboardingTargetRect = { height: 40, width: 40, x: 300, y: 400 }
-    await renderAtDeck('search', 5, { 'search-results.first-sermon-menu': MENU_RECT })
+    await renderAtDeck('search', 6, { 'search-results.first-sermon-menu': MENU_RECT })
 
     await waitFor(() => expect(action).toHaveBeenCalledTimes(1))
     unregisterTourAction('close-sermon-playlist-picker')
@@ -416,7 +416,7 @@ describe('<OnboardingTourOverlay>', () => {
 
   test('presents the playlist-picker card as a spotlight above the app modal', async () => {
     const PICKER_RECT: OnboardingTargetRect = { height: 200, width: 320, x: 40, y: 300 }
-    const { getAllByTestId, getByTestId, getByText } = await renderAtDeck('search', 4, {
+    const { getAllByTestId, getByTestId, getByText } = await renderAtDeck('search', 5, {
       'search.picker-modal': PICKER_RECT,
     })
 
@@ -492,7 +492,7 @@ describe('<OnboardingTourOverlay>', () => {
     expect(getByText(TAP_INDICATOR)).toBeTruthy()
   })
 
-  test('runs the type-query exit after the search-toggle exit and advances to the groups card', async () => {
+  test('shows the typing card while the query types, advancing only on «Далее»', async () => {
     const calls: string[] = []
     registerTourAction('open-listen-search', () => calls.push('open'))
     registerTourAction('type-search-query', () => calls.push('type'))
@@ -504,20 +504,49 @@ describe('<OnboardingTourOverlay>', () => {
 
     fireEvent.press(getByText(NEXT_LABEL))
 
-    // The search-toggle exit blinks and opens the search first; the query exit then
-    // performs its action without a blink (no tap target), and only after that does the
-    // deck advance to the grouped-results card — the typing is never cut short.
+    // The search-toggle exit blinks and opens the search, then the deck lands on the
+    // pass-through «Вводим запрос» card, which fires the typing on enter: the word types
+    // in parallel with the visible card.
+    await waitFor(() => expect(calls).toEqual(['open', 'type']), {
+      timeout: EXIT_FLOW_TIMEOUT_MS,
+    })
     await waitFor(() => expect(ctx.get(onboardingTourAtom)?.deckIndex).toBe(2), {
       timeout: EXIT_FLOW_TIMEOUT_MS,
     })
+
+    // The card floats over the live UI and does not auto-advance to the groups card:
+    // the typing finishes while the card stays put.
+    expect(getByText('Вводим запрос')).toBeTruthy()
+    expect(ctx.get(onboardingTourAtom)?.deckIndex).toBe(2)
+
+    fireEvent.press(getByText(NEXT_LABEL))
+
+    await waitFor(() => expect(ctx.get(onboardingTourAtom)?.deckIndex).toBe(3))
     expect(calls).toEqual(['open', 'type'])
 
     unregisterTourAction('open-listen-search')
     unregisterTourAction('type-search-query')
   })
 
+  test('fires the typing card enter action once on activation, not on re-render', async () => {
+    const action = jest.fn()
+    registerTourAction('type-search-query', action)
+
+    const { ctx, rerender } = await renderAtDeck('search', 2)
+
+    await waitFor(() => expect(action).toHaveBeenCalledTimes(1))
+
+    await act(async () => {
+      rerender(<OnboardingTourOverlay />)
+    })
+    expect(action).toHaveBeenCalledTimes(1)
+    expect(ctx.get(onboardingTourAtom)?.deckIndex).toBe(2)
+
+    unregisterTourAction('type-search-query')
+  })
+
   test('blinks the first-sermon exit visualization after the «Включить проповедь» card', async () => {
-    const { getByTestId, getByText } = await renderAtDeck('search', 3, {
+    const { getByTestId, getByText } = await renderAtDeck('search', 4, {
       'search-results.first-sermon': SECTIONS_RECT,
       'search-results.group-sermons': SECTIONS_RECT,
     })

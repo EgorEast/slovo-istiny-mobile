@@ -333,11 +333,15 @@ describe('onboarding scenario data', () => {
     expect(search.steps[2].title).toBe('Кнопка поиска')
     expect(search.steps[3].tapTargetId).toBe('listen.search-toggle')
     expect(search.steps[3].tapActionId).toBe('open-listen-search')
+    // The typing card floats over the live UI (interactive, no target) and types the
+    // query on enter; it is a card, not an exit, so it advances only on «Далее».
     expect(search.steps[4].title).toBe('Вводим запрос')
     expect(search.steps[4].text).toBe('Вводим запрос, например «лицемерие»…')
+    expect(search.steps[4].interactive).toBe(true)
+    expect(search.steps[4].actionOnEnterId).toBe('type-search-query')
     expect(search.steps[4].tapTargetId).toBeUndefined()
     expect(search.steps[4].targetId).toBeUndefined()
-    expect(search.steps[4].tapActionId).toBe('type-search-query')
+    expect(search.steps[4].tapActionId).toBeUndefined()
     expect(search.steps[5].targetId).toBe('search-results.group-sermons')
     expect(search.steps[6].title).toBe('Включить проповедь')
     expect(search.steps[7].tapTargetId).toBe('search-results.first-sermon')
@@ -358,14 +362,15 @@ describe('onboarding scenario data', () => {
     const search = scenariosById.search
     const deck = buildTourDeck(search.steps)
 
-    expect(deck).toHaveLength(6)
-    expect(deck.map(entry => entry.cardIndex)).toEqual([0, 2, 5, 6, 8, 9])
-    // The tab entry leads into the «Кнопка поиска» card, which owns the search-open
-    // and query-typing exits; the «Включить проповедь» card owns the first-sermon exit.
+    expect(deck).toHaveLength(7)
+    expect(deck.map(entry => entry.cardIndex)).toEqual([0, 2, 4, 5, 6, 8, 9])
+    // The tab entry leads into the «Кнопка поиска» card, which now owns only the
+    // search-open exit: the typing step is its own interactive card (deck index 2),
+    // not an exit. The «Включить проповедь» card owns the first-sermon exit.
     expect(deck[0].exitStepIndexes).toEqual([])
     expect(deck[1].entryStepIndexes).toEqual([1])
-    expect(deck[1].exitStepIndexes).toEqual([3, 4])
-    expect(deck[3].exitStepIndexes).toEqual([7])
+    expect(deck[1].exitStepIndexes).toEqual([3])
+    expect(deck[4].exitStepIndexes).toEqual([7])
   })
 
   test('playlist-menu walks the header menu and ends on the interactive sermon menu', () => {
@@ -577,14 +582,14 @@ describe('search scenario resume', () => {
     const fromListen = resolveDeckProgress(deck, [0], 1)
 
     expect(fromListen.displayIndex).toBe(0)
-    expect(fromListen.displayTotal).toBe(5)
+    expect(fromListen.displayTotal).toBe(6)
   })
 
   test('counts every card when the lead-up is not skipped', () => {
     const progress = resolveDeckProgress(deck, [], 0)
 
     expect(progress.displayIndex).toBe(0)
-    expect(progress.displayTotal).toBe(6)
+    expect(progress.displayTotal).toBe(7)
   })
 })
 

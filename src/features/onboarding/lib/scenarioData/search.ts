@@ -33,9 +33,11 @@ export const searchScenario: OnboardingScenario = {
       title: 'Открываем поиск',
     },
     {
-      // Types the demo query into the live search field, so the grouped results
-      // card below has a target to spotlight.
-      tapActionId: 'type-search-query',
+      // A pass-through card floating over the live search UI while the demo query types
+      // into the visible field: the typing runs on enter, in parallel with the card, and
+      // the user presses «Далее» to reach the grouped-results card (no auto-advance).
+      actionOnEnterId: 'type-search-query',
+      interactive: true,
       text: 'Вводим запрос, например «лицемерие»…',
       title: 'Вводим запрос',
     },

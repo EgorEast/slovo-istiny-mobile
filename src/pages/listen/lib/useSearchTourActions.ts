@@ -9,7 +9,8 @@ const TYPE_QUERY_ACTION_ID = 'type-search-query'
 const PRESS_FIRST_SERMON_ACTION_ID = 'press-first-sermon'
 const SEARCH_QUERY = 'лицемерие'
 // Each prefix lands ~100ms after the previous one, so the whole word (8 prefixes,
-// first one synchronous) types in ~700ms — well under the tour's 1000ms advance.
+// first one synchronous) types in ~700ms while the «Вводим запрос» card floats over
+// the live field; the user then presses «Далее» to advance.
 const TYPE_STEP_MS = 100
 
 /**
