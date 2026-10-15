@@ -389,12 +389,45 @@ describe('<OnboardingTourOverlay>', () => {
   })
 
   test('renders an interactive card as a pass-through card without a spotlight modal', async () => {
-    const { getByText, queryByTestId, queryByText } = await renderAtDeck('search', 3)
+    const { getByText, queryByTestId, queryByText } = await renderAtDeck('search', 4)
 
     expect(queryByTestId(TOUR_MODAL)).toBeNull()
+    expect(getByText('Меню проповеди')).toBeTruthy()
+    expect(getByText(DONE_LABEL)).toBeTruthy()
+    expect(queryByText(DIM)).toBeNull()
+  })
+
+  test('presents the playlist-picker card as a spotlight above the app modal', async () => {
+    const { getByTestId, getByText } = await renderAtDeck('search', 3)
+
+    expect(getByTestId(TOUR_MODAL)).toBeTruthy()
     expect(getByText('Выберите плейлист')).toBeTruthy()
     expect(getByText(NEXT_LABEL)).toBeTruthy()
-    expect(queryByText(DIM)).toBeNull()
+    expect(getByText(DIM)).toBeTruthy()
+  })
+
+  test('blinks the search-toggle exit visualization before opening the search', async () => {
+    const { getByTestId, getByText } = await renderAtDeck('search', 1, {
+      'listen.search-toggle': SECTIONS_RECT,
+      'tab.listen': SECTIONS_RECT,
+    })
+
+    fireEvent.press(getByText(NEXT_LABEL))
+
+    await waitFor(() => expect(getByTestId(TAP_MODAL)).toBeTruthy())
+    expect(getByText(TAP_INDICATOR)).toBeTruthy()
+  })
+
+  test('blinks the first-sermon exit visualization after the results card', async () => {
+    const { getByTestId, getByText } = await renderAtDeck('search', 2, {
+      'search-results.first-sermon': SECTIONS_RECT,
+      'search-results.group-sermons': SECTIONS_RECT,
+    })
+
+    fireEvent.press(getByText(NEXT_LABEL))
+
+    await waitFor(() => expect(getByTestId(TAP_MODAL)).toBeTruthy())
+    expect(getByText(TAP_INDICATOR)).toBeTruthy()
   })
 
   test('keeps an interactive card with a target pass-through and anchors its card to the target', async () => {

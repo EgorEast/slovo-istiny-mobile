@@ -288,7 +288,10 @@ describe('onboarding scenario data', () => {
     expect(search.steps[4].targetId).toBe('search-results.group-sermons')
     expect(search.steps[5].targetId).toBe('search-results.first-sermon')
     expect(search.steps[5].tapActionId).toBe('press-first-sermon')
-    expect(search.steps[6].interactive).toBe(true)
+    // The picker card spotlights above the SermonPlaylistPicker modal (presentOnTop);
+    // the sermon-menu card stays pass-through (its dropdown is not a Modal).
+    expect(search.steps[6].presentOnTop).toBe(true)
+    expect(search.steps[6].interactive).toBeUndefined()
     expect(search.steps[7].interactive).toBe(true)
   })
 

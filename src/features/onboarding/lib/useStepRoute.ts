@@ -25,7 +25,10 @@ export const useStepRoute = ({
 
   return {
     effectiveRoute,
-    isRouteReached: effectiveRoute !== undefined && !needsNavigation,
+    // An exit visualization performs an action on the screen the card already sits on,
+    // so there is no route to reach: the flag stays false, and the tap flow's
+    // self-navigation race guard cannot cancel the blink it is about to play.
+    isRouteReached: !isExitPhase && effectiveRoute !== undefined && !needsNavigation,
     needsNavigation,
   }
 }
