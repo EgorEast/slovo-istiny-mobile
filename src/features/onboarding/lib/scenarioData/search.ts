@@ -4,7 +4,6 @@ export const searchScenario: OnboardingScenario = {
   description: 'Группы и плейлисты',
   icon: 'search-outline',
   id: 'search',
-  screens: ['/listen', '/more'],
   steps: [
     {
       text: 'Сейчас перейдём на экран «Слушать» и откроем поиск — нажмите «Далее».',

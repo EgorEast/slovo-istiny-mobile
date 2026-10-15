@@ -260,7 +260,7 @@ describe('onboarding scenario data', () => {
   test('search scenario leads from «Ещё» into the search results', () => {
     const search = scenariosById.search
 
-    expect(search.screens).toEqual(['/listen', '/more'])
+    expect(search.screens).toBeUndefined()
     expect(search.steps).toHaveLength(8)
     expect(search.steps[0].targetId).toBeUndefined()
     expect(search.steps[1].route).toBe('/listen')
