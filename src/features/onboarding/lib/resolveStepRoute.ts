@@ -19,18 +19,36 @@ export const resolveStepRoute = (scenario: ScenarioSteps, stepIndex: number): Hr
   return undefined
 }
 
-// The scenario's first screen: the route of its first route-bearing step. A tour
-// started there plays from the opening intro card.
+// The scenario's first screen: the route of its first route-bearing step.
 const resolveScenarioFirstScreen = (steps: readonly OnboardingStep[]): Href | undefined =>
   steps.find(step => step.route !== undefined)?.route
 
-// The deck entry a tour begun on `pathname` starts from: the first card whose
-// effective route is `pathname`, rewound over leading routeless cards (a scenario's
-// opening card belongs to no screen, so it is not a lead-up to skip). On the scenario's
-// first screen the tour always plays from that opening card. A card entered through
-// entry transitions is itself the lead-up target when the tour resumes mid-path, so the
-// routeless cards before it are its lead-up and it is returned as-is. `-1` when no card
-// routes there.
+// Whether the tour reaches this deck entry from `pathname`: the card belongs to that
+// screen (its effective route, inherited when the card declares none), or one of the
+// entry transitions attached to it navigates from that screen.
+const isEntryReachedFrom = (
+  scenario: ScenarioSteps,
+  entry: TourDeckEntry,
+  pathname: string,
+): boolean =>
+  resolveStepRoute(scenario, entry.cardIndex) === pathname ||
+  entry.entryStepIndexes.some(index => scenario.steps[index].route === pathname)
+
+// The deck entry a same-screen start lands on: the first entry the tour reaches from
+// `pathname`, with the whole lead-up — the routeless intro and the tab entries — skipped
+// rather than rewound, so the first shown card is the screen's first card. `-1` when no
+// entry is reached from it.
+export const resolveSameScreenEntryOffset = (
+  steps: readonly OnboardingStep[],
+  deck: readonly TourDeckEntry[],
+  pathname: string,
+): number => deck.findIndex(entry => isEntryReachedFrom({ steps }, entry, pathname))
+
+// The deck entry a global scenario or a foreign-screen fallback starts from: the first
+// card whose effective route is `pathname`, rewound over leading routeless cards so a
+// scenario's opening intro stays. On a non-first screen a card entered through entry
+// transitions is itself the resume target, so the routeless cards before it are its
+// lead-up and it is returned as-is. `-1` when no card routes there.
 export const resolveScenarioEntryOffset = (
   steps: readonly OnboardingStep[],
   deck: readonly TourDeckEntry[],

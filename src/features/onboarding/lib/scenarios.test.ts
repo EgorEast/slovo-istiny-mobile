@@ -529,10 +529,10 @@ describe('share scenario resume', () => {
     })
   })
 
-  test('plays from the intro on «Ещё», the scenario first screen', () => {
+  test('skips the intro and the tab entry and starts on the QR card from «Ещё»', () => {
     expect(resolveTourStart(scenariosById.share, deck, '/more')).toEqual({
-      deckIndex: 0,
-      skippedDeckIndexes: [],
+      deckIndex: 1,
+      skippedDeckIndexes: [0],
     })
   })
 
@@ -554,10 +554,10 @@ describe('share scenario resume', () => {
 describe('search scenario resume', () => {
   const deck = buildTourDeck(scenariosById.search.steps)
 
-  test('plays from the intro on «Слушать», the scenario first screen', () => {
+  test('skips the intro and the tab entry and starts on the search button from «Слушать»', () => {
     expect(resolveTourStart(scenariosById.search, deck, '/listen')).toEqual({
-      deckIndex: 0,
-      skippedDeckIndexes: [],
+      deckIndex: 1,
+      skippedDeckIndexes: [0],
     })
   })
 
@@ -566,6 +566,13 @@ describe('search scenario resume', () => {
       deckIndex: 0,
       skippedDeckIndexes: [],
     })
+  })
+
+  test('counts only the remaining cards from the search button', () => {
+    const fromListen = resolveDeckProgress(deck, [0], 1)
+
+    expect(fromListen.displayIndex).toBe(0)
+    expect(fromListen.displayTotal).toBe(5)
   })
 
   test('counts every card when the lead-up is not skipped', () => {
@@ -586,10 +593,17 @@ describe('backup scenario resume', () => {
     })
   })
 
-  test('plays from the intro on «Ещё», the scenario first screen (the tab entry auto-skips)', () => {
-    expect(resolveTourStart(scenariosById.backup, deck, '/more')).toEqual({
+  test('plays the full tour with the intro from a foreign «История» screen', () => {
+    expect(resolveTourStart(scenariosById.backup, deck, '/history')).toEqual({
       deckIndex: 0,
       skippedDeckIndexes: [],
+    })
+  })
+
+  test('skips the intro and the tab entry and starts on the «Настройки» card from «Ещё»', () => {
+    expect(resolveTourStart(scenariosById.backup, deck, '/more')).toEqual({
+      deckIndex: 1,
+      skippedDeckIndexes: [0],
     })
   })
 
