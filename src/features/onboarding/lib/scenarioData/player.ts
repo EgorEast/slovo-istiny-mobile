@@ -4,6 +4,7 @@ export const playerScenario: OnboardingScenario = {
   description: 'Выбор проповеди и управление',
   icon: 'play-circle-outline',
   id: 'player',
+  screens: ['/listen'],
   steps: [
     {
       route: '/listen',

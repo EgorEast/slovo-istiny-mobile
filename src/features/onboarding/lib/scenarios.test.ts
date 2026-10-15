@@ -22,8 +22,8 @@ describe('onboarding scenario data', () => {
     expect(welcome.steps[6].tapTargetId).toBe('more.settings-item')
   })
 
-  test('player scenario is global, offered from every screen picker', () => {
-    expect(scenariosById.player.screens).toBeUndefined()
+  test('player scenario belongs to the listen screen picker', () => {
+    expect(scenariosById.player.screens).toEqual(['/listen'])
   })
 
   test('player scenario waits for the user to select a sermon and pause', () => {

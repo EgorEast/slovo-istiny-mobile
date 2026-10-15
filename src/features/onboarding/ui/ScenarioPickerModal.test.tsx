@@ -46,8 +46,8 @@ describe('<ScenarioPickerModal>', () => {
     expect(screen.getByText(GLOBAL_GROUP_TITLE)).toBeTruthy()
     expectRowTitles([
       'Как слушать проповеди',
-      'Плейлисты',
       'Плеер',
+      'Плейлисты',
       'Результаты поиска',
       'Резервное копирование',
       'Поделиться приложением',
@@ -64,7 +64,6 @@ describe('<ScenarioPickerModal>', () => {
     expectRowTitles([
       'Экран плейлиста',
       'Добавление в плейлист',
-      'Плеер',
       'Результаты поиска',
       'Резервное копирование',
       'Поделиться приложением',
@@ -80,7 +79,6 @@ describe('<ScenarioPickerModal>', () => {
 
     expectRowTitles([
       'Настройки и резервные копии',
-      'Плеер',
       'Результаты поиска',
       'Резервное копирование',
       'Поделиться приложением',
@@ -110,7 +108,6 @@ describe('<ScenarioPickerModal>', () => {
     expect(screen.queryByText(SCREEN_GROUP_TITLE)).toBeNull()
     expect(screen.getByText(GLOBAL_GROUP_TITLE)).toBeTruthy()
     expectRowTitles([
-      'Плеер',
       'Результаты поиска',
       'Резервное копирование',
       'Поделиться приложением',
@@ -128,7 +125,6 @@ describe('<ScenarioPickerModal>', () => {
       'История прослушивания',
       'Офлайн-режим',
       'Настройки и резервные копии',
-      'Плеер',
       'Результаты поиска',
       'Резервное копирование',
       'Поделиться приложением',
@@ -160,15 +156,13 @@ describe('<ScenarioPickerModal>', () => {
     await renderPicker('player')
 
     expect(screen.queryByText(SCREEN_GROUP_TITLE)).toBeNull()
-    // The «Плеер» group header shares its text with the global «Плеер» row.
-    expect(screen.getAllByText(PLAYER_GROUP_TITLE)).toHaveLength(2)
+    expect(screen.getByText(PLAYER_GROUP_TITLE)).toBeTruthy()
     expect(screen.getByText(GLOBAL_GROUP_TITLE)).toBeTruthy()
     expectRowTitles([
       'Экран плеера',
       'Подробнее и таймкоды',
       'Скорость прослушивания',
       'Настройка звука',
-      'Плеер',
       'Результаты поиска',
       'Резервное копирование',
       'Поделиться приложением',
