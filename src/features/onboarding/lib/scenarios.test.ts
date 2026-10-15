@@ -91,7 +91,7 @@ describe('onboarding scenario data', () => {
 
   test('each scenario wires the tab or row it taps when navigating', () => {
     expect(scenariosById.listen.steps[0].tapTargetId).toBe('tab.listen')
-    expect(scenariosById.playlists.steps[1].tapTargetId).toBe('listen.my-playlists')
+    expect(scenariosById.playlists.steps[0].tapTargetId).toBe('listen.my-playlists-title')
     expect(scenariosById.history.steps[1].tapTargetId).toBe('tab.more')
     expect(scenariosById.history.steps[2].tapTargetId).toBe('more.history-item')
     expect(scenariosById.offline.steps[1].tapTargetId).toBe('tab.more')
@@ -455,6 +455,21 @@ describe('onboarding scenario data', () => {
       '/listen/my-playlists',
       '/listen/playlist-list',
     ])
+  })
+
+  test('playlists scenario taps the section title to open the full list', () => {
+    const playlists = scenariosById.playlists
+
+    expect(playlists.title).toBe('Мои плейлисты')
+    expect(playlists.steps).toHaveLength(3)
+    // The first card spotlights the section and visualizes the tap on its title
+    // before navigating to the full list; the create/add cards follow.
+    expect(playlists.steps[0].route).toBe('/listen/my-playlists')
+    expect(playlists.steps[0].tapTargetId).toBe('listen.my-playlists-title')
+    expect(playlists.steps[0].targetId).toBe('listen.my-playlists')
+    expect(playlists.steps[0].title).toBe('Мои плейлисты')
+    expect(playlists.steps[0].text).toBe('Тап по заголовку раздела открывает полный список.')
+    expect(playlists.steps[1].targetId).toBe('playlists.create')
   })
 })
 

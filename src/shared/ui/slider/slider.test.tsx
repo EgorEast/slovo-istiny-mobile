@@ -1,4 +1,6 @@
 import { fireEvent, screen } from '@testing-library/react-native'
+import { type ReactElement } from 'react'
+import { View } from 'react-native'
 import { renderWithProviders } from '../../mocks/renderWithProviders'
 import { Slider } from './slider'
 import { getSliderItemStride } from './slider-item/slider-item.lib'
@@ -93,6 +95,25 @@ describe('<Slider/>', () => {
     // к тексту, а не вынесена отдельным элементом, который мог бы уехать на свою строку.
     const hasNestedArrow = title.children.some(child => typeof child !== 'string')
     expect(hasNestedArrow).toBe(true)
+  })
+
+  test('wraps the section title with renderTitleWrapper when provided', async () => {
+    const renderTitleWrapper = jest.fn((title: ReactElement) => (
+      <View testID='wrapped-title'>{title}</View>
+    ))
+
+    await renderWithProviders(
+      <Slider
+        items={sliderStub.items}
+        title={sliderStub.title}
+        renderTitleWrapper={renderTitleWrapper}
+      />,
+    )
+
+    expect(renderTitleWrapper).toHaveBeenCalledTimes(1)
+    expect(screen.getByTestId('wrapped-title')).toHaveTextContent(sliderStub.title, {
+      exact: false,
+    })
   })
 
   test('call onPressTitle callback, when press on tittle element', async () => {

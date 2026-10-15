@@ -1,20 +1,22 @@
 import { type OnboardingScenario } from '../scenarios'
 
+const MY_PLAYLISTS_ROUTE = '/listen/my-playlists'
+
 export const playlistsScenario: OnboardingScenario = {
   description: 'Создание и управление подборками',
   icon: 'albums-outline',
   id: 'playlists',
-  screens: ['/listen', '/listen/my-playlists', '/listen/playlist-list'],
+  screens: ['/listen', MY_PLAYLISTS_ROUTE, '/listen/playlist-list'],
   steps: [
     {
-      route: '/listen',
+      route: MY_PLAYLISTS_ROUTE,
+      tapTargetId: 'listen.my-playlists-title',
       targetId: 'listen.my-playlists',
-      text: 'Последние плейлисты на главном экране. Кнопка «Все» открывает полный список.',
+      text: 'Тап по заголовку раздела открывает полный список.',
       title: 'Мои плейлисты',
     },
     {
-      route: '/listen/my-playlists',
-      tapTargetId: 'listen.my-playlists',
+      route: MY_PLAYLISTS_ROUTE,
       targetId: 'playlists.create',
       text: 'Нажмите кнопку создания — плейлист появится в списке. Имя можно изменить в любой момент.',
       title: 'Создать плейлист',
@@ -24,5 +26,5 @@ export const playlistsScenario: OnboardingScenario = {
       title: 'Добавить проповедь',
     },
   ],
-  title: 'Плейлисты',
+  title: 'Мои плейлисты',
 }

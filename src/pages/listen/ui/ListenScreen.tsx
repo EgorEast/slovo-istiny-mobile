@@ -113,7 +113,10 @@ export const ListenScreen = () => {
                 ) : undefined
               }
             />
-            <MyPlaylistsSlider onboardingTargetId='listen.my-playlists' />
+            <MyPlaylistsSlider
+              onboardingTargetId='listen.my-playlists'
+              titleOnboardingTargetId='listen.my-playlists-title'
+            />
           </ScrollView>
         </PullToRefresh>
       )}

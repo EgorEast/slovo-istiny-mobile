@@ -1,3 +1,4 @@
+import { type ReactElement } from 'react'
 import { type GestureResponderEvent, type StyleProp, View, type ViewStyle } from 'react-native'
 import { useTheme } from '../theme/ThemeContext/useTheme'
 import { FONT_SIZES } from '../theme/themed'
@@ -29,6 +30,8 @@ interface SliderProps<D extends object> {
   itemsSize?: SliderItemSize
   onPressItem?: (data: D, event: GestureResponderEvent) => void
   onPressTitle?: (event: GestureResponderEvent) => void
+  /** Wraps the rendered section title (e.g. In an onboarding target); falls back to the bare title. */
+  renderTitleWrapper?: (title: ReactElement) => ReactElement
   style?: StyleProp<ViewStyle>
   title?: string
   titleFontSize?: FontSizes[keyof FontSizes]
@@ -46,6 +49,7 @@ export const Slider = <D extends object>({
   itemsSize = SliderItemSize.Small,
   onPressItem,
   onPressTitle,
+  renderTitleWrapper,
   style,
   title,
   titleFontSize = FONT_SIZES.h2,
@@ -60,10 +64,11 @@ export const Slider = <D extends object>({
   if (!items?.length) return null
 
   const marginBottom = getMarginBottom(itemsSize, titleFontSize)
+  const titleElement = <SliderTitle title={title} onPress={onPressTitle} fontSize={titleFontSize} />
 
   return (
     <View style={[sliderStyles.slider, { marginTop: titleFontSize / 2 }, { marginBottom }, style]}>
-      <SliderTitle title={title} onPress={onPressTitle} fontSize={titleFontSize} />
+      {renderTitleWrapper === undefined ? titleElement : renderTitleWrapper(titleElement)}
       <View ref={wrapperRef} style={sliderStyles.flexFill}>
         <SliderFlatList
           items={items}
