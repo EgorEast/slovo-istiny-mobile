@@ -36,20 +36,8 @@ export const playlistOfflineScenario: OnboardingScenario = {
     {
       skipIfMissing: true,
       targetId: 'playlist.row-menu-offline-add',
-      text: '«Добавить в офлайн» скачает только эту проповедь.',
+      text: '«Добавить в офлайн» скачает эту проповедь. Если она уже в офлайне, пункт будет называться «Удалить из офлайна» — тап по нему уберёт проповедь из кеша.',
       title: 'Одна проповедь в офлайн',
-    },
-    {
-      skipIfMissing: true,
-      targetId: 'playlist.row-menu-offline-remove',
-      text: '«Удалить из офлайна» уберёт эту проповедь из кеша.',
-      title: 'Убрать из офлайна',
-    },
-    {
-      route: '/listen',
-      tapTargetId: 'tab.listen',
-      text: 'Возвращаемся на экран «Слушать»…',
-      title: 'Экран «Слушать»',
     },
     {
       route: '/more',
