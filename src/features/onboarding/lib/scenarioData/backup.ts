@@ -4,7 +4,6 @@ export const backupScenario: OnboardingScenario = {
   description: 'Копии, автосинхронизация, папка',
   icon: 'save-outline',
   id: 'backup',
-  screens: ['/listen', '/more', '/settings'],
   steps: [
     {
       route: '/listen',
@@ -13,12 +12,7 @@ export const backupScenario: OnboardingScenario = {
     },
     {
       route: '/more',
-      tapTargetId: 'tab.more',
-      targetId: 'tab.more',
-      text: 'Переходим на экран «Ещё»…',
-      title: 'Экран «Ещё»',
-    },
-    {
+      tapTargetId: 'more.settings-item',
       targetId: 'more.settings-item',
       text: 'Чтобы открыть настройки, тапните по этому пункту.',
       title: 'Настройки',

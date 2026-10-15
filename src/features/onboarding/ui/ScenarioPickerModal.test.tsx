@@ -48,8 +48,8 @@ describe('<ScenarioPickerModal>', () => {
       'Как слушать проповеди',
       'Плейлисты',
       'Результаты поиска',
-      'Резервное копирование',
       'Плеер',
+      'Резервное копирование',
       'Добро пожаловать',
       'Что нового',
     ])
@@ -64,20 +64,21 @@ describe('<ScenarioPickerModal>', () => {
       'Экран плейлиста',
       'Добавление в плейлист',
       'Плеер',
+      'Резервное копирование',
       'Добро пожаловать',
       'Что нового',
     ])
   })
 
-  test('keeps the settings and backup scenarios local on the settings screen', async () => {
+  test('keeps the settings scenario local and offers backup globally on the settings screen', async () => {
     mockPathname.mockReturnValue('/settings')
 
     await renderPicker()
 
     expectRowTitles([
       'Настройки и резервные копии',
-      'Резервное копирование',
       'Плеер',
+      'Резервное копирование',
       'Добро пожаловать',
       'Что нового',
     ])
@@ -101,7 +102,13 @@ describe('<ScenarioPickerModal>', () => {
 
     await renderPicker()
 
-    expectRowTitles(['Поделиться приложением', 'Плеер', 'Добро пожаловать', 'Что нового'])
+    expectRowTitles([
+      'Поделиться приложением',
+      'Плеер',
+      'Резервное копирование',
+      'Добро пожаловать',
+      'Что нового',
+    ])
   })
 
   test('shows the More screen scenarios local on /more', async () => {
@@ -114,9 +121,9 @@ describe('<ScenarioPickerModal>', () => {
       'История прослушивания',
       'Офлайн-режим',
       'Настройки и резервные копии',
-      'Резервное копирование',
       'Поделиться приложением',
       'Плеер',
+      'Резервное копирование',
       'Добро пожаловать',
       'Что нового',
     ])
@@ -154,6 +161,7 @@ describe('<ScenarioPickerModal>', () => {
       'Скорость прослушивания',
       'Настройка звука',
       'Плеер',
+      'Резервное копирование',
       'Добро пожаловать',
       'Что нового',
     ])
