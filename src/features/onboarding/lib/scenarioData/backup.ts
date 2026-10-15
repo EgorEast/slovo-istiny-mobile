@@ -11,8 +11,16 @@ export const backupScenario: OnboardingScenario = {
       title: 'Резервное копирование',
     },
     {
+      // Pure navigation: from a nested screen without a tab bar this returns to
+      // «Ещё» first, so the tab card below can register and spotlight the tab.
+      route: '/more',
+      text: 'Возвращаемся на экран «Ещё»…',
+      title: 'Экран «Ещё»',
+    },
+    {
       route: '/more',
       tapTargetId: 'tab.more',
+      targetId: 'tab.more',
       text: 'Переходим на экран «Ещё»…',
       title: 'Экран «Ещё»',
     },

@@ -10,6 +10,13 @@ export const searchScenario: OnboardingScenario = {
       title: 'Результаты поиска',
     },
     {
+      // Pure navigation: from a nested screen without a tab bar this returns to
+      // «Слушать» first, so the tab card below can register and spotlight the tab.
+      route: '/listen',
+      text: 'Возвращаемся на экран «Слушать»…',
+      title: 'Экран «Слушать»',
+    },
+    {
       route: '/listen',
       tapTargetId: 'tab.listen',
       targetId: 'tab.listen',

@@ -16,13 +16,14 @@ export interface TourDeckProgress {
   isLastVisible: boolean
 }
 
-// A step that navigates/blinks into the card it precedes: it has a tap target and a
-// route but nothing to spotlight (`targetId`) or perform (`tapActionId`). The
-// scenario's opening step is never one — a tour must start with a card, so a leading
-// tap step stays the opening card.
+// A step that navigates into the card it precedes: it has a tap target or a route but
+// nothing to spotlight (`targetId`) or perform (`tapActionId`). A tap-target-less one
+// is pure navigation — it returns to a screen (e.g. a tab bar) before the card's
+// visualization, without a blink. The scenario's opening step is never one — a tour
+// must start with a card, so a leading tap step stays the opening card.
 const isEntryTransitionStep = (step: OnboardingStep, index: number): boolean =>
   index > 0 &&
-  step.tapTargetId !== undefined &&
+  (step.tapTargetId !== undefined || step.route !== undefined) &&
   step.targetId === undefined &&
   step.tapActionId === undefined
 

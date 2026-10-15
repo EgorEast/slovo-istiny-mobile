@@ -42,10 +42,13 @@ export const useTourTapFlow = ({
   const [holdExpiredStepKey, setHoldExpiredStepKey] = useState<null | string>(null)
   const blinkedStepRef = useRef<null | string>(null)
 
+  // A step without a declared tap target (a pure-navigation entry) navigates without a
+  // blink: there is nothing to hint at, so it must never enter the blink phase.
   const shouldBlink =
     isTourActive &&
     isTapFlow &&
     isBlinkAllowed &&
+    step?.tapTargetId !== undefined &&
     tapRect !== undefined &&
     !isRectOutsideViewport(tapRect, viewportHeight, bottomInset)
   const isTapPhase = phaseStepKey === stepKey

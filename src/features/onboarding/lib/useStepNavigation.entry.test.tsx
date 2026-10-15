@@ -134,19 +134,60 @@ describe('useStepNavigation entry transitions', () => {
   })
 
   test(
-    'skips an already-reached entry and plays the next one (share from «Ещё»)',
+    'blinks the QR lead-up entry and lands on the QR card (share from «Ещё»)',
     async () => {
-      const { ctx } = await renderNavigation(scenariosById.share, 1, '/more')
+      const { ctx } = await renderNavigation(scenariosById.share, 2, '/more')
 
-      // The «Ещё» tab entry is already reached: it skips instantly, then the row
-      // entry (route /share) blinks and navigates.
-      await waitFor(() => expect(ctx.get(onboardingEntryStepIndexAtom)).toBe(1), {
-        timeout: 1000,
-      })
+      // The share-item entry (route /share) blinks on the live row, then navigates.
       await waitFor(() => expect(ctx.get(onboardingEntryStepIndexAtom)).toBeNull(), {
         timeout: 8000,
       })
       expect(mockCurrentPathname).toBe('/share')
+    },
+    BLINK_BUDGET_MS,
+  )
+})
+
+describe('useStepNavigation return entries', () => {
+  test(
+    'navigates a tap-target-less entry without a blink (share return from a nested screen)',
+    async () => {
+      const { ctx, result } = await renderNavigation(scenariosById.share, 1, '/history')
+
+      // Pure navigation: nothing to hint at, so navigation is not held for a blink.
+      expect(result.current.holdNavigation).toBe(false)
+
+      await waitFor(() => expect(ctx.get(onboardingEntryStepIndexAtom)).toBeNull(), {
+        timeout: 2000,
+      })
+      expect(mockCurrentPathname).toBe('/more')
+    },
+    BLINK_BUDGET_MS,
+  )
+
+  test('skips the return entry when its route is already reached (share from «Ещё»)', async () => {
+    const { ctx } = await renderNavigation(scenariosById.share, 1, '/more')
+
+    await waitFor(() => expect(ctx.get(onboardingEntryStepIndexAtom)).toBeNull(), {
+      timeout: 1000,
+    })
+    expect(mockCurrentPathname).toBe('/more')
+  })
+
+  test.each([
+    ['search', '/listen'],
+    ['share', '/more'],
+    ['backup', '/more'],
+  ] as const)(
+    'returns to %s from a nested screen before the tab card',
+    async (scenarioId, returnRoute) => {
+      const { ctx } = await renderNavigation(scenariosById[scenarioId], 1, '/history')
+
+      await waitFor(() => expect(ctx.get(onboardingEntryStepIndexAtom)).toBeNull(), {
+        timeout: 2000,
+      })
+      expect(mockCurrentPathname).toBe(returnRoute)
+      expect(ctx.get(onboardingTourAtom)?.deckIndex).toBe(1)
     },
     BLINK_BUDGET_MS,
   )

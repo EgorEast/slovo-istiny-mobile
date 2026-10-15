@@ -60,28 +60,33 @@ describe('onboarding scenario data', () => {
     const share = scenariosById.share
 
     expect(share.screens).toBeUndefined()
-    expect(share.steps).toHaveLength(6)
+    expect(share.steps).toHaveLength(7)
     expect(share.steps[0].targetId).toBeUndefined()
     expect(share.steps[0].tapTargetId).toBeUndefined()
+    // Pure-navigation return entry: no tap target, only a route.
     expect(share.steps[1].route).toBe('/more')
-    expect(share.steps[1].tapTargetId).toBe('tab.more')
-    expect(share.steps[1].targetId).toBeUndefined()
-    expect(share.steps[2].route).toBe('/share')
-    expect(share.steps[2].tapTargetId).toBe('more.share-item')
-    expect(share.steps[2].targetId).toBeUndefined()
+    expect(share.steps[1].tapTargetId).toBeUndefined()
+    // The «Ещё» tab card: the return above lands here first from a nested screen.
+    expect(share.steps[2].route).toBe('/more')
+    expect(share.steps[2].tapTargetId).toBe('tab.more')
+    expect(share.steps[2].targetId).toBe('tab.more')
     expect(share.steps[3].route).toBe('/share')
-    expect(share.steps[3].targetId).toBe('share.qr')
-    expect(share.steps[4].targetId).toBe('share.copy')
+    expect(share.steps[3].tapTargetId).toBe('more.share-item')
+    expect(share.steps[3].targetId).toBeUndefined()
+    expect(share.steps[4].route).toBe('/share')
+    expect(share.steps[4].targetId).toBe('share.qr')
+    expect(share.steps[5].targetId).toBe('share.copy')
   })
 
-  test('share folds its two lead-up steps into the QR card as entry transitions', () => {
+  test('share folds its tab card and share-item lead-up into entry transitions', () => {
     const share = scenariosById.share
     const deck = buildTourDeck(share.steps)
 
-    expect(deck).toHaveLength(4)
-    expect(deck.map(entry => entry.cardIndex)).toEqual([0, 3, 4, 5])
-    expect(deck[1].entryStepIndexes).toEqual([1, 2])
-    expect(deck.filter(entry => entry.entryStepIndexes.length > 0)).toHaveLength(1)
+    expect(deck).toHaveLength(5)
+    expect(deck.map(entry => entry.cardIndex)).toEqual([0, 2, 4, 5, 6])
+    expect(deck[1].entryStepIndexes).toEqual([1])
+    expect(deck[2].entryStepIndexes).toEqual([3])
+    expect(deck.filter(entry => entry.entryStepIndexes.length > 0)).toHaveLength(2)
   })
 
   test('each scenario wires the tab or row it taps when navigating', () => {
@@ -113,28 +118,30 @@ describe('onboarding scenario data', () => {
     const backup = scenariosById.backup
 
     expect(backup.screens).toBeUndefined()
-    expect(backup.steps).toHaveLength(8)
+    expect(backup.steps).toHaveLength(9)
     expect(backup.steps[0].route).toBe('/listen')
     expect(backup.steps[0].targetId).toBeUndefined()
-    // Entry transition: blink the «Ещё» tab before landing on the «Настройки» card.
+    // Pure-navigation return entry: no tap target, only a route.
     expect(backup.steps[1].route).toBe('/more')
-    expect(backup.steps[1].tapTargetId).toBe('tab.more')
-    expect(backup.steps[1].targetId).toBeUndefined()
-    expect(backup.steps[1].tapActionId).toBeUndefined()
+    expect(backup.steps[1].tapTargetId).toBeUndefined()
+    // The «Ещё» tab card: the return above lands here first from a nested screen.
     expect(backup.steps[2].route).toBe('/more')
-    expect(backup.steps[2].tapTargetId).toBe('more.settings-item')
-    expect(backup.steps[2].targetId).toBe('more.settings-item')
-    expect(backup.steps[3].route).toBe('/settings')
+    expect(backup.steps[2].tapTargetId).toBe('tab.more')
+    expect(backup.steps[2].targetId).toBe('tab.more')
+    expect(backup.steps[3].route).toBe('/more')
     expect(backup.steps[3].tapTargetId).toBe('more.settings-item')
-    expect(backup.steps[3].targetId).toBe('settings.backup')
+    expect(backup.steps[3].targetId).toBe('more.settings-item')
+    expect(backup.steps[4].route).toBe('/settings')
+    expect(backup.steps[4].tapTargetId).toBe('more.settings-item')
+    expect(backup.steps[4].targetId).toBe('settings.backup')
   })
 
-  test('backup folds the More tab blink into the «Настройки» card as an entry transition', () => {
+  test('backup folds the More tab return into the tab card as an entry transition', () => {
     const backup = scenariosById.backup
     const deck = buildTourDeck(backup.steps)
 
-    expect(deck).toHaveLength(7)
-    expect(deck.map(entry => entry.cardIndex)).toEqual([0, 2, 3, 4, 5, 6, 7])
+    expect(deck).toHaveLength(8)
+    expect(deck.map(entry => entry.cardIndex)).toEqual([0, 2, 3, 4, 5, 6, 7, 8])
     expect(deck[1].entryStepIndexes).toEqual([1])
     expect(deck.filter(entry => entry.entryStepIndexes.length > 0)).toHaveLength(1)
   })
@@ -142,12 +149,12 @@ describe('onboarding scenario data', () => {
   test('backup scenario walks the section, folder, export, import and autosync', () => {
     const backup = scenariosById.backup
 
-    expect(backup.steps[4].targetId).toBe('settings.backup-folder')
-    expect(backup.steps[4].skipIfMissing).toBe(true)
-    expect(backup.steps[5].targetId).toBe('settings.backup-export')
-    expect(backup.steps[6].targetId).toBe('settings.backup-import')
-    expect(backup.steps[7].targetId).toBe('settings.backup-autosync')
-    expect(backup.steps[7].skipIfMissing).toBe(true)
+    expect(backup.steps[5].targetId).toBe('settings.backup-folder')
+    expect(backup.steps[5].skipIfMissing).toBe(true)
+    expect(backup.steps[6].targetId).toBe('settings.backup-export')
+    expect(backup.steps[7].targetId).toBe('settings.backup-import')
+    expect(backup.steps[8].targetId).toBe('settings.backup-autosync')
+    expect(backup.steps[8].skipIfMissing).toBe(true)
   })
 
   test('offline caching-switch waits for the list to load before the spotlight lands', () => {
@@ -276,23 +283,27 @@ describe('onboarding scenario data', () => {
     const search = scenariosById.search
 
     expect(search.screens).toBeUndefined()
-    expect(search.steps).toHaveLength(8)
+    expect(search.steps).toHaveLength(9)
     expect(search.steps[0].targetId).toBeUndefined()
+    // Pure-navigation return entry: no tap target, only a route.
     expect(search.steps[1].route).toBe('/listen')
-    expect(search.steps[1].tapTargetId).toBe('tab.listen')
-    expect(search.steps[1].targetId).toBe('tab.listen')
-    expect(search.steps[2].tapTargetId).toBe('listen.search-toggle')
-    expect(search.steps[2].tapActionId).toBe('open-listen-search')
-    expect(search.steps[3].tapActionId).toBe('type-search-query')
-    expect(search.steps[3].waitFor).toBeUndefined()
-    expect(search.steps[4].targetId).toBe('search-results.group-sermons')
-    expect(search.steps[5].targetId).toBe('search-results.first-sermon')
-    expect(search.steps[5].tapActionId).toBe('press-first-sermon')
+    expect(search.steps[1].tapTargetId).toBeUndefined()
+    // The «Слушать» tab card: the return above lands here first from a nested screen.
+    expect(search.steps[2].route).toBe('/listen')
+    expect(search.steps[2].tapTargetId).toBe('tab.listen')
+    expect(search.steps[2].targetId).toBe('tab.listen')
+    expect(search.steps[3].tapTargetId).toBe('listen.search-toggle')
+    expect(search.steps[3].tapActionId).toBe('open-listen-search')
+    expect(search.steps[4].tapActionId).toBe('type-search-query')
+    expect(search.steps[4].waitFor).toBeUndefined()
+    expect(search.steps[5].targetId).toBe('search-results.group-sermons')
+    expect(search.steps[6].targetId).toBe('search-results.first-sermon')
+    expect(search.steps[6].tapActionId).toBe('press-first-sermon')
     // The picker card spotlights above the SermonPlaylistPicker modal (presentOnTop);
     // the sermon-menu card stays pass-through (its dropdown is not a Modal).
-    expect(search.steps[6].presentOnTop).toBe(true)
-    expect(search.steps[6].interactive).toBeUndefined()
-    expect(search.steps[7].interactive).toBe(true)
+    expect(search.steps[7].presentOnTop).toBe(true)
+    expect(search.steps[7].interactive).toBeUndefined()
+    expect(search.steps[8].interactive).toBe(true)
   })
 
   test('playlist-menu walks the header menu and ends on the interactive sermon menu', () => {
@@ -441,22 +452,22 @@ describe('share scenario resume', () => {
     })
   })
 
-  test('starts on the intro card from «Ещё» (the tab entry skips itself)', () => {
+  test('resumes on the tab card from «Ещё» (the return entry skips itself)', () => {
     expect(resolveTourStart(scenariosById.share, deck, '/more')).toEqual({
-      deckIndex: 0,
-      skippedDeckIndexes: [],
-    })
-  })
-
-  test('skips the intro and starts on the QR card from «Поделиться приложением»', () => {
-    expect(resolveTourStart(scenariosById.share, deck, '/share')).toEqual({
       deckIndex: 1,
       skippedDeckIndexes: [0],
     })
   })
 
+  test('skips the intro and starts on the QR card from «Поделиться приложением»', () => {
+    expect(resolveTourStart(scenariosById.share, deck, '/share')).toEqual({
+      deckIndex: 2,
+      skippedDeckIndexes: [0, 1],
+    })
+  })
+
   test('counts only the remaining cards from the QR card', () => {
-    const fromShare = resolveDeckProgress(deck, [0], 1)
+    const fromShare = resolveDeckProgress(deck, [0, 1], 2)
 
     expect(fromShare.displayIndex).toBe(0)
     expect(fromShare.displayTotal).toBe(3)
@@ -466,10 +477,10 @@ describe('share scenario resume', () => {
 describe('search scenario resume', () => {
   const deck = buildTourDeck(scenariosById.search.steps)
 
-  test('plays the full tour from «Слушать», the scenario first screen', () => {
+  test('resumes on the tab card from «Слушать» (the return entry skips itself)', () => {
     expect(resolveTourStart(scenariosById.search, deck, '/listen')).toEqual({
-      deckIndex: 0,
-      skippedDeckIndexes: [],
+      deckIndex: 1,
+      skippedDeckIndexes: [0],
     })
   })
 

@@ -9,6 +9,7 @@ import {
 const card = (title: string): OnboardingStep => ({ text: '', title })
 const action = (tapActionId: string): OnboardingStep => ({ tapActionId, text: '', title: '' })
 const entry = (tapTargetId: string): OnboardingStep => ({ tapTargetId, text: '', title: '' })
+const navEntry = (route: string): OnboardingStep => ({ route, text: '', title: '' })
 
 describe('buildTourDeck', () => {
   test('treats every card as an entry and attaches a following action as its exit', () => {
@@ -72,6 +73,15 @@ describe('buildTourDeck entry transitions', () => {
     expect(deck).toEqual([
       { cardIndex: 0, entryStepIndexes: [], exitStepIndexes: [] },
       { cardIndex: 1, entryStepIndexes: [], exitStepIndexes: [] },
+    ])
+  })
+
+  test('attaches a tap-target-less route step as a pure-navigation entry', () => {
+    const deck = buildTourDeck([card('a'), navEntry('/more'), card('b')])
+
+    expect(deck).toEqual([
+      { cardIndex: 0, entryStepIndexes: [], exitStepIndexes: [] },
+      { cardIndex: 2, entryStepIndexes: [1], exitStepIndexes: [] },
     ])
   })
 
