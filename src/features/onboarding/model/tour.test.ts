@@ -1,15 +1,17 @@
 import { createCtx } from '@reatom/framework'
-import { scenariosById } from '../lib/scenarios'
+import { type OnboardingScenario, scenariosById } from '../lib/scenarios'
 import { buildTourDeck, resolveDeckProgress } from '../lib/tourDeck'
+import { advanceEntryTransition } from './entry'
+import { skipOnboardingStep } from './skip'
 import { onboardingTargetRectsAtom, registerOnboardingTargetRect } from './targets'
 import {
   endOnboardingTour,
   goToNextOnboardingStep,
   goToPrevOnboardingStep,
+  onboardingEntryStepIndexAtom,
   onboardingExitStepIndexAtom,
   onboardingStepDirectionAtom,
   onboardingTourAtom,
-  skipOnboardingStep,
   startOnboardingTour,
 } from './tour'
 
@@ -298,5 +300,79 @@ describe('onboarding tour model skip flow', () => {
     skipOnboardingStep(ctx, 'next')
 
     expect(ctx.get(onboardingTourAtom)).toBeNull()
+  })
+})
+
+describe('onboarding tour entry transitions', () => {
+  const ENTRY_SCENARIO_ID = 'backup'
+  const originalScenario = scenariosById[ENTRY_SCENARIO_ID]
+  const entryScenario: OnboardingScenario = {
+    description: '',
+    icon: 'information-circle-outline',
+    id: ENTRY_SCENARIO_ID,
+    steps: [
+      { text: '', title: 'Интро' },
+      { route: '/more', tapTargetId: 'tab.more', text: '', title: 'Ещё' },
+      { route: '/share', tapTargetId: 'more.share-item', text: '', title: 'Поделиться' },
+      { route: '/share', targetId: 'share.qr', text: '', title: 'QR' },
+      { text: '', title: 'Финал' },
+    ],
+    title: '',
+  }
+
+  beforeEach(() => {
+    scenariosById[ENTRY_SCENARIO_ID] = entryScenario
+  })
+
+  afterEach(() => {
+    scenariosById[ENTRY_SCENARIO_ID] = originalScenario
+  })
+
+  test('next into a card with entry transitions starts the entry phase', () => {
+    const ctx = createCtx()
+    startOnboardingTour(ctx, ENTRY_SCENARIO_ID, '/listen')
+    expect(ctx.get(onboardingEntryStepIndexAtom)).toBeNull()
+
+    goToNextOnboardingStep(ctx)
+
+    expect(ctx.get(onboardingTourAtom)?.deckIndex).toBe(1)
+    expect(ctx.get(onboardingEntryStepIndexAtom)).toBe(0)
+  })
+
+  test('advance walks the entry steps and lands on the card', () => {
+    const ctx = createCtx()
+    startOnboardingTour(ctx, ENTRY_SCENARIO_ID, '/listen')
+    goToNextOnboardingStep(ctx)
+
+    advanceEntryTransition(ctx)
+    expect(ctx.get(onboardingEntryStepIndexAtom)).toBe(1)
+
+    advanceEntryTransition(ctx)
+    expect(ctx.get(onboardingEntryStepIndexAtom)).toBeNull()
+    expect(ctx.get(onboardingTourAtom)?.deckIndex).toBe(1)
+  })
+
+  test('prev cancels the entry phase and lands on the previous card', () => {
+    const ctx = createCtx()
+    startOnboardingTour(ctx, ENTRY_SCENARIO_ID, '/listen')
+    goToNextOnboardingStep(ctx)
+
+    goToPrevOnboardingStep(ctx)
+
+    expect(ctx.get(onboardingTourAtom)?.deckIndex).toBe(0)
+    expect(ctx.get(onboardingEntryStepIndexAtom)).toBeNull()
+  })
+
+  test('starting on the card screen skips the intro and lands on the card', () => {
+    const ctx = createCtx()
+
+    startOnboardingTour(ctx, ENTRY_SCENARIO_ID, '/share')
+
+    expect(ctx.get(onboardingTourAtom)).toEqual({
+      deckIndex: 1,
+      scenarioId: ENTRY_SCENARIO_ID,
+      skippedDeckIndexes: [0],
+    })
+    expect(ctx.get(onboardingEntryStepIndexAtom)).toBe(0)
   })
 })

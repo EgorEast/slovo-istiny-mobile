@@ -1,6 +1,6 @@
 import { useAction } from '@reatom/npm-react'
 import { useEffect, useRef } from 'react'
-import { skipOnboardingStep } from '../model/tour'
+import { skipOnboardingStep } from '../model/skip'
 
 // A `skipIfMissing` card whose target never registers is dropped: 600 ms is long
 // enough for a mounted row to measure, short enough not to stall the tour when

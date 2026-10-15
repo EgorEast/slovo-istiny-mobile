@@ -1,10 +1,11 @@
 import { type OnboardingStep } from './scenarios'
 
-// A card (a step without `tapActionId`) and the visualization steps that follow it.
-// Visualizations are not tour steps: they play as the card's exit transition when the
-// tour departs it forward.
+// A card (a step without `tapActionId` that is not an entry transition) and the steps
+// that play as transitions around it: entry transitions navigate into the card, exit
+// visualizations perform an action on departure. Neither is counted as a tour step.
 export interface TourDeckEntry {
   cardIndex: number
+  entryStepIndexes: number[]
   exitStepIndexes: number[]
 }
 
@@ -15,15 +16,32 @@ export interface TourDeckProgress {
   isLastVisible: boolean
 }
 
+// A step that navigates/blinks into the card it precedes: it has a tap target and a
+// route but nothing to spotlight (`targetId`) or perform (`tapActionId`). The
+// scenario's opening step is never one — a tour must start with a card, so a leading
+// tap step stays the opening card.
+const isEntryTransitionStep = (step: OnboardingStep, index: number): boolean =>
+  index > 0 &&
+  step.tapTargetId !== undefined &&
+  step.targetId === undefined &&
+  step.tapActionId === undefined
+
 // Builds the deck: cards become entries, consecutive `tapActionId` steps attach to
-// the preceding card as its `exitStepIndexes` (played in order). Leading action steps
-// violate the authoring rule (a tour starts with a card) and are dropped, loudly.
+// the preceding card as its `exitStepIndexes` and consecutive entry-transition steps
+// attach to the following card as its `entryStepIndexes` (both played in order).
+// Leading action steps and trailing entry transitions violate the authoring rules and
+// are dropped, loudly.
 export const buildTourDeck = (steps: readonly OnboardingStep[]): TourDeckEntry[] => {
   const deck: TourDeckEntry[] = []
   const leadingActionIndexes: number[] = []
+  let pendingEntryIndexes: number[] = []
   let pendingExitIndexes: number[] = []
 
   steps.forEach((step, index) => {
+    if (isEntryTransitionStep(step, index)) {
+      pendingEntryIndexes.push(index)
+      return
+    }
     if (step.tapActionId !== undefined) {
       if (deck.length === 0) leadingActionIndexes.push(index)
       else pendingExitIndexes.push(index)
@@ -31,11 +49,12 @@ export const buildTourDeck = (steps: readonly OnboardingStep[]): TourDeckEntry[]
     }
 
     const previousEntry = deck[deck.length - 1]
-    if (previousEntry !== undefined && pendingExitIndexes.length > 0) {
+    if (previousEntry !== undefined && pendingExitIndexes.length > 0)
       previousEntry.exitStepIndexes.push(...pendingExitIndexes)
-      pendingExitIndexes = []
-    }
-    deck.push({ cardIndex: index, exitStepIndexes: [] })
+    pendingExitIndexes = []
+
+    deck.push({ cardIndex: index, entryStepIndexes: pendingEntryIndexes, exitStepIndexes: [] })
+    pendingEntryIndexes = []
   })
 
   const lastEntry = deck[deck.length - 1]
@@ -45,6 +64,10 @@ export const buildTourDeck = (steps: readonly OnboardingStep[]): TourDeckEntry[]
   if (leadingActionIndexes.length > 0)
     console.warn(
       `onboarding: dropped leading action step(s) at ${leadingActionIndexes.join(', ')} — a tour must start with a card`,
+    )
+  if (pendingEntryIndexes.length > 0)
+    console.warn(
+      `onboarding: dropped trailing entry transition step(s) at ${pendingEntryIndexes.join(', ')} — an entry transition must precede a card`,
     )
 
   return deck

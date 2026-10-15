@@ -3,23 +3,23 @@ import { useEffect } from 'react'
 import { resolveStepRoute } from './resolveStepRoute'
 import { type OnboardingScenario } from './scenarios'
 
-// Resolves the active card's effective route (its own, else the nearest preceding) and
+// Resolves the active step's effective route (its own, else the nearest preceding) and
 // reports whether the router still has to move there. During an exit transition the
 // card is already on screen, so no navigation is needed.
 export const useStepRoute = ({
-  cardIndex,
+  activeStepIndex,
   isExitPhase,
   scenario,
 }: {
-  cardIndex: number | undefined
+  activeStepIndex: number | undefined
   isExitPhase: boolean
   scenario: OnboardingScenario | undefined
 }) => {
   const pathname = usePathname()
   const effectiveRoute =
-    scenario === undefined || cardIndex === undefined
+    scenario === undefined || activeStepIndex === undefined
       ? undefined
-      : resolveStepRoute(scenario, cardIndex)
+      : resolveStepRoute(scenario, activeStepIndex)
   const needsNavigation =
     !isExitPhase && effectiveRoute !== undefined && pathname !== effectiveRoute
 

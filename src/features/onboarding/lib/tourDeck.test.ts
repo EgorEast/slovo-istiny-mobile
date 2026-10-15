@@ -8,15 +8,16 @@ import {
 
 const card = (title: string): OnboardingStep => ({ text: '', title })
 const action = (tapActionId: string): OnboardingStep => ({ tapActionId, text: '', title: '' })
+const entry = (tapTargetId: string): OnboardingStep => ({ tapTargetId, text: '', title: '' })
 
 describe('buildTourDeck', () => {
   test('treats every card as an entry and attaches a following action as its exit', () => {
     const deck = buildTourDeck([card('a'), action('one'), card('b'), action('two'), card('c')])
 
     expect(deck).toEqual([
-      { cardIndex: 0, exitStepIndexes: [1] },
-      { cardIndex: 2, exitStepIndexes: [3] },
-      { cardIndex: 4, exitStepIndexes: [] },
+      { cardIndex: 0, entryStepIndexes: [], exitStepIndexes: [1] },
+      { cardIndex: 2, entryStepIndexes: [], exitStepIndexes: [3] },
+      { cardIndex: 4, entryStepIndexes: [], exitStepIndexes: [] },
     ])
   })
 
@@ -24,15 +25,15 @@ describe('buildTourDeck', () => {
     const deck = buildTourDeck([card('a'), action('one'), action('two'), card('b')])
 
     expect(deck).toEqual([
-      { cardIndex: 0, exitStepIndexes: [1, 2] },
-      { cardIndex: 3, exitStepIndexes: [] },
+      { cardIndex: 0, entryStepIndexes: [], exitStepIndexes: [1, 2] },
+      { cardIndex: 3, entryStepIndexes: [], exitStepIndexes: [] },
     ])
   })
 
   test('attaches trailing actions to the last card', () => {
     const deck = buildTourDeck([card('a'), action('one')])
 
-    expect(deck).toEqual([{ cardIndex: 0, exitStepIndexes: [1] }])
+    expect(deck).toEqual([{ cardIndex: 0, entryStepIndexes: [], exitStepIndexes: [1] }])
   })
 
   test('drops leading actions and warns about the authoring-rule violation', () => {
@@ -40,7 +41,7 @@ describe('buildTourDeck', () => {
 
     const deck = buildTourDeck([action('one'), card('a')])
 
-    expect(deck).toEqual([{ cardIndex: 1, exitStepIndexes: [] }])
+    expect(deck).toEqual([{ cardIndex: 1, entryStepIndexes: [], exitStepIndexes: [] }])
     expect(warn).toHaveBeenCalledTimes(1)
     warn.mockRestore()
   })
@@ -49,6 +50,47 @@ describe('buildTourDeck', () => {
     const warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined)
 
     expect(buildTourDeck([action('one')])).toEqual([])
+    warn.mockRestore()
+  })
+})
+
+describe('buildTourDeck entry transitions', () => {
+  test('attaches consecutive entry transitions to the following card in order', () => {
+    const deck = buildTourDeck([card('a'), entry('one'), entry('two'), card('b')])
+
+    expect(deck).toEqual([
+      { cardIndex: 0, entryStepIndexes: [], exitStepIndexes: [] },
+      { cardIndex: 3, entryStepIndexes: [1, 2], exitStepIndexes: [] },
+    ])
+  })
+
+  test('keeps the scenario opening step a card even when it only taps', () => {
+    // read's opening step is `tapTargetId` with no `targetId`: it stays the opening
+    // card (a tour must start with a card), not a leading entry transition.
+    const deck = buildTourDeck([entry('tab.read'), card('a')])
+
+    expect(deck).toEqual([
+      { cardIndex: 0, entryStepIndexes: [], exitStepIndexes: [] },
+      { cardIndex: 1, entryStepIndexes: [], exitStepIndexes: [] },
+    ])
+  })
+
+  test('routes an exit to the preceding card and an entry to the following one', () => {
+    const deck = buildTourDeck([card('a'), action('one'), entry('two'), card('b')])
+
+    expect(deck).toEqual([
+      { cardIndex: 0, entryStepIndexes: [], exitStepIndexes: [1] },
+      { cardIndex: 3, entryStepIndexes: [2], exitStepIndexes: [] },
+    ])
+  })
+
+  test('drops trailing entry transitions and warns', () => {
+    const warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined)
+
+    const deck = buildTourDeck([card('a'), entry('one')])
+
+    expect(deck).toEqual([{ cardIndex: 0, entryStepIndexes: [], exitStepIndexes: [] }])
+    expect(warn).toHaveBeenCalledTimes(1)
     warn.mockRestore()
   })
 })

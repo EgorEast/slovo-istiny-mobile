@@ -23,20 +23,29 @@ export const OnboardingTourOverlay = () => {
   const { displayIndex, displayTotal, isFirstVisible, isLastVisible } = progress
   const activeTargetId = cardStep?.targetId
 
-  const { goNext, holdNavigation, isOverlayHidden, isWaitSatisfied, tapRect, tapStepKey } =
-    useStepNavigation({
-      bottomInset: insets.bottom,
-      cardStep,
-      deckIndex,
-      entry,
-      isLastVisible,
-      isTourActive: tour !== null,
-      scenario,
-      stepKey,
-      viewportHeight: height,
-    })
+  const {
+    goNext,
+    holdNavigation,
+    isEntryPhase,
+    isOverlayHidden,
+    isWaitSatisfied,
+    tapRect,
+    tapStepKey,
+  } = useStepNavigation({
+    bottomInset: insets.bottom,
+    cardStep,
+    deckIndex,
+    entry,
+    isLastVisible,
+    isTourActive: tour !== null,
+    scenario,
+    stepKey,
+    viewportHeight: height,
+  })
+  // An entry transition plays before the card lands, so the card's missing-target
+  // timer must not start until the phase is over (otherwise it expires mid-lead-up).
   const expiredStepKey = useExpiredStepKey({
-    activeTargetId,
+    activeTargetId: isEntryPhase ? undefined : cardStep?.targetId,
     isTourActive: tour !== null,
     stepKey,
   })
