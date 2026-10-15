@@ -12,6 +12,12 @@ export const backupScenario: OnboardingScenario = {
     },
     {
       route: '/more',
+      tapTargetId: 'tab.more',
+      text: 'Переходим на экран «Ещё»…',
+      title: 'Экран «Ещё»',
+    },
+    {
+      route: '/more',
       tapTargetId: 'more.settings-item',
       targetId: 'more.settings-item',
       text: 'Чтобы открыть настройки, тапните по этому пункту.',

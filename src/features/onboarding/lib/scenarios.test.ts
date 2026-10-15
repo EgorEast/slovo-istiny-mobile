@@ -113,26 +113,41 @@ describe('onboarding scenario data', () => {
     const backup = scenariosById.backup
 
     expect(backup.screens).toBeUndefined()
-    expect(backup.steps).toHaveLength(7)
+    expect(backup.steps).toHaveLength(8)
     expect(backup.steps[0].route).toBe('/listen')
     expect(backup.steps[0].targetId).toBeUndefined()
+    // Entry transition: blink the «Ещё» tab before landing on the «Настройки» card.
     expect(backup.steps[1].route).toBe('/more')
-    expect(backup.steps[1].tapTargetId).toBe('more.settings-item')
-    expect(backup.steps[1].targetId).toBe('more.settings-item')
-    expect(backup.steps[2].route).toBe('/settings')
+    expect(backup.steps[1].tapTargetId).toBe('tab.more')
+    expect(backup.steps[1].targetId).toBeUndefined()
+    expect(backup.steps[1].tapActionId).toBeUndefined()
+    expect(backup.steps[2].route).toBe('/more')
     expect(backup.steps[2].tapTargetId).toBe('more.settings-item')
-    expect(backup.steps[2].targetId).toBe('settings.backup')
+    expect(backup.steps[2].targetId).toBe('more.settings-item')
+    expect(backup.steps[3].route).toBe('/settings')
+    expect(backup.steps[3].tapTargetId).toBe('more.settings-item')
+    expect(backup.steps[3].targetId).toBe('settings.backup')
+  })
+
+  test('backup folds the More tab blink into the «Настройки» card as an entry transition', () => {
+    const backup = scenariosById.backup
+    const deck = buildTourDeck(backup.steps)
+
+    expect(deck).toHaveLength(7)
+    expect(deck.map(entry => entry.cardIndex)).toEqual([0, 2, 3, 4, 5, 6, 7])
+    expect(deck[1].entryStepIndexes).toEqual([1])
+    expect(deck.filter(entry => entry.entryStepIndexes.length > 0)).toHaveLength(1)
   })
 
   test('backup scenario walks the section, folder, export, import and autosync', () => {
     const backup = scenariosById.backup
 
-    expect(backup.steps[3].targetId).toBe('settings.backup-folder')
-    expect(backup.steps[3].skipIfMissing).toBe(true)
-    expect(backup.steps[4].targetId).toBe('settings.backup-export')
-    expect(backup.steps[5].targetId).toBe('settings.backup-import')
-    expect(backup.steps[6].targetId).toBe('settings.backup-autosync')
-    expect(backup.steps[6].skipIfMissing).toBe(true)
+    expect(backup.steps[4].targetId).toBe('settings.backup-folder')
+    expect(backup.steps[4].skipIfMissing).toBe(true)
+    expect(backup.steps[5].targetId).toBe('settings.backup-export')
+    expect(backup.steps[6].targetId).toBe('settings.backup-import')
+    expect(backup.steps[7].targetId).toBe('settings.backup-autosync')
+    expect(backup.steps[7].skipIfMissing).toBe(true)
   })
 
   test('offline caching-switch waits for the list to load before the spotlight lands', () => {
