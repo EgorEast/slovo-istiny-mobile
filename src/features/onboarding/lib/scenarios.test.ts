@@ -304,6 +304,7 @@ describe('onboarding scenario data', () => {
     // The picker card spotlights above the SermonPlaylistPicker modal (presentOnTop);
     // the sermon-menu card stays pass-through (its dropdown is not a Modal).
     expect(search.steps[7].presentOnTop).toBe(true)
+    expect(search.steps[7].cardPosition).toBe('bottom')
     expect(search.steps[7].interactive).toBeUndefined()
     expect(search.steps[8].interactive).toBe(true)
   })

@@ -50,6 +50,10 @@ export interface OnboardingStep {
   actionOnEnterId?: string
   // Highlighted target rects (background dimmed, zones stay bright) — see ui/TourWaitLayer.tsx.
   areaTargetIds?: string[]
+  // Bottom-anchored card for a `presentOnTop` step: the card sits at the screen bottom
+  // instead of next to the target, so it covers no more than the lower half of the
+  // app modal it spotlights (the highlighted rows stay visible above it).
+  cardPosition?: 'bottom'
   // Pass-through card over the live UI, no spotlight modal.
   interactive?: boolean
   // Re-present the tour window (fresh native Modal keyed by step) above app modals.

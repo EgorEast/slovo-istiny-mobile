@@ -61,6 +61,10 @@ export const TourSpotlight = ({
     insets.bottom,
     INDENTS.high,
   )
+  // A bottom-anchored card (presentOnTop modals) sits below the spotlighted rows
+  // instead of next to the hole, so the highlighted list stays visible.
+  const isBottomCard = step.presentOnTop === true && step.cardPosition === 'bottom'
+  const anchorOffset = isBottomCard ? { bottom: insets.bottom + INDENTS.medium } : { top }
 
   return (
     <Modal
@@ -79,7 +83,7 @@ export const TourSpotlight = ({
           ? holes.map(rect => <TourAreaHighlight rect={rect} key={`${rect.x}-${rect.y}`} />)
           : null}
         {isWaitingForTarget ? null : (
-          <View style={[styles.tooltipAnchor, { top }]}>
+          <View style={[styles.tooltipAnchor, anchorOffset]}>
             <View
               style={styles.tooltip}
               onLayout={event => setCardHeight(event.nativeEvent.layout.height)}

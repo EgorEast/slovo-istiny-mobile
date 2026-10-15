@@ -1,6 +1,7 @@
 import { act, screen } from '@testing-library/react-native'
 import { StyleSheet } from 'react-native'
 import { renderWithProviders } from 'shared/mocks'
+import { INDENTS } from 'shared/ui/theme'
 import { type OnboardingStep } from '../lib/scenarios'
 import { TourSpotlight } from './TourSpotlight'
 
@@ -101,5 +102,19 @@ describe('<TourSpotlight>', () => {
     expect(style.maxWidth).toBe(DESKTOP_COLUMN_WIDTH)
     expect(style.width).toBe('100%')
     expect(style.alignSelf).toBe('center')
+  })
+
+  test('anchors a presentOnTop bottom card at the bottom of the screen', async () => {
+    const step: OnboardingStep = { ...STEP, cardPosition: 'bottom', presentOnTop: true }
+
+    await renderWithProviders(spotlightElement(step, 'a'))
+
+    const tooltip = screen.getByText('tour-tooltip').parent
+    const anchor = StyleSheet.flatten(tooltip?.parent?.props.style)
+
+    // insets.bottom is 0 under the test SafeAreaProvider: the card hugs the bottom edge
+    // (above the system nav bar) instead of sitting next to the spotlighted target.
+    expect(anchor.bottom).toBe(INDENTS.medium)
+    expect(anchor.top).toBeUndefined()
   })
 })
