@@ -4,6 +4,7 @@ import { ScrollView, StyleSheet, Text, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Modal } from 'shared/ui/modal'
 import { FONT_SIZES, INDENTS, useTheme } from 'shared/ui/theme'
+import { isGlobalScenario, isScenarioOnScreen } from '../lib/scenarioGrouping'
 import { type OnboardingScenario, type ScenarioScope } from '../lib/scenarios'
 import { useOnboardingScenarios } from '../lib/useOnboardingScenarios'
 import { startOnboardingTour } from '../model/tour'
@@ -14,16 +15,6 @@ const SCREEN_GROUP_TITLE = 'На этом экране'
 const GLOBAL_GROUP_TITLE = 'Глобальные'
 const PLAYER_GROUP_TITLE = 'Плеер'
 const SCROLL_TEST_ID = 'scenario-picker-scroll'
-
-const isScenarioOnScreen = (scenario: OnboardingScenario, pathname: string) =>
-  scenario.screens?.includes(pathname) ?? false
-
-// A `globalFallback` scenario is local to its own screens but stays in «Глобальные»
-// everywhere else — its lead-up starts on one of its screens (backup, share). A plain
-// screen-bound scenario has no fallback and is hidden on foreign screens.
-const isGlobalScenario = (scenario: OnboardingScenario, pathname: string) =>
-  scenario.screens === undefined ||
-  (scenario.globalFallback === true && !isScenarioOnScreen(scenario, pathname))
 
 // The player picker is route-agnostic: it offers every route-less default scenario
 // plus the `globalFallback` ones, whatever route sits beneath the fullscreen player.

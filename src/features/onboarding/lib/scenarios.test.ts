@@ -293,7 +293,8 @@ describe('onboarding scenario data', () => {
   test('search scenario leads from «Ещё» into the search results', () => {
     const search = scenariosById.search
 
-    expect(search.screens).toBeUndefined()
+    expect(search.screens).toEqual(['/listen'])
+    expect(search.globalFallback).toBe(true)
     expect(search.steps).toHaveLength(9)
     expect(search.steps[0].targetId).toBeUndefined()
     // Pure-navigation return entry: no tap target, only a route.

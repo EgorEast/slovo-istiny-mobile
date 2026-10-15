@@ -2,8 +2,10 @@ import { type OnboardingScenario } from '../scenarios'
 
 export const searchScenario: OnboardingScenario = {
   description: 'Группы и плейлисты',
+  globalFallback: true,
   icon: 'search-outline',
   id: 'search',
+  screens: ['/listen'],
   steps: [
     {
       text: 'Сейчас перейдём на экран «Слушать» — тапнем по нему — и откроем поиск. Нажмите «Далее».',
