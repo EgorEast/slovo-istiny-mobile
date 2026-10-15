@@ -56,10 +56,11 @@ describe('onboarding scenario data', () => {
     expect(whatsNew.steps[0].title).toBe('Обзоры в приложении')
   })
 
-  test('share scenario is global and leads from «Ещё» into the QR code, copy button and link contents', () => {
+  test('share scenario falls back globally and leads from «Ещё» into the QR code, copy button and link contents', () => {
     const share = scenariosById.share
 
-    expect(share.screens).toBeUndefined()
+    expect(share.screens).toEqual(['/more', '/share'])
+    expect(share.globalFallback).toBe(true)
     expect(share.steps).toHaveLength(7)
     expect(share.steps[0].targetId).toBeUndefined()
     expect(share.steps[0].tapTargetId).toBeUndefined()
@@ -114,10 +115,11 @@ describe('onboarding scenario data', () => {
     ])
   })
 
-  test('backup scenario is global and opens the path into the backup section', () => {
+  test('backup scenario falls back globally and opens the path into the backup section', () => {
     const backup = scenariosById.backup
 
-    expect(backup.screens).toBeUndefined()
+    expect(backup.screens).toEqual(['/more', '/settings'])
+    expect(backup.globalFallback).toBe(true)
     expect(backup.steps).toHaveLength(9)
     expect(backup.steps[0].route).toBe('/listen')
     expect(backup.steps[0].targetId).toBeUndefined()

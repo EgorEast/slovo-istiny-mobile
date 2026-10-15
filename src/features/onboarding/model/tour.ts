@@ -1,7 +1,8 @@
 import { action, atom } from '@reatom/framework'
 import { resolveEntryStartIndex, resolveTourDeck } from '../lib/resolveDeck'
 import { resolveTourStart } from '../lib/resolveTourStart'
-import { type OnboardingScenarioId, scenariosById } from '../lib/scenarios'
+import { type OnboardingScenarioId } from '../lib/scenarioId'
+import { scenariosById } from '../lib/scenarios'
 import { findNearestDeckIndex } from '../lib/tourDeck'
 import { onboardingTargetRectsAtom } from './targets'
 

@@ -18,6 +18,18 @@ const SCROLL_TEST_ID = 'scenario-picker-scroll'
 const isScenarioOnScreen = (scenario: OnboardingScenario, pathname: string) =>
   scenario.screens?.includes(pathname) ?? false
 
+// A `globalFallback` scenario is local to its own screens but stays in «Глобальные»
+// everywhere else — its lead-up starts on one of its screens (backup, share). A plain
+// screen-bound scenario has no fallback and is hidden on foreign screens.
+const isGlobalScenario = (scenario: OnboardingScenario, pathname: string) =>
+  scenario.screens === undefined ||
+  (scenario.globalFallback === true && !isScenarioOnScreen(scenario, pathname))
+
+// The player picker is route-agnostic: it offers every route-less default scenario
+// plus the `globalFallback` ones, whatever route sits beneath the fullscreen player.
+const isPlayerGlobalScenario = (scenario: OnboardingScenario) =>
+  scenario.screens === undefined || scenario.globalFallback === true
+
 export const ScenarioPickerModal = ({
   onClose,
   scope = 'default',
@@ -40,14 +52,12 @@ export const ScenarioPickerModal = ({
   }
 
   const screenScenarios = scenarios.filter(scenario => isScenarioOnScreen(scenario, pathname))
-  // «Глобальные» is truly global: only scenarios without `screens` (welcome/whatsNew,
-  // player). A scenario bound to other screens is reachable from those screens and is
-  // not offered here at all — otherwise its cards would show on a screen where its
-  // targets are absent.
-  const globalScenarios = scenarios.filter(scenario => scenario.screens === undefined)
-  // The player picker is route-agnostic: its «Глобальные» group is every
-  // route-less default scenario (player, welcome/whatsNew).
-  const playerGlobalScenarios = defaultScenarios.filter(scenario => scenario.screens === undefined)
+  // «Глобальные» = truly route-less scenarios (search, welcome/whatsNew) plus the
+  // `globalFallback` ones (backup, share) on screens they do not name. A screen-bound
+  // scenario without `globalFallback` is reachable only from its own screens and is not
+  // offered here at all — otherwise its cards would show where its targets are absent.
+  const globalScenarios = scenarios.filter(scenario => isGlobalScenario(scenario, pathname))
+  const playerGlobalScenarios = defaultScenarios.filter(isPlayerGlobalScenario)
 
   return (
     <Modal visible={visible} onBackdropPress={onClose}>

@@ -73,15 +73,15 @@ describe('<ScenarioPickerModal>', () => {
     ])
   })
 
-  test('keeps the settings scenario local and offers backup globally on the settings screen', async () => {
+  test('groups backup with settings locally on the settings screen while share stays global', async () => {
     mockPathname.mockReturnValue('/settings')
 
     await renderPicker()
 
     expectRowTitles([
       'Настройки и резервные копии',
-      'Результаты поиска',
       'Резервное копирование',
+      'Результаты поиска',
       'Поделиться приложением',
       'Добро пожаловать',
       'Что нового',
@@ -101,23 +101,23 @@ describe('<ScenarioPickerModal>', () => {
     })
   })
 
-  test('offers the share scenario globally on the share screen', async () => {
+  test('shows the share scenario local on the share screen while backup stays global', async () => {
     mockPathname.mockReturnValue('/share')
 
     await renderPicker()
 
-    expect(screen.queryByText(SCREEN_GROUP_TITLE)).toBeNull()
+    expect(screen.getByText(SCREEN_GROUP_TITLE)).toBeTruthy()
     expect(screen.getByText(GLOBAL_GROUP_TITLE)).toBeTruthy()
     expectRowTitles([
+      'Поделиться приложением',
       'Результаты поиска',
       'Резервное копирование',
-      'Поделиться приложением',
       'Добро пожаловать',
       'Что нового',
     ])
   })
 
-  test('shows the More screen scenarios local on /more', async () => {
+  test('shows the More screen scenarios, backup and share local on /more', async () => {
     mockPathname.mockReturnValue('/more')
 
     await renderPicker()
@@ -126,9 +126,9 @@ describe('<ScenarioPickerModal>', () => {
       'История прослушивания',
       'Офлайн-режим',
       'Настройки и резервные копии',
-      'Результаты поиска',
       'Резервное копирование',
       'Поделиться приложением',
+      'Результаты поиска',
       'Добро пожаловать',
       'Что нового',
     ])

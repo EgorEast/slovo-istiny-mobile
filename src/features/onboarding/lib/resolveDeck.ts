@@ -1,4 +1,5 @@
-import { type OnboardingScenarioId, scenariosById } from './scenarios'
+import { type OnboardingScenarioId } from './scenarioId'
+import { scenariosById } from './scenarios'
 import { buildTourDeck, type TourDeckEntry } from './tourDeck'
 
 // The deck is derived from the active scenario's steps; the actions resolve it on

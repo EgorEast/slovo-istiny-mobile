@@ -20,10 +20,15 @@ import { shareScenario } from './scenarioData/share'
 import { studyScenario } from './scenarioData/study'
 import { welcomeScenario } from './scenarioData/welcome'
 import { whatsNewScenario } from './scenarioData/whatsNew'
+import { type OnboardingScenarioId } from './scenarioId'
 
 export interface OnboardingScenario {
   description: string
   featureFlag?: 'read' | 'study'
+  // A screen-bound scenario still offered in the «Глобальные» group on the screens it
+  // does not name (its lead-up starts on one of its own screens). Without it, a
+  // scenario with `screens` is hidden on every foreign screen.
+  globalFallback?: boolean
   icon: keyof typeof Ionicons.glyphMap
   id: OnboardingScenarioId
   scope?: ScenarioScope
@@ -39,28 +44,6 @@ export type ScenarioScope = 'default' | 'player'
 
 export const resolveScenarioScope = (scenario: OnboardingScenario): ScenarioScope =>
   scenario.scope ?? 'default'
-
-export type OnboardingScenarioId =
-  | 'backup'
-  | 'history'
-  | 'listen'
-  | 'offline'
-  | 'player-description'
-  | 'player-intro'
-  | 'player-sound'
-  | 'player-speed'
-  | 'player'
-  | 'playlist-add'
-  | 'playlist-menu'
-  | 'playlist-offline'
-  | 'playlists'
-  | 'read'
-  | 'search'
-  | 'settings'
-  | 'share'
-  | 'study'
-  | 'welcome'
-  | 'whatsNew'
 
 export interface OnboardingStep {
   // Registered action performed once on activation, no blink/auto-advance (lib/tourActions.ts).

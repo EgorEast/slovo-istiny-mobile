@@ -2,8 +2,10 @@ import { type OnboardingScenario } from '../scenarios'
 
 export const shareScenario: OnboardingScenario = {
   description: 'QR-код и ссылка',
+  globalFallback: true,
   icon: 'qr-code-outline',
   id: 'share',
+  screens: ['/more', '/share'],
   steps: [
     {
       text: 'Сейчас перейдём на экран «Ещё» и откроем страницу «Поделиться приложением» — нажмите «Далее».',

@@ -2,8 +2,10 @@ import { type OnboardingScenario } from '../scenarios'
 
 export const backupScenario: OnboardingScenario = {
   description: 'Копии, автосинхронизация, папка',
+  globalFallback: true,
   icon: 'save-outline',
   id: 'backup',
+  screens: ['/more', '/settings'],
   steps: [
     {
       route: '/listen',
