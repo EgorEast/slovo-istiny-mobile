@@ -1,11 +1,17 @@
 import { useAction, useAtom, useCtx } from '@reatom/npm-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Keyboard, Platform, Text, TextInput, View } from 'react-native'
 import { useEscapeKey } from 'shared/lib/escape-key'
 import { IconButton } from 'shared/ui/icon-button'
 import { INDENTS, useTheme } from 'shared/ui/theme'
 import { useSearchAutofocus } from '../lib/useSearchAutofocus'
-import { closeSearch, isSearchOpenAtom, resetSearchResults, searchQueryAtom } from '../model'
+import {
+  closeSearch,
+  isSearchOpenAtom,
+  resetSearchResults,
+  searchInputRequestAtom,
+  searchQueryAtom,
+} from '../model'
 import { fetchDistinctValues } from '../model-distinctValues'
 import { styles } from './SearchBar.styles'
 import { SearchSuggestions } from './SearchSuggestions'
@@ -24,12 +30,28 @@ export const SearchBar = () => {
   const [inputValue, setInputValue] = useState(() => ctx.get(searchQueryAtom))
   const [isFocused, setIsFocused] = useState(false)
   const [hasSelectedSuggestion, setHasSelectedSuggestion] = useState(false)
+  const [inputRequest] = useAtom(searchInputRequestAtom)
+  // Nonce of the last external request already mirrored, seeded from the current
+  // one so a stale request is not replayed when the bar mounts.
+  const handledRequestNonceRef = useRef(inputRequest?.nonce ?? 0)
   const inputRef = useSearchAutofocus()
   const closeSearchAction = useAction(closeSearch)
   const resetSearchResultsAction = useAction(resetSearchResults)
   const fetchDistinctValuesAction = useAction(fetchDistinctValues)
 
   useEffect(() => void fetchDistinctValuesAction(), [fetchDistinctValuesAction])
+
+  // Mirror an external typing request (onboarding tour) into the visible input —
+  // the same path a manual keystroke takes; the action already set the query atom.
+  useEffect(() => {
+    if (inputRequest === null || inputRequest.nonce === handledRequestNonceRef.current) return
+
+    handledRequestNonceRef.current = inputRequest.nonce
+    // eslint-disable-next-line react-hooks-extra/no-direct-set-state-in-use-effect -- external typing signal must land in the visible input
+    setInputValue(inputRequest.text)
+    // eslint-disable-next-line react-hooks-extra/no-direct-set-state-in-use-effect -- a fresh query hides the suggestion list
+    setHasSelectedSuggestion(false)
+  }, [inputRequest])
 
   const handleChangeText = (text: string) => {
     setInputValue(text)

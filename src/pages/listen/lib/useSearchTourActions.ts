@@ -1,7 +1,7 @@
-import { useAtom } from '@reatom/npm-react'
+import { useAction, useAtom } from '@reatom/npm-react'
 import { useCallback, useEffect, useRef } from 'react'
 import { useTourActionRegistrar } from 'features/onboarding'
-import { searchQueryAtom, searchResultsAtom } from 'features/sermon-search'
+import { searchResultsAtom, typeSearchInput } from 'features/sermon-search'
 import { type SermonData } from 'entities/sermon'
 
 const OPEN_SEARCH_ACTION_ID = 'open-listen-search'
@@ -14,11 +14,11 @@ const TYPE_STEP_MS = 100
 
 /**
  * Registers the search tour's actions on behalf of the page: the tour opens the
- * search overlay, then types the demo query into the real search atom (prefix by
- * prefix, cancellable) so the grouped-results card has a target to spotlight, then
- * presses the first rendered sermon. The page owns these because
- * `features/sermon-search` must not import `features/onboarding` (dependency
- * inversion).
+ * search overlay, then types the demo query into the real search input (prefix by
+ * prefix, cancellable) so the field shows it and the grouped-results card has a
+ * target to spotlight, then presses the first rendered sermon. The page owns these
+ * because `features/sermon-search` must not import `features/onboarding`
+ * (dependency inversion).
  * @param root0 - Hook input.
  * @param root0.onOpenSearch - Page-owned handler that opens the search overlay.
  * @param root0.onPressFirstSermon - Page-owned handler that starts playback of a sermon.
@@ -30,8 +30,8 @@ export const useSearchTourActions = ({
   onOpenSearch: () => void
   onPressFirstSermon: (sermon: SermonData) => void
 }) => {
-  const [, setQuery] = useAtom(searchQueryAtom)
   const [sermons] = useAtom(searchResultsAtom)
+  const typeSearchInputAction = useAction(typeSearchInput)
   const typingTimerRef = useRef<null | ReturnType<typeof setTimeout>>(null)
 
   const typeQuery = useCallback(() => {
@@ -40,13 +40,13 @@ export const useSearchTourActions = ({
 
     const typeNextChar = () => {
       typedCount += 1
-      setQuery(SEARCH_QUERY.slice(0, typedCount))
+      typeSearchInputAction(SEARCH_QUERY.slice(0, typedCount))
       typingTimerRef.current =
         typedCount < SEARCH_QUERY.length ? setTimeout(typeNextChar, TYPE_STEP_MS) : null
     }
 
     typeNextChar()
-  }, [setQuery])
+  }, [typeSearchInputAction])
 
   const pressFirstSermon = useCallback(() => {
     const firstSermon = sermons[0]
