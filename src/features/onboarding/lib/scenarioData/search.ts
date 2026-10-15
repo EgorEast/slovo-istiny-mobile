@@ -12,14 +12,10 @@ export const searchScenario: OnboardingScenario = {
       title: 'Результаты поиска',
     },
     {
-      // Pure navigation: from a nested screen without a tab bar this returns to
-      // «Слушать» first, so the tab entry below can register and blink the tab.
-      route: '/listen',
-      text: 'Возвращаемся на экран «Слушать»…',
-      title: 'Экран «Слушать»',
-    },
-    {
       // The «Слушать» tab is an entry transition (blink + navigation), not a card.
+      // It navigates itself (auto-skipped when already on «Слушать»), so no separate
+      // pure-navigation return is needed: a return entry would reach the route first
+      // and the tab entry would then be skipped without ever blinking.
       route: '/listen',
       tapTargetId: 'tab.listen',
       text: 'Переходим на экран «Слушать»…',

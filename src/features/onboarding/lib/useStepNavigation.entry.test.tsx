@@ -39,7 +39,11 @@ jest.mock('expo-router', () => ({
 
 const TARGET_RECT: OnboardingTargetRect = { height: 4, width: 3, x: 1, y: 2 }
 const ENTRY_SCENARIO_ID = 'backup'
-const ENTRY_RECTS = { 'more.share-item': TARGET_RECT, 'tab.more': TARGET_RECT }
+const ENTRY_RECTS = {
+  'more.share-item': TARGET_RECT,
+  'tab.listen': TARGET_RECT,
+  'tab.more': TARGET_RECT,
+}
 const BLINK_BUDGET_MS = 15000
 
 const entryScenario: OnboardingScenario = {
@@ -52,6 +56,20 @@ const entryScenario: OnboardingScenario = {
     { route: '/share', tapTargetId: 'more.share-item', text: '', title: 'Поделиться' },
     { route: '/share', targetId: 'share.qr', text: '', title: 'QR' },
     { text: '', title: 'Финал' },
+  ],
+  title: '',
+}
+
+// A pure-navigation return entry (route only, no tap target) leading into a card, so
+// the no-hold behavior is isolated from the blink entries that follow it in `share`.
+const returnScenario: OnboardingScenario = {
+  description: '',
+  icon: 'information-circle-outline',
+  id: 'share',
+  steps: [
+    { text: '', title: 'Интро' },
+    { route: '/more', text: '', title: 'Ещё' },
+    { route: '/more', targetId: 'more.menu', text: '', title: 'Меню' },
   ],
   title: '',
 }
@@ -150,15 +168,31 @@ describe('useStepNavigation entry transitions', () => {
 
 describe('useStepNavigation return entries', () => {
   test(
-    'navigates a tap-target-less entry without a blink (search return from a nested screen)',
+    'navigates a tap-target-less entry without a blink (pure-navigation return)',
     async () => {
-      const { ctx, result } = await renderNavigation(scenariosById.search, 1, '/history')
+      const { ctx, result } = await renderNavigation(returnScenario, 1, '/history')
 
       // Pure navigation: nothing to hint at, so navigation is not held for a blink.
       expect(result.current.holdNavigation).toBe(false)
 
       await waitFor(() => expect(ctx.get(onboardingEntryStepIndexAtom)).toBeNull(), {
         timeout: 2000,
+      })
+      expect(mockCurrentPathname).toBe('/more')
+    },
+    BLINK_BUDGET_MS,
+  )
+
+  test(
+    'blinks the search tab entry from a foreign screen and navigates to «Слушать»',
+    async () => {
+      const { ctx, result } = await renderNavigation(scenariosById.search, 1, '/more')
+
+      // The tab entry is a blink transition: navigation is held while it blinks.
+      expect(result.current.holdNavigation).toBe(true)
+
+      await waitFor(() => expect(ctx.get(onboardingEntryStepIndexAtom)).toBeNull(), {
+        timeout: 8000,
       })
       expect(mockCurrentPathname).toBe('/listen')
     },

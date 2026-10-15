@@ -295,28 +295,29 @@ describe('onboarding scenario data', () => {
 
     expect(search.screens).toEqual(['/listen'])
     expect(search.globalFallback).toBe(true)
-    expect(search.steps).toHaveLength(9)
+    expect(search.steps).toHaveLength(8)
     expect(search.steps[0].targetId).toBeUndefined()
-    // Pure-navigation return entry: no tap target, only a route.
+    // The «Слушать» tab is an entry transition (blink + navigation), not a spotlight
+    // card, and it navigates on its own — no separate pure-navigation return, which
+    // would reach «Слушать» first and make the tab entry skip without ever blinking.
     expect(search.steps[1].route).toBe('/listen')
-    expect(search.steps[1].tapTargetId).toBeUndefined()
-    // The «Слушать» tab is an entry transition (blink + navigation), not a spotlight card.
-    expect(search.steps[2].route).toBe('/listen')
-    expect(search.steps[2].tapTargetId).toBe('tab.listen')
-    expect(search.steps[2].targetId).toBeUndefined()
-    expect(search.steps[3].tapTargetId).toBe('listen.search-toggle')
-    expect(search.steps[3].tapActionId).toBe('open-listen-search')
-    expect(search.steps[4].tapActionId).toBe('type-search-query')
-    expect(search.steps[4].waitFor).toBeUndefined()
-    expect(search.steps[5].targetId).toBe('search-results.group-sermons')
-    expect(search.steps[6].targetId).toBe('search-results.first-sermon')
-    expect(search.steps[6].tapActionId).toBe('press-first-sermon')
-    // The picker card spotlights above the SermonPlaylistPicker modal (presentOnTop);
-    // the sermon-menu card stays pass-through (its dropdown is not a Modal).
-    expect(search.steps[7].presentOnTop).toBe(true)
-    expect(search.steps[7].cardPosition).toBe('bottom')
-    expect(search.steps[7].interactive).toBeUndefined()
-    expect(search.steps[8].interactive).toBe(true)
+    expect(search.steps[1].tapTargetId).toBe('tab.listen')
+    expect(search.steps[1].targetId).toBeUndefined()
+    expect(search.steps[2].tapTargetId).toBe('listen.search-toggle')
+    expect(search.steps[2].tapActionId).toBe('open-listen-search')
+    expect(search.steps[3].tapActionId).toBe('type-search-query')
+    expect(search.steps[3].waitFor).toBeUndefined()
+    expect(search.steps[4].targetId).toBe('search-results.group-sermons')
+    expect(search.steps[5].targetId).toBe('search-results.first-sermon')
+    expect(search.steps[5].tapActionId).toBe('press-first-sermon')
+    // The picker card spotlights above the SermonPlaylistPicker modal (presentOnTop)
+    // and highlights the picker window itself (areaTargetIds); the sermon-menu card
+    // stays pass-through (its dropdown is not a Modal).
+    expect(search.steps[6].presentOnTop).toBe(true)
+    expect(search.steps[6].cardPosition).toBe('bottom')
+    expect(search.steps[6].areaTargetIds).toEqual(['search.picker-modal'])
+    expect(search.steps[6].interactive).toBeUndefined()
+    expect(search.steps[7].interactive).toBe(true)
   })
 
   test('search folds its tab into the entry transitions of the results card', () => {
@@ -324,12 +325,12 @@ describe('onboarding scenario data', () => {
     const deck = buildTourDeck(search.steps)
 
     expect(deck).toHaveLength(4)
-    expect(deck.map(entry => entry.cardIndex)).toEqual([0, 5, 7, 8])
-    // The two search-open visualizations leave the intro card; the tab and the
-    // pure-navigation return lead into the results card, which owns the first-sermon exit.
-    expect(deck[0].exitStepIndexes).toEqual([3, 4])
-    expect(deck[1].entryStepIndexes).toEqual([1, 2])
-    expect(deck[1].exitStepIndexes).toEqual([6])
+    expect(deck.map(entry => entry.cardIndex)).toEqual([0, 4, 6, 7])
+    // The two search-open visualizations leave the intro card; the tab entry leads
+    // into the results card, which owns the first-sermon exit.
+    expect(deck[0].exitStepIndexes).toEqual([2, 3])
+    expect(deck[1].entryStepIndexes).toEqual([1])
+    expect(deck[1].exitStepIndexes).toEqual([5])
   })
 
   test('playlist-menu walks the header menu and ends on the interactive sermon menu', () => {

@@ -9,7 +9,7 @@ import {
   onboardingTargetRectsAtom,
   registerOnboardingTargetRect,
 } from '../model/targets'
-import { endOnboardingTour, onboardingTourAtom } from '../model/tour'
+import { endOnboardingTour, onboardingEntryStepIndexAtom, onboardingTourAtom } from '../model/tour'
 import { OnboardingTourOverlay } from './OnboardingTourOverlay'
 
 jest.mock('react-native-svg', () => {
@@ -411,6 +411,37 @@ describe('<OnboardingTourOverlay>', () => {
     // so the dialog the tour points at stays visible.
     expect(getByText('hole:40,300')).toBeTruthy()
     expect(getAllByTestId(AREA_HIGHLIGHT)).toHaveLength(1)
+  })
+
+  test('blinks the search lead-up tab entry from a foreign screen before navigating', async () => {
+    mockPathname.mockReturnValue('/more')
+
+    const { getByTestId, getByText } = await renderAtDeck(
+      'search',
+      1,
+      { 'tab.listen': SECTIONS_RECT },
+      ctx => onboardingEntryStepIndexAtom(ctx, 0),
+    )
+
+    await waitFor(() => expect(getByTestId(TAP_MODAL)).toBeTruthy())
+    expect(getByText(TAP_INDICATOR)).toBeTruthy()
+    await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('/listen'), {
+      timeout: TAP_PHASE_TIMEOUT_MS,
+    })
+  })
+
+  test('skips the search lead-up tab entry when the tour starts on «Слушать»', async () => {
+    const { ctx, queryByTestId, queryByText } = await renderAtDeck(
+      'search',
+      1,
+      { 'tab.listen': SECTIONS_RECT },
+      setupCtx => onboardingEntryStepIndexAtom(setupCtx, 0),
+    )
+
+    // On «Слушать» the whole entry phase skips itself: no tab blink, straight to the card.
+    await waitFor(() => expect(ctx.get(onboardingEntryStepIndexAtom)).toBeNull())
+    expect(queryByTestId(TAP_MODAL)).toBeNull()
+    expect(queryByText(TAP_INDICATOR)).toBeNull()
   })
 
   test('blinks the search-toggle exit visualization before opening the search', async () => {

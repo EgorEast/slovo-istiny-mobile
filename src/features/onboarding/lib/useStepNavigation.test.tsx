@@ -87,7 +87,7 @@ describe('useStepNavigation exit transitions', () => {
     const action = jest.fn()
     registerTourAction('type-search-query', action)
 
-    // search intro card (deck entry 0) owns exits [3, 4]; exit 1 is the targetless «type query».
+    // search intro card (deck entry 0) owns exits [2, 3]; exit 1 is the targetless «type query».
     const { ctx } = await renderNavigation(scenariosById.search, 0, {}, setupCtx =>
       onboardingExitStepIndexAtom(setupCtx, 1),
     )
