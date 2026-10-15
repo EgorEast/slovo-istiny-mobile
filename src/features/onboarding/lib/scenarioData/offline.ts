@@ -1,5 +1,7 @@
 import { type OnboardingScenario } from '../scenarios'
 
+const OFFLINE_ITEM_TARGET_ID = 'more.offline-item'
+
 export const offlineScenario: OnboardingScenario = {
   description: 'Прослушивание без интернета',
   icon: 'cloud-offline-outline',
@@ -7,19 +9,15 @@ export const offlineScenario: OnboardingScenario = {
   screens: ['/more', '/offline'],
   steps: [
     {
-      text: 'Сейчас перейдём на экран «Ещё» — тапнем по нему — и откроем офлайн-режим. Нажмите «Далее».',
-      title: 'Офлайн-режим',
-    },
-    {
       route: '/more',
-      tapTargetId: 'tab.more',
-      targetId: 'more.offline-item',
-      text: 'Открываем раздел офлайн-кэша.',
+      tapTargetId: OFFLINE_ITEM_TARGET_ID,
+      targetId: OFFLINE_ITEM_TARGET_ID,
+      text: 'Чтобы перейти на экран офлайна, тапните по пункту «Офлайн». Нажмите «Далее».',
       title: 'Офлайн-режим',
     },
     {
       route: '/offline',
-      tapTargetId: 'more.offline-item',
+      tapTargetId: OFFLINE_ITEM_TARGET_ID,
       targetId: 'offline.caching-switch',
       text: 'Переключатель включает автоматическое сохранение проповедей на устройство.',
       title: 'Автокэширование',

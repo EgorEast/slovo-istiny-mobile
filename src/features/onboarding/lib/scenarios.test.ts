@@ -5,6 +5,7 @@ import { buildTourDeck, resolveDeckProgress } from './tourDeck'
 
 const FIRST_ROW_TARGET_ID = 'playlist.first-row'
 const ROW_MENU_ADD_TARGET_ID = 'playlist.row-menu-add'
+const OFFLINE_ITEM_TARGET_ID = 'more.offline-item'
 
 describe('onboarding scenario data', () => {
   test('welcome runs eight steps and ends on the tours setting', () => {
@@ -94,8 +95,8 @@ describe('onboarding scenario data', () => {
     expect(scenariosById.playlists.steps[0].tapTargetId).toBe('listen.my-playlists-title')
     expect(scenariosById.history.steps[1].tapTargetId).toBe('tab.more')
     expect(scenariosById.history.steps[2].tapTargetId).toBe('more.history-item')
-    expect(scenariosById.offline.steps[1].tapTargetId).toBe('tab.more')
-    expect(scenariosById.offline.steps[2].tapTargetId).toBe('more.offline-item')
+    expect(scenariosById.offline.steps[0].tapTargetId).toBe(OFFLINE_ITEM_TARGET_ID)
+    expect(scenariosById.offline.steps[1].tapTargetId).toBe(OFFLINE_ITEM_TARGET_ID)
     expect(scenariosById.settings.steps[1].tapTargetId).toBe('tab.more')
     expect(scenariosById.settings.steps[2].tapTargetId).toBe('more.settings-item')
     expect(scenariosById.read.steps[0].tapTargetId).toBe('tab.read')
@@ -157,17 +158,28 @@ describe('onboarding scenario data', () => {
   })
 
   test('offline caching-switch waits for the list to load before the spotlight lands', () => {
-    const switchStep = scenariosById.offline.steps[2]
+    const switchStep = scenariosById.offline.steps[1]
 
     expect(switchStep.targetId).toBe('offline.caching-switch')
     expect(switchStep.waitFor).toBe('offlineLoaded')
   })
 
-  test('the tab tap lives in the intro and the item cards just open the section', () => {
-    expect(scenariosById.offline.steps[0].text).toBe(
-      'Сейчас перейдём на экран «Ещё» — тапнем по нему — и откроем офлайн-режим. Нажмите «Далее».',
+  test('offline merges the intro with the entry card into four steps', () => {
+    const offline = scenariosById.offline
+
+    expect(offline.steps).toHaveLength(4)
+    expect(offline.steps[0].route).toBe('/more')
+    expect(offline.steps[0].tapTargetId).toBe(OFFLINE_ITEM_TARGET_ID)
+    expect(offline.steps[0].targetId).toBe(OFFLINE_ITEM_TARGET_ID)
+    expect(offline.steps[0].text).toBe(
+      'Чтобы перейти на экран офлайна, тапните по пункту «Офлайн». Нажмите «Далее».',
     )
-    expect(scenariosById.offline.steps[1].text).toBe('Открываем раздел офлайн-кэша.')
+    expect(offline.steps[1].targetId).toBe('offline.caching-switch')
+    expect(offline.steps[2].targetId).toBe('offline.rows')
+    expect(offline.steps[3].targetId).toBe('offline.header-menu')
+  })
+
+  test('the tab tap lives in the intro and the item cards just open the section', () => {
     expect(scenariosById.history.steps[0].text).toBe(
       'Сейчас перейдём на экран «Ещё» — тапнем по нему — и откроем историю прослушивания. Нажмите «Далее».',
     )

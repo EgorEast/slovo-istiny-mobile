@@ -3,9 +3,15 @@ import { type OnboardingStep } from '../lib/scenarios'
 import { TourTooltip } from './TourTooltip'
 
 const HINT = 'Выполните действие, чтобы продолжить'
+const PASSIVE_HINT = 'Загружаем офлайн-кэш…'
 const NEXT_LABEL = 'Далее'
 const PLAIN_STEP: OnboardingStep = { text: 'текст', title: 'Заголовок' }
 const WAIT_STEP: OnboardingStep = { text: 'текст', title: 'Заголовок', waitFor: 'paused' }
+const PASSIVE_WAIT_STEP: OnboardingStep = {
+  text: 'текст',
+  title: 'Заголовок',
+  waitFor: 'offlineLoaded',
+}
 
 const renderTooltip = (step: OnboardingStep, isWaitSatisfied: boolean) =>
   renderWithProviders(
@@ -58,6 +64,14 @@ describe('<TourTooltip>', () => {
     expect(queryByText(NEXT_LABEL)).toBeNull()
     expect(getByText(HINT)).toBeTruthy()
     expect(getByText('Назад')).toBeTruthy()
+  })
+
+  test('shows the passive hint for a background wait instead of the action hint', async () => {
+    const { getByText, queryByText } = await renderTooltip(PASSIVE_WAIT_STEP, false)
+
+    expect(queryByText(NEXT_LABEL)).toBeNull()
+    expect(getByText(PASSIVE_HINT)).toBeTruthy()
+    expect(queryByText(HINT)).toBeNull()
   })
 
   test('shows the primary button once the wait condition is satisfied', async () => {

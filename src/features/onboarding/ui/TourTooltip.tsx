@@ -4,8 +4,7 @@ import { IconButton } from 'shared/ui/icon-button'
 import { PressableButton } from 'shared/ui/pressable-button/PressableButton'
 import { COLORS, FONT_SIZES, INDENTS, RADIUSES, useTheme } from 'shared/ui/theme'
 import { type OnboardingStep } from '../lib/scenarios'
-
-const WAIT_HINT = 'Выполните действие, чтобы продолжить'
+import { resolveWaitHint } from '../lib/waitHint'
 
 export const TourTooltip = ({
   displayIndex,
@@ -30,6 +29,7 @@ export const TourTooltip = ({
 }) => {
   const { currentTheme } = useTheme()
   const isWaiting = step.waitFor !== undefined && !isWaitSatisfied
+  const waitHint = resolveWaitHint(step.waitFor)
 
   return (
     <View style={[styles.card, { backgroundColor: currentTheme.surface }]}>
@@ -52,7 +52,7 @@ export const TourTooltip = ({
           </PressableButton>
         )}
         {isWaiting ? (
-          <Text style={[styles.hint, { color: currentTheme.textMuted }]}>{WAIT_HINT}</Text>
+          <Text style={[styles.hint, { color: currentTheme.textMuted }]}>{waitHint}</Text>
         ) : (
           <PressableButton
             onPress={onNext}
