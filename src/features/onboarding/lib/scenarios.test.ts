@@ -406,7 +406,7 @@ describe('onboarding scenario data', () => {
 
     expect(playlistOffline.title).toBe('Прослушивание без интернета')
     expect(playlistOffline.screens).toEqual(['/listen/playlist'])
-    expect(playlistOffline.steps).toHaveLength(8)
+    expect(playlistOffline.steps).toHaveLength(9)
     expect(playlistOffline.steps[0].targetId).toBeUndefined()
     expect(playlistOffline.steps[0].tapActionId).toBeUndefined()
     expect(playlistOffline.steps[1].tapTargetId).toBe('playlist.menu')
@@ -418,27 +418,30 @@ describe('onboarding scenario data', () => {
     expect(playlistOffline.steps[4].actionOnEnterId).toBe('close-playlist-menu')
     expect(playlistOffline.steps[4].tapTargetId).toBe(FIRST_ROW_TARGET_ID)
     expect(playlistOffline.steps[4].tapActionId).toBe('open-playlist-row-menu')
-    // The row cache item is a toggle: one card covers both «Добавить в офлайн» and
-    // «Удалить из офлайна» — there is no separate removal card.
+    // The row cache item is a toggle: the add card names the swap to «Удалить из
+    // офлайна», and a separate removal card follows it.
     expect(playlistOffline.steps[5].targetId).toBe('playlist.row-menu-offline-add')
     expect(playlistOffline.steps[5].skipIfMissing).toBe(true)
     expect(playlistOffline.steps[5].text).toContain('Удалить из офлайна')
+    expect(playlistOffline.steps[6].targetId).toBe('playlist.row-menu-offline-remove')
+    expect(playlistOffline.steps[6].skipIfMissing).toBe(true)
+    expect(playlistOffline.steps[6].title).toBe('Убрать из офлайна')
     // The tour stays on the playlist screen (its tab bar is visible) and only blinks
     // the «Ещё» tab before navigating: an entry transition, no /listen return.
-    expect(playlistOffline.steps[6].route).toBe('/more')
-    expect(playlistOffline.steps[6].tapTargetId).toBe('tab.more')
-    expect(playlistOffline.steps[6].targetId).toBeUndefined()
-    expect(playlistOffline.steps[7].targetId).toBe('more.offline-item')
+    expect(playlistOffline.steps[7].route).toBe('/more')
+    expect(playlistOffline.steps[7].tapTargetId).toBe('tab.more')
+    expect(playlistOffline.steps[7].targetId).toBeUndefined()
+    expect(playlistOffline.steps[8].targetId).toBe('more.offline-item')
   })
 
-  test('playlist-offline folds its exits and entry into five cards', () => {
+  test('playlist-offline folds its exits and entry into six cards', () => {
     const deck = buildTourDeck(scenariosById['playlist-offline'].steps)
 
-    expect(deck).toHaveLength(5)
-    expect(deck.map(entry => entry.cardIndex)).toEqual([0, 2, 3, 5, 7])
+    expect(deck).toHaveLength(6)
+    expect(deck.map(entry => entry.cardIndex)).toEqual([0, 2, 3, 5, 6, 8])
     expect(deck[0].exitStepIndexes).toEqual([1])
     expect(deck[2].exitStepIndexes).toEqual([4])
-    expect(deck[4].entryStepIndexes).toEqual([6])
+    expect(deck[5].entryStepIndexes).toEqual([7])
   })
 
   test('the playlist screen offers three local tours', () => {
