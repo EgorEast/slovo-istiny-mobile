@@ -50,6 +50,7 @@ describe('<ScenarioPickerModal>', () => {
       'Результаты поиска',
       'Плеер',
       'Резервное копирование',
+      'Поделиться приложением',
       'Добро пожаловать',
       'Что нового',
     ])
@@ -65,6 +66,7 @@ describe('<ScenarioPickerModal>', () => {
       'Добавление в плейлист',
       'Плеер',
       'Резервное копирование',
+      'Поделиться приложением',
       'Добро пожаловать',
       'Что нового',
     ])
@@ -79,6 +81,7 @@ describe('<ScenarioPickerModal>', () => {
       'Настройки и резервные копии',
       'Плеер',
       'Резервное копирование',
+      'Поделиться приложением',
       'Добро пожаловать',
       'Что нового',
     ])
@@ -97,15 +100,17 @@ describe('<ScenarioPickerModal>', () => {
     })
   })
 
-  test('keeps only the share scenario local on the share screen', async () => {
+  test('offers the share scenario globally on the share screen', async () => {
     mockPathname.mockReturnValue('/share')
 
     await renderPicker()
 
+    expect(screen.queryByText(SCREEN_GROUP_TITLE)).toBeNull()
+    expect(screen.getByText(GLOBAL_GROUP_TITLE)).toBeTruthy()
     expectRowTitles([
-      'Поделиться приложением',
       'Плеер',
       'Резервное копирование',
+      'Поделиться приложением',
       'Добро пожаловать',
       'Что нового',
     ])
@@ -121,9 +126,9 @@ describe('<ScenarioPickerModal>', () => {
       'История прослушивания',
       'Офлайн-режим',
       'Настройки и резервные копии',
-      'Поделиться приложением',
       'Плеер',
       'Резервное копирование',
+      'Поделиться приложением',
       'Добро пожаловать',
       'Что нового',
     ])
@@ -162,6 +167,7 @@ describe('<ScenarioPickerModal>', () => {
       'Настройка звука',
       'Плеер',
       'Резервное копирование',
+      'Поделиться приложением',
       'Добро пожаловать',
       'Что нового',
     ])

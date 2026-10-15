@@ -4,7 +4,6 @@ export const shareScenario: OnboardingScenario = {
   description: 'QR-код и ссылка',
   icon: 'qr-code-outline',
   id: 'share',
-  screens: ['/more', '/share'],
   steps: [
     {
       text: 'Сейчас перейдём на экран «Ещё» и откроем страницу «Поделиться приложением» — нажмите «Далее».',
@@ -13,14 +12,13 @@ export const shareScenario: OnboardingScenario = {
     {
       route: '/more',
       tapTargetId: 'tab.more',
-      targetId: 'tab.more',
       text: 'Переходим на экран «Ещё»…',
       title: 'Экран «Ещё»',
     },
     {
+      route: '/share',
       tapTargetId: 'more.share-item',
-      targetId: 'more.share-item',
-      text: 'Чтобы открыть страницу поделиться, тапните по этому пункту.',
+      text: 'Тапаем по пункту «Поделиться приложением»…',
       title: 'Поделиться приложением',
     },
     {

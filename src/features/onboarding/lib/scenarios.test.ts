@@ -56,20 +56,32 @@ describe('onboarding scenario data', () => {
     expect(whatsNew.steps[0].title).toBe('Обзоры в приложении')
   })
 
-  test('share scenario leads from «Ещё» into the QR code, copy button and link contents', () => {
+  test('share scenario is global and leads from «Ещё» into the QR code, copy button and link contents', () => {
     const share = scenariosById.share
 
-    expect(share.screens).toEqual(['/more', '/share'])
+    expect(share.screens).toBeUndefined()
     expect(share.steps).toHaveLength(6)
     expect(share.steps[0].targetId).toBeUndefined()
+    expect(share.steps[0].tapTargetId).toBeUndefined()
     expect(share.steps[1].route).toBe('/more')
     expect(share.steps[1].tapTargetId).toBe('tab.more')
-    expect(share.steps[1].targetId).toBe('tab.more')
-    expect(share.steps[2].targetId).toBe('more.share-item')
+    expect(share.steps[1].targetId).toBeUndefined()
+    expect(share.steps[2].route).toBe('/share')
     expect(share.steps[2].tapTargetId).toBe('more.share-item')
+    expect(share.steps[2].targetId).toBeUndefined()
     expect(share.steps[3].route).toBe('/share')
     expect(share.steps[3].targetId).toBe('share.qr')
     expect(share.steps[4].targetId).toBe('share.copy')
+  })
+
+  test('share folds its two lead-up steps into the QR card as entry transitions', () => {
+    const share = scenariosById.share
+    const deck = buildTourDeck(share.steps)
+
+    expect(deck).toHaveLength(4)
+    expect(deck.map(entry => entry.cardIndex)).toEqual([0, 3, 4, 5])
+    expect(deck[1].entryStepIndexes).toEqual([1, 2])
+    expect(deck.filter(entry => entry.entryStepIndexes.length > 0)).toHaveLength(1)
   })
 
   test('each scenario wires the tab or row it taps when navigating', () => {
@@ -358,22 +370,29 @@ describe('resolveStepRoute', () => {
 describe('share scenario resume', () => {
   const deck = buildTourDeck(scenariosById.share.steps)
 
-  test('plays the full tour from «Ещё», the scenario first screen', () => {
+  test('plays the full lead-up from a foreign screen', () => {
+    expect(resolveTourStart(scenariosById.share, deck, '/listen')).toEqual({
+      deckIndex: 0,
+      skippedDeckIndexes: [],
+    })
+  })
+
+  test('starts on the intro card from «Ещё» (the tab entry skips itself)', () => {
     expect(resolveTourStart(scenariosById.share, deck, '/more')).toEqual({
       deckIndex: 0,
       skippedDeckIndexes: [],
     })
   })
 
-  test('skips the whole lead-up when starting from «Поделиться приложением»', () => {
+  test('skips the intro and starts on the QR card from «Поделиться приложением»', () => {
     expect(resolveTourStart(scenariosById.share, deck, '/share')).toEqual({
-      deckIndex: 3,
-      skippedDeckIndexes: [0, 1, 2],
+      deckIndex: 1,
+      skippedDeckIndexes: [0],
     })
   })
 
-  test('counts only the remaining cards from «Поделиться приложением»', () => {
-    const fromShare = resolveDeckProgress(deck, [0, 1, 2], 3)
+  test('counts only the remaining cards from the QR card', () => {
+    const fromShare = resolveDeckProgress(deck, [0], 1)
 
     expect(fromShare.displayIndex).toBe(0)
     expect(fromShare.displayTotal).toBe(3)

@@ -56,12 +56,12 @@ const entryScenario: OnboardingScenario = {
   title: '',
 }
 
-const renderEntryNavigation = (deckIndex: number, pathname: string) => {
+const renderNavigation = (scenario: OnboardingScenario, deckIndex: number, pathname: string) => {
   const ctx = createCtx()
-  const deck = buildTourDeck(entryScenario.steps)
+  const deck = buildTourDeck(scenario.steps)
   const entry = deck[deckIndex]
   mockPathnameStore.set(pathname)
-  onboardingTourAtom(ctx, { deckIndex, scenarioId: ENTRY_SCENARIO_ID, skippedDeckIndexes: [] })
+  onboardingTourAtom(ctx, { deckIndex, scenarioId: scenario.id, skippedDeckIndexes: [] })
   onboardingTargetRectsAtom(ctx, ENTRY_RECTS)
   onboardingEntryStepIndexAtom(ctx, 0)
 
@@ -69,13 +69,13 @@ const renderEntryNavigation = (deckIndex: number, pathname: string) => {
     () =>
       useStepNavigation({
         bottomInset: 0,
-        cardStep: entryScenario.steps[entry.cardIndex],
+        cardStep: scenario.steps[entry.cardIndex],
         deckIndex,
         entry,
         isLastVisible: deckIndex === deck.length - 1,
         isTourActive: true,
-        scenario: entryScenario,
-        stepKey: `${ENTRY_SCENARIO_ID}:${deckIndex}`,
+        scenario,
+        stepKey: `${scenario.id}:${deckIndex}`,
         viewportHeight: 800,
       }),
     { ctx },
@@ -97,7 +97,7 @@ describe('useStepNavigation entry transitions', () => {
   test(
     'blinks each entry transition forward, then lands on the card',
     async () => {
-      const { ctx, result } = await renderEntryNavigation(1, '/listen')
+      const { ctx, result } = await renderNavigation(entryScenario, 1, '/listen')
 
       // The first entry holds navigation while its blink plays on the live tab.
       expect(result.current.holdNavigation).toBe(true)
@@ -113,7 +113,7 @@ describe('useStepNavigation entry transitions', () => {
   )
 
   test('skips every entry instantly when the card screen is already reached', async () => {
-    const { ctx, result } = await renderEntryNavigation(1, '/share')
+    const { ctx, result } = await renderNavigation(entryScenario, 1, '/share')
 
     await waitFor(() => expect(ctx.get(onboardingEntryStepIndexAtom)).toBeNull(), {
       timeout: 1000,
@@ -123,7 +123,7 @@ describe('useStepNavigation entry transitions', () => {
   })
 
   test('«Назад» lands on the previous card without replaying the entry phase', async () => {
-    const { ctx } = await renderEntryNavigation(1, '/listen')
+    const { ctx } = await renderNavigation(entryScenario, 1, '/listen')
 
     await act(async () => {
       goToPrevOnboardingStep(ctx)
@@ -132,4 +132,22 @@ describe('useStepNavigation entry transitions', () => {
     expect(ctx.get(onboardingTourAtom)?.deckIndex).toBe(0)
     expect(ctx.get(onboardingEntryStepIndexAtom)).toBeNull()
   })
+
+  test(
+    'skips an already-reached entry and plays the next one (share from «Ещё»)',
+    async () => {
+      const { ctx } = await renderNavigation(scenariosById.share, 1, '/more')
+
+      // The «Ещё» tab entry is already reached: it skips instantly, then the row
+      // entry (route /share) blinks and navigates.
+      await waitFor(() => expect(ctx.get(onboardingEntryStepIndexAtom)).toBe(1), {
+        timeout: 1000,
+      })
+      await waitFor(() => expect(ctx.get(onboardingEntryStepIndexAtom)).toBeNull(), {
+        timeout: 8000,
+      })
+      expect(mockCurrentPathname).toBe('/share')
+    },
+    BLINK_BUDGET_MS,
+  )
 })
