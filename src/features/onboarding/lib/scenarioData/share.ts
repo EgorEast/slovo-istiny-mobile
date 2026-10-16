@@ -19,8 +19,6 @@ export const shareScenario: OnboardingScenario = {
       // already on «Ещё».
       route: '/more',
       tapTargetId: 'tab.more',
-      text: 'Переходим на экран «Ещё»…',
-      title: 'Экран «Ещё»',
     },
     {
       // Screen-local intro: a same-screen start from «Ещё» lands here (the routeless
@@ -33,8 +31,6 @@ export const shareScenario: OnboardingScenario = {
     {
       route: '/share',
       tapTargetId: 'more.share-item',
-      text: 'Тапаем по пункту «Поделиться приложением»…',
-      title: 'Поделиться приложением',
     },
     {
       route: '/share',

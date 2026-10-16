@@ -179,22 +179,6 @@ describe('useStepNavigation entry transitions', () => {
 
 describe('useStepNavigation return entries', () => {
   test(
-    'navigates a tap-target-less entry without a blink (pure-navigation return)',
-    async () => {
-      const { ctx, result } = await renderNavigation(returnScenario, 1, '/history')
-
-      // Pure navigation: nothing to hint at, so navigation is not held for a blink.
-      expect(result.current.holdNavigation).toBe(false)
-
-      await waitFor(() => expect(ctx.get(onboardingEntryStepIndexAtom)).toBeNull(), {
-        timeout: 2000,
-      })
-      expect(mockCurrentPathname).toBe('/more')
-    },
-    BLINK_BUDGET_MS,
-  )
-
-  test(
     'blinks the search tab entry from a foreign screen and navigates to «Слушать»',
     async () => {
       const { ctx, result } = await renderNavigation(scenariosById.search, 1, '/more')
@@ -237,6 +221,35 @@ describe('useStepNavigation return entries', () => {
       })
       expect(mockCurrentPathname).toBe('/more')
       expect(ctx.get(onboardingTourAtom)?.deckIndex).toBe(1)
+    },
+    BLINK_BUDGET_MS,
+  )
+})
+
+describe('useStepNavigation pure-navigation return entry', () => {
+  const originalScenario = scenariosById.share
+
+  beforeEach(() => {
+    scenariosById.share = returnScenario
+  })
+
+  afterEach(() => {
+    scenariosById.share = originalScenario
+    mockPathnameStore.set('/listen')
+  })
+
+  test(
+    'navigates a tap-target-less entry without a blink (pure-navigation return)',
+    async () => {
+      const { ctx, result } = await renderNavigation(returnScenario, 1, '/history')
+
+      // Pure navigation: nothing to hint at, so navigation is not held for a blink.
+      expect(result.current.holdNavigation).toBe(false)
+
+      await waitFor(() => expect(ctx.get(onboardingEntryStepIndexAtom)).toBeNull(), {
+        timeout: 2000,
+      })
+      expect(mockCurrentPathname).toBe('/more')
     },
     BLINK_BUDGET_MS,
   )
