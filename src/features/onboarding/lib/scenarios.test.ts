@@ -92,7 +92,7 @@ describe('onboarding scenario data', () => {
 
   test('each scenario wires the tab or row it taps when navigating', () => {
     expect(scenariosById.listen.steps[0].tapTargetId).toBe('tab.listen')
-    expect(scenariosById.playlists.steps[0].tapTargetId).toBe('listen.my-playlists-title')
+    expect(scenariosById.playlists.steps[1].tapTargetId).toBe('listen.my-playlists-title')
     expect(scenariosById.history.steps[1].tapTargetId).toBe('tab.more')
     expect(scenariosById.history.steps[2].tapTargetId).toBe('more.history-item')
     expect(scenariosById.offline.steps[0].tapTargetId).toBe(OFFLINE_ITEM_TARGET_ID)
@@ -150,7 +150,7 @@ describe('onboarding scenario data', () => {
     // start from «Ещё» lands on it instead of the bare spotlight card below.
     expect(backup.steps[2].route).toBeUndefined()
     expect(backup.steps[2].targetId).toBeUndefined()
-    expect(backup.steps[2].text.startsWith('Резервная копия сохраняет')).toBe(true)
+    expect(backup.steps[2].text).toMatch(/^Резервная копия сохраняет/)
     expect(backup.steps[3].route).toBe('/more')
     expect(backup.steps[3].tapTargetId).toBe('more.settings-item')
     expect(backup.steps[3].targetId).toBe('more.settings-item')
@@ -503,17 +503,31 @@ describe('onboarding scenario data', () => {
 
   test('playlists scenario taps the section title to open the full list', () => {
     const playlists = scenariosById.playlists
+    const deck = buildTourDeck(playlists.steps)
 
     expect(playlists.title).toBe('Мои плейлисты')
-    expect(playlists.steps).toHaveLength(3)
-    // The first card spotlights the section and visualizes the tap on its title
-    // before navigating to the full list; the create/add cards follow.
-    expect(playlists.steps[0].route).toBe('/listen/my-playlists')
-    expect(playlists.steps[0].tapTargetId).toBe('listen.my-playlists-title')
+    expect(playlists.steps).toHaveLength(4)
+    // The first card spotlights the section on /listen; the tap on its title is a
+    // leading entry transition into the create card on the full-list screen.
+    expect(playlists.steps[0].route).toBe('/listen')
     expect(playlists.steps[0].targetId).toBe('listen.my-playlists')
     expect(playlists.steps[0].title).toBe('Мои плейлисты')
-    expect(playlists.steps[0].text).toBe('Тап по заголовку раздела открывает полный список.')
-    expect(playlists.steps[1].targetId).toBe('playlists.create')
+    expect(playlists.steps[1].route).toBe('/listen/my-playlists')
+    expect(playlists.steps[1].tapTargetId).toBe('listen.my-playlists-title')
+    expect(playlists.steps[1].targetId).toBeUndefined()
+    expect(playlists.steps[1].title).toBeUndefined()
+    expect(deck).toHaveLength(3)
+    expect(deck[1].cardIndex).toBe(2)
+    expect(deck[1].entryStepIndexes).toEqual([1])
+    expect(playlists.steps[2].targetId).toBe('playlists.create')
+
+    const fromListen = resolveTourStart(playlists, deck, '/listen')
+    expect(fromListen.deckIndex).toBe(0)
+    expect(fromListen.skippedDeckIndexes).toEqual([])
+
+    const fromMyPlaylists = resolveTourStart(playlists, deck, '/listen/my-playlists')
+    expect(fromMyPlaylists.deckIndex).toBe(1)
+    expect(fromMyPlaylists.skippedDeckIndexes).toEqual([0])
   })
 })
 
@@ -523,8 +537,8 @@ describe('resolveStepRoute', () => {
   })
 
   test('inherits the nearest previous route for a routeless step', () => {
-    // playlists step 2 («Добавить проповедь») has no route of its own.
-    expect(resolveStepRoute(scenariosById.playlists, 2)).toBe('/listen/my-playlists')
+    // playlists step 3 («Добавить проповедь») has no route of its own.
+    expect(resolveStepRoute(scenariosById.playlists, 3)).toBe('/listen/my-playlists')
   })
 
   test('returns undefined when no preceding step declares a route', () => {

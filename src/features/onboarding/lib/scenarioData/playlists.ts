@@ -9,11 +9,14 @@ export const playlistsScenario: OnboardingScenario = {
   screens: ['/listen', MY_PLAYLISTS_ROUTE, '/listen/playlist-list'],
   steps: [
     {
+      route: '/listen',
+      targetId: 'listen.my-playlists',
+      text: 'Здесь ваши личные плейлисты. Тап по заголовку раздела открывает полный список — нажмите «Далее», и мы перейдём к нему.',
+      title: 'Мои плейлисты',
+    },
+    {
       route: MY_PLAYLISTS_ROUTE,
       tapTargetId: 'listen.my-playlists-title',
-      targetId: 'listen.my-playlists',
-      text: 'Тап по заголовку раздела открывает полный список.',
-      title: 'Мои плейлисты',
     },
     {
       route: MY_PLAYLISTS_ROUTE,

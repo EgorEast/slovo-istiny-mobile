@@ -65,8 +65,9 @@ export interface OnboardingStep {
   tapActionId?: string
   tapTargetId?: string
   targetId?: string
-  text: string
-  title: string
+  // Card content. Entry transitions navigate without rendering a card, so they carry neither.
+  text?: string
+  title?: string
   waitFor?: 'offlineLoaded' | 'paused' | 'sermonSelected'
 }
 
