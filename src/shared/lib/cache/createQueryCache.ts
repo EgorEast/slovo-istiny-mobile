@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import z from 'zod'
 import { getParseJsonWithSchema } from '../../model/getParseJsonWithSchema'
 import { getCachedJson } from './getCachedJson'
+import { pruneStaleKeys } from './pruneStaleKeys'
 import { setCachedJson } from './setCachedJson'
 
 const queryIndexSchema = z.array(z.string())
@@ -96,6 +97,14 @@ export const createQueryCache = <T>({
 
     return writeQueue
   }
+
+  // Arm the prune on the shared queue so every later write chains after it and
+  // can never race the cleanup.
+  writeQueue = writeQueue
+    .then(() => pruneStaleKeys({ indexKey, parseIndex, prefix }))
+    .catch(error => {
+      console.warn(`Failed to prune stale ${label} cache keys:`, error)
+    })
 
   return {
     get: (query: string): Promise<T[] | undefined> =>
