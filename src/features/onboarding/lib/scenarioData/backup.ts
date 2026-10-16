@@ -20,6 +20,13 @@ export const backupScenario: OnboardingScenario = {
       title: 'Экран «Ещё»',
     },
     {
+      // Screen-local intro: a same-screen start from «Ещё» lands here (the routeless
+      // foreign-start intro and the tab entry above are skipped), so this card explains
+      // the «Настройки» tap itself. Routeless — inherits «/more» from the tab entry above.
+      text: 'Резервная копия сохраняет плейлисты, историю и настройки приложения в один файл. Чтобы сделать её, откроем настройки: тапнем по пункту «Настройки» в этом списке. Нажмите «Далее».',
+      title: 'Резервная копия',
+    },
+    {
       route: '/more',
       tapTargetId: 'more.settings-item',
       targetId: 'more.settings-item',

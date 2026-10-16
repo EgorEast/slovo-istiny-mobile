@@ -138,7 +138,7 @@ describe('onboarding scenario data', () => {
 
     expect(backup.screens).toEqual(['/more', '/settings'])
     expect(backup.globalFallback).toBe(true)
-    expect(backup.steps).toHaveLength(8)
+    expect(backup.steps).toHaveLength(9)
     // The opening description card is routeless, so the tour always starts with it.
     expect(backup.steps[0].route).toBeUndefined()
     expect(backup.steps[0].targetId).toBeUndefined()
@@ -146,20 +146,25 @@ describe('onboarding scenario data', () => {
     expect(backup.steps[1].route).toBe('/more')
     expect(backup.steps[1].tapTargetId).toBe('tab.more')
     expect(backup.steps[1].targetId).toBeUndefined()
-    expect(backup.steps[2].route).toBe('/more')
-    expect(backup.steps[2].tapTargetId).toBe('more.settings-item')
-    expect(backup.steps[2].targetId).toBe('more.settings-item')
-    expect(backup.steps[3].route).toBe('/settings')
+    // The screen-local intro card is routeless and inherits «/more», so a same-screen
+    // start from «Ещё» lands on it instead of the bare spotlight card below.
+    expect(backup.steps[2].route).toBeUndefined()
+    expect(backup.steps[2].targetId).toBeUndefined()
+    expect(backup.steps[2].text.startsWith('Резервная копия сохраняет')).toBe(true)
+    expect(backup.steps[3].route).toBe('/more')
     expect(backup.steps[3].tapTargetId).toBe('more.settings-item')
-    expect(backup.steps[3].targetId).toBe('settings.backup')
+    expect(backup.steps[3].targetId).toBe('more.settings-item')
+    expect(backup.steps[4].route).toBe('/settings')
+    expect(backup.steps[4].tapTargetId).toBe('more.settings-item')
+    expect(backup.steps[4].targetId).toBe('settings.backup')
   })
 
-  test('backup folds the More tab blink into the entry transition of the settings card', () => {
+  test('backup folds the More tab blink into the entry transition of the screen-local intro card', () => {
     const backup = scenariosById.backup
     const deck = buildTourDeck(backup.steps)
 
-    expect(deck).toHaveLength(7)
-    expect(deck.map(entry => entry.cardIndex)).toEqual([0, 2, 3, 4, 5, 6, 7])
+    expect(deck).toHaveLength(8)
+    expect(deck.map(entry => entry.cardIndex)).toEqual([0, 2, 3, 4, 5, 6, 7, 8])
     expect(deck[1].entryStepIndexes).toEqual([1])
     expect(deck.filter(entry => entry.entryStepIndexes.length > 0)).toHaveLength(1)
   })
@@ -167,12 +172,12 @@ describe('onboarding scenario data', () => {
   test('backup scenario walks the section, folder, export, import and autosync', () => {
     const backup = scenariosById.backup
 
-    expect(backup.steps[4].targetId).toBe('settings.backup-folder')
-    expect(backup.steps[4].skipIfMissing).toBe(true)
-    expect(backup.steps[5].targetId).toBe('settings.backup-export')
-    expect(backup.steps[6].targetId).toBe('settings.backup-import')
-    expect(backup.steps[7].targetId).toBe('settings.backup-autosync')
-    expect(backup.steps[7].skipIfMissing).toBe(true)
+    expect(backup.steps[5].targetId).toBe('settings.backup-folder')
+    expect(backup.steps[5].skipIfMissing).toBe(true)
+    expect(backup.steps[6].targetId).toBe('settings.backup-export')
+    expect(backup.steps[7].targetId).toBe('settings.backup-import')
+    expect(backup.steps[8].targetId).toBe('settings.backup-autosync')
+    expect(backup.steps[8].skipIfMissing).toBe(true)
   })
 
   test('offline caching-switch waits for the list to load before the spotlight lands', () => {
@@ -610,24 +615,25 @@ describe('backup scenario resume', () => {
     })
   })
 
-  test('skips the intro and the tab entry and starts on the «Настройки» card from «Ещё»', () => {
+  test('skips the foreign intro and opens the «Ещё»-screen intro card from «Ещё»', () => {
     expect(resolveTourStart(scenariosById.backup, deck, '/more')).toEqual({
       deckIndex: 1,
       skippedDeckIndexes: [0],
     })
+    expect(deck[1].cardIndex).toBe(2)
   })
 
   test('resumes on the backup section from «Настройки»', () => {
     expect(resolveTourStart(scenariosById.backup, deck, '/settings')).toEqual({
-      deckIndex: 2,
-      skippedDeckIndexes: [0, 1],
+      deckIndex: 3,
+      skippedDeckIndexes: [0, 1, 2],
     })
   })
 
-  test('counts all seven cards from the intro', () => {
+  test('counts all eight cards from the intro', () => {
     const progress = resolveDeckProgress(deck, [], 0)
 
     expect(progress.displayIndex).toBe(0)
-    expect(progress.displayTotal).toBe(7)
+    expect(progress.displayTotal).toBe(8)
   })
 })
