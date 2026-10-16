@@ -1,9 +1,9 @@
 /* eslint-disable camelcase -- Innertube.create options are snake_case in youtubei.js */
 import { type Innertube } from 'youtubei.js'
-import { type ResolvedAudio } from './importTypes'
-import { ImportSourceError } from './sourceErrors'
-import { resolveYoutubeAudioWithFallback } from './youtubeClients'
-import { installYoutubeShims } from './youtubeShims'
+import { type ResolvedAudio } from '../importTypes'
+import { ImportSourceError } from '../sourceErrors'
+import { resolveYoutubeAudioWithFallback } from '../youtubeClients'
+import { installYoutubeShims } from '../youtubeShims'
 
 // UA скопирован из youtubei.js Constants.CLIENTS.ANDROID_VR (v18.1.0): клиент
 // обязан представляться тем же приложением, что и в client-контексте, иначе
