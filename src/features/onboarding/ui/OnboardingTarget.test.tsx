@@ -3,14 +3,21 @@ import { act, waitFor } from '@testing-library/react-native'
 import { Dimensions, Text, View } from 'react-native'
 import { renderWithProviders } from 'shared/mocks'
 import { registerTourScrollable, unregisterTourScrollable } from '../lib/tourScrollable'
-import { onboardingTargetRectsAtom } from '../model/targets'
+import {
+  bumpOnboardingScrollEpoch,
+  onboardingScrollEpochAtom,
+  onboardingTargetRectsAtom,
+} from '../model/targets'
 import { onboardingTourAtom } from '../model/tour'
 import { OnboardingTarget } from './OnboardingTarget'
 
 const TARGET_ID = 'listen.search-toggle'
 const MEASURE_FLUSH_MS = 150
 const FALLBACK_FLUSH_MS = 700
+const POST_SCROLL_BUMP_FLUSH_MS = 800
 const VIEWPORT_HEIGHT = 800
+const ZERO_RECT = { height: 0, width: 0, x: 0, y: 0 }
+const POST_SCROLL_RECT = { height: 50, width: 300, x: 1, y: 200 }
 const BELOW_FOLD_RECT = { height: 50, width: 300, x: 0, y: 2000 }
 const BELOW_FOLD_SCROLL_OFFSET = 1625
 const ABOVE_VIEWPORT_RECT = { height: 50, width: 300, x: 0, y: -120 }
@@ -30,6 +37,20 @@ const mockMeasureInWindow = (rect: { height: number; width: number; x: number; y
       cb(rect.x, rect.y, rect.width, rect.height)
       return undefined
     })
+
+// The first measurement (the target's single +100 ms one) reports a clipped zero-size
+// rect and never registers; later calls report a real, on-screen rect.
+const mockMeasureInWindowSequence = () => {
+  let calls = 0
+  return jest
+    .spyOn(View.prototype, 'measureInWindow')
+    .mockImplementation((cb: (x: number, y: number, width: number, height: number) => void) => {
+      calls += 1
+      const rect = calls === 1 ? ZERO_RECT : POST_SCROLL_RECT
+      cb(rect.x, rect.y, rect.width, rect.height)
+      return undefined
+    })
+}
 
 const mockMeasureLayout = (rect: { height: number; width: number; x: number; y: number }) =>
   jest
@@ -90,6 +111,34 @@ describe('<OnboardingTarget>', () => {
     await waitFor(() =>
       expect(ctx.get(onboardingTargetRectsAtom)).toEqual({
         'listen.sections': { height: 4, width: 3, x: 1, y: 2 },
+      }),
+    )
+  })
+
+  test('re-measures a non-active target when the tour scroll settles', async () => {
+    mockMeasureInWindowSequence()
+    const ctx = createCtx()
+    onboardingTourAtom(ctx, { deckIndex: 1, scenarioId: 'listen', skippedDeckIndexes: [] })
+
+    await renderWithProviders(
+      <OnboardingTarget id='listen.sections'>
+        <View />
+      </OnboardingTarget>,
+      { ctx },
+    )
+
+    await act(async () => {
+      await new Promise(resolve => setTimeout(resolve, MEASURE_FLUSH_MS))
+    })
+    expect(ctx.get(onboardingTargetRectsAtom)).toEqual({})
+
+    await act(() => {
+      bumpOnboardingScrollEpoch(ctx)
+    })
+
+    await waitFor(() =>
+      expect(ctx.get(onboardingTargetRectsAtom)).toEqual({
+        'listen.sections': POST_SCROLL_RECT,
       }),
     )
   })
@@ -222,6 +271,11 @@ describe('<OnboardingTarget>', () => {
       timeout: 2000,
     })
     expect(measureLayoutSpy).toHaveBeenCalledWith(777, expect.any(Function), expect.any(Function))
+
+    await act(async () => {
+      await new Promise(resolve => setTimeout(resolve, POST_SCROLL_BUMP_FLUSH_MS))
+    })
+    expect(ctx.get(onboardingScrollEpochAtom)).toBeGreaterThanOrEqual(1)
   })
 
   test('skips the layout fallback when the rect registers', async () => {

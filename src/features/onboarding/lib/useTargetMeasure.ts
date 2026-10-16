@@ -3,7 +3,7 @@ import { useNavigation } from 'expo-router'
 import { useCallback, useEffect } from 'react'
 import { type View } from 'react-native'
 import { onboardingActiveStepIndexAtom } from '../model/derived'
-import { registerOnboardingTargetRect } from '../model/targets'
+import { onboardingScrollEpochAtom, registerOnboardingTargetRect } from '../model/targets'
 import { onboardingTourAtom } from '../model/tour'
 import { scenariosById } from './scenarios'
 
@@ -29,6 +29,7 @@ export const useTargetMeasure = ({ getNode, id }: TargetMeasureInput) => {
   const navigation = useNavigation<TransitionEndNavigation>()
   const [tour] = useAtom(onboardingTourAtom)
   const [activeStepIndex] = useAtom(onboardingActiveStepIndexAtom)
+  const [scrollEpoch] = useAtom(onboardingScrollEpochAtom)
   const register = useAction(registerOnboardingTargetRect)
 
   const activeTargetId =
@@ -52,6 +53,14 @@ export const useTargetMeasure = ({ getNode, id }: TargetMeasureInput) => {
     const timer = setTimeout(measure, MEASURE_DELAY_MS)
     return () => clearTimeout(timer)
   }, [isActive, isTourActive, measure])
+
+  // A tour scroll brings clipped targets into view after their single +100 ms measure
+  // already failed; the settled-scroll epoch re-measures them so tap hints have rects.
+  useEffect(() => {
+    if (scrollEpoch === 0 || isActive || !isTourActive) return
+
+    measure()
+  }, [isActive, isTourActive, measure, scrollEpoch])
 
   // The active target re-measures on a bounded schedule so the highlight follows
   // the screen as it settles (async data loads, transition offsets). Timers are

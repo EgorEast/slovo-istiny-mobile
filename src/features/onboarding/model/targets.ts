@@ -12,6 +12,14 @@ export const onboardingTargetRectsAtom = atom<Record<string, OnboardingTargetRec
   'onboardingTargetRectsAtom',
 )
 
+export const onboardingScrollEpochAtom = atom(0, 'onboardingScrollEpochAtom')
+
+// Increments after a tour-initiated scroll settles: targets that could not measure
+// while clipped (below the fold) get a re-measure wave once they are visible.
+export const bumpOnboardingScrollEpoch = action(ctx => {
+  onboardingScrollEpochAtom(ctx, ctx.get(onboardingScrollEpochAtom) + 1)
+}, 'bumpOnboardingScrollEpoch')
+
 const isSameRect = (a: OnboardingTargetRect, b: OnboardingTargetRect) =>
   a.x === b.x && a.y === b.y && a.width === b.width && a.height === b.height
 
