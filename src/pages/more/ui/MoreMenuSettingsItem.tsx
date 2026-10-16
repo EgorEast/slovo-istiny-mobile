@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons'
 import { type StyleProp, Text, View, type ViewStyle } from 'react-native'
+import { OnboardingTarget } from 'features/onboarding'
 import { useTheme } from 'shared/ui/theme'
 import { TouchableItem } from 'shared/ui/touchable-item'
 import { styles } from './styles'
@@ -7,12 +8,14 @@ import { styles } from './styles'
 export const MoreMenuSettingsItem = ({
   description,
   icon,
+  onboardingTargetId,
   onPress,
   style,
   title,
 }: {
   description?: string
   icon?: keyof typeof Ionicons.glyphMap
+  onboardingTargetId?: string
   onPress: () => void
   style?: StyleProp<ViewStyle>
   title: string
@@ -20,23 +23,25 @@ export const MoreMenuSettingsItem = ({
   const { currentTheme } = useTheme()
 
   return (
-    <TouchableItem
-      onPress={onPress}
-      style={[styles.itemContainer, { backgroundColor: currentTheme.surface }, style]}
-    >
-      <View style={styles.itemContent}>
-        {icon ? (
-          <Ionicons size={24} name={icon} style={styles.itemIcon} color={currentTheme.text} />
-        ) : null}
-        <View style={styles.itemTextContainer}>
-          <Text style={[styles.itemTitle, { color: currentTheme.text }]}>{title}</Text>
-          {description ? (
-            <Text style={[styles.itemDescription, { color: currentTheme.textMuted }]}>
-              {description}
-            </Text>
+    <OnboardingTarget id={onboardingTargetId}>
+      <TouchableItem
+        onPress={onPress}
+        style={[styles.itemContainer, { backgroundColor: currentTheme.surface }, style]}
+      >
+        <View style={styles.itemContent}>
+          {icon ? (
+            <Ionicons size={24} name={icon} style={styles.itemIcon} color={currentTheme.text} />
           ) : null}
+          <View style={styles.itemTextContainer}>
+            <Text style={[styles.itemTitle, { color: currentTheme.text }]}>{title}</Text>
+            {description ? (
+              <Text style={[styles.itemDescription, { color: currentTheme.textMuted }]}>
+                {description}
+              </Text>
+            ) : null}
+          </View>
         </View>
-      </View>
-    </TouchableItem>
+      </TouchableItem>
+    </OnboardingTarget>
   )
 }

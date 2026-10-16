@@ -2,6 +2,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons'
 import { useAction, useAtom } from '@reatom/npm-react'
 import { useCallback, useRef, useState } from 'react'
 import { StyleSheet, View } from 'react-native'
+import { OnboardingTarget } from 'features/onboarding'
 import { activeCacheUrlAtom, cacheQueueAtom, clearAudioCacheAction } from 'entities/offline-cache'
 import { ConfirmDialog } from 'shared/ui/confirm-dialog'
 import { ErrorDialog, useErrorDialog } from 'shared/ui/error-dialog'
@@ -19,7 +20,7 @@ const CLEAR_CONFIRM_TEXT = 'Очистить'
 const CLEAR_FAILED_MESSAGE = 'Не удалось очистить офлайн. Попробуйте снова.'
 const CLEAR_ERROR_MESSAGE = 'Ошибка при очистке офлайна'
 
-export const OfflineHeaderMenu = () => {
+export const OfflineHeaderMenu = ({ onboardingTargetId }: { onboardingTargetId?: string }) => {
   const { currentTheme } = useTheme()
   const [menuVisible, setMenuVisible] = useState(false)
   const [dialogVisible, setDialogVisible] = useState(false)
@@ -59,7 +60,7 @@ export const OfflineHeaderMenu = () => {
   }
 
   return (
-    <>
+    <OnboardingTarget id={onboardingTargetId}>
       <View ref={buttonRef} collapsable={false}>
         <IconButton
           style={styles.button}
@@ -105,7 +106,7 @@ export const OfflineHeaderMenu = () => {
         message={errorMessage || ''}
         visible={errorMessage !== null}
       />
-    </>
+    </OnboardingTarget>
   )
 }
 

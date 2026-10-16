@@ -14,6 +14,7 @@ import { PlaylistHeaderMenuButton } from './PlaylistHeaderMenuButton'
  * @param props.buttonRef - Ref to the menu wrapper view used as the dropdown anchor.
  * @param props.iconColor - Icon tint; defaults to the theme text color.
  * @param props.isEditable - Whether the playlist can be edited (shows the edit button).
+ * @param props.onboardingTargetId - Optional onboarding target id for the menu trigger.
  * @param props.onOpenMenu - Opens the menu dropdown.
  * @param props.playlistId - Id of the playlist being edited.
  */
@@ -22,6 +23,7 @@ export const PlaylistHeaderActions = ({
   buttonRef,
   iconColor,
   isEditable,
+  onboardingTargetId,
   onOpenMenu,
   playlistId,
 }: {
@@ -29,6 +31,7 @@ export const PlaylistHeaderActions = ({
   buttonRef: RefObject<null | View>
   iconColor?: ColorValue
   isEditable: boolean
+  onboardingTargetId?: string
   onOpenMenu: () => void
   playlistId: string
 }) => {
@@ -48,6 +51,7 @@ export const PlaylistHeaderActions = ({
         buttonRef={buttonRef}
         iconColor={iconColor}
         accessibilityLabel={accessibilityLabel}
+        onboardingTargetId={onboardingTargetId}
       />
     </View>
   )

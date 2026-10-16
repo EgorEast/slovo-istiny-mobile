@@ -1,3 +1,4 @@
+import { type ReactElement, type ReactNode } from 'react'
 import { StyleSheet, Text, View } from 'react-native'
 import { type PlaylistData } from 'entities/playlist'
 import { TRACK_LIST_ITEM_SIZES } from 'entities/track-list'
@@ -14,37 +15,45 @@ const TITLE = 'Выберите плейлист'
  * caller's `visible`. Choosing a row starts playback in that playlist, the
  * backdrop closes without starting anything.
  * @param root0 - Picker props.
+ * @param root0.containerWrapper - Page-owned wrapper around the dialog (dependency
+ * inversion: the tour spotlights the picker window without this feature importing
+ * `features/onboarding`).
  * @param root0.onClose - Dismiss without playing.
  * @param root0.onSelect - Play the sermon within the chosen playlist.
  * @param root0.playlists - The sermon's playlists.
  * @param root0.visible - Whether the picker is shown.
  */
 export const SermonPlaylistPicker = ({
+  containerWrapper,
   onClose,
   onSelect,
   playlists,
   visible,
 }: {
+  containerWrapper?: (dialog: ReactElement) => ReactNode
   onClose: () => void
   onSelect: (playlist: PlaylistData) => void
   playlists: PlaylistData[]
   visible: boolean
 }) => {
   const { currentTheme } = useTheme()
+  const dialog = (
+    <View style={styles.container}>
+      <Text style={[styles.title, { color: currentTheme.text }]}>{TITLE}</Text>
+      {playlists.map(playlist => (
+        <PressableButton key={playlist.id} style={styles.row} onPress={() => onSelect(playlist)}>
+          <CoverImage uri={playlist.artwork} style={styles.artwork} />
+          <Text numberOfLines={1} style={[styles.rowTitle, { color: currentTheme.text }]}>
+            {playlist.title}
+          </Text>
+        </PressableButton>
+      ))}
+    </View>
+  )
 
   return (
     <Modal visible={visible} onBackdropPress={onClose}>
-      <View style={styles.container}>
-        <Text style={[styles.title, { color: currentTheme.text }]}>{TITLE}</Text>
-        {playlists.map(playlist => (
-          <PressableButton key={playlist.id} style={styles.row} onPress={() => onSelect(playlist)}>
-            <CoverImage uri={playlist.artwork} style={styles.artwork} />
-            <Text numberOfLines={1} style={[styles.rowTitle, { color: currentTheme.text }]}>
-              {playlist.title}
-            </Text>
-          </PressableButton>
-        ))}
-      </View>
+      {containerWrapper === undefined ? dialog : containerWrapper(dialog)}
     </Modal>
   )
 }

@@ -21,6 +21,7 @@ const mockSetOptions = jest.fn()
 jest.mock('expo-router', () => ({
   useLocalSearchParams: () => ({ playlist: 'local-1' }),
   useNavigation: () => ({ setOptions: mockSetOptions }),
+  usePathname: () => '/playlist-edit',
   useRouter: () => ({ back: mockBack, push: mockPush }),
 }))
 

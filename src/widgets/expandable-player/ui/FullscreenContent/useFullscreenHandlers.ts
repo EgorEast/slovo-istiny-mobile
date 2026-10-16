@@ -26,6 +26,7 @@ import { isOnlineAtom } from 'shared/model'
 import type BottomSheet from '@gorhom/bottom-sheet'
 import { getFullscreenVisualState } from '../../lib/getFullscreenVisualState'
 import { useCollapseCascade } from './useCollapseCascade'
+import { useFullscreenTourActions } from './useFullscreenTourActions'
 
 export const useFullscreenHandlers = () => {
   const ctx = useCtx()
@@ -43,6 +44,7 @@ export const useFullscreenHandlers = () => {
   const { startSeek, stopSeek, tapSeek } = useSeekControls({ duration, position, seekTo })
   const {
     handleCollapse,
+    setMenuView,
     setShowDetails,
     setShowMenu,
     setShowPlaylist,
@@ -53,6 +55,8 @@ export const useFullscreenHandlers = () => {
     showSoundSettings,
   } = useCollapseCascade()
   const playlistSheetRef = useRef<BottomSheet>(null)
+
+  useFullscreenTourActions({ setMenuView, setShowDetails, setShowMenu, setShowSoundSettings })
 
   const isCached = useIsCached(audio?.audioUrl ?? null, cacheTrigger)
   const isCurrentAudioDownloading = isDownloading && downloadingAudioUrl === audio?.audioUrl

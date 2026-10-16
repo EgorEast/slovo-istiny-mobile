@@ -1,6 +1,7 @@
 import { useAtom } from '@reatom/npm-react'
 import { StyleSheet, View } from 'react-native'
 import { useEntryPlayback } from 'features/entry-playback'
+import { OnboardingTarget } from 'features/onboarding'
 import { useLastListeningEntry } from 'entities/listening-history'
 import { currentAudioAtom, isPlayingAtom, usePlayer } from 'entities/player'
 import { dynamicSectionsAtom, isLoadingSectionsAtom } from 'entities/section'
@@ -17,7 +18,11 @@ const CONTINUE_ERROR_MESSAGE = 'Не удалось продолжить про�
 const PAUSE_ERROR_MESSAGE = 'Не удалось поставить на паузу'
 const PAUSE_HINT = 'Приостановить воспроизведение'
 
-export const ContinueListeningButton = () => {
+export const ContinueListeningButton = ({
+  onboardingTargetId,
+}: {
+  onboardingTargetId?: string
+}) => {
   const { entry, isLoaded, sermon } = useLastListeningEntry()
   const playEntry = useEntryPlayback(CONTINUE_ERROR_MESSAGE)
   const { pause } = usePlayer()
@@ -58,27 +63,29 @@ export const ContinueListeningButton = () => {
       : START_LISTENING_LABEL
 
   return (
-    <IconButton
-      accessible
-      disabled={isDisabled}
-      onPress={() => void handlePress()}
-      accessibilityLabel={accessibilityLabel}
-      accessibilityState={{ disabled: isDisabled }}
-      accessibilityHint={isPlaying ? PAUSE_HINT : undefined}
-      Icon={
-        <View style={styles.mainArea}>
-          <ContinueCircleButton width={width} isPlaying={isPlaying} />
-        </View>
-      }
-      style={({ pressed }) => [
-        styles.block,
-        {
-          alignSelf: layout.stacked ? 'flex-end' : 'stretch',
-          opacity: pressed ? 0.8 : isDisabled ? 0.5 : 1,
-          width,
-        },
-      ]}
-    />
+    <OnboardingTarget id={onboardingTargetId}>
+      <IconButton
+        accessible
+        disabled={isDisabled}
+        onPress={() => void handlePress()}
+        accessibilityLabel={accessibilityLabel}
+        accessibilityState={{ disabled: isDisabled }}
+        accessibilityHint={isPlaying ? PAUSE_HINT : undefined}
+        Icon={
+          <View style={styles.mainArea}>
+            <ContinueCircleButton width={width} isPlaying={isPlaying} />
+          </View>
+        }
+        style={({ pressed }) => [
+          styles.block,
+          {
+            alignSelf: layout.stacked ? 'flex-end' : 'stretch',
+            opacity: pressed ? 0.8 : isDisabled ? 0.5 : 1,
+            width,
+          },
+        ]}
+      />
+    </OnboardingTarget>
   )
 }
 

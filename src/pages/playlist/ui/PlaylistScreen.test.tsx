@@ -1,7 +1,8 @@
 import { createCtx } from '@reatom/framework'
-import { act, fireEvent, waitFor } from '@testing-library/react-native'
+import { act, fireEvent, screen, waitFor } from '@testing-library/react-native'
 import { type ComponentType } from 'react'
 import { View as RNView } from 'react-native'
+import { useTourActionRegistrar } from 'features/onboarding'
 import {
   FAVORITES_PLAYLIST,
   myPlaylistsAtom,
@@ -27,10 +28,30 @@ const mockReplace = jest.fn()
 const mockResolvePlaylistFromCache = jest.fn()
 const mockTogglePlaylistSermon = jest.fn()
 const mockUseIsLocalPlaylist = jest.fn()
+const mockOpenAddAllToPlaylist = jest.fn()
+const mockOpenAddToPlaylist = jest.fn()
+
+// The tour drives the row menu through the screen's registrations; the modal
+// itself is irrelevant here, so keep it unmounted and spy on the open handler.
+jest.mock('features/add-to-playlist', () => ({
+  useAddToPlaylistModal: () => ({
+    modal: null,
+    openAddAllToPlaylist: mockOpenAddAllToPlaylist,
+    openAddToPlaylist: mockOpenAddToPlaylist,
+  }),
+}))
+
+// Keep the real onboarding UI (the first row's target wrapper) but spy on the
+// action registrar so tests can invoke what the tour would perform.
+jest.mock('features/onboarding', () => {
+  const actual = jest.requireActual('features/onboarding')
+  return { ...actual, useTourActionRegistrar: jest.fn() }
+})
 
 jest.mock('expo-router', () => ({
   useLocalSearchParams: () => mockParams,
   useNavigation: () => ({ setOptions: mockSetOptions }),
+  usePathname: () => '/listen',
   useRouter: () => ({ replace: mockReplace, setParams: jest.fn() }),
 }))
 
@@ -146,28 +167,57 @@ jest.mock('expo-blur', () => {
 })
 
 jest.mock('entities/track-list', () => {
+  const { Fragment, useEffect, useState } = jest.requireActual('react')
   const { Pressable, Text, View } = jest.requireActual('react-native')
   return {
     createTracksListStyles: () => ({ container: {}, divider: {} }),
-    TracksListItem: (props: {
+    TracksListItem: ({
+      bindMenuOpener,
+      isAudioPlaying,
+      menuActions,
+      onPress,
+      renderMenuItem,
+      title,
+    }: {
       audioUrl?: null | string
+      bindMenuOpener?: (controls: { close: () => void; open: () => void }) => void
       isAudioPlaying?: boolean
-      menuActions?: Array<{ onPress: () => void; text: string }>
+      menuActions?: Array<{ onboardingTargetId?: string; onPress: () => void; text: string }>
       onPress?: () => void
+      renderMenuItem?: (row: React.ReactNode, item: object) => React.ReactNode
       title: string
-    }) => (
-      <Pressable onPress={props.onPress} testID='tracks-list-item'>
-        <View>
-          <Text>{props.title}</Text>
-          {props.menuActions?.map(action => (
-            <Pressable key={action.text} onPress={action.onPress}>
-              <Text>{action.text}</Text>
-            </Pressable>
-          ))}
-          {props.isAudioPlaying && <Text testID={`playing-indicator-${props.title}`}>playing</Text>}
-        </View>
-      </Pressable>
-    ),
+    }) => {
+      const [isMenuOpen, setIsMenuOpen] = useState(false)
+
+      useEffect(() => {
+        bindMenuOpener?.({
+          close: () => setIsMenuOpen(false),
+          open: () => setIsMenuOpen(true),
+        })
+      }, [bindMenuOpener])
+
+      return (
+        <Pressable onPress={onPress} testID='tracks-list-item'>
+          <View>
+            <Text>{title}</Text>
+            {menuActions?.map(action => {
+              const row = (
+                <Pressable onPress={action.onPress}>
+                  <Text>{action.text}</Text>
+                </Pressable>
+              )
+              return (
+                <Fragment key={action.text}>
+                  {renderMenuItem ? renderMenuItem(row, action) : row}
+                </Fragment>
+              )
+            })}
+            {isMenuOpen && <Text>row-menu-open</Text>}
+            {isAudioPlaying && <Text testID={`playing-indicator-${title}`}>playing</Text>}
+          </View>
+        </Pressable>
+      )
+    },
   }
 })
 
@@ -456,6 +506,62 @@ describe('<PlaylistScreen>', () => {
 
     expect(getByTestId(`${PLAYING_INDICATOR_PREFIX}${SERMON_1.title}`)).toBeTruthy()
     expect(queryByTestId(`${PLAYING_INDICATOR_PREFIX}${SERMON_2.title}`)).toBeNull()
+  })
+})
+
+describe('<PlaylistScreen> row-menu tour actions', () => {
+  const OPEN_ROW_MENU_ACTION = 'open-playlist-row-menu'
+  const PRESS_ROW_MENU_ADD_ACTION = 'press-row-menu-add'
+  const ROW_MENU_OPEN_TEXT = 'row-menu-open'
+
+  beforeEach(() => {
+    jest.clearAllMocks()
+    mockUseIsLocalPlaylist.mockReturnValue(false)
+    mockParams.playlist = PLAYLIST_ID
+    delete mockParams.custom
+  })
+
+  const renderTracks = async () => {
+    const ctx = createCtx()
+    dynamicSectionsAtom(ctx, [makeSection()])
+    return renderScreen(ctx)
+  }
+
+  const tourAction = (id: string) =>
+    jest.mocked(useTourActionRegistrar).mock.calls.find(([actionId]) => actionId === id)?.[1]
+
+  test('registers the row-menu actions and opens the first row menu', async () => {
+    const { getByText } = await renderTracks()
+
+    const open = tourAction(OPEN_ROW_MENU_ACTION)
+    expect(open).toBeDefined()
+    expect(screen.queryByText(ROW_MENU_OPEN_TEXT)).toBeNull()
+
+    await act(async () => {
+      open?.()
+    })
+
+    expect(getByText(ROW_MENU_OPEN_TEXT)).toBeTruthy()
+  })
+
+  test('pressing add closes the row menu and opens the modal for the first sermon', async () => {
+    await renderTracks()
+
+    const open = tourAction(OPEN_ROW_MENU_ACTION)
+    const pressAdd = tourAction(PRESS_ROW_MENU_ADD_ACTION)
+    expect(pressAdd).toBeDefined()
+
+    await act(async () => {
+      open?.()
+    })
+    expect(screen.getByText(ROW_MENU_OPEN_TEXT)).toBeTruthy()
+
+    await act(async () => {
+      pressAdd?.()
+    })
+
+    expect(mockOpenAddToPlaylist).toHaveBeenCalledWith(SERMON_1)
+    expect(screen.queryByText(ROW_MENU_OPEN_TEXT)).toBeNull()
   })
 })
 

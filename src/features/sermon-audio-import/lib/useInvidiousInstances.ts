@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { invidiousApi } from 'shared/api'
-import { DEFAULT_INVIDIOUS_BASE_URL } from './importSettings'
+import { DEFAULT_INVIDIOUS_BASE_URL } from 'shared/model'
 
 const FALLBACK_INSTANCES: readonly string[] = [DEFAULT_INVIDIOUS_BASE_URL]
 

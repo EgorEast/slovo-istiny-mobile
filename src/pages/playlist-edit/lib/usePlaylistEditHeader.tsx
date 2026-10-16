@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons'
 import { useNavigation } from 'expo-router'
 import { useEffect, useMemo, useRef } from 'react'
+import { OnboardingHelpRow } from 'features/onboarding'
 import { IconButton } from 'shared/ui/icon-button'
 import { useTheme } from 'shared/ui/theme'
 
@@ -37,12 +38,14 @@ export const usePlaylistEditHeader = ({
 
   const headerRight = useMemo(
     () => () => (
-      <IconButton
-        disabled={!canSave}
-        accessibilityLabel={SAVE_LABEL}
-        onPress={() => onSaveRef.current()}
-        Icon={<Ionicons size={ICON_SIZE} name='checkmark' color={currentTheme.primary} />}
-      />
+      <OnboardingHelpRow tintColor={currentTheme.primary}>
+        <IconButton
+          disabled={!canSave}
+          accessibilityLabel={SAVE_LABEL}
+          onPress={() => onSaveRef.current()}
+          Icon={<Ionicons size={ICON_SIZE} name='checkmark' color={currentTheme.primary} />}
+        />
+      </OnboardingHelpRow>
     ),
     [canSave, currentTheme.primary],
   )

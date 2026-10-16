@@ -31,11 +31,6 @@ export interface ImportPhaseProgress {
   phase: ImportPhase
 }
 
-export interface ImportSettings {
-  invidiousBaseUrl: string
-  source: ImportSource
-}
-
 export type ImportSource = 'invidious' | 'youtube'
 
 export interface ResolvedAudio {

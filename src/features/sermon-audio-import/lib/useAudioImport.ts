@@ -1,13 +1,9 @@
 import { useAction } from '@reatom/npm-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { showToast } from 'shared/model'
+import { type ImportSettings, showToast } from 'shared/model'
 import { reportError } from 'shared/model/error-dialog'
 import { importAudio } from './importAudio'
-import {
-  type ImportedSermonMetadata,
-  type ImportPhaseProgress,
-  type ImportSettings,
-} from './importTypes'
+import { type ImportedSermonMetadata, type ImportPhaseProgress } from './importTypes'
 import { getImportErrorMessage, ImportSourceError } from './sourceErrors'
 
 const IMPORTED_MESSAGE = 'Импортировано из YouTube'

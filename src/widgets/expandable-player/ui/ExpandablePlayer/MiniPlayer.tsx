@@ -1,6 +1,8 @@
+import { forwardRef } from 'react'
 import { ActivityIndicator, Platform, Text, View, type ViewStyle } from 'react-native'
 import { GestureDetector, type GestureType } from 'react-native-gesture-handler'
 import Animated, { type AnimatedStyle } from 'react-native-reanimated'
+import { OnboardingTarget } from 'features/onboarding'
 import { PlayerControlButton, PlayerControlButtonType } from 'entities/player'
 import { type PlaylistData } from 'entities/playlist'
 import { type AudioPlayerData } from 'entities/sermon'
@@ -19,18 +21,7 @@ const AnimatedPressable = Animated.createAnimatedComponent(PressableButton)
 // role. Same container pattern as TracksListItemBase ROW_ACCESSIBILITY_ROLE.
 const ROW_ACCESSIBILITY_ROLE = Platform.OS === 'web' ? 'link' : 'button'
 
-export const MiniPlayer = ({
-  audio,
-  currentTheme,
-  miniPan,
-  miniStyle,
-  miniStyles,
-  onPlayPause,
-  onPress,
-  playing,
-  playlist,
-  showSpinner,
-}: {
+interface MiniPlayerProps {
   audio: AudioPlayerData
   currentTheme: ThemeColors
   miniPan: GestureType
@@ -41,37 +32,59 @@ export const MiniPlayer = ({
   playing: boolean
   playlist: null | PlaylistData
   showSpinner: boolean
-}) => {
-  const subtitle = getPlayerSubtitle(audio, playlist)
-
-  return (
-    <GestureDetector gesture={miniPan}>
-      <AnimatedPressable
-        onPress={onPress}
-        accessibilityRole={ROW_ACCESSIBILITY_ROLE}
-        style={[miniStyles.miniContainer, miniStyle, { backgroundColor: currentTheme.surface }]}
-      >
-        <CoverImage eager uri={audio.artwork} style={miniStyles.miniCover} />
-        <View style={miniStyles.miniTextContainer}>
-          <MovingText autoStart text={audio.title || ''} style={miniStyles.miniTrackTitle} />
-          <Text numberOfLines={1} style={miniStyles.miniPlaylistName}>
-            {subtitle}
-          </Text>
-        </View>
-        <View style={miniStyles.miniControls}>
-          {showSpinner ? (
-            <ActivityIndicator size={36} color={currentTheme.text} testID='buffering-indicator' />
-          ) : (
-            <PlayerControlButton
-              size={36}
-              onPress={onPlayPause}
-              color={currentTheme.text}
-              type={playing ? PlayerControlButtonType.Pause : PlayerControlButtonType.Play}
-            />
-          )}
-        </View>
-        <MiniDownloadProgress miniStyles={miniStyles} audioUrl={audio.audioUrl} />
-      </AnimatedPressable>
-    </GestureDetector>
-  )
 }
+
+export const MiniPlayer = forwardRef<View, MiniPlayerProps>(
+  (
+    {
+      audio,
+      currentTheme,
+      miniPan,
+      miniStyle,
+      miniStyles,
+      onPlayPause,
+      onPress,
+      playing,
+      playlist,
+      showSpinner,
+    },
+    ref,
+  ) => {
+    const subtitle = getPlayerSubtitle(audio, playlist)
+
+    return (
+      <GestureDetector gesture={miniPan}>
+        <AnimatedPressable
+          ref={ref}
+          onPress={onPress}
+          accessibilityRole={ROW_ACCESSIBILITY_ROLE}
+          style={[miniStyles.miniContainer, miniStyle, { backgroundColor: currentTheme.surface }]}
+        >
+          <CoverImage eager uri={audio.artwork} style={miniStyles.miniCover} />
+          <View style={miniStyles.miniTextContainer}>
+            <MovingText autoStart text={audio.title || ''} style={miniStyles.miniTrackTitle} />
+            <Text numberOfLines={1} style={miniStyles.miniPlaylistName}>
+              {subtitle}
+            </Text>
+          </View>
+          <View style={miniStyles.miniControls}>
+            {showSpinner ? (
+              <ActivityIndicator size={36} color={currentTheme.text} testID='buffering-indicator' />
+            ) : (
+              <OnboardingTarget id='player.mini-play-pause'>
+                <PlayerControlButton
+                  size={36}
+                  onPress={onPlayPause}
+                  color={currentTheme.text}
+                  type={playing ? PlayerControlButtonType.Pause : PlayerControlButtonType.Play}
+                />
+              </OnboardingTarget>
+            )}
+          </View>
+          <MiniDownloadProgress miniStyles={miniStyles} audioUrl={audio.audioUrl} />
+        </AnimatedPressable>
+      </GestureDetector>
+    )
+  },
+)
+MiniPlayer.displayName = 'MiniPlayer'

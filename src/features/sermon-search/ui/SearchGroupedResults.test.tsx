@@ -1,5 +1,7 @@
 import { createCtx } from '@reatom/framework'
 import { fireEvent, screen } from '@testing-library/react-native'
+import { type ReactElement } from 'react'
+import { Text as RNText, View as RNView } from 'react-native'
 import {
   FAVORITES_PLAYLIST,
   type LocalPlaylistData,
@@ -70,19 +72,25 @@ jest.mock('entities/track-list', () => {
   const { Text, View } = jest.requireActual('react-native')
   const TracksListItem = (props: {
     menuActions?: Array<{ onPress: () => void; text: string }>
+    renderMenuButton?: (button: ReactElement) => ReactElement
     subtitle?: string
     title: string
-  }) => (
-    <View>
-      <Text>{props.title}</Text>
-      {props.subtitle && <Text>{props.subtitle}</Text>}
-      {props.menuActions?.map(action => (
-        <Text key={action.text} onPress={action.onPress}>
-          {action.text}
-        </Text>
-      ))}
-    </View>
-  )
+  }) => {
+    const menuButton = <Text>menu-trigger</Text>
+
+    return (
+      <View>
+        <Text>{props.title}</Text>
+        {props.subtitle && <Text>{props.subtitle}</Text>}
+        {props.renderMenuButton ? props.renderMenuButton(menuButton) : menuButton}
+        {props.menuActions?.map(action => (
+          <Text key={action.text} onPress={action.onPress}>
+            {action.text}
+          </Text>
+        ))}
+      </View>
+    )
+  }
   TracksListItem.Skeleton = () => <View testID='tracks-list-item-skeleton' />
   return {
     TRACK_LIST_ITEM_SIZES: jest.requireActual('entities/track-list').TRACK_LIST_ITEM_SIZES,
@@ -176,6 +184,54 @@ describe('<SearchGroupedResults>', () => {
     expect(screen.getByRole('button', { name: `${SERMONS_LABEL}, 1` })).toBeTruthy()
     expect(screen.getByRole('button', { name: `${PLAYLISTS_LABEL}, 2` })).toBeTruthy()
     expect(screen.getByRole('button', { name: `${PREACHERS_LABEL}, 3` })).toBeTruthy()
+  })
+
+  test('applies the page-owned wrappers around the sermon header and first row only', async () => {
+    const groupHeaderWrapper = jest.fn((header: ReactElement) => (
+      <RNView testID='wrapped-header'>{header}</RNView>
+    ))
+    const firstRowWrapper = jest.fn((row: ReactElement) => (
+      <RNView testID='wrapped-row'>{row}</RNView>
+    ))
+    const ctx = createCtx()
+    searchQueryAtom(ctx, ACTIVE_QUERY)
+    searchResultsAtom(ctx, [buildSermon(1), buildSermon(2)])
+
+    await renderWithProviders(
+      <SearchGroupedResults
+        onPlaylistPress={jest.fn()}
+        firstRowWrapper={firstRowWrapper}
+        groupHeaderWrapper={groupHeaderWrapper}
+      />,
+      { ctx },
+    )
+
+    expect(groupHeaderWrapper).toHaveBeenCalledTimes(1)
+    expect(firstRowWrapper).toHaveBeenCalledTimes(1)
+    expect(screen.getByTestId('wrapped-header')).toBeTruthy()
+    expect(screen.getByTestId('wrapped-row')).toHaveTextContent('Проповедь 1', { exact: false })
+  })
+
+  test('applies the page-owned menu-button wrapper to the first sermon row only', async () => {
+    const firstRowMenuButtonWrapper = jest.fn((button: ReactElement) => (
+      <RNView testID='wrapped-menu-button'>{button}</RNView>
+    ))
+    const ctx = createCtx()
+    searchQueryAtom(ctx, ACTIVE_QUERY)
+    searchResultsAtom(ctx, [buildSermon(1), buildSermon(2)])
+
+    await renderWithProviders(
+      <SearchGroupedResults
+        onPlaylistPress={jest.fn()}
+        firstRowMenuButtonWrapper={firstRowMenuButtonWrapper}
+      />,
+      { ctx },
+    )
+
+    // Two rows render a trigger, but only the first row's is wrapped.
+    expect(firstRowMenuButtonWrapper).toHaveBeenCalledTimes(1)
+    expect(screen.getAllByText('menu-trigger')).toHaveLength(2)
+    expect(screen.getByTestId('wrapped-menu-button')).toHaveTextContent('menu-trigger')
   })
 
   test('caps the sermons group at four rows', async () => {
@@ -282,6 +338,33 @@ describe('<SearchGroupedResults>', () => {
     expect(mockPlayNewSermon).toHaveBeenCalledWith(
       expect.objectContaining({ playlist: expect.objectContaining({ id: 'pl-a' }) }),
     )
+  })
+
+  test('threads the page-owned picker wrapper into the picker dialog', async () => {
+    const playlistA = playlistsMocks.getPlaylistControllerCreateResponseMock({ id: 'pl-a' })
+    const playlistB = playlistsMocks.getPlaylistControllerCreateResponseMock({ id: 'pl-b' })
+    const sermon = buildSermonData(
+      sermonsMocks.getSermonControllerFindOneResponseMock({ playlists: [playlistA, playlistB] }),
+    )
+    const pickerWrapper = jest.fn((dialog: ReactElement) => (
+      <RNView>
+        <RNText>wrapped-picker</RNText>
+        {dialog}
+      </RNView>
+    ))
+    const ctx = createCtx()
+    searchQueryAtom(ctx, ACTIVE_QUERY)
+    searchResultsAtom(ctx, [sermon])
+    await renderWithProviders(
+      <SearchGroupedResults onPlaylistPress={jest.fn()} pickerWrapper={pickerWrapper} />,
+      { ctx },
+    )
+
+    await fireEvent.press(screen.getByText(sermon.title))
+
+    expect(pickerWrapper).toHaveBeenCalledTimes(1)
+    expect(screen.getByText('wrapped-picker')).toBeTruthy()
+    expect(screen.getByText(PICKER_TITLE)).toBeTruthy()
   })
 
   test('dismisses the picker without playing when the backdrop is pressed', async () => {

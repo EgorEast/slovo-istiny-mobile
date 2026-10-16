@@ -1,6 +1,7 @@
 import { useAction, useAtom } from '@reatom/npm-react'
 import { useEffect } from 'react'
 import { StyleSheet } from 'react-native'
+import { OnboardingTarget } from 'features/onboarding'
 import { type BookData } from 'entities/sermon'
 import {
   Slider,
@@ -16,7 +17,11 @@ import {
   notesForPreachersBooksSliderAtom,
 } from '../model-notesForPreachers'
 
-export const NotesForPreachersBooksSlider = () => {
+export const NotesForPreachersBooksSlider = ({
+  onboardingTargetId,
+}: {
+  onboardingTargetId?: string
+}) => {
   const title = 'Конспекты для проповедников'
 
   const { navigateToBookReader, navigateToBooksList } = useReadNavigation()
@@ -37,24 +42,26 @@ export const NotesForPreachersBooksSlider = () => {
   }, [fetchNotesForPreachersBooks])
 
   return (
-    <Slider
-      title={title}
-      style={styles.slider}
-      titleTextAlign='center'
-      onPressItem={onItemPress}
-      itemsSize={SliderItemSize.Large}
-      transform={SliderItemTransform.High}
-      whereIsSlideTitleLocated={WhereIsSlideTitleLocated.On}
-      descriptionBackgroundStyle={SliderItemTextBackgroundStyle.DarkBlur}
-      onPressTitle={() => {
-        onPressTitle(notesForPreachersBooks)
-      }}
-      items={notesForPreachersBooks.map(item => ({
-        artwork: item.artwork,
-        data: item,
-        title: item.title,
-      }))}
-    />
+    <OnboardingTarget id={onboardingTargetId}>
+      <Slider
+        title={title}
+        style={styles.slider}
+        titleTextAlign='center'
+        onPressItem={onItemPress}
+        itemsSize={SliderItemSize.Large}
+        transform={SliderItemTransform.High}
+        whereIsSlideTitleLocated={WhereIsSlideTitleLocated.On}
+        descriptionBackgroundStyle={SliderItemTextBackgroundStyle.DarkBlur}
+        onPressTitle={() => {
+          onPressTitle(notesForPreachersBooks)
+        }}
+        items={notesForPreachersBooks.map(item => ({
+          artwork: item.artwork,
+          data: item,
+          title: item.title,
+        }))}
+      />
+    </OnboardingTarget>
   )
 }
 

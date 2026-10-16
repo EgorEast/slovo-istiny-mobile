@@ -1,11 +1,13 @@
 import { type PlaylistData } from 'entities/playlist'
 import { type AudioPlayerData, type SermonData } from 'entities/sermon'
 import { usePlaylistActions } from './usePlaylistActions'
+import { usePlaylistRowMenuTourActions } from './usePlaylistRowMenuTourActions'
 import { useRemoveSermonFromPlaylist } from './useRemoveSermonFromPlaylist'
 
 /**
  * Composes the playlist screen's row actions with the removal confirmation:
- * play/press handlers and the context-menu builder plus the confirm dialog.
+ * play/press handlers, the context-menu builder, the confirm dialog and the
+ * row-menu tour actions (the first row hands over its dropdown controls).
  * @param list - The playlist's sermons backing the track rows.
  * @param playlist - The playlist being displayed.
  * @param historySermonIds - Sermon ids present in listening history.
@@ -28,6 +30,7 @@ export const usePlaylistTrackActions = (
     onAddToPlaylist,
     requestRemove,
   )
+  const { bindRowMenu } = usePlaylistRowMenuTourActions(onAddToPlaylist, list[0])
 
-  return { buildMenuActions, handlePressItem, handlePressPlayAll, renderDialog }
+  return { bindRowMenu, buildMenuActions, handlePressItem, handlePressPlayAll, renderDialog }
 }

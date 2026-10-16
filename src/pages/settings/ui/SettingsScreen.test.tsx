@@ -3,6 +3,10 @@ import { fireEvent } from '@testing-library/react-native'
 import { renderWithProviders } from 'shared/mocks'
 import { SettingsScreen } from './SettingsScreen'
 
+jest.mock('expo-router', () => ({
+  useNavigation: () => ({ addListener: jest.fn() }),
+}))
+
 // Секция бэкапа тянет экспорт/импорт (нативный expo-audio) — изолируем экран.
 jest.mock('features/settings-backup', () => ({
   BackupSection: () => null,

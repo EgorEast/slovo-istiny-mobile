@@ -5,6 +5,10 @@ import { renderWithProviders } from 'shared/mocks/renderWithProviders'
 import { isTabBarMeasuredAtom } from 'shared/ui/layout'
 import { ExpandablePlayer } from './ExpandablePlayer'
 
+jest.mock('expo-router', () => ({
+  useNavigation: () => ({ addListener: jest.fn() }),
+}))
+
 const mockTogglePlay = jest.fn().mockResolvedValue(undefined)
 
 jest.mock('entities/player', () => {

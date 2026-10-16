@@ -20,6 +20,15 @@ export const isSearchOpenAtom = atom(false, 'isSearchOpenAtom')
 // Last query a fetch was started for; lets `useDebouncedSearch` skip a duplicate
 // debounced fetch when the query was already fetched (e.g. web deep-link seed).
 export const lastFetchedQueryAtom = atom('', 'lastFetchedQueryAtom')
+// External request to type text into the visible search input (the onboarding
+// tour simulates typing through it). `SearchBar` mirrors every request into its
+// local input state; `nonce` makes each request distinct so identical text can be
+// applied twice. Kept apart from `searchQueryAtom` because the input's local
+// state must not follow async query updates (controlled-input race).
+export const searchInputRequestAtom = atom<{ nonce: number; text: string } | null>(
+  null,
+  'searchInputRequestAtom',
+)
 
 let latestRequestId = 0
 
@@ -45,6 +54,17 @@ export const resetSearchResults = action(async ctx => {
     lastFetchedQueryAtom(ctx, '')
   })
 }, 'resetSearchResults')
+
+// Simulates a keystroke: sets the canonical query (which drives the fetch) and
+// asks the visible `SearchBar` input to adopt the same text, so the onboarding
+// tour's typed demo query shows up in the field while results keep flowing from
+// `searchQueryAtom`.
+export const typeSearchInput = action((ctx, text: string) => {
+  const previous = ctx.get(searchInputRequestAtom)
+
+  searchQueryAtom(ctx, text)
+  searchInputRequestAtom(ctx, { nonce: (previous?.nonce ?? 0) + 1, text })
+}, 'typeSearchInput')
 
 export const closeSearch = action(async ctx => {
   cancelInFlightFetches()

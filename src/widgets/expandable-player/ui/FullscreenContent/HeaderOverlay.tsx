@@ -1,8 +1,11 @@
 import { Entypo } from '@expo/vector-icons'
+import { View } from 'react-native'
 import { Gesture, GestureDetector } from 'react-native-gesture-handler'
 import { useSharedValue } from 'react-native-reanimated'
 import { scheduleOnRN } from 'react-native-worklets'
+import { HelpHeaderButton } from 'features/onboarding'
 import { IconButton } from 'shared/ui/icon-button'
+import { COLORS } from 'shared/ui/theme'
 import { type createStyles } from '../ExpandablePlayer/styles'
 import { NextSermonPlate } from './NextSermonPlate'
 import { StopAllCachingButton } from './StopAllCachingButton'
@@ -77,6 +80,9 @@ export const HeaderOverlay = ({
           nextSermonTitle={nextSermonTitle}
         />
       )}
+      <View style={[styles.helpButton, { top: insetsTop }]}>
+        <HelpHeaderButton scope='player' tintColor={COLORS.white} />
+      </View>
       <StopAllCachingButton styles={styles} insetsTop={insetsTop} />
     </>
   )

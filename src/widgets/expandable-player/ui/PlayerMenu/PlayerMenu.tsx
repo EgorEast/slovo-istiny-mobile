@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useAtom } from '@reatom/npm-react'
+import { useEffect } from 'react'
 import { Pressable, View } from 'react-native'
 import Animated from 'react-native-reanimated'
 import { type TrackCacheVisualState } from 'entities/offline-cache'
@@ -7,6 +8,7 @@ import { type AudioPlayerData } from 'entities/sermon'
 import { hapticLight } from 'shared/lib/haptics'
 import { reportError } from 'shared/model/error-dialog'
 import { useTheme } from 'shared/ui/theme'
+import { playerMenuViewAtom } from '../../model/playerMenuViewAtom'
 import { styles } from './PlayerMenu.styles'
 import { PlayerMenuItems } from './PlayerMenuItems'
 import { PlayerSpeedMenu } from './PlayerSpeedMenu'
@@ -37,8 +39,17 @@ export const PlayerMenu = ({
 }) => {
   const { currentTheme } = useTheme()
   const { rate, setPlaybackRate } = usePlaybackRate()
-  const [view, setView] = useState<'main' | 'speed'>('main')
+  const [view, setView] = useAtom(playerMenuViewAtom)
   const { backdropStyle, handleLayout, wrapperStyle } = useMenuRevealAnimation()
+
+  // The menu view lives in a shared atom so the tour can open the speed page.
+  // Reset it on unmount: the next menu open must start on the main page.
+  useEffect(
+    () => () => {
+      setView('main')
+    },
+    [setView],
+  )
 
   const handleDetailsPress = () => {
     onShowDetails()

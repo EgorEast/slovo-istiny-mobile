@@ -1,5 +1,6 @@
 import { Entypo } from '@expo/vector-icons'
 import { Text, View } from 'react-native'
+import { OnboardingTarget } from 'features/onboarding'
 import { PLAYBACK_RATES, type PlaybackRate } from 'entities/player'
 import { formatPlaybackRate } from 'shared/lib/player'
 import { PressableButton } from 'shared/ui/pressable-button'
@@ -18,49 +19,51 @@ export const PlayerSpeedMenu = ({
   const { currentTheme } = useTheme()
 
   return (
-    <View>
-      <PressableButton onPress={onBack} accessibilityLabel='Назад' style={styles.speedHeader}>
-        <Entypo
-          size={18}
-          name='chevron-left'
-          color={currentTheme.text}
-          style={styles.speedHeaderBack}
-        />
-        <Text style={[styles.speedHeaderText, { color: currentTheme.text }]}>
-          Скорость воспроизведения
-        </Text>
-      </PressableButton>
-      {PLAYBACK_RATES.map(rate => {
-        const isActive = rate === currentRate
-        return (
-          <PressableButton
-            key={rate}
-            onPress={() => onSelect(rate)}
-            accessibilityState={{ selected: isActive }}
-            style={[styles.menuItem, styles.menuItemRow]}
-            accessibilityLabel={`Скорость ${formatPlaybackRate(rate)}`}
-          >
-            <Text
-              style={[
-                styles.menuItemText,
-                {
-                  color: isActive ? currentTheme.primary : currentTheme.text,
-                },
-              ]}
+    <OnboardingTarget id='player-fullscreen.speed-menu'>
+      <View>
+        <PressableButton onPress={onBack} accessibilityLabel='Назад' style={styles.speedHeader}>
+          <Entypo
+            size={18}
+            name='chevron-left'
+            color={currentTheme.text}
+            style={styles.speedHeaderBack}
+          />
+          <Text style={[styles.speedHeaderText, { color: currentTheme.text }]}>
+            Скорость воспроизведения
+          </Text>
+        </PressableButton>
+        {PLAYBACK_RATES.map(rate => {
+          const isActive = rate === currentRate
+          return (
+            <PressableButton
+              key={rate}
+              onPress={() => onSelect(rate)}
+              accessibilityState={{ selected: isActive }}
+              style={[styles.menuItem, styles.menuItemRow]}
+              accessibilityLabel={`Скорость ${formatPlaybackRate(rate)}`}
             >
-              {formatPlaybackRate(rate)}
-            </Text>
-            {isActive && (
-              <Entypo
-                size={14}
-                name='check'
-                color={currentTheme.primary}
-                style={styles.speedCheckIcon}
-              />
-            )}
-          </PressableButton>
-        )
-      })}
-    </View>
+              <Text
+                style={[
+                  styles.menuItemText,
+                  {
+                    color: isActive ? currentTheme.primary : currentTheme.text,
+                  },
+                ]}
+              >
+                {formatPlaybackRate(rate)}
+              </Text>
+              {isActive && (
+                <Entypo
+                  size={14}
+                  name='check'
+                  color={currentTheme.primary}
+                  style={styles.speedCheckIcon}
+                />
+              )}
+            </PressableButton>
+          )
+        })}
+      </View>
+    </OnboardingTarget>
   )
 }

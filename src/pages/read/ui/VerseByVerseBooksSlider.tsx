@@ -1,6 +1,7 @@
 import { useAction, useAtom } from '@reatom/npm-react'
 import { useEffect } from 'react'
 import { StyleSheet } from 'react-native'
+import { OnboardingTarget } from 'features/onboarding'
 import { type BookData } from 'entities/sermon'
 import {
   Slider,
@@ -13,7 +14,11 @@ import { INDENTS } from 'shared/ui/theme'
 import { useReadNavigation } from '../lib/useReadNavigation'
 import { getVerseByVerseBooksSlider, verseByVerseBooksSliderAtom } from '../model-verseByVerse'
 
-export const VerseByVerseBooksSlider = () => {
+export const VerseByVerseBooksSlider = ({
+  onboardingTargetId,
+}: {
+  onboardingTargetId?: string
+}) => {
   const title = 'По библии. Стих за стихом'
 
   const { navigateToBookReader, navigateToBooksList } = useReadNavigation()
@@ -34,24 +39,26 @@ export const VerseByVerseBooksSlider = () => {
   }, [fetchVerseByVerseBooks])
 
   return (
-    <Slider
-      title={title}
-      style={styles.slider}
-      titleTextAlign='center'
-      onPressItem={onItemPress}
-      itemsSize={SliderItemSize.Large}
-      transform={SliderItemTransform.High}
-      whereIsSlideTitleLocated={WhereIsSlideTitleLocated.On}
-      descriptionBackgroundStyle={SliderItemTextBackgroundStyle.DarkBlur}
-      onPressTitle={() => {
-        onPressTitle(verseByVerseBooks)
-      }}
-      items={verseByVerseBooks.map(item => ({
-        artwork: item.artwork,
-        data: item,
-        title: item.title,
-      }))}
-    />
+    <OnboardingTarget id={onboardingTargetId}>
+      <Slider
+        title={title}
+        style={styles.slider}
+        titleTextAlign='center'
+        onPressItem={onItemPress}
+        itemsSize={SliderItemSize.Large}
+        transform={SliderItemTransform.High}
+        whereIsSlideTitleLocated={WhereIsSlideTitleLocated.On}
+        descriptionBackgroundStyle={SliderItemTextBackgroundStyle.DarkBlur}
+        onPressTitle={() => {
+          onPressTitle(verseByVerseBooks)
+        }}
+        items={verseByVerseBooks.map(item => ({
+          artwork: item.artwork,
+          data: item,
+          title: item.title,
+        }))}
+      />
+    </OnboardingTarget>
   )
 }
 

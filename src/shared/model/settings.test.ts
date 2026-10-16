@@ -9,12 +9,16 @@ import { SERVER_URL } from '../config/server-storage-keys'
 import {
   hapticsEnabledAtom,
   loadHapticsEnabled,
+  loadToursDisabled,
   serverUrlAtom,
   setHapticsEnabled,
   setServerUrlAction,
+  setToursDisabled,
+  toursDisabledAtom,
 } from './settings'
 
 const HAPTICS_ENABLED_KEY = 'haptics_enabled'
+const TOURS_DISABLED_KEY = 'tours_disabled'
 const STORAGE_FAILURE_MESSAGE = 'storage failure'
 
 const mockedAxiosInstance = jest.requireMock('shared/api/axiosInstance').axiosInstance as {
@@ -115,6 +119,72 @@ describe('settings model', () => {
         expect.any(Error),
       )
       expect(ctx.get(hapticsEnabledAtom)).toBe(true)
+    })
+  })
+
+  describe('setToursDisabled', () => {
+    test('writes the value to AsyncStorage and updates the atom', async () => {
+      await setToursDisabled(ctx, true)
+
+      expect(AsyncStorage.setItem).toHaveBeenCalledWith(TOURS_DISABLED_KEY, 'true')
+      expect(ctx.get(toursDisabledAtom)).toBe(true)
+    })
+
+    test('persists the value before the atom updates', async () => {
+      const atomValueAtWrite = jest.fn()
+      ;(AsyncStorage.setItem as jest.Mock).mockImplementationOnce(async () => {
+        atomValueAtWrite(ctx.get(toursDisabledAtom))
+      })
+
+      const update = setToursDisabled(ctx, true)
+
+      expect(ctx.get(toursDisabledAtom)).toBe(false)
+
+      await update
+
+      expect(atomValueAtWrite).toHaveBeenCalledWith(false)
+      expect(ctx.get(toursDisabledAtom)).toBe(true)
+    })
+  })
+
+  describe('loadToursDisabled', () => {
+    test('loads true from AsyncStorage', async () => {
+      ;(AsyncStorage.getItem as jest.Mock).mockResolvedValue('true')
+
+      const result = await loadToursDisabled(ctx)
+
+      expect(result).toBe(true)
+      expect(ctx.get(toursDisabledAtom)).toBe(true)
+    })
+
+    test('loads false from AsyncStorage', async () => {
+      ;(AsyncStorage.getItem as jest.Mock).mockResolvedValue('false')
+
+      const result = await loadToursDisabled(ctx)
+
+      expect(result).toBe(false)
+      expect(ctx.get(toursDisabledAtom)).toBe(false)
+    })
+
+    test('keeps the default false when storage is empty', async () => {
+      ;(AsyncStorage.getItem as jest.Mock).mockResolvedValue(null)
+
+      const result = await loadToursDisabled(ctx)
+
+      expect(result).toBeUndefined()
+      expect(ctx.get(toursDisabledAtom)).toBe(false)
+    })
+
+    test('logs the error and keeps the atom unchanged when storage rejects', async () => {
+      ;(AsyncStorage.getItem as jest.Mock).mockRejectedValue(new Error(STORAGE_FAILURE_MESSAGE))
+
+      await expect(loadToursDisabled(ctx)).resolves.toBeUndefined()
+
+      expect(console.error).toHaveBeenCalledWith(
+        'Failed to load tours disabled:',
+        expect.any(Error),
+      )
+      expect(ctx.get(toursDisabledAtom)).toBe(false)
     })
   })
 })

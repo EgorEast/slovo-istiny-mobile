@@ -3,6 +3,11 @@ import { useFeatureFlag } from 'entities/feature-flags'
 import { renderWithProviders } from 'shared/mocks'
 import { StudyScreen } from './ui'
 
+jest.mock('expo-router', () => ({
+  ...jest.requireActual('expo-router'),
+  useNavigation: () => ({ addListener: jest.fn() }),
+}))
+
 jest.mock('entities/feature-flags', () => ({ useFeatureFlag: jest.fn() }))
 
 jest.mock('./scene-routes', () => {

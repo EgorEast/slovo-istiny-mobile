@@ -1,5 +1,5 @@
 import { useAtom } from '@reatom/npm-react'
-import { useCallback, useState } from 'react'
+import { type ReactElement, type ReactNode, useCallback, useState } from 'react'
 import { usePlayNewSermon } from 'entities/player'
 import {
   FAVORITES_PLAYLIST,
@@ -32,9 +32,17 @@ const containsSermon = (playlist: LocalPlaylistData, sermonId: string): boolean 
  * «Избранные»), a picker opens and playback waits for the choice; otherwise it
  * plays immediately. The built-in favorites playlist is the default context and
  * does not by itself make the choice ambiguous. Returns the modal element to
- * render on the screen, mirroring `useAddToPlaylistModal`.
+ * render on the screen, mirroring `useAddToPlaylistModal`, plus the picker's
+ * dismiss handler so an owner (the onboarding tour) can close it.
+ * @param root0 - Hook options.
+ * @param root0.pickerWrapper - Page-owned wrapper around the picker dialog (baked
+ * into the modal element so the tour can spotlight the picker window).
  */
-export const useSermonPlayback = () => {
+export const useSermonPlayback = ({
+  pickerWrapper,
+}: {
+  pickerWrapper?: (dialog: ReactElement) => ReactNode
+} = {}) => {
   const playNewSermon = usePlayNewSermon()
   const [myPlaylists] = useAtom(myPlaylistsAtom)
   const [pending, setPending] = useState<null | PendingChoice>(null)
@@ -76,9 +84,10 @@ export const useSermonPlayback = () => {
       visible
       onClose={closePicker}
       onSelect={onSelectPlaylist}
+      containerWrapper={pickerWrapper}
       playlists={[...(pending.sermon.playlists ?? []), ...pending.localPlaylists]}
     />
   ) : null
 
-  return { modal, onSermonPress }
+  return { closePicker, modal, onSermonPress }
 }

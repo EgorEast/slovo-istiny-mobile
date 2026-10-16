@@ -1,5 +1,5 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons'
-import { forwardRef } from 'react'
+import { forwardRef, type ReactElement } from 'react'
 import { Text, View } from 'react-native'
 import { CoverImage } from 'shared/ui/cover-image'
 import { IconButton } from 'shared/ui/icon-button'
@@ -22,6 +22,8 @@ export const TracksListItemContent = forwardRef<
     isSermonCachingEnabled: boolean
     progress?: number
     progressValue: number
+    /** Wraps the ⋯ trigger (e.g. In an onboarding target); falls back to the bare trigger. */
+    renderMenuButton?: (button: ReactElement) => ReactElement
     subtitle?: string
     theme: ThemeColors
     title: string
@@ -39,6 +41,7 @@ export const TracksListItemContent = forwardRef<
       isSermonCachingEnabled,
       progress,
       progressValue,
+      renderMenuButton,
       subtitle,
       theme,
       title,
@@ -47,6 +50,15 @@ export const TracksListItemContent = forwardRef<
   ) => {
     const tracksListStyles = createTracksListStyles(theme)
     const isCompleted = progress != null && progress >= 1
+    const menuButton = (
+      <IconButton
+        ref={ref}
+        onPress={dotsOnPress}
+        accessibilityLabel='Меню трека'
+        style={tracksListStyles.dotsButton}
+        Icon={<MaterialCommunityIcons size={20} name='dots-vertical' color={theme.textMuted} />}
+      />
+    )
 
     return (
       <>
@@ -88,13 +100,7 @@ export const TracksListItemContent = forwardRef<
           />
           {subtitle ? <Text style={tracksListStyles.subtitle}>{subtitle}</Text> : null}
         </View>
-        <IconButton
-          ref={ref}
-          onPress={dotsOnPress}
-          accessibilityLabel='Меню трека'
-          style={tracksListStyles.dotsButton}
-          Icon={<MaterialCommunityIcons size={20} name='dots-vertical' color={theme.textMuted} />}
-        />
+        {renderMenuButton === undefined ? menuButton : renderMenuButton(menuButton)}
         {progress != null && progress > 0 && <ProgressBar progress={progress} />}
       </>
     )

@@ -3,6 +3,7 @@ import { buildHistoryMenuActions } from 'entities/listening-history'
 import { usePlayNewSermon } from 'entities/player'
 import { type PlaylistData, useIsLocalPlaylist } from 'entities/playlist'
 import { type AudioPlayerData, type SermonData, toAudioPlayerData } from 'entities/sermon'
+import { type MenuActionItem } from 'entities/track-list'
 import { type MenuItem } from 'shared/ui/menu'
 
 const ADD_TO_PLAYLIST_TEXT = 'Добавить в плейлист'
@@ -15,6 +16,17 @@ const insertAfterAddToPlaylist = (actions: MenuItem[], item: MenuItem): MenuItem
   const insertAt = addIndex === -1 ? 0 : addIndex + 1
   return [...actions.slice(0, insertAt), item, ...actions.slice(insertAt)]
 }
+
+// The tour spotlights the first row's «Добавить в плейлист» item, so only that row
+// carries an onboarding target id; other rows' menus stay untargeted.
+const onboardingTargetIdForText = (text: string): string | undefined =>
+  text === ADD_TO_PLAYLIST_TEXT ? 'playlist.row-menu-add' : undefined
+
+const withOnboardingTargets = (actions: MenuActionItem[]): MenuActionItem[] =>
+  actions.map(action => {
+    const onboardingTargetId = onboardingTargetIdForText(action.text)
+    return onboardingTargetId === undefined ? action : { ...action, onboardingTargetId }
+  })
 
 /**
  * Composes the playlist screen's per-item actions: press-to-play, play-all and
@@ -49,7 +61,7 @@ export const usePlaylistActions = (
   )
 
   const buildMenuActions = useCallback(
-    (index: number): MenuItem[] | undefined => {
+    (index: number): MenuActionItem[] | undefined => {
       const sermon = list[index]
       const audio = sermon ? toAudioPlayerData(sermon) : null
       if (!audio) return undefined
@@ -60,13 +72,16 @@ export const usePlaylistActions = (
         playlist,
         sermon: audio,
       })
-      if (!onRemoveRequest || !isLocalPlaylist) return actions
-      return insertAfterAddToPlaylist(actions, {
-        icon: 'playlist-remove',
-        iconFamily: 'material-community',
-        onPress: () => onRemoveRequest(audio),
-        text: REMOVE_FROM_PLAYLIST_TEXT,
-      })
+      const withRemove =
+        onRemoveRequest && isLocalPlaylist
+          ? insertAfterAddToPlaylist(actions, {
+              icon: 'playlist-remove',
+              iconFamily: 'material-community',
+              onPress: () => onRemoveRequest(audio),
+              text: REMOVE_FROM_PLAYLIST_TEXT,
+            })
+          : actions
+      return index === 0 ? withOnboardingTargets(withRemove) : withRemove
     },
     [
       historySermonIds,

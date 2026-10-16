@@ -1,6 +1,7 @@
 import { createCtx } from '@reatom/framework'
 import { act, fireEvent, screen, waitFor } from '@testing-library/react-native'
 import { View } from 'react-native'
+import { useTourActionRegistrar } from 'features/onboarding'
 import { currentPlaylistAtom } from 'entities/player'
 import { FAVORITES_PLAYLIST, myPlaylistsAtom } from 'entities/playlist'
 import { renderWithProviders } from 'shared/mocks/renderWithProviders'
@@ -38,6 +39,20 @@ jest.mock('entities/offline-cache', () => {
       ...actual.audioCacheService,
       isCached: jest.fn().mockResolvedValue(false),
     },
+  }
+})
+
+jest.mock('features/onboarding', () => {
+  const { Text } = jest.requireActual('react-native')
+
+  return {
+    OnboardingTarget: ({ children, id }: { children: React.ReactNode; id?: string }) => (
+      <>
+        {id === undefined ? null : <Text>{id}</Text>}
+        {children}
+      </>
+    ),
+    useTourActionRegistrar: jest.fn(),
   }
 })
 
@@ -123,6 +138,9 @@ const renderMenu = async () => {
 }
 
 const MENU_BUTTON_LABEL = 'Меню плейлиста'
+const OPEN_MENU_ACTION = 'open-playlist-menu'
+const CLOSE_MENU_ACTION = 'close-playlist-menu'
+const SHARE_ROW_TEXT = 'Поделиться плейлистом'
 
 const openMenu = async () => {
   const utils = await renderMenu()
@@ -167,6 +185,38 @@ describe('<PlaylistHeaderMenu>', () => {
     const button = getByRole('button', { name: MENU_BUTTON_LABEL })
     expect(button.props.accessibilityState?.disabled).not.toBe(true)
     expect(button.props.disabled).not.toBe(true)
+  })
+
+  test('registers the open-menu tour action, which opens the dropdown', async () => {
+    await renderMenu()
+
+    const action = jest
+      .mocked(useTourActionRegistrar)
+      .mock.calls.find(([id]) => id === OPEN_MENU_ACTION)?.[1]
+    expect(action).toBeDefined()
+    expect(screen.queryByText(SHARE_ROW_TEXT)).toBeNull()
+
+    await act(async () => {
+      action?.()
+    })
+
+    expect(screen.getByText(SHARE_ROW_TEXT)).toBeTruthy()
+  })
+
+  test('registers the close-menu tour action, which closes the dropdown', async () => {
+    await openMenu()
+
+    const action = jest
+      .mocked(useTourActionRegistrar)
+      .mock.calls.find(([id]) => id === CLOSE_MENU_ACTION)?.[1]
+    expect(action).toBeDefined()
+    expect(screen.getByText(SHARE_ROW_TEXT)).toBeTruthy()
+
+    await act(async () => {
+      action?.()
+    })
+
+    expect(screen.queryByText(SHARE_ROW_TEXT)).toBeNull()
   })
 
   test('mark-all flow: confirm calls markSermonsListenedAction with all playable audios + playlist', async () => {

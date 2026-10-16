@@ -3,6 +3,7 @@ import { useRouter } from 'expo-router'
 import { useEffect } from 'react'
 import { ScrollView, Text, View } from 'react-native'
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
+import { HelpHeaderButton, OnboardingTarget, useTourScrollable } from 'features/onboarding'
 import { authStatusAtom, authUserAtom, canAccessAdmin, restoreSession } from 'entities/auth'
 import { APP_NAME, APP_VERSION } from 'shared/config'
 import { useTheme } from 'shared/ui/theme'
@@ -17,6 +18,7 @@ export const MoreScreen = () => {
   const restore = useAction(restoreSession)
   const [status] = useAtom(authStatusAtom)
   const [user] = useAtom(authUserAtom)
+  const tourScrollableRef = useTourScrollable()
 
   useEffect(() => {
     if (status !== 'idle') return
@@ -34,32 +36,38 @@ export const MoreScreen = () => {
         { backgroundColor: currentTheme.background, paddingTop: insets.top },
       ]}
     >
-      <ScrollView>
+      <ScrollView ref={tourScrollableRef}>
         <View style={styles.header}>
           <View style={styles.headerTexts}>
             <Text style={[styles.appName, { color: currentTheme.text }]}>{APP_NAME}</Text>
             <Text style={styles.appVersion}>v{APP_VERSION}</Text>
           </View>
-          {canOpenAdminPanel && <AdminPanelButton />}
+          <View style={styles.headerActions}>
+            {canOpenAdminPanel && <AdminPanelButton />}
+            <HelpHeaderButton />
+          </View>
         </View>
         <Text style={[styles.appDescription, { color: currentTheme.textMuted }]}>
           Приложение для прослушивания и чтения проповедей
         </Text>
 
-        <View style={styles.menu}>
+        <OnboardingTarget id='more.menu' style={styles.menu}>
           <MoreMenuSettingsItem
             title='Офлайн'
             icon='cloud-offline-outline'
+            onboardingTargetId='more.offline-item'
             onPress={() => router.push('/offline')}
           />
           <MoreMenuSettingsItem
             icon='time-outline'
             title='История прослушивания'
+            onboardingTargetId='more.history-item'
             onPress={() => router.push('/history')}
           />
           <MoreMenuSettingsItem
             title='Настройки'
             icon='settings-outline'
+            onboardingTargetId='more.settings-item'
             onPress={() => router.push('/settings')}
           />
           <MoreMenuSettingsItem
@@ -70,9 +78,10 @@ export const MoreScreen = () => {
           <MoreMenuSettingsItem
             icon='share-social-outline'
             title='Поделиться приложением'
+            onboardingTargetId='more.share-item'
             onPress={() => router.push('/share')}
           />
-        </View>
+        </OnboardingTarget>
       </ScrollView>
     </SafeAreaView>
   )

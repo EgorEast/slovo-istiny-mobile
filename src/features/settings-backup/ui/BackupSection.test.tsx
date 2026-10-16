@@ -1,10 +1,12 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { createCtx } from '@reatom/framework'
-import { fireEvent, waitFor } from '@testing-library/react-native'
+import { act, fireEvent, waitFor } from '@testing-library/react-native'
+import { type ReactElement } from 'react'
 import { renderWithProviders } from 'shared/mocks'
 import { reportError } from 'shared/model/error-dialog'
 import { backupAutosyncEnabledAtom } from '../model/backupFolder'
 import { BackupSection } from './BackupSection'
+import { type BackupSectionControls } from './backupSectionBindings'
 
 const BACKUP_DIR_URI_KEY = 'backup_dir_uri'
 const FOLDER_URI = 'file:///backups'
@@ -526,5 +528,53 @@ describe('<BackupSection>', () => {
       expect(queryByText(MERGE_LABEL)).toBeNull()
       expect(mockReportError).not.toHaveBeenCalled()
     })
+  })
+})
+
+describe('<BackupSection> DI bindings', () => {
+  beforeEach(async () => {
+    jest.clearAllMocks()
+    await AsyncStorage.clear()
+    mockSupportsFolderSync.mockReturnValue(true)
+  })
+
+  test('wraps each inner control with the owner wrapper and its control key', async () => {
+    const renderControlWrapper = jest.fn((control: ReactElement) => control)
+    const { getByRole } = await renderWithProviders(
+      <BackupSection renderControlWrapper={renderControlWrapper} />,
+      { ctx: createCtx() },
+    )
+
+    await fireEvent.press(getByRole('button', { name: HEADER_NAME }))
+
+    await waitFor(() => {
+      expect(renderControlWrapper).toHaveBeenCalledWith(expect.anything(), 'folder')
+      expect(renderControlWrapper).toHaveBeenCalledWith(expect.anything(), 'export')
+      expect(renderControlWrapper).toHaveBeenCalledWith(expect.anything(), 'import')
+      expect(renderControlWrapper).toHaveBeenCalledWith(expect.anything(), 'autosync')
+    })
+  })
+
+  test('binds an expand control the owner uses to open the section', async () => {
+    let controls: BackupSectionControls | null = null
+    const bindControls = jest.fn((next: BackupSectionControls | null) => {
+      controls = next
+    })
+    const { getByRole } = await renderWithProviders(<BackupSection bindControls={bindControls} />, {
+      ctx: createCtx(),
+    })
+    const header = getByRole('button', { name: HEADER_NAME })
+
+    expect(header).toBeCollapsed()
+    expect(bindControls).toHaveBeenCalledWith(
+      expect.objectContaining({ expand: expect.any(Function) }),
+    )
+
+    expect(controls).not.toBeNull()
+    await act(async () => {
+      controls?.expand()
+    })
+
+    await waitFor(() => expect(getByRole('button', { name: HEADER_NAME })).toBeExpanded())
   })
 })

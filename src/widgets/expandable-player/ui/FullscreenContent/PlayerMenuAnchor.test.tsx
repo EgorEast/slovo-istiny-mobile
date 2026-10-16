@@ -1,12 +1,19 @@
 import { createCtx } from '@reatom/framework'
 import { act, fireEvent, waitFor } from '@testing-library/react-native'
 import { useState } from 'react'
+import { StyleSheet, View } from 'react-native'
+import { onboardingTargetRectsAtom, onboardingTourAtom } from 'features/onboarding'
 import { currentPlaylistAtom } from 'entities/player'
 import { myPlaylistsAtom } from 'entities/playlist'
 import { type AudioPlayerData } from 'entities/sermon'
 import { renderWithProviders } from 'shared/mocks/renderWithProviders'
 import { type createStyles } from '../ExpandablePlayer/styles'
+import { expandedControlsStyles } from './expandedControlsStyles'
 import { PlayerMenuAnchor } from './PlayerMenuAnchor'
+
+jest.mock('expo-router', () => ({
+  useNavigation: () => ({ addListener: jest.fn() }),
+}))
 
 const mockTogglePlaylistSermon = jest.fn()
 const mockPlayNewSermon = jest.fn()
@@ -73,6 +80,8 @@ const CANCEL_TEXT = 'Отмена'
 const PLAYLIST_ID = 'custom-abcdef0123456789'
 const CANDIDATE_ID = 'candidate-playlist'
 const CANDIDATE_TITLE = 'Другой плейлист'
+const TARGET_ID = 'player-fullscreen.menu'
+const RECT = { height: 4, width: 3, x: 1, y: 2 }
 
 const MOCK_AUDIO: AudioPlayerData = {
   artist: 'Author',
@@ -250,5 +259,44 @@ describe('<PlayerMenuAnchor>', () => {
     })
 
     expect(mockTogglePlaylistSermon).not.toHaveBeenCalled()
+  })
+
+  test('registers its spotlight rect for the player menu target', async () => {
+    jest
+      .spyOn(View.prototype, 'measureInWindow')
+      .mockImplementation((cb: (x: number, y: number, width: number, height: number) => void) => {
+        cb(RECT.x, RECT.y, RECT.width, RECT.height)
+        return undefined
+      })
+    const ctx = createCtx()
+    onboardingTourAtom(ctx, { deckIndex: 4, scenarioId: 'player-intro', skippedDeckIndexes: [] })
+
+    await renderWithProviders(
+      <PlayerMenuAnchor
+        styles={STYLES}
+        showMenu={false}
+        audio={MOCK_AUDIO}
+        visualState='cloud'
+        onOpenMenu={jest.fn()}
+        setShowMenu={jest.fn()}
+        onShowDetails={jest.fn()}
+        onToggleCache={jest.fn()}
+        onboardingTargetId={TARGET_ID}
+        onOpenSoundSettings={jest.fn()}
+      />,
+      { ctx },
+    )
+
+    await waitFor(() => expect(ctx.get(onboardingTargetRectsAtom)).toEqual({ [TARGET_ID]: RECT }))
+  })
+})
+
+describe('<PlayerMenuAnchor> menu icon', () => {
+  test('tints the trigger like the neighboring fullscreen controls', () => {
+    const menuIcon = StyleSheet.flatten(expandedControlsStyles.menuIcon)
+    const controlIcon = StyleSheet.flatten(expandedControlsStyles.controlIcon)
+
+    expect(menuIcon?.color).toBe(controlIcon?.color)
+    expect(menuIcon?.color).toBe('#fff')
   })
 })

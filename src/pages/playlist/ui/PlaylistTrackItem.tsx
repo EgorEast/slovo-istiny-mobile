@@ -1,14 +1,19 @@
-import { memo, useCallback } from 'react'
+import { memo, type ReactElement, useCallback } from 'react'
 import { StyleSheet } from 'react-native'
 import { useTrackItemCache } from 'entities/offline-cache'
-import { TracksListItem } from 'entities/track-list'
-import { type MenuItem } from 'shared/ui/menu'
+import {
+  type MenuActionItem,
+  type TrackListMenuControls,
+  TracksListItem,
+} from 'entities/track-list'
 import { INDENTS } from 'shared/ui/theme'
 
 export const PlaylistTrackItem = memo(
   ({
     artwork,
     audioUrl,
+    bindMenuOpener,
+    cacheActionOnboardingTargetIds,
     cacheTrigger,
     currentAudioId,
     id,
@@ -16,19 +21,23 @@ export const PlaylistTrackItem = memo(
     isPlaying,
     menuActions,
     onPress,
+    renderMenuItem,
     storedProgress,
     subtitle,
     title,
   }: {
     artwork: null | string
     audioUrl?: null | string
+    bindMenuOpener?: (controls: TrackListMenuControls) => void
+    cacheActionOnboardingTargetIds?: { add: string; remove: string }
     cacheTrigger?: number
     currentAudioId?: string
     id: string | undefined
     index: number
     isPlaying: boolean
-    menuActions?: MenuItem[]
+    menuActions?: MenuActionItem[]
     onPress: (index: number) => void
+    renderMenuItem?: (row: ReactElement, item: MenuActionItem) => ReactElement
     storedProgress?: number
     subtitle?: string
     title: string
@@ -46,9 +55,12 @@ export const PlaylistTrackItem = memo(
         cacheState={cacheState}
         progress={storedProgress}
         menuActions={menuActions}
+        bindMenuOpener={bindMenuOpener}
+        renderMenuItem={renderMenuItem}
         audioUrl={audioUrl ?? undefined}
         isPlaying={currentAudioId === id}
         isAudioPlaying={currentAudioId === id && isPlaying}
+        cacheActionOnboardingTargetIds={cacheActionOnboardingTargetIds}
       />
     )
   },

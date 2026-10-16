@@ -2,12 +2,22 @@ import Ionicons from '@expo/vector-icons/Ionicons'
 import * as Clipboard from 'expo-clipboard'
 import { useEffect, useState } from 'react'
 import { type StyleProp, StyleSheet, Text, type ViewStyle } from 'react-native'
+import { OnboardingTarget } from 'features/onboarding'
 import { FONT_SIZES, RADIUSES, useTheme } from 'shared/ui/theme'
 import { TouchableItem } from 'shared/ui/touchable-item'
+import { SHARE_MESSAGE } from '../lib/constants'
 
 const COPIED_FEEDBACK_MS = 2000
 
-export const CopyLinkButton = ({ style, url }: { style?: StyleProp<ViewStyle>; url: string }) => {
+export const CopyLinkButton = ({
+  onboardingTargetId,
+  style,
+  url,
+}: {
+  onboardingTargetId?: string
+  style?: StyleProp<ViewStyle>
+  url: string
+}) => {
   const { currentTheme } = useTheme()
   const [isCopied, setIsCopied] = useState(false)
 
@@ -20,7 +30,7 @@ export const CopyLinkButton = ({ style, url }: { style?: StyleProp<ViewStyle>; u
 
   const handleCopy = async () => {
     try {
-      await Clipboard.setStringAsync(url)
+      await Clipboard.setStringAsync(`${SHARE_MESSAGE}\n${url}`)
       setIsCopied(true)
     } catch (error) {
       console.error('[share] Failed to copy release URL:', error)
@@ -28,20 +38,24 @@ export const CopyLinkButton = ({ style, url }: { style?: StyleProp<ViewStyle>; u
   }
 
   return (
-    <TouchableItem
-      onPress={() => void handleCopy()}
-      style={[styles.button, { backgroundColor: currentTheme.surface }, style]}
-    >
-      <Ionicons
-        size={24}
-        style={styles.icon}
-        color={currentTheme.primary}
-        name={isCopied ? 'checkmark-circle-outline' : 'copy-outline'}
-      />
-      <Text style={[styles.title, { color: isCopied ? currentTheme.primary : currentTheme.text }]}>
-        {isCopied ? 'Скопировано' : 'Скопировать ссылку'}
-      </Text>
-    </TouchableItem>
+    <OnboardingTarget id={onboardingTargetId}>
+      <TouchableItem
+        onPress={() => void handleCopy()}
+        style={[styles.button, { backgroundColor: currentTheme.surface }, style]}
+      >
+        <Ionicons
+          size={24}
+          style={styles.icon}
+          color={currentTheme.primary}
+          name={isCopied ? 'checkmark-circle-outline' : 'copy-outline'}
+        />
+        <Text
+          style={[styles.title, { color: isCopied ? currentTheme.primary : currentTheme.text }]}
+        >
+          {isCopied ? 'Скопировано' : 'Скопировать ссылку'}
+        </Text>
+      </TouchableItem>
+    </OnboardingTarget>
   )
 }
 

@@ -37,6 +37,11 @@ export const styles = StyleSheet.create({
     paddingRight: INDENTS.low,
     paddingTop: HEADER_TOP_OFFSET,
   },
+  headerActions: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: INDENTS.low,
+  },
   headerTexts: {
     flex: 1,
     flexDirection: 'column',

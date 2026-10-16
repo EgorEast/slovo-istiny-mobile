@@ -59,7 +59,7 @@ export const MyPlaylistsNormalView = ({
       listFooter={
         <View style={styles.create}>
           {items.length > 0 && <PlaylistListSeparator />}
-          <MyPlaylistsCreateRow onPress={onPressCreate} />
+          <MyPlaylistsCreateRow onPress={onPressCreate} onboardingTargetId='playlists.create' />
         </View>
       }
     />

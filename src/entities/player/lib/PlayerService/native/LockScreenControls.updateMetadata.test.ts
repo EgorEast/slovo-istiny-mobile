@@ -1,4 +1,5 @@
 import { type AudioPlayer } from 'expo-audio'
+import { AppState } from 'react-native'
 import { getLocalAppIconUri } from 'shared/lib/app-icon'
 import { reportError } from 'shared/model/error-dialog'
 import { lockScreenControls } from './LockScreenControls'
@@ -42,6 +43,7 @@ describe('setMetadata replace-in-place paths', () => {
   beforeEach(() => {
     jest.clearAllMocks()
     jest.spyOn(console, 'error').mockImplementation(() => {})
+    AppState.currentState = 'active'
     mockIsExpoGo.isExpoGo = false
     mockedGetLocalAppIconUri.mockReturnValue(null)
   })
@@ -138,6 +140,7 @@ describe('reassertMetadata foreground re-assertion', () => {
   beforeEach(() => {
     jest.clearAllMocks()
     jest.spyOn(console, 'error').mockImplementation(() => {})
+    AppState.currentState = 'active'
     mockIsExpoGo.isExpoGo = false
     mockedGetLocalAppIconUri.mockReturnValue(null)
   })

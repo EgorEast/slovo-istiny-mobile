@@ -1,6 +1,6 @@
 import { useAtom } from '@reatom/npm-react'
-import { useCallback } from 'react'
-import { ScrollView, StyleSheet } from 'react-native'
+import { type ReactElement, type ReactNode, useCallback } from 'react'
+import { ScrollView } from 'react-native'
 import { useHistoryProgressMap, useHistorySermonIds } from 'entities/listening-history'
 import { type PlaylistData } from 'entities/playlist'
 import { type AudioPlayerData } from 'entities/sermon'
@@ -17,6 +17,7 @@ import {
   searchQueryAtom,
   searchResultsAtom,
 } from '../model'
+import { styles } from './SearchGroupedResults.styles'
 import { SearchGroupedResultsSkeleton } from './SearchGroupedResultsSkeleton'
 import { SearchGroupSkeleton } from './SearchGroupSkeleton'
 import { SearchPlaylistGroup } from './SearchPlaylistGroup'
@@ -28,15 +29,24 @@ const NO_RESULTS_MESSAGE = 'Ничего не найдено'
 type SearchGroupKey = 'playlists' | 'preachers' | 'sermons'
 
 export const SearchGroupedResults = ({
+  firstRowMenuButtonWrapper,
+  firstRowWrapper,
+  groupHeaderWrapper,
   onAddToPlaylist,
   onPlaylistPress,
   onPreacherPress,
   onShowAllGroup,
+  pickerWrapper,
 }: {
+  // Page-owned wrappers (dependency inversion): this feature never imports onboarding.
+  firstRowMenuButtonWrapper?: (button: ReactElement) => ReactElement
+  firstRowWrapper?: (row: ReactElement) => ReactNode
+  groupHeaderWrapper?: (header: ReactElement) => ReactNode
   onAddToPlaylist?: (sermon: AudioPlayerData) => void
   onPlaylistPress: (playlist: PlaylistData) => void
   onPreacherPress?: (artist: string) => void
   onShowAllGroup?: (group: SearchGroupKey, query: string) => void
+  pickerWrapper?: (dialog: ReactElement) => ReactNode
 }) => {
   useDebouncedSearch()
 
@@ -47,10 +57,9 @@ export const SearchGroupedResults = ({
   const [preachers] = useAtom(searchPreachersAtom)
   const [isSearching] = useAtom(isSearchingAtom)
   const [tabBarHeight] = useAtom(tabBarHeightAtom)
-  const { modal, onSermonPress } = useSermonPlayback()
+  const { modal, onSermonPress } = useSermonPlayback({ pickerWrapper })
   const progressMap = useHistoryProgressMap()
   const historySermonIds = useHistorySermonIds()
-
   const trimmedQuery = query.trim()
 
   const handlePreacherPress = useCallback(
@@ -89,8 +98,11 @@ export const SearchGroupedResults = ({
               onPress={onSermonPress}
               progressMap={progressMap}
               onAddToPlaylist={onAddToPlaylist}
+              firstRowWrapper={firstRowWrapper}
               historySermonIds={historySermonIds}
+              groupHeaderWrapper={groupHeaderWrapper}
               onShowAll={handleShowAllGroup('sermons')}
+              firstRowMenuButtonWrapper={firstRowMenuButtonWrapper}
             />
             <SearchPlaylistGroup
               playlists={playlists}
@@ -113,12 +125,3 @@ export const SearchGroupedResults = ({
 // Skeletons hang off the public component (Composition API).
 SearchGroupedResults.Skeleton = SearchGroupedResultsSkeleton
 SearchGroupedResults.GroupSkeleton = SearchGroupSkeleton
-
-const styles = StyleSheet.create({
-  listContent: {
-    flexGrow: 1,
-  },
-  scroll: {
-    flex: 1,
-  },
-})

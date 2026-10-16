@@ -1,4 +1,5 @@
 import { Platform } from 'react-native'
+import { type ImportSettings } from 'shared/model'
 import { buildAudioFileName } from './audioFileName'
 import { downloadAudio } from './downloadAudio'
 import { type DownloadedAudio } from './downloadAudio/types'
@@ -8,7 +9,6 @@ import {
   type ImportedSermonMetadata,
   type ImportErrorCode,
   type ImportPhaseProgress,
-  type ImportSettings,
   type ResolvedAudio,
 } from './importTypes'
 import { resolveInvidiousAudio } from './invidiousSource'

@@ -9,6 +9,10 @@ jest.mock('expo-blur', () => {
   return { BlurView: View }
 })
 
+jest.mock('expo-router', () => ({
+  useNavigation: () => ({ addListener: jest.fn(() => jest.fn()) }),
+}))
+
 jest.mock('shared/model/info-dialog', () => ({ showInfo: jest.fn() }))
 const mockedShowInfo = showInfo as jest.MockedFunction<typeof showInfo>
 

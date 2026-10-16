@@ -1,4 +1,4 @@
-import { Fragment } from 'react'
+import { Fragment, type ReactElement, type ReactNode } from 'react'
 import { type AudioPlayerData, type SermonData } from 'entities/sermon'
 import { SearchGroup } from './SearchGroup'
 import { SearchResultsRow } from './SearchResultsRow'
@@ -8,6 +8,9 @@ const SERMONS_LABEL = 'Проповеди'
 const MAX_SERMON_RESULTS = 4
 
 export const SearchSermonGroup = ({
+  firstRowMenuButtonWrapper,
+  firstRowWrapper,
+  groupHeaderWrapper,
   historySermonIds,
   onAddToPlaylist,
   onPress,
@@ -15,6 +18,9 @@ export const SearchSermonGroup = ({
   progressMap,
   sermons,
 }: {
+  firstRowMenuButtonWrapper?: (button: ReactElement) => ReactElement
+  firstRowWrapper?: (row: ReactElement) => ReactNode
+  groupHeaderWrapper?: (header: ReactElement) => ReactNode
   historySermonIds: Set<string>
   onAddToPlaylist?: (sermon: AudioPlayerData) => void
   onPress: (sermon: SermonData) => void
@@ -22,18 +28,30 @@ export const SearchSermonGroup = ({
   progressMap: Map<string, number>
   sermons: SermonData[]
 }) => (
-  <SearchGroup onPress={onShowAll} label={SERMONS_LABEL} count={sermons.length}>
-    {sermons.slice(0, MAX_SERMON_RESULTS).map(sermon => (
-      <Fragment key={sermon.id}>
+  <SearchGroup
+    onPress={onShowAll}
+    label={SERMONS_LABEL}
+    count={sermons.length}
+    groupHeaderWrapper={groupHeaderWrapper}
+  >
+    {sermons.slice(0, MAX_SERMON_RESULTS).map((sermon, index) => {
+      const row = (
         <SearchResultsRow
           sermon={sermon}
           onPress={onPress}
           onAddToPlaylist={onAddToPlaylist}
           progress={progressMap.get(sermon.id)}
           inHistory={historySermonIds.has(sermon.id)}
+          menuButtonWrapper={index === 0 ? firstRowMenuButtonWrapper : undefined}
         />
-        <SearchRowSeparator />
-      </Fragment>
-    ))}
+      )
+
+      return (
+        <Fragment key={sermon.id}>
+          {index === 0 && firstRowWrapper ? firstRowWrapper(row) : row}
+          <SearchRowSeparator />
+        </Fragment>
+      )
+    })}
   </SearchGroup>
 )

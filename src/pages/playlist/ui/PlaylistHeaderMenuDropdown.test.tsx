@@ -42,6 +42,25 @@ jest.mock('shared/ui/menu', () => {
   }
 })
 
+jest.mock('features/onboarding', () => {
+  const { Text } = jest.requireActual('react-native')
+
+  return {
+    OnboardingTarget: ({ children, id }: { children: React.ReactNode; id?: string }) => (
+      <>
+        {id === undefined ? null : <Text>{id}</Text>}
+        {children}
+      </>
+    ),
+  }
+})
+
+jest.mock('./PlaylistMenuDivider', () => {
+  const { Text } = jest.requireActual('react-native')
+
+  return { PlaylistMenuDivider: () => <Text>menu-divider</Text> }
+})
+
 const ANCHOR = { height: 36, width: 44, x: 300, y: 500 }
 
 const ADD_ALL_TO_OFFLINE_TEXT = 'Добавить все в офлайн'
@@ -67,6 +86,7 @@ const defaultProps = {
   isAddAllToOfflineDisabled: false,
   isCaching: false,
   isClearCacheDisabled: false,
+  isOfflineItemsVisible: true,
   isShareDisabled: false,
   onAddAllToOffline: jest.fn(),
   onClear: jest.fn(),
@@ -310,6 +330,81 @@ describe('<PlaylistHeaderMenuDropdown>', () => {
     fireEvent.press(screen.getByText(CLEAR_TEXT))
 
     expect(onClear).toHaveBeenCalledTimes(1)
+  })
+
+  test('wires an onboarding target id for every rendered menu row', async () => {
+    await renderDropdown({
+      canClear: true,
+      canDelete: true,
+      canMarkAll: true,
+      canPublish: true,
+      canRemoveFromHistory: true,
+      onAddAllToPlaylist: jest.fn(),
+    })
+
+    const ids = [
+      'playlist.menu-share',
+      'playlist.menu-add-all',
+      'playlist.menu-publish',
+      'playlist.menu-offline-add',
+      'playlist.menu-offline-remove',
+      'playlist.menu-history-mark',
+      'playlist.menu-history-remove',
+      'playlist.menu-clear',
+      'playlist.menu-delete',
+    ]
+
+    ids.forEach(id => expect(screen.getByText(id)).toBeTruthy())
+  })
+})
+
+const DIVIDER_TEXT = 'menu-divider'
+
+describe('<PlaylistHeaderMenuDropdown> dividers', () => {
+  beforeEach(() => {
+    jest.clearAllMocks()
+  })
+
+  const countDividers = () => screen.getAllByText(DIVIDER_TEXT).length
+
+  test('renders a single divider before the offline group', async () => {
+    await renderDropdown()
+
+    expect(countDividers()).toBe(1)
+  })
+
+  test('adds a divider between the share row and the batch rows', async () => {
+    await renderDropdown({ onAddAllToPlaylist: jest.fn() })
+
+    expect(countDividers()).toBe(2)
+  })
+
+  test('separates history and destructive groups from the rest', async () => {
+    await renderDropdown({ canClear: true, canMarkAll: true })
+
+    // offline leading + history + destructive
+    expect(countDividers()).toBe(3)
+  })
+
+  test('renders exactly one divider per non-empty group boundary', async () => {
+    await renderDropdown({
+      canClear: true,
+      canDelete: true,
+      canMarkAll: true,
+      canPublish: true,
+      canRemoveFromHistory: true,
+      onAddAllToPlaylist: jest.fn(),
+    })
+
+    // share|batch, batch|offline, offline|history, history|destructive
+    expect(countDividers()).toBe(4)
+  })
+
+  test('keeps one divider per boundary when batch and offline groups are hidden', async () => {
+    await renderDropdown({ canClear: true, canMarkAll: true, isOfflineItemsVisible: false })
+
+    // history + destructive
+    expect(countDividers()).toBe(2)
   })
 })
 

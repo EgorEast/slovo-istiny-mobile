@@ -37,6 +37,16 @@ export const expandedControlsStyles = StyleSheet.create({
     justifyContent: 'space-between',
   },
 
+  helpButton: {
+    alignItems: 'center',
+    height: 48,
+    justifyContent: 'center',
+    position: 'absolute',
+    right: INDENTS.medium,
+    width: 48,
+    zIndex: 300,
+  },
+
   menuButton: {
     padding: INDENTS.low,
   },
@@ -46,7 +56,9 @@ export const expandedControlsStyles = StyleSheet.create({
   },
 
   menuIcon: {
-    color: '#9ca3af',
+    // Same white as the neighboring fullscreen controls (close/transport/stop):
+    // the trigger must not read as disabled against the dark player backdrop.
+    color: '#fff',
     fontSize: FONT_SIZES.lg,
   },
 
@@ -72,7 +84,9 @@ export const expandedControlsStyles = StyleSheet.create({
     height: 48,
     justifyContent: 'center',
     position: 'absolute',
-    right: INDENTS.medium,
+    // Left of the always-on help button (right: INDENTS.medium, width 48) so the
+    // two 48×48 controls coexist while a caching run is active.
+    right: INDENTS.medium + 48 + INDENTS.low,
     width: 48,
     zIndex: 300,
   },

@@ -5,7 +5,13 @@ import { type SermonData } from 'entities/sermon'
 import { sermonsMocks } from 'shared/api/generated'
 import { createKeyDownEvent, installFakeDom } from 'shared/lib/testing'
 import { renderWithProviders } from 'shared/mocks'
-import { isSearchingAtom, isSearchOpenAtom, searchQueryAtom, searchResultsAtom } from '../model'
+import {
+  isSearchingAtom,
+  isSearchOpenAtom,
+  searchQueryAtom,
+  searchResultsAtom,
+  typeSearchInput,
+} from '../model'
 import { distinctValuesAtom } from '../model-distinctValues'
 import { SearchBar } from './SearchBar'
 
@@ -90,6 +96,31 @@ describe('<SearchBar>', () => {
     const { getByPlaceholderText } = await renderWithProviders(<SearchBar />, { ctx })
 
     expect(getByPlaceholderText(SEARCH_PLACEHOLDER).props.value).toBe('вера')
+  })
+
+  test('shows externally typed text (onboarding tour) in the visible input', async () => {
+    const ctx = createCtx()
+    const { getByPlaceholderText } = await renderWithProviders(<SearchBar />, { ctx })
+    const input = getByPlaceholderText(SEARCH_PLACEHOLDER)
+
+    await act(async () => {
+      typeSearchInput(ctx, 'л')
+    })
+    await waitFor(() => expect(input.props.value).toBe('л'))
+
+    await act(async () => {
+      typeSearchInput(ctx, 'ли')
+    })
+    await waitFor(() => expect(input.props.value).toBe('ли'))
+  })
+
+  test('does not replay an earlier external typing request when it mounts', async () => {
+    const ctx = createCtx()
+    typeSearchInput(ctx, 'лицемерие')
+    searchQueryAtom(ctx, '')
+    const { getByPlaceholderText } = await renderWithProviders(<SearchBar />, { ctx })
+
+    expect(getByPlaceholderText(SEARCH_PLACEHOLDER).props.value).toBe('')
   })
 
   test('clearing resets both the visible input and the query atom', async () => {

@@ -1,3 +1,4 @@
+import { type ReactElement } from 'react'
 import { FlatList, StyleSheet } from 'react-native'
 import { INDENTS, useTheme } from 'shared/ui/theme'
 import { type PlaylistMembership } from '../lib/useSortedPlaylists'
@@ -11,10 +12,13 @@ const LIST_PADDING = INDENTS.medium
 export const PlaylistMembershipList = ({
   items,
   onToggle,
+  renderRowWrapper,
   values,
 }: {
   items: PlaylistMembership[]
   onToggle: (playlistId: string) => void
+  /** Оборачивает строку плейлиста (например, в онбординг-цель). */
+  renderRowWrapper?: (row: ReactElement, playlistId: string) => ReactElement
   values: Record<string, boolean>
 }) => {
   const { currentTheme } = useTheme()
@@ -25,15 +29,19 @@ export const PlaylistMembershipList = ({
       contentContainerStyle={styles.content}
       keyExtractor={item => item.playlist.id}
       style={[styles.list, { backgroundColor: currentTheme.surface }]}
-      renderItem={({ item }) => (
-        <PlaylistMembershipRow
-          title={item.playlist.title}
-          isContained={item.isContained}
-          value={values[item.playlist.id]}
-          onChange={() => onToggle(item.playlist.id)}
-          sermonCount={item.playlist.sermonIds.length}
-        />
-      )}
+      renderItem={({ item }) => {
+        const row = (
+          <PlaylistMembershipRow
+            title={item.playlist.title}
+            isContained={item.isContained}
+            value={values[item.playlist.id]}
+            onChange={() => onToggle(item.playlist.id)}
+            sermonCount={item.playlist.sermonIds.length}
+          />
+        )
+
+        return renderRowWrapper === undefined ? row : renderRowWrapper(row, item.playlist.id)
+      }}
     />
   )
 }

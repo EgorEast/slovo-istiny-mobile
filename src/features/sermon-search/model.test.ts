@@ -43,10 +43,12 @@ import {
   isSearchOpenAtom,
   openSearch,
   resetSearchResults,
+  searchInputRequestAtom,
   searchPlaylistsAtom,
   searchPreachersAtom,
   searchQueryAtom,
   searchResultsAtom,
+  typeSearchInput,
 } from './model'
 
 type PlaylistEntity = ReturnType<typeof playlistsMocks.getPlaylistControllerCreateResponseMock>
@@ -310,6 +312,22 @@ describe('sermon-search model', () => {
     expect(ctx.get(searchPlaylistsAtom)).toEqual([])
     expect(ctx.get(searchPreachersAtom)).toEqual([])
     expect(ctx.get(isSearchingAtom)).toBe(false)
+  })
+
+  test('typeSearchInput sets the query and asks the visible input to adopt the text', () => {
+    const ctx = createCtx()
+    const partialQuery = 'ли'
+
+    typeSearchInput(ctx, partialQuery)
+
+    expect(ctx.get(searchQueryAtom)).toBe(partialQuery)
+    expect(ctx.get(searchInputRequestAtom)?.text).toBe(partialQuery)
+
+    // A repeated identical request still gets a fresh nonce so the input re-adopts it.
+    const firstNonce = ctx.get(searchInputRequestAtom)?.nonce ?? 0
+    typeSearchInput(ctx, partialQuery)
+
+    expect(ctx.get(searchInputRequestAtom)?.nonce).toBe(firstNonce + 1)
   })
 
   test('fetchSearchResults keeps only playlist title matches, ignoring sermon content', async () => {

@@ -8,9 +8,11 @@ const PUBLISH_ICON = 'globe-outline'
 export const PUBLISH_TEXT = 'Добавить в глобальные'
 
 export const PlaylistPublishMenuItem = ({
+  onboardingTargetId,
   onPress,
   text,
 }: {
+  onboardingTargetId?: string
   onPress: () => void
   text: string
 }) => {
@@ -20,6 +22,7 @@ export const PlaylistPublishMenuItem = ({
     <PlaylistMenuRow
       text={text}
       onPress={onPress}
+      onboardingTargetId={onboardingTargetId}
       icon={<Ionicons size={ICON_SIZE} name={PUBLISH_ICON} color={currentTheme.icon} />}
     />
   )

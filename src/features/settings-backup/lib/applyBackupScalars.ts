@@ -1,9 +1,4 @@
 import { type Ctx } from '@reatom/framework'
-import {
-  importSettingsSchema,
-  persistImportSettings,
-  readImportSettings,
-} from 'features/sermon-audio-import/@x/settings-backup'
 import { setSermonCachingEnabled } from 'entities/offline-cache'
 import {
   setBalanceAction,
@@ -13,7 +8,15 @@ import {
   setPlaybackRateAction,
   setRepeatModeAction,
 } from 'entities/player'
-import { setHapticsEnabled, setServerUrlAction } from 'shared/model'
+import {
+  importSettingsSchema,
+  persistImportSettings,
+  readImportSettings,
+  setHapticsEnabled,
+  setServerUrlAction,
+  setToursDisabled,
+  setToursSeenVersion,
+} from 'shared/model'
 import { setDynamicColors, setThemeMode } from 'shared/ui/theme'
 import { type BackupImportData } from '../model/backupPayload'
 
@@ -34,6 +37,9 @@ export const applySettingsScalars = async (
   if (settings.serverUrl) await setServerUrlAction(ctx, settings.serverUrl)
   if (settings.sermonCachingEnabled !== undefined)
     await setSermonCachingEnabled(ctx, settings.sermonCachingEnabled)
+  if (settings.toursDisabled !== undefined) await setToursDisabled(ctx, settings.toursDisabled)
+  if (settings.toursSeenVersion !== undefined)
+    await setToursSeenVersion(ctx, settings.toursSeenVersion)
 }
 
 /**

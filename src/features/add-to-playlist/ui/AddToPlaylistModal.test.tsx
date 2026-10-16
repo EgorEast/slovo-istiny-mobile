@@ -1,9 +1,12 @@
 import { createCtx } from '@reatom/framework'
 import { act, fireEvent, screen } from '@testing-library/react-native'
+import { type ReactElement } from 'react'
+import { View } from 'react-native'
 import { type PlaylistData } from 'entities/playlist'
 import { type SermonData } from 'entities/sermon'
 import { renderWithProviders } from 'shared/mocks/renderWithProviders'
 import { toastAtom } from 'shared/model'
+import { type AddToPlaylistControls } from '../lib/addToPlaylistControls'
 import { AddToPlaylistModal } from './AddToPlaylistModal'
 
 const mockTogglePlaylistSermon = jest.fn()
@@ -344,5 +347,84 @@ describe('<AddToPlaylistModal> batch mode', () => {
     expect(mockTogglePlaylistSermon.mock.calls[0][3]).toBe(false)
     expect(mockTogglePlaylistSermon.mock.calls[1][2]).toEqual(SOURCE_B)
     expect(mockTogglePlaylistSermon.mock.calls[1][3]).toBe(false)
+  })
+})
+
+describe('<AddToPlaylistModal> onboarding bindings', () => {
+  const ROW_WRAPPER_PREFIX = 'row-wrapper-'
+  const SAVE_WRAPPER_ID = 'save-wrapper'
+
+  beforeEach(() => {
+    jest.clearAllMocks()
+    mockTogglePlaylistSermon.mockReset()
+    mockOnClose.mockReset()
+  })
+
+  const renderBoundModal = async (
+    ctx: ReturnType<typeof createCtx>,
+    bindings: {
+      bindControls?: (controls: AddToPlaylistControls | null) => void
+      renderRowWrapper?: (row: ReactElement, playlistId: string) => ReactElement
+      renderSaveWrapper?: (save: ReactElement) => ReactElement
+    },
+  ) =>
+    renderWithProviders(
+      <AddToPlaylistModal
+        visible
+        onClose={mockOnClose}
+        state={{ kind: 'sermon', sermon: SERMON }}
+        {...bindings}
+      />,
+      { ctx },
+    )
+
+  test('wraps every playlist row and the save button in the provided wrappers', async () => {
+    const ctx = createCtx()
+    seedPlaylists(ctx, [])
+    const renderRowWrapper = jest.fn((row: ReactElement, playlistId: string) => (
+      <View testID={`${ROW_WRAPPER_PREFIX}${playlistId}`}>{row}</View>
+    ))
+    const renderSaveWrapper = jest.fn((save: ReactElement) => (
+      <View testID={SAVE_WRAPPER_ID}>{save}</View>
+    ))
+
+    await renderBoundModal(ctx, { renderRowWrapper, renderSaveWrapper })
+
+    expect(screen.getByTestId(`${ROW_WRAPPER_PREFIX}${FAVORITES_PLAYLIST.id}`)).toBeTruthy()
+    expect(screen.getByTestId(`${ROW_WRAPPER_PREFIX}${PLAIN_PLAYLIST_ID}`)).toBeTruthy()
+    expect(screen.getByTestId(SAVE_WRAPPER_ID)).toBeTruthy()
+  })
+
+  test('hands setPlaylistChecked to bindControls and ticks the favorites checkbox', async () => {
+    const ctx = createCtx()
+    seedPlaylists(ctx, [])
+    const bindControls = jest.fn<void, [AddToPlaylistControls | null]>()
+
+    await renderBoundModal(ctx, { bindControls })
+
+    const controls = bindControls.mock.calls[0][0]
+    if (!controls) throw new Error('controls were not bound on mount')
+    expect(getSaveButton()).toBeDisabled()
+
+    await act(async () => {
+      controls.setPlaylistChecked(FAVORITES_PLAYLIST.id, true)
+    })
+
+    expect(screen.getAllByRole('checkbox')[0]).toBeChecked()
+    expect(getSaveButton()).toBeEnabled()
+  })
+
+  test('clears the bound controls on unmount', async () => {
+    const ctx = createCtx()
+    seedPlaylists(ctx, [])
+    const bindControls = jest.fn<void, [AddToPlaylistControls | null]>()
+
+    const { unmount } = await renderBoundModal(ctx, { bindControls })
+
+    await act(async () => {
+      unmount()
+    })
+
+    expect(bindControls).toHaveBeenLastCalledWith(null)
   })
 })

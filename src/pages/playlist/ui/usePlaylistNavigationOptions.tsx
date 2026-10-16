@@ -1,6 +1,7 @@
 import { useNavigation } from 'expo-router'
 import { useEffect } from 'react'
 import { type ColorValue } from 'react-native'
+import { OnboardingHelpRow } from 'features/onboarding'
 import { type PlaylistData } from 'entities/playlist'
 import { formatSermonReference, type SermonData } from 'entities/sermon'
 import { PlaylistHeaderMenu } from './PlaylistHeaderMenu'
@@ -38,14 +39,17 @@ export const usePlaylistNavigationOptions = ({
   useEffect(() => {
     navigation.setOptions({
       headerRight: () => (
-        <PlaylistHeaderMenu
-          isEditEnabled
-          playlist={playlist}
-          playlistTitle={title}
-          tracksData={tracksListData}
-          iconColor={headerIconColor}
-          onAddAllToPlaylist={onAddAllToPlaylist}
-        />
+        <OnboardingHelpRow tintColor={headerIconColor}>
+          <PlaylistHeaderMenu
+            isEditEnabled
+            playlist={playlist}
+            playlistTitle={title}
+            tracksData={tracksListData}
+            iconColor={headerIconColor}
+            onboardingTargetId='playlist.menu'
+            onAddAllToPlaylist={onAddAllToPlaylist}
+          />
+        </OnboardingHelpRow>
       ),
     })
 

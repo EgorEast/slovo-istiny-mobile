@@ -1,5 +1,5 @@
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons'
-import { type ComponentProps, type RefObject } from 'react'
+import { type ComponentProps, Fragment, type ReactElement, type RefObject } from 'react'
 import { StyleSheet, Text, type View } from 'react-native'
 import { PressableButton } from '../pressable-button/PressableButton'
 import { useTheme } from '../theme/ThemeContext/useTheme'
@@ -35,12 +35,15 @@ export const MenuDropdown = ({
   anchorRef,
   items,
   onClose,
+  renderItem,
   visible,
 }: {
   anchor: AnchorRect | null
   anchorRef?: RefObject<null | View>
   items: ReadonlyArray<MenuItem>
   onClose: () => void
+  /** Wraps each rendered row; falls back to the bare row when omitted. */
+  renderItem?: (row: ReactElement, item: MenuItem) => ReactElement
   visible: boolean
 }) => {
   const { currentTheme } = useTheme()
@@ -54,40 +57,47 @@ export const MenuDropdown = ({
       anchorRef={anchorRef}
       menuStyle={[styles.menu, { backgroundColor: currentTheme.surface }]}
     >
-      {items.map((item, index) => (
-        <PressableButton
-          disabled={item.disabled}
-          key={`${item.text}-${index}`}
-          style={[styles.item, item.disabled && styles.itemDisabled]}
-          accessibilityState={item.disabled ? { disabled: true } : undefined}
-          onPress={
-            item.disabled
-              ? undefined
-              : () => {
-                  item.onPress()
-                  onClose()
-                }
-          }
-        >
-          {item.icon &&
-            (item.iconFamily === 'material-community' ? (
-              <MaterialCommunityIcons
-                size={ICON_SIZE}
-                name={item.icon}
-                style={styles.itemIcon}
-                color={currentTheme.text}
-              />
-            ) : (
-              <Ionicons
-                size={ICON_SIZE}
-                name={item.icon}
-                style={styles.itemIcon}
-                color={currentTheme.text}
-              />
-            ))}
-          <Text style={[styles.itemText, { color: currentTheme.text }]}>{item.text}</Text>
-        </PressableButton>
-      ))}
+      {items.map((item, index) => {
+        const row = (
+          <PressableButton
+            disabled={item.disabled}
+            style={[styles.item, item.disabled && styles.itemDisabled]}
+            accessibilityState={item.disabled ? { disabled: true } : undefined}
+            onPress={
+              item.disabled
+                ? undefined
+                : () => {
+                    item.onPress()
+                    onClose()
+                  }
+            }
+          >
+            {item.icon &&
+              (item.iconFamily === 'material-community' ? (
+                <MaterialCommunityIcons
+                  size={ICON_SIZE}
+                  name={item.icon}
+                  style={styles.itemIcon}
+                  color={currentTheme.text}
+                />
+              ) : (
+                <Ionicons
+                  size={ICON_SIZE}
+                  name={item.icon}
+                  style={styles.itemIcon}
+                  color={currentTheme.text}
+                />
+              ))}
+            <Text style={[styles.itemText, { color: currentTheme.text }]}>{item.text}</Text>
+          </PressableButton>
+        )
+
+        return (
+          <Fragment key={`${item.text}-${index}`}>
+            {renderItem ? renderItem(row, item) : row}
+          </Fragment>
+        )
+      })}
     </AnchoredDropdown>
   )
 }

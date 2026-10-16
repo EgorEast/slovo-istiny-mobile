@@ -78,7 +78,7 @@ export const ShareScreen = () => {
           onToggle={() => toggleSection('landing')}
           isExpanded={expandedSection === 'landing'}
         >
-          <ShareLinkCard url={LANDING_URL} />
+          <ShareLinkCard url={LANDING_URL} qrTargetId='share.qr' copyTargetId='share.copy' />
         </CollapsibleSection>
 
         <CollapsibleSection

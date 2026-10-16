@@ -1,6 +1,7 @@
 import BottomSheet, { BottomSheetScrollView } from '@gorhom/bottom-sheet'
 import { memo, useCallback, useRef } from 'react'
-import { StyleSheet, Text, View } from 'react-native'
+import { StyleSheet, Text } from 'react-native'
+import { OnboardingTarget } from 'features/onboarding'
 import { FONT_SIZES, INDENTS, useTheme } from 'shared/ui/theme'
 import { FINAL_SNAP_INDEX, useSheetSnapMetrics } from '../../lib/useSheetSnapMetrics'
 import { SoundSettingsContent } from './SoundSettingsContent'
@@ -36,7 +37,7 @@ const SoundSettingsBottomSheetComponent = ({ onClose }: { onClose: () => void })
       backgroundStyle={{ backgroundColor: currentTheme.surface }}
       handleIndicatorStyle={{ backgroundColor: currentTheme.textMuted }}
     >
-      <View style={styles.container}>
+      <OnboardingTarget style={styles.container} id='player-fullscreen.sound-sheet'>
         <Text style={[styles.title, { color: currentTheme.text }]}>{TITLE}</Text>
         <BottomSheetScrollView
           showsVerticalScrollIndicator={false}
@@ -44,7 +45,7 @@ const SoundSettingsBottomSheetComponent = ({ onClose }: { onClose: () => void })
         >
           <SoundSettingsContent />
         </BottomSheetScrollView>
-      </View>
+      </OnboardingTarget>
     </BottomSheet>
   )
 }

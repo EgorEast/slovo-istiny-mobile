@@ -150,4 +150,13 @@ describe('<OfflineRow>', () => {
 
     expect(mockReportError).toHaveBeenCalled()
   })
+
+  test('does not re-render when the parent passes identical props', async () => {
+    const { rerender } = await renderWithProviders(<OfflineRow item={mockItem} isPlaying={false} />)
+    const rendersAfterMount = mockTrackItemProps.length
+
+    await rerender(<OfflineRow item={mockItem} isPlaying={false} />)
+
+    expect(mockTrackItemProps).toHaveLength(rendersAfterMount)
+  })
 })

@@ -5,8 +5,12 @@ import { DEFAULT_API_URL } from '../config/api-url'
 import { SERVER_URL } from '../config/server-storage-keys'
 
 const HAPTICS_ENABLED_KEY = 'haptics_enabled'
+const TOURS_DISABLED_KEY = 'tours_disabled'
+export const TOURS_SEEN_VERSION_KEY = 'tours_seen_version'
 
 export const hapticsEnabledAtom = atom<boolean>(true, 'hapticsEnabledAtom')
+
+export const toursDisabledAtom = atom<boolean>(false, 'toursDisabledAtom')
 
 export const setHapticsEnabled = action(async (ctx, enabled: boolean) => {
   await AsyncStorage.setItem(HAPTICS_ENABLED_KEY, String(enabled))
@@ -34,6 +38,39 @@ export const loadHapticsEnabled = action(async rootCtx => {
     return undefined
   }
 }, 'loadHapticsEnabled')
+
+export const setToursDisabled = action(async (ctx, disabled: boolean) => {
+  await AsyncStorage.setItem(TOURS_DISABLED_KEY, String(disabled))
+
+  await ctx.schedule(() => {
+    toursDisabledAtom(ctx, disabled)
+  })
+
+  return disabled
+}, 'setToursDisabled')
+
+export const loadToursDisabled = action(async rootCtx => {
+  try {
+    const saved = await AsyncStorage.getItem(TOURS_DISABLED_KEY)
+    if (saved === null) return undefined
+
+    const disabled = saved === 'true'
+
+    toursDisabledAtom(rootCtx, disabled)
+
+    return disabled
+  } catch (error) {
+    console.error('Failed to load tours disabled:', error)
+
+    return undefined
+  }
+}, 'loadToursDisabled')
+
+export const setToursSeenVersion = action(async (_ctx, version: string) => {
+  await AsyncStorage.setItem(TOURS_SEEN_VERSION_KEY, version)
+
+  return version
+}, 'setToursSeenVersion')
 
 export const serverUrlAtom = atom<string>(DEFAULT_API_URL, 'serverUrlAtom')
 

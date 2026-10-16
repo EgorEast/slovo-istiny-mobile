@@ -1,13 +1,13 @@
-import { StyleSheet, View } from 'react-native'
+import { StyleSheet } from 'react-native'
 import { AnchoredDropdown } from 'shared/ui/menu'
 import { INDENTS, RADIUSES, useTheme } from 'shared/ui/theme'
-import { PlaylistAddAllMenuItem } from './PlaylistAddAllMenuItem'
+import { PlaylistBatchMenuItems } from './PlaylistBatchMenuItems'
 import { PlaylistClearMenuItem } from './PlaylistClearMenuItem'
 import { PlaylistDeleteMenuItem } from './PlaylistDeleteMenuItem'
 import { type PlaylistHeaderMenuDropdownProps } from './PlaylistHeaderMenuDropdown.types'
 import { PlaylistHistoryMenuItem } from './PlaylistHistoryMenuItem'
+import { PlaylistMenuDivider } from './PlaylistMenuDivider'
 import { PlaylistOfflineMenuItems } from './PlaylistOfflineMenuItems'
-import { PlaylistPublishMenuItem, PUBLISH_TEXT } from './PlaylistPublishMenuItem'
 import { PlaylistShareMenuItem, SHARE_TEXT } from './PlaylistShareMenuItem'
 
 export const PlaylistHeaderMenuDropdown = ({
@@ -39,6 +39,8 @@ export const PlaylistHeaderMenuDropdown = ({
 }: PlaylistHeaderMenuDropdownProps) => {
   const { currentTheme } = useTheme()
   const showHistoryItems = canMarkAll || canRemoveFromHistory
+  const showBatchItems = Boolean(onAddAllToPlaylist) || canPublish
+  const showDestructiveItems = canClear || canDelete
 
   return (
     <AnchoredDropdown
@@ -48,11 +50,20 @@ export const PlaylistHeaderMenuDropdown = ({
       anchorRef={anchorRef}
       menuStyle={[styles.dropdown, { backgroundColor: currentTheme.surface }]}
     >
-      <PlaylistShareMenuItem onPress={onShare} text={SHARE_TEXT} isDisabled={isShareDisabled} />
+      <PlaylistShareMenuItem
+        onPress={onShare}
+        text={SHARE_TEXT}
+        isDisabled={isShareDisabled}
+        onboardingTargetId='playlist.menu-share'
+      />
 
-      {onAddAllToPlaylist && <PlaylistAddAllMenuItem onPress={onAddAllToPlaylist} />}
-
-      {canPublish && <PlaylistPublishMenuItem onPress={onPublish} text={PUBLISH_TEXT} />}
+      {showBatchItems && (
+        <PlaylistBatchMenuItems
+          onPublish={onPublish}
+          canPublish={canPublish}
+          onAddAllToPlaylist={onAddAllToPlaylist}
+        />
+      )}
 
       {isOfflineItemsVisible && (
         <PlaylistOfflineMenuItems
@@ -67,28 +78,38 @@ export const PlaylistHeaderMenuDropdown = ({
       )}
 
       {showHistoryItems && (
-        <View style={[styles.dropdownDivider, { backgroundColor: currentTheme.textMuted }]} />
-      )}
-      {canMarkAll && (
-        <PlaylistHistoryMenuItem
-          onPress={onMarkAll}
-          icon='checkmark-done'
-          text='Пометить все прослушанными'
-        />
-      )}
-      {canRemoveFromHistory && (
-        <PlaylistHistoryMenuItem
-          icon='time-outline'
-          onPress={onRemoveFromHistory}
-          text='Удалить проповеди из истории'
-        />
+        <>
+          <PlaylistMenuDivider />
+          {canMarkAll && (
+            <PlaylistHistoryMenuItem
+              onPress={onMarkAll}
+              icon='checkmark-done'
+              text='Пометить все прослушанными'
+              onboardingTargetId='playlist.menu-history-mark'
+            />
+          )}
+          {canRemoveFromHistory && (
+            <PlaylistHistoryMenuItem
+              icon='time-outline'
+              onPress={onRemoveFromHistory}
+              text='Удалить проповеди из истории'
+              onboardingTargetId='playlist.menu-history-remove'
+            />
+          )}
+        </>
       )}
 
-      {(canClear || canDelete) && (
-        <View style={[styles.dropdownDivider, { backgroundColor: currentTheme.textMuted }]} />
+      {showDestructiveItems && (
+        <>
+          <PlaylistMenuDivider />
+          {canClear && (
+            <PlaylistClearMenuItem onPress={onClear} onboardingTargetId='playlist.menu-clear' />
+          )}
+          {canDelete && (
+            <PlaylistDeleteMenuItem onPress={onDelete} onboardingTargetId='playlist.menu-delete' />
+          )}
+        </>
       )}
-      {canClear && <PlaylistClearMenuItem onPress={onClear} />}
-      {canDelete && <PlaylistDeleteMenuItem onPress={onDelete} />}
     </AnchoredDropdown>
   )
 }
@@ -100,10 +121,5 @@ const styles = StyleSheet.create({
     elevation: 8,
     minWidth: 180,
     paddingVertical: INDENTS.lowest,
-  },
-  dropdownDivider: {
-    height: 1,
-    marginHorizontal: INDENTS.medium,
-    opacity: 0.3,
   },
 })

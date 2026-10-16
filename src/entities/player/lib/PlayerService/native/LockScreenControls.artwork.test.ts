@@ -1,4 +1,5 @@
 import { type AudioPlayer } from 'expo-audio'
+import { AppState } from 'react-native'
 import { getLocalAppIconUri } from 'shared/lib/app-icon'
 import { reportError } from 'shared/model/error-dialog'
 import { lockScreenControls } from './LockScreenControls'
@@ -40,6 +41,7 @@ const metadataStub = { title: 'Проповедь' }
 describe('setMetadata artwork sanitization', () => {
   beforeEach(() => {
     jest.clearAllMocks()
+    AppState.currentState = 'active'
     mockIsExpoGo.isExpoGo = false
     mockedGetLocalAppIconUri.mockReturnValue(null)
   })

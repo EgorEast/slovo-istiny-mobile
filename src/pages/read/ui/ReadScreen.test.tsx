@@ -14,6 +14,11 @@ import {
 import { getVerseByVerseBooksSlider, verseByVerseBooksSliderAtom } from '../model-verseByVerse'
 import { ReadScreen } from './ReadScreen'
 
+jest.mock('expo-router', () => ({
+  ...jest.requireActual('expo-router'),
+  useNavigation: () => ({ addListener: jest.fn() }),
+}))
+
 const mockNavigateToBookReader = jest.fn()
 const mockNavigateToBooksList = jest.fn()
 

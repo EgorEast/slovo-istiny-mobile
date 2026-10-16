@@ -1,8 +1,4 @@
 import { createCtx, type Ctx } from '@reatom/framework'
-import {
-  persistImportSettings,
-  readImportSettings,
-} from 'features/sermon-audio-import/@x/settings-backup'
 import { setSermonCachingEnabled } from 'entities/offline-cache'
 import {
   setBalanceAction,
@@ -12,7 +8,14 @@ import {
   setPlaybackRateAction,
   setRepeatModeAction,
 } from 'entities/player'
-import { setHapticsEnabled, setServerUrlAction } from 'shared/model'
+import {
+  persistImportSettings,
+  readImportSettings,
+  setHapticsEnabled,
+  setServerUrlAction,
+  setToursDisabled,
+  setToursSeenVersion,
+} from 'shared/model'
 import { setDynamicColors, setThemeMode } from 'shared/ui/theme'
 import { applyPlayerScalars, applySettingsScalars, applyYouTubeImport } from './applyBackupScalars'
 
@@ -29,21 +32,21 @@ jest.mock('entities/offline-cache', () => ({
   setSermonCachingEnabled: jest.fn(),
 }))
 
+// Схему берём настоящую (merge валидируется ею), а экшены и владельческие read/persist — мокаем.
 jest.mock('shared/model', () => ({
+  ...jest.requireActual('shared/model'),
+  persistImportSettings: jest.fn(),
+  readImportSettings: jest.fn(),
   setHapticsEnabled: jest.fn(),
   setServerUrlAction: jest.fn(),
+  setToursDisabled: jest.fn(),
+  setToursSeenVersion: jest.fn(),
 }))
 
 jest.mock('shared/ui/theme', () => ({
   setDynamicColors: jest.fn(),
   setThemeMode: jest.fn(),
 }))
-
-// Схему берём настоящую (merge валидируется ею), а владельческие read/persist — мокаем.
-jest.mock('features/sermon-audio-import/@x/settings-backup', () => {
-  const actual = jest.requireActual('features/sermon-audio-import/@x/settings-backup')
-  return { ...actual, persistImportSettings: jest.fn(), readImportSettings: jest.fn() }
-})
 
 const ctx: Ctx = createCtx()
 
@@ -61,6 +64,8 @@ describe('applySettingsScalars', () => {
       sermonCachingEnabled: true,
       serverUrl: 'https://api.example.com',
       themeMode: 'dark',
+      toursDisabled: true,
+      toursSeenVersion: '1.2.0',
     })
 
     expect(setThemeMode).toHaveBeenCalledWith(ctx, 'dark')
@@ -68,6 +73,8 @@ describe('applySettingsScalars', () => {
     expect(setHapticsEnabled).toHaveBeenCalledWith(ctx, false)
     expect(setServerUrlAction).toHaveBeenCalledWith(ctx, 'https://api.example.com')
     expect(setSermonCachingEnabled).toHaveBeenCalledWith(ctx, true)
+    expect(setToursDisabled).toHaveBeenCalledWith(ctx, true)
+    expect(setToursSeenVersion).toHaveBeenCalledWith(ctx, '1.2.0')
   })
 
   test('skips fields absent from the file', async () => {
@@ -78,6 +85,8 @@ describe('applySettingsScalars', () => {
     expect(setHapticsEnabled).not.toHaveBeenCalled()
     expect(setServerUrlAction).not.toHaveBeenCalled()
     expect(setSermonCachingEnabled).not.toHaveBeenCalled()
+    expect(setToursDisabled).not.toHaveBeenCalled()
+    expect(setToursSeenVersion).not.toHaveBeenCalled()
   })
 
   test('does nothing without settings', async () => {

@@ -1,4 +1,5 @@
 import { action, atom, type Ctx } from '@reatom/framework'
+import { offlineSermonsLoadedAtom } from 'entities/offline-cache'
 import { type PlaylistData } from 'entities/playlist'
 import { type AudioPlayerData, type SermonData } from 'entities/sermon'
 import { reportError } from 'shared/model/error-dialog'
@@ -34,6 +35,7 @@ export const loadOfflineSermons = action(async (ctx: Ctx) => {
   } finally {
     await ctx.schedule(() => {
       isLoadingOfflineSermonsAtom(ctx, false)
+      offlineSermonsLoadedAtom(ctx, true)
     })
   }
 }, 'loadOfflineSermons')

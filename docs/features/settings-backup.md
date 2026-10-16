@@ -4,8 +4,10 @@
 
 **Файлы:**
 
-- `src/features/settings-backup/index.ts` — публичный API (только `BackupSection`)
-- `src/features/settings-backup/ui/BackupSection.tsx` — секция UI: папка, действия, автосинхронизация, диалоги
+- `src/features/settings-backup/index.ts` — публичный API (`BackupSection` + типы `BackupControlKey`/`BackupSectionControls`)
+- `src/features/settings-backup/ui/BackupSection.tsx` — секция UI: заголовок-группа, диалоги, DI-привязки
+- `src/features/settings-backup/ui/BackupControls.tsx` — внутренние контролы (папка, экспорт, импорт, автосинхронизация) с опциональной обёрткой владельца
+- `src/features/settings-backup/ui/backupSectionBindings.ts` — DI-типы секции (`BackupControlKey`, `BackupSectionControls`, `BackupSectionBindings`)
 - `src/features/settings-backup/ui/useBackupSection.ts` — состояние и обработчики секции (выбор папки, экспорт)
 - `src/features/settings-backup/ui/useBackupImport.ts` — импорт: чтение файла, выбор режима, подтверждение смены URL
 - `src/features/settings-backup/ui/BackupImportModeDialog.tsx` — диалог «Объединить / Заменить»
@@ -47,7 +49,9 @@
       "dynamicColors": true,
       "hapticsEnabled": true,
       "serverUrl": "https://api.slovo-istini.com",
-      "sermonCachingEnabled": false
+      "sermonCachingEnabled": false,
+      "toursDisabled": false,
+      "toursSeenVersion": "1.2.0"
     },
     "player": {
       "playbackRate": 1,
@@ -68,9 +72,9 @@
 - `kind` = `'slovo-propovedi-backup'`, `version` = `1` (`BACKUP_KIND` / `BACKUP_VERSION`).
 - `exportedAt` — ISO-строка момента экспорта.
 - `listeningHistory`, `myPlaylists`, `myPlaylistsSectionSettings` — валидируются **владельческими** схемами (`listeningHistorySchema`, `myPlaylistsArraySchema`, `sectionSettingsDraftSchema`), а не копиями.
-- `settings` — подмножество скаляров: `themeMode` (`'system' | 'light' | 'dark'`), `dynamicColors`, `hapticsEnabled`, `serverUrl` (только `http(s)://`), `sermonCachingEnabled`. Все поля опциональны.
+- `settings` — подмножество скаляров: `themeMode` (`'system' | 'light' | 'dark'`), `dynamicColors`, `hapticsEnabled`, `serverUrl` (только `http(s)://`), `sermonCachingEnabled`, `toursDisabled`, `toursSeenVersion` (строка). Все поля опциональны.
 - `player` — `playbackRate`, `repeatMode`, `balance`, `pitch`, `equalizerEnabled`, `equalizerGains` (те же схемы плеера, что и при восстановлении).
-- `youtubeImport` — `source`, `invidiousBaseUrl`: ослабленная до partial владельческая `importSettingsSchema` из `features/sermon-audio-import` (см. [@x-зависимость](#x-зависимость)).
+- `youtubeImport` — `source`, `invidiousBaseUrl`: ослабленная до partial `importSettingsSchema` из `shared/model` (см. [Общий контракт с импортом аудио](#общий-контракт-с-импортом-аудио)).
 - Пустые скалярные секции не пишутся вовсе (`dropEmpty` в `buildPayload`): секция без единого определённого поля в файл не попадает.
 
 Разбор недоверенного ввода двухэтапный (`parseBackupFile`): сначала лёгкий конверт `{kind, version}`, затем полная схема данных. Результат: `ok` (данные), `newer-version` (файл новее поддерживаемой версии), `invalid` (битый JSON, чужой маркер, плохие данные).
@@ -142,15 +146,19 @@
 
 - Включение — чекбокс «Автосинхронизация» (доступен только при выбранной и рабочей папке).
 - Конфликт при включении: если в папке уже есть `slovo-backup-auto.json`, открывается `AutosyncConflictDialog` — «Импортировать (объединить)» / «Импортировать (заменить)» (через общий пайплайн импорта, с подтверждением смены URL) либо «Перезаписать бэкап» (записать текущее состояние сразу). После успешного импорта или перезаписи автосинхронизация включается; отмена/закрытие оставляет её выключенной. Повреждённый автофайл предлагает только «Перезаписать бэкап» + «Отмена». Если файла нет — включение сразу.
-- Триггер — `useAutoBackupSync`: trailing-дебаунс **30 с** (`useDebounce` с `flushOnUnmount`), срабатывает при уходе приложения в фон (`AppState === 'background'`), после ручного экспорта/импорта и при изменении отслеживаемых данных (настройки темы/хаптики/сервера/кеша/плеера, история, локальные плейлисты, настройки секции).
+- Триггер — `useAutoBackupSync`: trailing-дебаунс **30 с** (`useDebounce` с `flushOnUnmount`), срабатывает при уходе приложения в фон (`AppState === 'background'`), после ручного экспорта/импорта и при изменении отслеживаемых данных (настройки темы/хаптики/обзоров/сервера/кеша/плеера, история, локальные плейлисты, настройки секции).
 - Запись сериализуется очередью promise (`writeAutoBackup`), поэтому параллельные flush не перезаписывают `slovo-backup-auto.json` вразнобой; ошибки логируются и не рвут цепочку.
 - Фактически пишется только при включённом флаге и наличии URI папки.
 
 Ключи `backup_dir_uri` и `backup_autosync` (значения переживают обновления приложения, читаются защищённо) описаны в [contracts/storage.md](../contracts/storage.md).
 
-## @x зависимость
+## Тур «Резервное копирование»
 
-`features/settings-backup` и `features/sermon-audio-import` — слайсы одного слоя. Кросс-импорт идёт по конвенции FSD `@x`: `src/features/sermon-audio-import/@x/settings-backup.ts` реэкспортирует `importSettingsSchema`, `readImportSettings`, `persistImportSettings`. Благодаря этому фича не дублирует схему и ключ настроек импорта аудио, а `youtubeImport` читается и пишется через владельческий публичный интерфейс.
+Сценарий онбординга `backup` (см. [onboarding.md](./onboarding.md)) подсвечивает секцию и её контролы. Фича об онбординге не знает: `BackupSection` принимает опциональные DI-пропсы (`BackupSectionBindings`) — `renderControlWrapper(control, controlKey)` оборачивает внутренние контролы (ключи `folder`/`export`/`import`/`autosync`), а `bindControls` отдаёт владельцу `expand()`. Экран [`SettingsScreen`](../screens/settings.md) передаёт обёртки с целями `settings.backup-folder`/`-export`/`-import`/`-autosync` и разворачивает свёрнутую группу, когда активен сценарий `backup` (иначе цели внутри неё не смонтированы). Шаги `folder`/`autosync` помечены `skipIfMissing`: там, где выбор папки недоступен (iOS, браузеры без File System Access API), они выпадают из колоды, и тур показывает только экспорт/импорт.
+
+## Общий контракт с импортом аудио
+
+`features/settings-backup` и `features/sermon-audio-import` не связаны кросс-импортом: контракт хранения настроек импорта (`importSettingsSchema`, `readImportSettings`, `persistImportSettings`, ключ `youtube_import_settings`) живёт в `src/shared/model/importSettings.ts`. Обе фичи импортируют его из `shared/model` — фича не дублирует схему и ключ, а `youtubeImport` читается и пишется через общий read/persist. Прежний feature-to-feature `@x`-мост (`src/features/sermon-audio-import/@x/settings-backup.ts`) удалён по правилу «`@x` — только между `entities`» (см. [architecture.md](../architecture.md) → «@x cross-import»).
 
 ## Связанные документы
 

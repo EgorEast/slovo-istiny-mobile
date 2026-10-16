@@ -3,6 +3,7 @@ import { BlurView } from 'expo-blur'
 import { type Tabs } from 'expo-router'
 import { View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { OnboardingTarget } from 'features/onboarding'
 import { setTabBarHeight } from 'shared/ui/layout'
 import { useTheme } from 'shared/ui/theme'
 import { styles } from './styles'
@@ -46,14 +47,15 @@ export const CustomTabBar = ({ hideFloatingPlayer: _, navigation, state }: Custo
             const isActive = index === state.index
 
             return (
-              <TabButton
-                key={route.key}
-                isActive={isActive}
-                routeKey={route.key}
-                routeName={route.name}
-                isDisabled={!isTabAvailable(route.name)}
-                onPress={() => handleTabPress(route, isActive)}
-              />
+              <OnboardingTarget key={route.key} id={`tab.${route.name}`} style={styles.tabButton}>
+                <TabButton
+                  isActive={isActive}
+                  routeKey={route.key}
+                  routeName={route.name}
+                  isDisabled={!isTabAvailable(route.name)}
+                  onPress={() => handleTabPress(route, isActive)}
+                />
+              </OnboardingTarget>
             )
           })}
         </View>

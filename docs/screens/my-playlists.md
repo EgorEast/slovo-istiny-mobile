@@ -44,6 +44,9 @@
   `body { overflow: hidden }` из `public/index.html`). Поэтому контейнеру задан
   `containerStyle={styles.listContainer}` с `flex: 1` (как у `DraggableFlatList` админки, см.
   [features/admin.md](../features/admin.md)).
+- Кнопка «?» в шапке (`OnboardingHelpRow`, рядом с карандашом «Изменить порядок»/«Сохранить») —
+  онбординг/обзор возможностей (см. [../features/onboarding.md](../features/onboarding.md)).
+  Окрашена в `currentTheme.primary` — как карандаш/галочка рядом.
 
 ### Режим редактирования
 

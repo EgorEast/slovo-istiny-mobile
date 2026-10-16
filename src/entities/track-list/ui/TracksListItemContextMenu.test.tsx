@@ -1,4 +1,5 @@
 import { act, fireEvent, screen } from '@testing-library/react-native'
+import { type ReactElement } from 'react'
 import { type TestInstance } from 'test-renderer'
 import { renderWithProviders } from 'shared/mocks/renderWithProviders'
 import { type TrackCacheVisualState } from './trackCacheState'
@@ -195,6 +196,67 @@ describe('<TracksListItemContextMenu>', () => {
     await renderWithProviders(<TracksListItemContextMenu {...baseProps} />)
 
     expect(screen.getByText(ADD_TO_OFFLINE_TEXT)).toBeTruthy()
+  })
+
+  test('wraps every dropdown row through renderMenuItem with its own item', async () => {
+    const menuActions = [{ onboardingTargetId: 'row.target', onPress: jest.fn(), text: 'Share' }]
+    const renderMenuItem = jest.fn((row: ReactElement) => row)
+
+    const { container } = await renderWithProviders(
+      <TracksListItemContextMenu
+        {...baseProps}
+        menuActions={menuActions}
+        renderMenuItem={renderMenuItem}
+      />,
+    )
+
+    await measureMenu(container)
+
+    // The cache action plus the custom one: each row reaches the wrapper with its
+    // own item, and the custom item carries its onboarding target id as plain data.
+    expect(renderMenuItem).toHaveBeenCalledTimes(2)
+    expect(renderMenuItem).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ onboardingTargetId: 'row.target', text: 'Share' }),
+    )
+  })
+
+  test('wraps the cache item with the add target id while the row is not cached', async () => {
+    const renderMenuItem = jest.fn((row: ReactElement) => row)
+
+    await renderWithProviders(
+      <TracksListItemContextMenu
+        {...baseProps}
+        isCached={false}
+        visualState='cloud'
+        renderMenuItem={renderMenuItem}
+        cacheActionOnboardingTargetIds={{ add: 'row.cache-add', remove: 'row.cache-remove' }}
+      />,
+    )
+
+    expect(renderMenuItem).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ onboardingTargetId: 'row.cache-add', text: ADD_TO_OFFLINE_TEXT }),
+    )
+  })
+
+  test('wraps the cache item with the remove target id while the row is cached', async () => {
+    const renderMenuItem = jest.fn((row: ReactElement) => row)
+
+    await renderWithProviders(
+      <TracksListItemContextMenu
+        {...baseProps}
+        isCached={true}
+        visualState='cached'
+        renderMenuItem={renderMenuItem}
+        cacheActionOnboardingTargetIds={{ add: 'row.cache-add', remove: 'row.cache-remove' }}
+      />,
+    )
+
+    expect(renderMenuItem).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ onboardingTargetId: 'row.cache-remove', text: REMOVE_CACHE_TEXT }),
+    )
   })
 
   test('disables cache item when isCacheDisabled is true', async () => {

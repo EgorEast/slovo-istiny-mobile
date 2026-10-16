@@ -9,6 +9,7 @@ export interface PlaylistOfflineMenuItemProps {
   icon: keyof typeof MaterialCommunityIcons.glyphMap
   iconColor?: ColorValue
   isDisabled?: boolean
+  onboardingTargetId?: string
   onPress: () => void
   text: string
   textColor?: ColorValue
@@ -18,6 +19,7 @@ export const PlaylistOfflineMenuItem = ({
   icon,
   iconColor,
   isDisabled = false,
+  onboardingTargetId,
   onPress,
   text,
   textColor,
@@ -30,6 +32,7 @@ export const PlaylistOfflineMenuItem = ({
       onPress={onPress}
       textColor={textColor}
       isDisabled={isDisabled}
+      onboardingTargetId={onboardingTargetId}
       icon={
         <MaterialCommunityIcons
           name={icon}
