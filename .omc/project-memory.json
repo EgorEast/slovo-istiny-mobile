@@ -242,11 +242,12 @@
     "patches": {
       "path": "patches",
       "purpose": null,
-      "fileCount": 3,
+      "fileCount": 4,
       "lastAccessed": 1789980025279,
       "keyFiles": [
+        "expo-audio+57.0.5.patch",
         "expo-font+57.0.4.patch",
-        "expo-router+57.0.22.patch",
+        "expo-router+57.0.28.patch",
         "react-native-gesture-handler+2.32.0.patch"
       ]
     },
