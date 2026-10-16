@@ -1,6 +1,7 @@
 import { applyWebUpdate } from './applyWebUpdate'
 
 const SKIP_WAITING_MESSAGE = { type: 'SKIP_WAITING' }
+const APPLY_TIMEOUT_MS = 15_000
 
 interface ServiceWorkerContainerMock {
   addEventListener: jest.Mock
@@ -61,11 +62,51 @@ describe('applyWebUpdate', () => {
   })
 
   test('reloads directly when no waiting worker exists', async () => {
-    mockServiceWorkerContainer(null)
+    const container = mockServiceWorkerContainer(null)
     const reload = mockReload()
 
     await applyWebUpdate()
 
     expect(reload).toHaveBeenCalledTimes(1)
+    expect(container.addEventListener).not.toHaveBeenCalled()
+  })
+
+  describe('safety timeout', () => {
+    beforeEach(() => {
+      jest.useFakeTimers()
+    })
+
+    afterEach(() => {
+      jest.useRealTimers()
+    })
+
+    test('does not reload again from the safety timer after controllerchange reloads', async () => {
+      const waiting = createWaitingWorker()
+      const container = mockServiceWorkerContainer(waiting)
+      const reload = mockReload()
+
+      await applyWebUpdate()
+
+      const controllerChangeHandler = getControllerChangeHandler(container)
+      controllerChangeHandler?.()
+      expect(reload).toHaveBeenCalledTimes(1)
+
+      jest.advanceTimersByTime(APPLY_TIMEOUT_MS)
+
+      expect(reload).toHaveBeenCalledTimes(1)
+    })
+
+    test('reloads from the safety timer when controllerchange never fires', async () => {
+      const waiting = createWaitingWorker()
+      mockServiceWorkerContainer(waiting)
+      const reload = mockReload()
+
+      await applyWebUpdate()
+      expect(reload).not.toHaveBeenCalled()
+
+      jest.advanceTimersByTime(APPLY_TIMEOUT_MS)
+
+      expect(reload).toHaveBeenCalledTimes(1)
+    })
   })
 })
