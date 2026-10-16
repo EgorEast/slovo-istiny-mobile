@@ -7,9 +7,9 @@ import { isPlayerExpandedAtom } from 'entities/player'
 import { useTheme } from 'shared/ui/theme'
 import { useGlowVisibility } from '../lib/useGlowVisibility'
 import { isGlowVisibleAtom, isListenScrollingAtom } from '../model'
+import { TOTAL_SIZE } from './continueButton.constants'
 import { GlowRing } from './GlowRing'
 
-export const TOTAL_SIZE = 224 // MUST match GlowRing.RING_SIZE (224) — both define the same overlay
 const INNER_SIZE = 168
 const ICON_SIZE = 100
 

@@ -1,7 +1,8 @@
 import { Easing, ReduceMotion, withRepeat, withTiming } from 'react-native-reanimated'
+import { TOTAL_SIZE } from './continueButton.constants'
 
-// Габарит SVG-холста свечения. ДОЛЖЕН совпадать с TOTAL_SIZE в ContinueCircleButton.
-export const RING_SIZE = 224
+// Габарит SVG-холста свечения: RING_SIZE = габарит кнопки из continueButton.constants.
+export const RING_SIZE = TOTAL_SIZE
 export const CENTER = RING_SIZE / 2
 // Орбита цветовых «клякс» и их базовый радиус — доли RING_SIZE. Внешний край
 // (ORBIT + BLOB_R * maxScale) держим около CENTER, иначе холст обрежет ореол.
