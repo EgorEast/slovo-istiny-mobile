@@ -17,7 +17,7 @@ const MeasuredTarget = ({
   const insets = useSafeAreaInsets()
   const { isActive, measure } = useTargetMeasure({ getNode, id })
 
-  useTargetAutoScroll({ bottomInset: insets.bottom, id, isActive, measure })
+  useTargetAutoScroll({ bottomInset: insets.bottom, getNode, id, isActive, measure })
 
   return (
     <View ref={ref} style={style} collapsable={false} onLayout={isActive ? measure : undefined}>

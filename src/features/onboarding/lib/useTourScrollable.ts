@@ -3,10 +3,12 @@ import { registerTourScrollable, unregisterTourScrollable } from './tourScrollab
 
 // A screen's main scrollable is either a ScrollView (`scrollTo({ y })`) or a
 // FlatList (`scrollToOffset({ offset })`). Both are accepted so every tour screen
-// can register its own scrollable without an adapter.
-type TourScrollableNode =
+// can register its own scrollable without an adapter. `getInnerViewNode` is optional:
+// it anchors the layout fallback's `measureLayout`, but not every node exposes it.
+type TourScrollableNode = (
   | { scrollTo: (params: { animated?: boolean; y?: number }) => void }
   | { scrollToOffset: (params: { animated?: boolean; offset: number }) => void }
+) & { getInnerViewNode?: () => number }
 
 const scrollNodeTo = (node: TourScrollableNode, y: number, animated: boolean) => {
   if ('scrollTo' in node) {
@@ -15,6 +17,18 @@ const scrollNodeTo = (node: TourScrollableNode, y: number, animated: boolean) =>
   }
 
   node.scrollToOffset({ animated, offset: y })
+}
+
+// The content view's native tag anchors `measureLayout`. Not every node (a jest mock,
+// a bare view) exposes it, so resolve defensively instead of trusting the type.
+const resolveInnerViewNode = (node: TourScrollableNode): null | number => {
+  if (typeof node.getInnerViewNode !== 'function') return null
+
+  try {
+    return node.getInnerViewNode() ?? null
+  } catch {
+    return null
+  }
 }
 
 /**
@@ -29,5 +43,8 @@ export const useTourScrollable = () =>
       return
     }
 
-    registerTourScrollable({ scrollTo: (y, animated = true) => scrollNodeTo(node, y, animated) })
+    registerTourScrollable({
+      getInnerViewNode: () => resolveInnerViewNode(node),
+      scrollTo: (y, animated = true) => scrollNodeTo(node, y, animated),
+    })
   }, [])

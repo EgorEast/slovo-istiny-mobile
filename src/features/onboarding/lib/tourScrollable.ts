@@ -1,6 +1,7 @@
 import { type OnboardingTargetRect } from '../model/targets'
 
 interface TourScrollable {
+  getInnerViewNode: () => null | number
   scrollTo: (y: number, animated: boolean) => void
 }
 
