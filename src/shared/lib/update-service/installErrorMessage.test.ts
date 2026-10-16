@@ -66,6 +66,7 @@ describe('classifyUpdateError', () => {
     ['ERR_DOWNLOAD'],
     ['Network request failed'],
     ['[updateService] Download failed or was cancelled: https://example.com/update.zip'],
+    ['Download stalled: no progress for 30s'],
     ['Download timed out after 600s'],
   ])('classifies %s as a download error', hint => {
     expect(classifyUpdateError(new Error(hint))).toEqual({

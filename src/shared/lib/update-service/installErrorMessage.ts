@@ -52,6 +52,7 @@ const DOWNLOAD_HINTS = [
   'ERR_DOWNLOAD',
   'Network request failed',
   'Download failed or was cancelled',
+  'Download stalled',
   'Download timed out',
 ]
 const DOWNLOAD_MESSAGE = 'Не удалось скачать обновление. Проверьте подключение и попробуйте снова'
