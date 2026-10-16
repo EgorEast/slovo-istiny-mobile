@@ -12,6 +12,7 @@ import { playerSpeedScenario } from './scenarioData/player-speed'
 import { playlistAddScenario } from './scenarioData/playlist-add'
 import { playlistMenuScenario } from './scenarioData/playlist-menu'
 import { playlistOfflineScenario } from './scenarioData/playlist-offline'
+import { playlistShareScenario } from './scenarioData/playlist-share'
 import { playlistsScenario } from './scenarioData/playlists'
 import { readScenario } from './scenarioData/read'
 import { searchScenario } from './scenarioData/search'
@@ -83,6 +84,7 @@ export const scenarios: OnboardingScenario[] = [
   playlistMenuScenario,
   playlistAddScenario,
   playlistOfflineScenario,
+  playlistShareScenario,
   historyScenario,
   offlineScenario,
   settingsScenario,
@@ -107,6 +109,7 @@ export const scenariosById: Record<OnboardingScenarioId, OnboardingScenario> = {
   'playlist-add': playlistAddScenario,
   'playlist-menu': playlistMenuScenario,
   'playlist-offline': playlistOfflineScenario,
+  'playlist-share': playlistShareScenario,
   playlists: playlistsScenario,
   read: readScenario,
   search: searchScenario,

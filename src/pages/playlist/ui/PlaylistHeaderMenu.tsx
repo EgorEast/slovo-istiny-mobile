@@ -1,3 +1,4 @@
+import { useCallback } from 'react'
 import { ErrorModal } from 'shared/ui/error-modal'
 import { buildAddAllToPlaylistHandler } from '../lib/buildAddAllToPlaylistHandler'
 import { useLocalPlaylistPublish } from '../lib/useLocalPlaylistPublish'
@@ -7,11 +8,12 @@ import { usePlaylistManagementMenu } from '../lib/usePlaylistManagementMenu'
 import { usePlaylistMenuTourActions } from '../lib/usePlaylistMenuTourActions'
 import { usePlaylistOfflineMenu } from '../lib/usePlaylistOfflineMenu'
 import { usePlaylistShare } from '../lib/usePlaylistShare'
+import { usePlaylistShareTourActions } from '../lib/usePlaylistShareTourActions'
 import { PlaylistHeaderActions } from './PlaylistHeaderActions'
+import { PlaylistHeaderDialogs } from './PlaylistHeaderDialogs'
 import { type PlaylistHeaderMenuProps } from './PlaylistHeaderMenu.types'
 import { PlaylistHeaderMenuDropdown } from './PlaylistHeaderMenuDropdown'
-import { PlaylistHistoryDialogs } from './PlaylistHistoryDialogs'
-import { PlaylistOfflineDialogs } from './PlaylistOfflineDialogs'
+import { PlaylistShareModal } from './PlaylistShareModal'
 
 const DEFAULT_MENU_LABEL = 'Меню плейлиста'
 
@@ -25,15 +27,11 @@ export const PlaylistHeaderMenu = ({
   playlistTitle,
   tracksData,
 }: PlaylistHeaderMenuProps) => {
+  const offlineMenu = usePlaylistOfflineMenu(tracksData, playlistTitle)
   const {
     allCached,
     buttonRef,
-    cachedCount,
-    cacheDialogVisible,
-    clearDialogVisible,
-    handleAddAllToOfflineConfirm,
     handleAddAllToOfflineOption,
-    handleClearCacheConfirm,
     handleClearCacheOption,
     handleOpenMenu,
     handleStopCaching,
@@ -43,17 +41,23 @@ export const PlaylistHeaderMenu = ({
     isOfflineItemsVisible,
     menuAnchor,
     menuVisible,
-    setCacheDialogVisible,
-    setClearDialogVisible,
     setMenuVisible,
-  } = usePlaylistOfflineMenu(tracksData, playlistTitle)
+  } = offlineMenu
 
-  const closeMenu = usePlaylistMenuTourActions(handleOpenMenu, setMenuVisible)
+  const closeMenuSetter = useCallback(() => setMenuVisible(false), [setMenuVisible])
+
+  const share = usePlaylistShare(playlist, closeMenuSetter)
+  const closeMenu = usePlaylistMenuTourActions(
+    handleOpenMenu,
+    setMenuVisible,
+    share.closeShareModal,
+  )
+
+  usePlaylistShareTourActions(share.openShareModal)
 
   const addAllHandler = buildAddAllToPlaylistHandler(onAddAllToPlaylist, playlist, closeMenu)
   const historyMenu = usePlaylistHistoryMenu(playlist, closeMenu)
-  const { error, handleErrorClose } = usePlaylistCacheError(cacheDialogVisible)
-  const { canShare, handleShare } = usePlaylistShare(playlist, closeMenu)
+  const { error, handleErrorClose } = usePlaylistCacheError(offlineMenu.cacheDialogVisible)
   const { canPublish, handlePublish, isLocalPlaylist } = useLocalPlaylistPublish(
     playlist,
     closeMenu,
@@ -82,10 +86,10 @@ export const PlaylistHeaderMenu = ({
         canDelete={canDelete}
         allCached={allCached}
         isCaching={isCaching}
-        onShare={handleShare}
         canPublish={canPublish}
         onPublish={handlePublish}
-        isShareDisabled={!canShare}
+        onShare={share.openShareModal}
+        isShareDisabled={!share.canShare}
         onStopCaching={handleStopCaching}
         onAddAllToPlaylist={addAllHandler}
         canMarkAll={historyMenu.canMarkAll}
@@ -101,24 +105,20 @@ export const PlaylistHeaderMenu = ({
         canRemoveFromHistory={historyMenu.canRemoveFromHistory}
       />
 
-      <PlaylistOfflineDialogs
-        tracksData={tracksData}
-        cachedCount={cachedCount}
-        cacheDialogVisible={cacheDialogVisible}
-        clearDialogVisible={clearDialogVisible}
-        onClearCacheConfirm={handleClearCacheConfirm}
-        onClearCancel={() => setClearDialogVisible(false)}
-        onAddAllToOfflineConfirm={handleAddAllToOfflineConfirm}
-        onAddToOfflineCancel={() => setCacheDialogVisible(false)}
-      />
+      {share.shareUrl !== null && (
+        <PlaylistShareModal
+          url={share.shareUrl}
+          onClose={share.closeShareModal}
+          isVisible={share.isShareModalVisible}
+          onCopy={() => void share.copyShareLink()}
+          onShare={() => void share.sendShareLink()}
+        />
+      )}
 
-      <PlaylistHistoryDialogs
-        onMarkConfirm={historyMenu.handleMarkAllConfirm}
-        markDialogVisible={historyMenu.markDialogVisible}
-        onRemoveConfirm={historyMenu.handleRemoveConfirm}
-        removeDialogVisible={historyMenu.removeDialogVisible}
-        onMarkCancel={() => historyMenu.setMarkDialogVisible(false)}
-        onRemoveCancel={() => historyMenu.setRemoveDialogVisible(false)}
+      <PlaylistHeaderDialogs
+        tracksData={tracksData}
+        offlineMenu={offlineMenu}
+        historyMenu={historyMenu}
       />
 
       <ErrorModal error={error} visible={error !== null} onClose={handleErrorClose} />

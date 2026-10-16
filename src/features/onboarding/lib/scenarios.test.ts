@@ -490,12 +490,61 @@ describe('onboarding scenario data', () => {
     expect(deck[5].entryStepIndexes).toEqual([7])
   })
 
-  test('the playlist screen offers three local tours', () => {
+  test('playlist-share walks the header menu into the share modal and ends on «Готово»', () => {
+    const playlistShare = scenariosById['playlist-share']
+
+    expect(playlistShare.title).toBe('Поделиться плейлистом')
+    expect(playlistShare.screens).toEqual(['/listen/playlist'])
+    expect(playlistShare.steps).toHaveLength(8)
+    expect(playlistShare.steps[0].targetId).toBeUndefined()
+    expect(playlistShare.steps[0].tapTargetId).toBeUndefined()
+    // The intro card's exit visualization opens the header menu itself.
+    expect(playlistShare.steps[1].targetId).toBe('playlist.menu')
+    expect(playlistShare.steps[1].tapTargetId).toBe('playlist.menu')
+    expect(playlistShare.steps[1].tapActionId).toBe('open-playlist-menu')
+    // The «Поделиться» row may be absent: the tour drops its card instead of
+    // spotlighting a hidden item. Its exit visualization opens the share modal.
+    expect(playlistShare.steps[2].targetId).toBe('playlist.menu-share')
+    expect(playlistShare.steps[2].skipIfMissing).toBe(true)
+    expect(playlistShare.steps[3].targetId).toBe('playlist.menu-share')
+    expect(playlistShare.steps[3].tapTargetId).toBe('playlist.menu-share')
+    expect(playlistShare.steps[3].tapActionId).toBe('open-playlist-share')
+    // The three modal cards re-present the tour window above the app modal.
+    expect(playlistShare.steps[4].targetId).toBe('playlist.share-modal-qr')
+    expect(playlistShare.steps[4].presentOnTop).toBe(true)
+    expect(playlistShare.steps[4].skipIfMissing).toBe(true)
+    expect(playlistShare.steps[5].targetId).toBe('playlist.share-modal-copy')
+    expect(playlistShare.steps[5].presentOnTop).toBe(true)
+    expect(playlistShare.steps[5].skipIfMissing).toBe(true)
+    expect(playlistShare.steps[6].targetId).toBe('playlist.share-modal-send')
+    expect(playlistShare.steps[6].presentOnTop).toBe(true)
+    expect(playlistShare.steps[6].skipIfMissing).toBe(true)
+    // The final targetless card re-presents on top and closes the menu on enter.
+    expect(playlistShare.steps[7].targetId).toBeUndefined()
+    expect(playlistShare.steps[7].presentOnTop).toBe(true)
+    expect(playlistShare.steps[7].actionOnEnterId).toBe('close-playlist-menu')
+  })
+
+  test('playlist-share folds its two exit visualizations into six cards', () => {
+    const deck = buildTourDeck(scenariosById['playlist-share'].steps)
+
+    expect(deck).toHaveLength(6)
+    expect(deck.map(entry => entry.cardIndex)).toEqual([0, 2, 4, 5, 6, 7])
+    expect(deck[0].exitStepIndexes).toEqual([1])
+    expect(deck[1].exitStepIndexes).toEqual([3])
+  })
+
+  test('the playlist screen offers four local tours', () => {
     const localIds = scenarios
       .filter(scenario => scenario.screens?.includes('/listen/playlist') ?? false)
       .map(scenario => scenario.id)
 
-    expect(localIds).toEqual(['playlist-menu', 'playlist-add', 'playlist-offline'])
+    expect(localIds).toEqual([
+      'playlist-menu',
+      'playlist-add',
+      'playlist-offline',
+      'playlist-share',
+    ])
   })
 
   test('playlists scenario no longer claims the single-playlist screen', () => {

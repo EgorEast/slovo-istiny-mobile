@@ -1,5 +1,6 @@
 import { createCtx } from '@reatom/framework'
 import { act } from '@testing-library/react-native'
+import * as Clipboard from 'expo-clipboard'
 import {
   FAVORITES_PLAYLIST,
   type LocalPlaylistData,
@@ -13,6 +14,11 @@ import { buildPlaylistShareUrl } from './buildPlaylistShareUrl'
 import { usePlaylistShare } from './usePlaylistShare'
 
 const mockSharePlaylist = jest.fn()
+const mockSetStringAsync = jest.mocked(Clipboard.setStringAsync)
+
+jest.mock('expo-clipboard', () => ({
+  setStringAsync: jest.fn(),
+}))
 
 jest.mock('./sharePlaylist', () => ({
   sharePlaylist: (...args: unknown[]) => mockSharePlaylist(...args),
@@ -43,9 +49,9 @@ const renderShare = async (id: string, playlists?: LocalPlaylistData[]) => {
   return { ctx, onCloseMenu, result }
 }
 
-const invokeHandleShare = async (handleShare: () => Promise<void>) => {
+const openModal = async (openShareModal: () => void) => {
   await act(async () => {
-    await handleShare()
+    openShareModal()
   })
 }
 
@@ -56,56 +62,94 @@ describe('usePlaylistShare', () => {
 
   afterEach(() => {
     jest.useRealTimers()
+    jest.restoreAllMocks()
   })
 
-  test('canShare is false for a non-UUID placeholder id and handleShare is a no-op', async () => {
-    const { ctx, onCloseMenu, result } = await renderShare('default')
+  test('canShare is false for a placeholder id and openShareModal is a no-op', async () => {
+    const { onCloseMenu, result } = await renderShare('default')
 
     expect(result.current.canShare).toBe(false)
+    expect(result.current.shareUrl).toBeNull()
 
-    await invokeHandleShare(result.current.handleShare)
+    await openModal(result.current.openShareModal)
 
-    expect(mockSharePlaylist).not.toHaveBeenCalled()
     expect(onCloseMenu).not.toHaveBeenCalled()
-    expect(ctx.get(toastAtom)).toBeNull()
+    expect(result.current.isShareModalVisible).toBe(false)
+  })
+  test('canShare is false for favorites even though it is local', async () => {
+    const { result } = await renderShare(FAVORITES_PLAYLIST.id, [FAVORITES_PLAYLIST])
+
+    expect(result.current.canShare).toBe(false)
+    expect(result.current.shareUrl).toBeNull()
   })
 
-  test('canShare is true for a UUID and handleShare passes the title and built URL', async () => {
-    mockSharePlaylist.mockResolvedValue('shared')
-    const { result } = await renderShare(VALID_UUID)
-    const expectedUrl = buildPlaylistShareUrl(VALID_UUID)
+  test('openShareModal closes the menu and reveals the modal with the server URL', async () => {
+    const { onCloseMenu, result } = await renderShare(VALID_UUID)
 
     expect(result.current.canShare).toBe(true)
+    expect(result.current.shareUrl).toBe(buildPlaylistShareUrl(VALID_UUID))
 
-    await invokeHandleShare(result.current.handleShare)
+    await openModal(result.current.openShareModal)
+
+    expect(onCloseMenu).toHaveBeenCalledTimes(1)
+    expect(result.current.isShareModalVisible).toBe(true)
+  })
+
+  test('openShareModal uses the custom URL for a local playlist', async () => {
+    const local: LocalPlaylistData = {
+      id: 'local-1',
+      sermonIds: ['s-1', 's-2'],
+      sermons: [],
+      title: PLAYLIST_TITLE,
+    }
+    const { onCloseMenu, result } = await renderShare('local-1', [FAVORITES_PLAYLIST, local])
+
+    expect(result.current.shareUrl).toBe(
+      buildCustomPlaylistShareUrl({ sermonIds: ['s-1', 's-2'], title: PLAYLIST_TITLE }),
+    )
+
+    await openModal(result.current.openShareModal)
+
+    expect(onCloseMenu).toHaveBeenCalledTimes(1)
+    expect(result.current.isShareModalVisible).toBe(true)
+  })
+
+  test('sendShareLink shares the title and URL and stays silent on success', async () => {
+    mockSharePlaylist.mockResolvedValue('shared')
+    const { ctx, result } = await renderShare(VALID_UUID)
+    const expectedUrl = buildPlaylistShareUrl(VALID_UUID)
+
+    await act(async () => {
+      await result.current.sendShareLink()
+    })
 
     expect(mockSharePlaylist).toHaveBeenCalledWith({
       text: `${PLAYLIST_TITLE} — ${expectedUrl}`,
       url: expectedUrl,
     })
+    expect(ctx.get(toastAtom)).toBeNull()
   })
 
-  test.each(['shared', 'dismissed'])(
-    'closes the menu without a toast when sharing resolves "%s"',
-    async outcome => {
-      mockSharePlaylist.mockResolvedValue(outcome)
-      const { ctx, onCloseMenu, result } = await renderShare(VALID_UUID)
+  test.each(['shared', 'dismissed'])('shows no toast when sharing resolves "%s"', async outcome => {
+    mockSharePlaylist.mockResolvedValue(outcome)
+    const { ctx, result } = await renderShare(VALID_UUID)
 
-      await invokeHandleShare(result.current.handleShare)
+    await act(async () => {
+      await result.current.sendShareLink()
+    })
 
-      expect(onCloseMenu).toHaveBeenCalledTimes(1)
-      expect(ctx.get(toastAtom)).toBeNull()
-    },
-  )
+    expect(ctx.get(toastAtom)).toBeNull()
+  })
 
-  test('closes the menu and shows the share-error toast when sharing fails', async () => {
+  test('sendShareLink shows the share-error toast when sharing fails', async () => {
     mockSharePlaylist.mockResolvedValue('error')
-    const { ctx, onCloseMenu, result } = await renderShare(VALID_UUID)
+    const { ctx, result } = await renderShare(VALID_UUID)
 
     jest.useFakeTimers()
-    await invokeHandleShare(result.current.handleShare)
+    await act(async () => {
+      await result.current.sendShareLink()
+    })
 
-    expect(onCloseMenu).toHaveBeenCalledTimes(1)
     expect(ctx.get(toastAtom)).toBe(SHARE_ERROR_MESSAGE)
 
     await act(async () => {
@@ -115,14 +159,17 @@ describe('usePlaylistShare', () => {
     expect(ctx.get(toastAtom)).toBeNull()
   })
 
-  test('closes the menu and shows the copied-link toast on a web copy', async () => {
-    mockSharePlaylist.mockResolvedValue('copied')
-    const { ctx, onCloseMenu, result } = await renderShare(VALID_UUID)
+  test('copyShareLink copies the title and URL and auto-hides the copied toast', async () => {
+    mockSetStringAsync.mockResolvedValue(true)
+    const { ctx, result } = await renderShare(VALID_UUID)
+    const expectedUrl = buildPlaylistShareUrl(VALID_UUID)
 
     jest.useFakeTimers()
-    await invokeHandleShare(result.current.handleShare)
+    await act(async () => {
+      await result.current.copyShareLink()
+    })
 
-    expect(onCloseMenu).toHaveBeenCalledTimes(1)
+    expect(mockSetStringAsync).toHaveBeenCalledWith(`${PLAYLIST_TITLE} — ${expectedUrl}`)
     expect(ctx.get(toastAtom)).toBe(COPIED_MESSAGE)
 
     await act(async () => {
@@ -132,58 +179,29 @@ describe('usePlaylistShare', () => {
     expect(ctx.get(toastAtom)).toBeNull()
   })
 
-  test('canShare is true for a local playlist and shares the custom URL', async () => {
-    mockSharePlaylist.mockResolvedValue('shared')
-    const local: LocalPlaylistData = {
-      id: 'local-1',
-      sermonIds: ['s-1', 's-2'],
-      sermons: [],
-      title: PLAYLIST_TITLE,
-    }
-    const { result } = await renderShare('local-1', [FAVORITES_PLAYLIST, local])
-    const expectedUrl = buildCustomPlaylistShareUrl({
-      sermonIds: ['s-1', 's-2'],
-      title: PLAYLIST_TITLE,
+  test('copyShareLink shows the share-error toast when the clipboard fails', async () => {
+    jest.spyOn(console, 'warn').mockImplementation(() => undefined)
+    mockSetStringAsync.mockRejectedValue(new Error('copy failed'))
+    const { ctx, result } = await renderShare(VALID_UUID)
+
+    jest.useFakeTimers()
+    await act(async () => {
+      await result.current.copyShareLink()
     })
 
-    expect(result.current.canShare).toBe(true)
-
-    await invokeHandleShare(result.current.handleShare)
-
-    expect(mockSharePlaylist).toHaveBeenCalledWith({
-      text: `${PLAYLIST_TITLE} — ${expectedUrl}`,
-      url: expectedUrl,
-    })
+    expect(ctx.get(toastAtom)).toBe(SHARE_ERROR_MESSAGE)
   })
 
-  test('canShare is false for favorites even though it is local', async () => {
-    const { result } = await renderShare(FAVORITES_PLAYLIST.id, [FAVORITES_PLAYLIST])
+  test('closeShareModal hides the modal', async () => {
+    const { result } = await renderShare(VALID_UUID)
 
-    expect(result.current.canShare).toBe(false)
-  })
+    await openModal(result.current.openShareModal)
+    expect(result.current.isShareModalVisible).toBe(true)
 
-  test('shares the custom URL for a local playlist whose id is a UUID', async () => {
-    mockSharePlaylist.mockResolvedValue('shared')
-    const local: LocalPlaylistData = {
-      id: VALID_UUID,
-      sermonIds: ['s-1'],
-      sermons: [],
-      title: PLAYLIST_TITLE,
-    }
-    const { result } = await renderShare(VALID_UUID, [FAVORITES_PLAYLIST, local])
-    const expectedUrl = buildCustomPlaylistShareUrl({
-      sermonIds: ['s-1'],
-      title: PLAYLIST_TITLE,
+    await act(async () => {
+      result.current.closeShareModal()
     })
 
-    expect(result.current.canShare).toBe(true)
-
-    await invokeHandleShare(result.current.handleShare)
-
-    expect(mockSharePlaylist).toHaveBeenCalledWith({
-      text: `${PLAYLIST_TITLE} — ${expectedUrl}`,
-      url: expectedUrl,
-    })
-    expect(expectedUrl).not.toBe(buildPlaylistShareUrl(VALID_UUID))
+    expect(result.current.isShareModalVisible).toBe(false)
   })
 })

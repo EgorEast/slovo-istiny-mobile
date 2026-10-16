@@ -11,6 +11,7 @@ export type OnboardingScenarioId =
   | 'playlist-add'
   | 'playlist-menu'
   | 'playlist-offline'
+  | 'playlist-share'
   | 'playlists'
   | 'read'
   | 'search'
