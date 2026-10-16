@@ -154,16 +154,27 @@ describe('useStepNavigation entry transitions', () => {
   test(
     'blinks the share-item lead-up entry and lands on the QR card (share from «Ещё»)',
     async () => {
-      const { ctx } = await renderNavigation(scenariosById.share, 1, '/more')
+      const { ctx } = await renderNavigation(scenariosById.share, 2, '/more')
 
       // The share-item entry (route /share) blinks on the live row, then navigates.
       await waitFor(() => expect(ctx.get(onboardingEntryStepIndexAtom)).toBeNull(), {
         timeout: 8000,
       })
       expect(mockCurrentPathname).toBe('/share')
+      expect(ctx.get(onboardingTourAtom)?.deckIndex).toBe(2)
     },
     BLINK_BUDGET_MS,
   )
+
+  test('auto-skips the tab entry of the screen-local intro when already on «Ещё»', async () => {
+    const { ctx, result } = await renderNavigation(scenariosById.share, 1, '/more')
+
+    await waitFor(() => expect(ctx.get(onboardingEntryStepIndexAtom)).toBeNull(), {
+      timeout: 1000,
+    })
+    expect(result.current.holdNavigation).toBe(false)
+    expect(mockCurrentPathname).toBe('/more')
+  })
 })
 
 describe('useStepNavigation return entries', () => {
@@ -201,7 +212,7 @@ describe('useStepNavigation return entries', () => {
 
   test.each([
     ['search', '/listen'],
-    ['share', '/share'],
+    ['share', '/more'],
   ] as const)(
     'leads from a nested screen to the %s card screen',
     async (scenarioId, cardRoute) => {

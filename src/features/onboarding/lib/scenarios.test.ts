@@ -65,13 +65,14 @@ describe('onboarding scenario data', () => {
     expect(share.steps).toHaveLength(7)
     expect(share.steps[0].targetId).toBeUndefined()
     expect(share.steps[0].tapTargetId).toBeUndefined()
-    // Pure-navigation return entry: no tap target, only a route.
-    expect(share.steps[1].route).toBe('/more')
-    expect(share.steps[1].tapTargetId).toBeUndefined()
     // The «Ещё» tab is an entry transition (blink + navigation), not a spotlight card.
-    expect(share.steps[2].route).toBe('/more')
-    expect(share.steps[2].tapTargetId).toBe('tab.more')
+    expect(share.steps[1].route).toBe('/more')
+    expect(share.steps[1].tapTargetId).toBe('tab.more')
+    expect(share.steps[1].targetId).toBeUndefined()
+    // Screen-local intro: a same-screen start from «Ещё» lands here.
+    expect(share.steps[2].route).toBeUndefined()
     expect(share.steps[2].targetId).toBeUndefined()
+    expect(share.steps[2].tapTargetId).toBeUndefined()
     expect(share.steps[3].route).toBe('/share')
     expect(share.steps[3].tapTargetId).toBe('more.share-item')
     expect(share.steps[3].targetId).toBeUndefined()
@@ -84,10 +85,11 @@ describe('onboarding scenario data', () => {
     const share = scenariosById.share
     const deck = buildTourDeck(share.steps)
 
-    expect(deck).toHaveLength(4)
-    expect(deck.map(entry => entry.cardIndex)).toEqual([0, 4, 5, 6])
-    expect(deck[1].entryStepIndexes).toEqual([1, 2, 3])
-    expect(deck.filter(entry => entry.entryStepIndexes.length > 0)).toHaveLength(1)
+    expect(deck).toHaveLength(5)
+    expect(deck.map(entry => entry.cardIndex)).toEqual([0, 2, 4, 5, 6])
+    expect(deck[1].entryStepIndexes).toEqual([1])
+    expect(deck[2].entryStepIndexes).toEqual([3])
+    expect(deck.filter(entry => entry.entryStepIndexes.length > 0)).toHaveLength(2)
   })
 
   test('each scenario wires the tab or row it taps when navigating', () => {
@@ -215,6 +217,9 @@ describe('onboarding scenario data', () => {
     )
     expect(scenariosById.share.steps[0].text).toBe(
       'Сейчас перейдём на экран «Ещё» — тапнем по нему — и откроем страницу «Поделиться приложением». Нажмите «Далее».',
+    )
+    expect(scenariosById.share.steps[2].text).toBe(
+      'Откроем страницу «Поделиться приложением»: тапнем по одноимённому пункту в этом списке. Нажмите «Далее».',
     )
   })
 
@@ -558,22 +563,22 @@ describe('share scenario resume', () => {
     })
   })
 
-  test('skips the intro and the tab entry and starts on the QR card from «Ещё»', () => {
+  test('skips the foreign intro and the tab entry and starts on the screen-local intro from «Ещё»', () => {
     expect(resolveTourStart(scenariosById.share, deck, '/more')).toEqual({
       deckIndex: 1,
       skippedDeckIndexes: [0],
     })
   })
 
-  test('skips the intro and starts on the QR card from «Поделиться приложением»', () => {
+  test('skips the lead-up and starts on the QR card from «Поделиться приложением»', () => {
     expect(resolveTourStart(scenariosById.share, deck, '/share')).toEqual({
-      deckIndex: 1,
-      skippedDeckIndexes: [0],
+      deckIndex: 2,
+      skippedDeckIndexes: [0, 1],
     })
   })
 
   test('counts only the remaining cards from the QR card', () => {
-    const fromShare = resolveDeckProgress(deck, [0], 1)
+    const fromShare = resolveDeckProgress(deck, [0, 1], 2)
 
     expect(fromShare.displayIndex).toBe(0)
     expect(fromShare.displayTotal).toBe(3)
