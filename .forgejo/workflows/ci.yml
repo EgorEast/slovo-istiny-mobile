@@ -44,8 +44,13 @@ jobs:
           # Get all non-merge commits in the PR range
           COMMITS=$(git rev-list --no-merges "$BASE_SHA..$HEAD_SHA")
           FAILED=0
+          TOTAL=0
+          BAD_ROWS=""
 
           for COMMIT in $COMMITS; do
+            TOTAL=$((TOTAL + 1))
+            COMMIT_OK=1
+
             # Extract author info from commit metadata
             AUTHOR_NAME=$(git show -s --format='%an' "$COMMIT")
             AUTHOR_EMAIL=$(git show -s --format='%ae' "$COMMIT")
@@ -64,7 +69,7 @@ jobs:
               echo "  Author: $AUTHOR_NAME <$AUTHOR_EMAIL>"
               echo "  Fix with: git rebase --signoff HEAD~1"
               FAILED=1
-              continue
+              COMMIT_OK=0
             fi
 
             # Check 2: At least one Signed-off-by email must match commit author email
@@ -81,10 +86,36 @@ jobs:
             if [ "$MATCH_FOUND" -eq 0 ]; then
               echo "::error::commit $SHORT_SHA: no Signed-off-by email matches author $AUTHOR_EMAIL"
               echo "  Subject: $SUBJECT"
-              echo "  Found trailers: $SOB_TRAILERS"
+              if [ -n "$SOB_TRAILERS" ]; then
+                echo "  Found trailers: $SOB_TRAILERS"
+              else
+                echo "  No Signed-off-by trailer found"
+              fi
               FAILED=1
+              COMMIT_OK=0
+            fi
+
+            if [ "$COMMIT_OK" -eq 0 ]; then
+              AUTHOR_ESC=${AUTHOR_NAME//|/\\|}
+              BAD_ROWS="${BAD_ROWS}| \`$SHORT_SHA\` | ${SUBJECT//|/\\|} | $AUTHOR_ESC <$AUTHOR_EMAIL> |"$'\n'
             fi
           done
+
+          {
+            echo "## DCO"
+            echo ""
+            if [ "$FAILED" -eq 1 ]; then
+              echo "❌ $TOTAL commit(s) checked, some failed the sign-off check:"
+              echo ""
+              echo "| Commit | Subject | Author |"
+              echo "|---|---|---|"
+              printf '%s' "$BAD_ROWS"
+              echo ""
+              echo "Fix with \`git commit -s\` / \`git rebase --signoff HEAD~1\` (trailer email must match the commit author)."
+            else
+              echo "✅ $TOTAL commit(s) checked, all signed off."
+            fi
+          } | scripts/ci/step-summary.sh
 
           if [ "$FAILED" -eq 1 ]; then
             echo ""
@@ -136,16 +167,32 @@ jobs:
         run: yarn install --frozen-lockfile
 
       - name: Check patch-package patches
-        run: yarn check:patches
+        id: patches
+        run: |
+          start=$EPOCHSECONDS
+          yarn check:patches
+          echo "duration=$((EPOCHSECONDS-start))s" >> "$GITHUB_OUTPUT"
 
       - name: Check types (tsc)
-        run: yarn check:types
+        id: types
+        run: |
+          start=$EPOCHSECONDS
+          yarn check:types
+          echo "duration=$((EPOCHSECONDS-start))s" >> "$GITHUB_OUTPUT"
 
       - name: Check FSD architecture (steiger)
-        run: yarn check:fsd
+        id: fsd
+        run: |
+          start=$EPOCHSECONDS
+          yarn check:fsd
+          echo "duration=$((EPOCHSECONDS-start))s" >> "$GITHUB_OUTPUT"
 
       - name: Lint (ESLint)
-        run: yarn lint
+        id: lint
+        run: |
+          start=$EPOCHSECONDS
+          yarn lint
+          echo "duration=$((EPOCHSECONDS-start))s" >> "$GITHUB_OUTPUT"
 
       - name: Cache Gradle dependencies
         uses: actions/cache@v4
@@ -199,18 +246,51 @@ jobs:
           "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" "platform-tools" > /dev/null
 
       - name: Run all tests (jest)
+        id: jest
         # --maxWorkers=2 caps peak memory: heavy jest-expo + RN UI test suites
         # were triggering OOM (SIGKILL) when many workers ran in parallel.
-        run: yarn testFinal --maxWorkers=2
+        run: |
+          start=$EPOCHSECONDS
+          yarn testFinal --maxWorkers=2
+          echo "duration=$((EPOCHSECONDS-start))s" >> "$GITHUB_OUTPUT"
 
       - name: Run native unit tests
+        id: native-tests
         env:
           GRADLE_OPTS: >-
             -Dorg.gradle.internal.http.connectionTimeout=120000
             -Dorg.gradle.internal.http.socketTimeout=300000
         run: |
+          start=$EPOCHSECONDS
           cd android
           ./gradlew :apk-installer:testDebugUnitTest :audio-effects:testDebugUnitTest --continue
+          echo "duration=$((EPOCHSECONDS-start))s" >> "$GITHUB_OUTPUT"
+
+      # Forgejo (>= v17.0 + runner >= 13.2) renders this Markdown above the job
+      # logs; on older runners the file write is silently discarded.
+      - name: Job summary
+        if: always()
+        run: |
+          [ -f scripts/ci/step-summary.sh ] || exit 0
+          status_emoji() {
+            case "$1" in
+              success) echo '✅' ;;
+              failure) echo '❌' ;;
+              *) echo '⏭️' ;;
+            esac
+          }
+          {
+            echo '## Checks'
+            echo ''
+            echo '| Check | Status | Duration |'
+            echo '|---|---|---|'
+            echo "| check:patches | $(status_emoji '${{ steps.patches.outcome }}') | ${{ steps.patches.outputs.duration || '—' }} |"
+            echo "| check:types | $(status_emoji '${{ steps.types.outcome }}') | ${{ steps.types.outputs.duration || '—' }} |"
+            echo "| check:fsd | $(status_emoji '${{ steps.fsd.outcome }}') | ${{ steps.fsd.outputs.duration || '—' }} |"
+            echo "| lint | $(status_emoji '${{ steps.lint.outcome }}') | ${{ steps.lint.outputs.duration || '—' }} |"
+            echo "| jest tests | $(status_emoji '${{ steps.jest.outcome }}') | ${{ steps.jest.outputs.duration || '—' }} |"
+            echo "| native tests (gradle) | $(status_emoji '${{ steps.native-tests.outcome }}') | ${{ steps.native-tests.outputs.duration || '—' }} |"
+          } | scripts/ci/step-summary.sh
 
       # Clean up large directories to reduce runner storage usage
       - name: Cleanup workspace

@@ -32,6 +32,13 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -e
+          summary_row() { printf '%s\n' "$1" | scripts/ci/step-summary.sh; }
+
+          {
+            echo "## Release ${{ github.ref_name }} — create-release"
+            echo ''
+          } | scripts/ci/step-summary.sh
+
           URL="${{ github.server_url }}/api/v1/repos/${{ github.repository }}/commits/${{ github.sha }}/status"
 
           # Runner capacity is 2, so this job holding a runner slot while
@@ -42,8 +49,8 @@ jobs:
             STATE=$(curl -s -H "Authorization: token $GITHUB_TOKEN" "$URL" | jq -r '.statuses[] | select(.context | startswith("CI / checks")) | .status' | head -1)
 
             case "$STATE" in
-              success) echo "CI passed for ${{ github.sha }}"; exit 0 ;;
-              failure|error) echo "::error::CI did not pass for ${{ github.sha }} (status: $STATE). Refusing to release."; exit 1 ;;
+              success) echo "CI passed for ${{ github.sha }}"; summary_row "- CI status on \`${{ github.sha }}\`: ✅ passed"; exit 0 ;;
+              failure|error) echo "::error::CI did not pass for ${{ github.sha }} (status: $STATE). Refusing to release."; summary_row "- CI status on \`${{ github.sha }}\`: ❌ $STATE — refusing to release"; exit 1 ;;
             esac
 
             echo "Waiting for CI status on ${{ github.sha }} (attempt $i/40)..."
@@ -51,6 +58,7 @@ jobs:
           done
 
           echo "::error::Timed out waiting for CI status on ${{ github.sha }}"
+          summary_row "- CI status on \`${{ github.sha }}\`: ❌ timed out"
           exit 1
 
       - name: Setup Node.js
@@ -89,6 +97,10 @@ jobs:
           echo "All versions match tag $TAG_VERSION (code: $EXPECTED_CODE)"
           echo "version=$TAG_VERSION" >> "$GITHUB_OUTPUT"
 
+          {
+            echo "- Versions: package.json ✅ · gradle versionName ✅ · versionCode \`$EXPECTED_CODE\` ✅"
+          } | scripts/ci/step-summary.sh
+
       - name: Extract changelog section
         run: |
           VERSION="${{ steps.version.outputs.version }}"
@@ -107,10 +119,18 @@ jobs:
 
           echo "Extracted changelog section for v$VERSION ($(wc -l < release-body.md) lines)"
 
+          {
+            echo "### Changelog excerpt"
+            echo ''
+            sed 's/^/> /' release-body.md
+            echo ''
+          } | scripts/ci/step-summary.sh
+
       - name: Create Forgejo Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          summary_row() { printf '%s\n' "$1" | scripts/ci/step-summary.sh; }
           jq -n \
             --arg tag "${{ github.ref_name }}" \
             --arg name "${{ github.ref_name }}" \
@@ -129,6 +149,7 @@ jobs:
             exit 1
           fi
           echo "Created Forgejo Release ${{ github.ref_name }} (HTTP $HTTP_CODE)"
+          summary_row "- Forgejo release: [${{ github.ref_name }}](${{ github.server_url }}/${{ github.repository }}/releases/tag/${{ github.ref_name }}) ✅"
 
       - name: Cleanup
         if: always()
@@ -156,13 +177,26 @@ jobs:
           WEB_HOSTNAME: ${{ vars.WEB_HOSTNAME }}
         run: |
           set -e
+
+          {
+            echo "## Release ${{ github.ref_name }} — web"
+            echo ''
+          } | scripts/ci/step-summary.sh
+
           missing=0
+          missing_list=""
           for v in BACKEND_API_HOSTNAME LANDING_HOSTNAME WEB_HOSTNAME; do
             if [ -z "${!v}" ]; then
               echo "::error::Required Forgejo variable $v is not set (org- or repo-level vars) — refusing to build"
               missing=1
+              missing_list="$missing_list \`$v\`"
             fi
           done
+          if [ "$missing" -eq 1 ]; then
+            printf '%s\n' "- Required vars: ❌ missing$missing_list" | scripts/ci/step-summary.sh
+          else
+            printf '%s\n' "- Required vars: ✅" | scripts/ci/step-summary.sh
+          fi
           exit $missing
 
       - name: Setup Node.js
@@ -198,17 +232,24 @@ jobs:
           EXPO_PUBLIC_BACKEND_API_HOSTNAME: ${{ vars.BACKEND_API_HOSTNAME }}
           EXPO_PUBLIC_LANDING_HOSTNAME: ${{ vars.LANDING_HOSTNAME }}
           EXPO_PUBLIC_WEB_HOSTNAME: ${{ vars.WEB_HOSTNAME }}
-        run: yarn web:build
+        run: |
+          start=$EPOCHSECONDS
+          yarn web:build
+          printf '%s\n' "- Web export: ✅ ($((EPOCHSECONDS-start))s)" | scripts/ci/step-summary.sh
 
       - name: Zip web build
         run: |
           VERSION="${{ needs.create-release.outputs.version }}"
           (cd dist && zip -qr "../slovo-propovedi-web-v${VERSION}.zip" .)
+          {
+            echo "- Artifact: \`slovo-propovedi-web-v${VERSION}.zip\` ($(du -h "slovo-propovedi-web-v${VERSION}.zip" | cut -f1))"
+          } | scripts/ci/step-summary.sh
 
       - name: Upload web zip to the Forgejo Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          summary_row() { printf '%s\n' "$1" | scripts/ci/step-summary.sh; }
           VERSION="${{ needs.create-release.outputs.version }}"
           TAG="${{ github.ref_name }}"
           RELEASE_ID=$(curl -s \
@@ -223,6 +264,7 @@ jobs:
             -H "Authorization: token $GITHUB_TOKEN" \
             -H "Content-Type: application/zip" \
             --data-binary @slovo-propovedi-web-v${VERSION}.zip
+          summary_row "- Uploaded to the release: ✅ [$TAG](${{ github.server_url }}/${{ github.repository }}/releases/tag/$TAG)"
 
       - name: Check deploy config
         id: deploycfg
@@ -234,6 +276,7 @@ jobs:
             echo "deploy=true" >> "$GITHUB_OUTPUT"
           else
             echo "::warning::VPS_HOST secret or WEB_HOSTNAME variable not set — skipping VPS deploy (the web zip is still attached to the release)"
+            printf '%s\n' "- VPS deploy: ⏭️ skipped (VPS_HOST secret or WEB_HOSTNAME variable not set)" | scripts/ci/step-summary.sh
             echo "deploy=false" >> "$GITHUB_OUTPUT"
           fi
 
@@ -270,6 +313,7 @@ jobs:
              WEB_HOSTNAME='$WEB_HOSTNAME' \
              ACME_EMAIL='$ACME_EMAIL' \
              bash /tmp/vps-deploy-web.sh"
+          printf '%s\n' "- VPS deploy: ✅ https://$WEB_HOSTNAME (tag $DEPLOY_TAG)" | scripts/ci/step-summary.sh
 
       - name: Cleanup workspace
         if: always()
@@ -297,13 +341,26 @@ jobs:
           WEB_HOSTNAME: ${{ vars.WEB_HOSTNAME }}
         run: |
           set -e
+
+          {
+            echo "## Release ${{ github.ref_name }} — android"
+            echo ''
+          } | scripts/ci/step-summary.sh
+
           missing=0
+          missing_list=""
           for v in BACKEND_API_HOSTNAME LANDING_HOSTNAME WEB_HOSTNAME; do
             if [ -z "${!v}" ]; then
               echo "::error::Required Forgejo variable $v is not set (org- or repo-level vars) — refusing to build"
               missing=1
+              missing_list="$missing_list \`$v\`"
             fi
           done
+          if [ "$missing" -eq 1 ]; then
+            printf '%s\n' "- Required vars: ❌ missing$missing_list" | scripts/ci/step-summary.sh
+          else
+            printf '%s\n' "- Required vars: ✅" | scripts/ci/step-summary.sh
+          fi
           exit $missing
 
       - name: Setup Node.js
@@ -374,7 +431,10 @@ jobs:
           EXPO_PUBLIC_BACKEND_API_HOSTNAME: ${{ vars.BACKEND_API_HOSTNAME }}
           EXPO_PUBLIC_LANDING_HOSTNAME: ${{ vars.LANDING_HOSTNAME }}
           EXPO_PUBLIC_WEB_HOSTNAME: ${{ vars.WEB_HOSTNAME }}
-        run: npx expo prebuild --platform android --clean
+        run: |
+          start=$EPOCHSECONDS
+          npx expo prebuild --platform android --clean
+          printf '%s\n' "- Expo prebuild: ✅ ($((EPOCHSECONDS-start))s)" | scripts/ci/step-summary.sh
 
       - name: Verify prebuild versionCode
         run: |
@@ -405,6 +465,7 @@ jobs:
         run: |
           if [ -z "${ANDROID_KEYSTORE_BASE64:-}" ]; then
             echo "::warning::ANDROID_KEYSTORE_BASE64 is not configured — building a debug-signed release (dev-only)"
+            printf '%s\n' "- APK signing: ⚠️ debug-signed fallback (ANDROID_KEYSTORE_BASE64 not set)" | scripts/ci/step-summary.sh
             exit 0
           fi
           echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > android/app/release.keystore
@@ -414,6 +475,7 @@ jobs:
             echo "RELEASE_KEY_ALIAS=$ANDROID_KEY_ALIAS"
             echo "RELEASE_KEY_PASSWORD=$ANDROID_KEY_PASSWORD"
           } >> "$GITHUB_ENV"
+          printf '%s\n' "- APK signing: release keystore 🔐" | scripts/ci/step-summary.sh
 
       - name: Configure Gradle for CI
         run: |
@@ -499,8 +561,10 @@ jobs:
           # artifacts build the prod variant assembled by assembleProdRelease.
           # The --init-script is belt-and-suspenders: the config plugin already
           # disables lintVital* tasks via the root build.gradle subprojects block.
+          start=$EPOCHSECONDS
           nice -n 19 ionice -c 3 ./gradlew assembleProdRelease --no-daemon -Dorg.gradle.parallel=false --init-script ../scripts/gradle/disable-lint-vital.gradle
           df -h /
+          printf '%s\n' "- APK build (arm64-v8a): ✅ ($((EPOCHSECONDS-start))s)" | ../scripts/ci/step-summary.sh
 
       - name: Rename and zip APK
         run: |
@@ -510,6 +574,10 @@ jobs:
           RENAMED="Slovo.Propovedi v${VERSION}.apk"
           cp "$APK_PATH" "$APK_DIR/$RENAMED"
           zip -j "slovo-propovedi-v${VERSION}.zip" "$APK_DIR/$RENAMED"
+          {
+            echo "- APK: \`$RENAMED\`"
+            echo "- Artifact: \`slovo-propovedi-v${VERSION}.zip\` ($(du -h "slovo-propovedi-v${VERSION}.zip" | cut -f1))"
+          } | scripts/ci/step-summary.sh
 
       - name: Extract changelog section
         run: |
@@ -525,6 +593,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          summary_row() { printf '%s\n' "$1" | scripts/ci/step-summary.sh; }
           VERSION="${{ needs.create-release.outputs.version }}"
           TAG="${{ github.ref_name }}"
           RELEASE_ID=$(curl -s \
@@ -539,6 +608,7 @@ jobs:
             -H "Authorization: token $GITHUB_TOKEN" \
             -H "Content-Type: application/zip" \
             --data-binary @slovo-propovedi-v${VERSION}.zip
+          summary_row "- Uploaded to the release: ✅ [$TAG](${{ github.server_url }}/${{ github.repository }}/releases/tag/$TAG)"
 
       - name: Mirror release to GitHub
         env:
@@ -546,8 +616,10 @@ jobs:
           # so both the secret and the env var use the MIRROR_GITHUB_TOKEN name.
           MIRROR_GITHUB_TOKEN: ${{ secrets.MIRROR_GITHUB_TOKEN }}
         run: |
+          summary_row() { printf '%s\n' "$1" | scripts/ci/step-summary.sh; }
           if [ -z "${MIRROR_GITHUB_TOKEN:-}" ]; then
             echo "MIRROR_GITHUB_TOKEN is not configured - skipping GitHub mirror"
+            summary_row "- GitHub mirror: ⏭️ skipped (MIRROR_GITHUB_TOKEN not set)"
             exit 0
           fi
 
@@ -571,9 +643,11 @@ jobs:
             RELEASE_ID=$(jq -r .id /tmp/gh-release.json 2>/dev/null || echo null)
             if [ -z "$RELEASE_ID" ] || [ "$RELEASE_ID" = "null" ]; then
               echo "::warning::GitHub mirror failed: could not read release id for $TAG"
+              summary_row "- GitHub mirror: ⚠️ failed (could not read release id)"
               exit 0
             fi
             echo "GitHub release for $TAG already exists (id: $RELEASE_ID)"
+            summary_row "- GitHub mirror: ✅ release already exists"
           elif [ "$RELEASE_STATUS" = "404" ]; then
             jq -n \
               --arg tag "$TAG" \
@@ -588,11 +662,14 @@ jobs:
             RELEASE_ID=$(echo "$CREATE_RESPONSE" | jq -r .id 2>/dev/null || true)
             if [ -z "$RELEASE_ID" ] || [ "$RELEASE_ID" = "null" ]; then
               echo "::warning::GitHub mirror failed: could not create release for $TAG - $(echo "$CREATE_RESPONSE" | jq -r .message 2>/dev/null || true)"
+              summary_row "- GitHub mirror: ⚠️ failed (could not create release)"
               exit 0
             fi
             echo "Created GitHub release for $TAG (id: $RELEASE_ID)"
+            summary_row "- GitHub mirror: ✅ release created"
           else
             echo "::warning::GitHub mirror failed: unexpected status $RELEASE_STATUS for releases/tags/$TAG"
+            summary_row "- GitHub mirror: ⚠️ failed (status $RELEASE_STATUS)"
             exit 0
           fi
 
@@ -605,10 +682,13 @@ jobs:
 
           if [ "$UPLOAD_STATUS" = "201" ]; then
             echo "Uploaded $ZIP_FILE to GitHub release $RELEASE_ID"
+            summary_row "- GitHub mirror: ✅ asset uploaded"
           elif [ "$UPLOAD_STATUS" = "422" ]; then
             echo "Asset $ZIP_FILE already exists on GitHub release $RELEASE_ID - skipping"
+            summary_row "- GitHub mirror: ✅ asset already exists"
           else
             echo "::warning::GitHub mirror failed: asset upload returned status $UPLOAD_STATUS - $(jq -r .message /tmp/gh-upload.json 2>/dev/null || true)"
+            summary_row "- GitHub mirror: ⚠️ failed (asset status $UPLOAD_STATUS)"
           fi
 
       - name: Mirror release to SourceCraft
@@ -617,8 +697,10 @@ jobs:
           # auth is required even for GET requests.
           MIRROR_SOURCECRAFT_TOKEN: ${{ secrets.MIRROR_SOURCECRAFT_TOKEN }}
         run: |
+          summary_row() { printf '%s\n' "$1" | scripts/ci/step-summary.sh; }
           if [ -z "${MIRROR_SOURCECRAFT_TOKEN:-}" ]; then
             echo "MIRROR_SOURCECRAFT_TOKEN is not configured - skipping SourceCraft mirror"
+            summary_row "- SourceCraft mirror: ⏭️ skipped (MIRROR_SOURCECRAFT_TOKEN not set)"
             exit 0
           fi
 
@@ -641,9 +723,11 @@ jobs:
             ASSET_EXISTS=$(jq -r --arg n "$ZIP_FILE" '[.assets[]? | select(.name == $n)] | length > 0' /tmp/sc-release.json 2>/dev/null || echo false)
             if [ "$ASSET_EXISTS" = "true" ]; then
               echo "Asset $ZIP_FILE already attached to SourceCraft release $TAG - skipping upload"
+              summary_row "- SourceCraft mirror: ✅ asset already attached"
               SKIP_UPLOAD=true
             else
               echo "SourceCraft release for $TAG already exists - uploading asset"
+              summary_row "- SourceCraft mirror: ✅ release exists, uploading asset"
             fi
           elif [ "$RELEASE_STATUS" = "404" ]; then
             # The tag already exists via git mirroring, so target_branch is not set.
@@ -659,11 +743,14 @@ jobs:
             CREATED_TAG=$(jq -r '.tag // .id' /tmp/sc-create.json 2>/dev/null || true)
             if [ -z "$CREATED_TAG" ] || [ "$CREATED_TAG" = "null" ]; then
               echo "::warning::SourceCraft mirror failed: could not create release for $TAG (status $CREATE_STATUS) - $(jq -r .message /tmp/sc-create.json 2>/dev/null || true)"
+              summary_row "- SourceCraft mirror: ⚠️ failed (create release, status $CREATE_STATUS)"
               exit 0
             fi
             echo "Created SourceCraft release for $TAG (status $CREATE_STATUS)"
+            summary_row "- SourceCraft mirror: ✅ release created (status $CREATE_STATUS)"
           else
             echo "::warning::SourceCraft mirror failed: unexpected status $RELEASE_STATUS for releases/tag/$TAG"
+            summary_row "- SourceCraft mirror: ⚠️ failed (status $RELEASE_STATUS)"
             exit 0
           fi
 
@@ -681,8 +768,10 @@ jobs:
 
           if [ "$UPLOAD_STATUS" = "201" ]; then
             echo "Uploaded $ZIP_FILE to SourceCraft release $TAG"
+            summary_row "- SourceCraft mirror: ✅ asset uploaded"
           else
             echo "::warning::SourceCraft mirror failed: asset upload returned status $UPLOAD_STATUS - $(jq -r .message /tmp/sc-upload.json 2>/dev/null || true)"
+            summary_row "- SourceCraft mirror: ⚠️ failed (asset upload status $UPLOAD_STATUS)"
           fi
 
       - name: Cleanup workspace

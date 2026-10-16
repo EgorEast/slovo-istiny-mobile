@@ -45,7 +45,11 @@ jobs:
           node-version: 24
 
       - name: Run Renovate
-        run: npx --yes renovate
+        id: renovate
+        run: |
+          start=$EPOCHSECONDS
+          npx --yes renovate
+          echo "duration=$((EPOCHSECONDS-start))s" >> "$GITHUB_OUTPUT"
         env:
           RENOVATE_PLATFORM: forgejo
           RENOVATE_ENDPOINT: ${{ github.server_url }}/api/v1
@@ -59,3 +63,22 @@ jobs:
           RENOVATE_GIT_AUTHOR: ${{ vars.RENOVATE_GIT_AUTHOR }}
           GITHUB_COM_TOKEN: ${{ secrets.RENOVATE_GITHUB_COM_TOKEN }}
           LOG_LEVEL: info
+
+      # Forgejo (>= v17.0 + runner >= 13.2) renders this Markdown above the job
+      # logs; on older runners the file write is silently discarded.
+      - name: Job summary
+        if: always()
+        run: |
+          [ -f scripts/ci/step-summary.sh ] || exit 0
+          case "${{ steps.renovate.outcome }}" in
+            success) STATUS='✅ success' ;;
+            failure) STATUS='❌ failure' ;;
+            *) STATUS='⏭️ skipped' ;;
+          esac
+          {
+            echo '## Renovate'
+            echo ''
+            echo "- Repository: \`${{ github.repository }}\`"
+            echo "- Event: \`${{ github.event_name }}\`"
+            echo "- Result: $STATUS (${{ steps.renovate.outputs.duration || '—' }})"
+          } | scripts/ci/step-summary.sh
