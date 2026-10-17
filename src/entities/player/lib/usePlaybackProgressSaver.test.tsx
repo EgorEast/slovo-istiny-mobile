@@ -16,6 +16,7 @@ import { usePlaybackProgressSaver } from './usePlaybackProgressSaver'
 const mockFlushHistoryProgress = jest.fn()
 
 jest.mock('entities/listening-history/@x/player', () => ({
+  COMPLETION_REMAINING_MS: 10_000,
   flushHistoryProgressAction: (_ctx: unknown, params: unknown) => mockFlushHistoryProgress(params),
 }))
 

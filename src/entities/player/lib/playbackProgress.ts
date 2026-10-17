@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { action } from '@reatom/framework'
 import z from 'zod'
+import { COMPLETION_REMAINING_MS } from 'entities/listening-history/@x/player'
 import { CURRENT_SOUND_POSITION } from 'shared/config'
 
 export const playbackProgressSchema = z.object({
@@ -10,6 +11,20 @@ export const playbackProgressSchema = z.object({
   sermonId: z.string(),
 })
 
+/**
+ * Пауза в пределах порога завершённости от конца трека считается дослушиванием:
+ * сохраняем позицию 0, иначе cold start восстановит почти конец записи и сразу
+ * получит STATE_ENDED («мгновенное завершение»). Длительность 0/неизвестна не
+ * нормализуется — без неё остаток до конца не посчитать.
+ * @param positionMs - Позиция воспроизведения в миллисекундах.
+ * @param durationMs - Длительность трека в миллисекундах (может быть неизвестна).
+ */
+const normalizePersistedPositionMs = (positionMs: number, durationMs?: number): number => {
+  if (typeof durationMs !== 'number' || durationMs <= 0) return positionMs
+  if (durationMs - positionMs < COMPLETION_REMAINING_MS) return 0
+  return positionMs
+}
+
 export const savePlaybackProgress = action(
   async (
     _ctx,
@@ -17,7 +32,12 @@ export const savePlaybackProgress = action(
   ) => {
     await AsyncStorage.setItem(
       CURRENT_SOUND_POSITION,
-      JSON.stringify({ durationMs, positionMs, savedAtMs: Date.now(), sermonId }),
+      JSON.stringify({
+        durationMs,
+        positionMs: normalizePersistedPositionMs(positionMs, durationMs),
+        savedAtMs: Date.now(),
+        sermonId,
+      }),
     )
   },
   'savePlaybackProgress',

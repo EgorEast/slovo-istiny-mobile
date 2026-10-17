@@ -1,3 +1,4 @@
+export { COMPLETION_REMAINING_MS } from '../lib/constants'
 export { flushHistoryProgressAction } from '../lib/flushHistoryProgress'
 export { getEntrySermon } from '../lib/getEntrySermon'
 export { getResumePosition } from '../lib/getResumePosition'

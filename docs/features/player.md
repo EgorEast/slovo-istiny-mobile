@@ -99,7 +99,7 @@
 
 **Seek-swap без мигания прогресса:** при подмене источника (партиал → кэш/сеть) seek-guard остаётся взведённым через весь swap (`replaceAudio(..., { preserveSeekGuard: true })`): тот же нативный плеер продолжает слать статусы уже привязанных слушателей, и сброшенный guard пропустил бы `currentTime≈0` нового источника в `positionAtom` (видимый сброс прогрессбара в 0). Позиция держит цель, пока новый источник не загрузится; после успешного swap состояние seek явно очищается (тот же тройной сброс, что и на ошибке). Длительность при same-track swap (позиция > 0) **не сбрасывается** — известная корректная длительность сохраняется; при настоящей смене трека (позиция 0) сброс остаётся.
 
-**Известные ограничения:** все JS-достижимые пути resume (UI-resume и авто-resume после прерывания) проходят через cached-source swap. Единственный «незалеченный» вход — кнопка play в lock-screen/уведомлении: она действует на `AudioPlayer` нативно (expo-audio MediaSession/MPRemoteCommandCenter) и не доходит до `resumeAfterPause`, поэтому мёртвый плеер со stale-источником там всё ещё не лечится (см. [debt.md](../debt.md), `src/entities/player/lib/PlayerService/native/LockScreenControls.ts`).
+**Известные ограничения:** на native через cached-source swap идут все JS-достижимые пути resume (UI-resume и авто-resume после прерывания); на web — UI-resume и reconnect через swap, а web interruption auto-resume сознательно остаётся прямым `audio.play()` (см. комментарий в `interruptionAutoResume.ts`). Единственный «незалеченный» вход — кнопка play в lock-screen/уведомлении: она действует на `AudioPlayer` нативно (expo-audio MediaSession/MPRemoteCommandCenter) и не доходит до `resumeAfterPause`, поэтому мёртвый плеер со stale-источником там всё ещё не лечится (см. [debt.md](../debt.md), `src/entities/player/lib/PlayerService/native/LockScreenControls.ts`).
 
 ### Офлайн-guard при воспроизведении (Issue #81)
 
@@ -428,6 +428,8 @@ Artwork резолвится с фолбэком: `artworkUrl = [metadata.artwor
 - **Уход в фон** (`usePlaybackProgressSaver`): AppState `background` → немедленный flush теми же guard'ами.
 
 При cold start `initializePlayer` парсит JSON через `playbackProgressSchema`; легаси-голое-число → parse вернёт `undefined` → позиция 0. Если `sermonId` не совпадает с текущим аудио → позиция 0. Позиция clamp'ится к `durationMs` из записи (если поле отсутствует или ≤ 0, clamp не применяется).
+
+**Нормализация позиции у конца трека.** `savePlaybackProgress` — единственная точка записи `CURRENT_SOUND_POSITION` — при `durationMs > 0` и остатке меньше `COMPLETION_REMAINING_MS` (10с, общий порог завершённости из `entities/listening-history/lib/constants.ts`) сохраняет `positionMs: 0`. Пауза в пределах 10с от конца считается дослушиванием (история при этом получает реальную позицию и помечает запись завершённой), поэтому cold start перезапускает проповедь с начала, а не seek'ает к концу и не даёт мгновенный `STATE_ENDED`. При `durationMs` 0/неизвестной позиция сохраняется как есть.
 
 ## История прослушивания и resume
 
