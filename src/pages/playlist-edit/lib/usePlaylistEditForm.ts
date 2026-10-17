@@ -14,17 +14,19 @@ import { type SermonShape } from 'shared/model'
 /**
  * Состояние экрана редактирования локального плейлиста.
  *
- * Держит локальные копии названия и порядка проповедей, инициализированные из
- * плейлиста. «Сохранить» доступно, только когда название непустое и изменено
- * название **или** порядок. Сохранение при необходимости гидратирует
- * `myPlaylistsAtom` (`loadMyPlaylists`), затем вызывает переименование и/или
- * reorder (только изменившиеся части), после чего `router.back()`. Экран
- * монтируется лишь когда плейлист найден, поэтому локальные копии не
- * рассинхронизируются с асинхронной гидратацией атома.
+ * Держит локальную копию названия и явный пользовательский порядок проповедей.
+ * «Сохранить» доступно, только когда название непустое и изменено название
+ * **или** порядок. Сохранение при необходимости гидратирует `myPlaylistsAtom`
+ * (`loadMyPlaylists`), затем вызывает переименование и/или reorder (только
+ * изменившиеся части), после чего `router.back()`.
+ *
+ * Порядок хранится как `userOrder: SermonShape[] | null`: `null` — пользователь
+ * ещё не переставлял проповеди, поэтому показывается живая база `displaySermons`
+ * (она догидратируется вместе с секциями), а не порядок, замороженный на mount.
  * @param playlist - Редактируемый локальный плейлист.
  * @param displaySermons - Проповеди в порядке `sermonIds` (у id-only плейлиста —
  * резолвленные) — база для отображения и детекта изменения порядка.
- * @returns Значение/сеттер названия, порядок и его сеттер, доступность и обработчик сохранения.
+ * @returns Значение/сеттер названия, отображаемый порядок и его сеттер, доступность и обработчик сохранения.
  */
 export const usePlaylistEditForm = (playlist: LocalPlaylistData, displaySermons: SermonShape[]) => {
   const router = useRouter()
@@ -33,11 +35,12 @@ export const usePlaylistEditForm = (playlist: LocalPlaylistData, displaySermons:
   const loadPlaylists = useAction(loadMyPlaylists)
   const [isLoaded] = useAtom(myPlaylistsLoadedAtom)
   const [title, setTitle] = useState(playlist.title)
-  const [orderedSermons, setOrderedSermons] = useState<SermonShape[]>(displaySermons)
+  const [userOrder, setUserOrder] = useState<null | SermonShape[]>(null)
 
+  const orderedSermons = userOrder ?? displaySermons
   const trimmedTitle = title.trim()
   const isTitleChanged = trimmedTitle !== playlist.title.trim()
-  const isOrderChanged = hasOrderChanged(displaySermons, orderedSermons)
+  const isOrderChanged = userOrder !== null && hasOrderChanged(displaySermons, userOrder)
   const canSave = trimmedTitle.length > 0 && (isTitleChanged || isOrderChanged)
 
   const save = useCallback(async () => {
@@ -65,5 +68,5 @@ export const usePlaylistEditForm = (playlist: LocalPlaylistData, displaySermons:
     trimmedTitle,
   ])
 
-  return { canSave, orderedSermons, save, setOrderedSermons, setTitle, title }
+  return { canSave, orderedSermons, save, setTitle, setUserOrder, title }
 }

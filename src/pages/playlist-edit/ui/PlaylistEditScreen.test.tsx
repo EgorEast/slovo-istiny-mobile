@@ -94,6 +94,7 @@ const DRAG_LABEL = 'Переместить проповедь'
 const DELETE_DIALOG_TITLE = 'Удалить плейлист?'
 const DELETE_CONFIRM_TEXT = 'Удалить'
 const EMPTY_MESSAGE = 'В плейлисте пока нет проповедей'
+const TWO_SERMONS_TITLE = 'Проповеди (2)'
 
 const SERMON_A: SermonShape = { artist: 'Автор A', artwork: null, id: 's1', title: 'Проповедь A' }
 const SERMON_B: SermonShape = { artist: 'Автор B', artwork: null, id: 's2', title: 'Проповедь B' }
@@ -167,7 +168,7 @@ describe('<PlaylistEditScreen>', () => {
     const { getAllByLabelText, getByLabelText, getByText } = await renderScreen()
 
     expect(getByLabelText(NAME_LABEL).props.value).toBe('Мой плейлист')
-    expect(getByText('Проповеди (2)')).toBeTruthy()
+    expect(getByText(TWO_SERMONS_TITLE)).toBeTruthy()
     expect(getByText(SERMON_A.title)).toBeTruthy()
     expect(getByText(SERMON_B.title)).toBeTruthy()
     expect(getAllByLabelText(DRAG_LABEL)).toHaveLength(2)
@@ -215,7 +216,7 @@ describe('<PlaylistEditScreen>', () => {
       sections: CATALOG_SECTIONS,
     })
 
-    expect(getByText('Проповеди (2)')).toBeTruthy()
+    expect(getByText(TWO_SERMONS_TITLE)).toBeTruthy()
     expect(getByText(SERMON_A.title)).toBeTruthy()
     expect(getByText(SERMON_B.title)).toBeTruthy()
   })
@@ -237,6 +238,52 @@ describe('<PlaylistEditScreen>', () => {
       mockCapturedOnDragEnd?.({ data: [SERMON_B, SERMON_A] })
     })
     fireEvent.press(getByText(SAVE_LABEL))
+
+    await waitFor(() => expect(mockReorder).toHaveBeenCalledWith('local-1', ['s2', 's1']))
+    expect(mockRename).not.toHaveBeenCalled()
+    expect(mockBack).toHaveBeenCalledTimes(1)
+  })
+
+  test('stays unchanged when the id-only list hydrates after mount', async () => {
+    const { ctx, getAllByLabelText, getByRole, getByText } = await renderScreen({
+      playlist: ID_ONLY_PLAYLIST,
+    })
+
+    expect(getByText('Проповеди (0)')).toBeTruthy()
+
+    await act(async () => {
+      dynamicSectionsAtom(ctx, CATALOG_SECTIONS)
+    })
+
+    expect(getByText(TWO_SERMONS_TITLE)).toBeTruthy()
+    expect(getByText(SERMON_A.title)).toBeTruthy()
+    expect(getAllByLabelText(DRAG_LABEL)).toHaveLength(2)
+
+    const saveButton = getByRole('button', { name: SAVE_LABEL })
+    expect(saveButton).toBeDisabled()
+
+    fireEvent.press(saveButton)
+
+    expect(mockReorder).not.toHaveBeenCalled()
+    expect(mockBack).not.toHaveBeenCalled()
+  })
+
+  test('saves the reorder after the id-only list hydrates late', async () => {
+    const { ctx, getByRole, getByText } = await renderScreen({ playlist: ID_ONLY_PLAYLIST })
+
+    await act(async () => {
+      dynamicSectionsAtom(ctx, CATALOG_SECTIONS)
+    })
+    expect(getByText(TWO_SERMONS_TITLE)).toBeTruthy()
+
+    await act(async () => {
+      mockCapturedOnDragEnd?.({ data: [SERMON_B, SERMON_A] })
+    })
+
+    const saveButton = getByRole('button', { name: SAVE_LABEL })
+    expect(saveButton).toBeEnabled()
+
+    fireEvent.press(saveButton)
 
     await waitFor(() => expect(mockReorder).toHaveBeenCalledWith('local-1', ['s2', 's1']))
     expect(mockRename).not.toHaveBeenCalled()

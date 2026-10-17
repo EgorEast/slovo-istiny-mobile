@@ -53,10 +53,12 @@
   Сохранение перестановки пишет только порядок `sermonIds` (экшен `reorderLocalPlaylistSermons`
   переставляет id, не материализуя снапшоты) — slim-дизайн импортированного плейлиста
   сохраняется.
-- Состояние формы — `usePlaylistEditForm` (`src/pages/playlist-edit/lib/`): локальные копии
-  названия и порядка, инициализированные из плейлиста (порядок — из резолвленного списка
-  `usePlaylistDisplaySermons`, т.е. детект изменения порядка идёт против отображённой базы).
-  Сохранение вызывает только изменившиеся
+- Состояние формы — `usePlaylistEditForm` (`src/pages/playlist-edit/lib/`): локальная копия
+  названия и **явный пользовательский порядок** `userOrder: SermonShape[] | null`. Пока
+  `userOrder === null`, список показывает живую базу `usePlaylistDisplaySermons` — поэтому
+  поздняя гидратация секций на cold start наполняет список и не включает «Сохранить»;
+  изменение порядка фиксируется только после drag (`setUserOrder`), а детект изменения идёт
+  против текущей отображённой базы. Сохранение вызывает только изменившиеся
   части: переименование `renameLocalPlaylist` и/или перестановку `reorderLocalPlaylistSermons`
   (`entities/playlist`), затем `router.back()`. Та же `save` подключена к галочке в шапке
   (`usePlaylistEditHeader`, `src/pages/playlist-edit/lib/`) и к нижней панели. Перед сохранением

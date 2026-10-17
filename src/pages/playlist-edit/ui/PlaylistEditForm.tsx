@@ -33,7 +33,7 @@ export const PlaylistEditForm = ({ playlist }: { playlist: LocalPlaylistData }) 
   const { currentTheme } = useTheme()
   const router = useRouter()
   const displaySermons = usePlaylistDisplaySermons(playlist)
-  const { canSave, orderedSermons, save, setOrderedSermons, setTitle, title } = usePlaylistEditForm(
+  const { canSave, orderedSermons, save, setTitle, setUserOrder, title } = usePlaylistEditForm(
     playlist,
     displaySermons,
   )
@@ -45,8 +45,8 @@ export const PlaylistEditForm = ({ playlist }: { playlist: LocalPlaylistData }) 
 
   const renderItem = usePlaylistEditItemRenderer()
   const handleDragEnd = useCallback(
-    ({ data }: { data: SermonShape[] }) => setOrderedSermons(data),
-    [setOrderedSermons],
+    ({ data }: { data: SermonShape[] }) => setUserOrder(data),
+    [setUserOrder],
   )
 
   return (
