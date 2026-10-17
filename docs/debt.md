@@ -79,6 +79,7 @@
 - [ ] `src/shared/api/axiosInstance.ts` — TODO перехода на экран логина (см. Auth flow).
 - [ ] `src/shared/api/books.ts` — TODO заменить на реальный вызов (см. Local DB → API migration).
 - [ ] **Require-циклы book-reader (pre-existing, warn-уровень).** `getParagraphElement.tsx` → `getElementsInBlockElement.ts` → `parseObjectToStylizedElements.ts` → `getParagraphElement.tsx` и `getBlockElement.tsx` → та же цепочка — `src/pages/book-reader/lib/*` — зафиксированы как warn в `.dependency-cruiser.cjs` (`no-circular-legacy-book-reader`); вернуться при рефакторинге book-reader (вынести общие хелперы).
+- [ ] **`installErrorMessage.ts` упёрся в потолок 130 строк** — `src/shared/lib/update-service/installErrorMessage.ts` — при следующей новой подсказке/виде ошибки вынести `STATUS_ERRORS` (чистая таблица маппинга) в отдельный модуль рядом с `findCodeError`.
 
 ## Gradle wrapper
 
@@ -131,6 +132,10 @@
 - [ ] Lock-screen / notification play button acts on the AudioPlayer natively and never reaches resumeAfterPause — every JS-reachable resume path (UI resume, interruption auto-resume) now swaps the source, but the purely native lock-screen play on a dead player cannot be intercepted from JS (expo-audio MediaSession/MPRemoteCommandCenter act on the player directly) — src/entities/player/lib/PlayerService/native/LockScreenControls.ts — revisit only with an upstream hook
 - [ ] **Web-автовозобновление после системного прерывания ограничено платформой.** `src/entities/player/lib/PlayerService/web/interruptionAutoResume.ts`, `src/entities/player/lib/PlayerService/web/pauseIntent.ts` — на iOS Safari прерывание может не выстрелить или браузер не разрешит `play()` (autoplay-policy; WebKit #212780/#295518), а при убитом ОС процессе PWA возобновление извне невозможно; Android Chrome автоматически лечит только transient focus loss, пока процесс жив. Вернуться при жалобах на невозврат воспроизведения после звонка.
 - [ ] **Pre-measurement transient: до первого `onTextLayout`/`onLayout` измерителя `textWidth` = 0 и ширина статичного ряда не определена.** На Android заголовок на один кадр переносится по ширине контейнера (последнее слово может исчезнуть). Давать ряду огромную pre-measurement ширину отклонено: раздутый ряд глотал бы тапы рядом с короткими заголовками. — `src/shared/ui/marquee-text/useMarqueeAnimation.ts`, `src/shared/ui/marquee-text/useMarqueeMeasurement.ts` — вернуться, если появится видимый фликер заголовков при монтировании списков.
+
+## Локальные плейлисты
+
+- [ ] **Перетаскивание до завершения гидрации секций замораживает неполный список в `userOrder`** — `src/pages/playlist-edit/lib/usePlaylistEditForm.ts` — если пользователь начал drag до поздней гидрации `dynamicSectionsAtom`, `userOrder` фиксирует тогдашний (неполный) список; дальше-разрезолвенные проповеди исчезают из видимого списка до сохранения; потери данных нет (`permuteById` аппендит идентификаторы при persist), но видимый список расходится с каталогом. Вернуться, если редактирование импортированных плейлистов на холодном старте станет пользовательским сценарием (вариант: мердж `userOrder` с `displaySermons` по id при гидрации).
 
 ## FSD: домен в entities (граница `shared`)
 
