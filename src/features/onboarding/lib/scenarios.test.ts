@@ -92,6 +92,14 @@ describe('onboarding scenario data', () => {
     expect(deck.filter(entry => entry.entryStepIndexes.length > 0)).toHaveLength(2)
   })
 
+  test('whatsNew folds its tab and settings-item lead-up into the settings card', () => {
+    const whatsNewDeck = buildTourDeck(scenariosById.whatsNew.steps)
+
+    expect(whatsNewDeck.map(entry => entry.cardIndex)).toEqual([0, 3])
+    expect(whatsNewDeck[1].entryStepIndexes).toEqual([1, 2])
+    expect(whatsNewDeck[1].exitStepIndexes).toEqual([])
+  })
+
   test('each scenario wires the tab or row it taps when navigating', () => {
     expect(scenariosById.listen.steps[0].tapTargetId).toBe('tab.listen')
     expect(scenariosById.playlists.steps[1].tapTargetId).toBe('listen.my-playlists-title')
