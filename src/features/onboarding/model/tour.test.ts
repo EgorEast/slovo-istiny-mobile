@@ -22,7 +22,7 @@ const PLAYLIST_MENU_DECK = buildTourDeck(scenariosById[PLAYLIST_MENU].steps)
 describe('onboarding tour model', () => {
   test('start sets the first card and wipes previous rects', () => {
     const ctx = createCtx()
-    onboardingTargetRectsAtom(ctx, { target: RECT })
+    onboardingTargetRectsAtom(ctx, { target: { 'instance-1': RECT } })
     onboardingExitStepIndexAtom(ctx, 0)
 
     startOnboardingTour(ctx, 'listen', '/')
@@ -163,7 +163,7 @@ describe('onboarding tour model', () => {
     const ctx = createCtx()
     startOnboardingTour(ctx, 'listen', '/')
     onboardingExitStepIndexAtom(ctx, 0)
-    registerOnboardingTargetRect(ctx, { id: 'a', rect: RECT })
+    registerOnboardingTargetRect(ctx, { id: 'a', instanceId: 'instance-1', rect: RECT })
 
     endOnboardingTour(ctx)
 

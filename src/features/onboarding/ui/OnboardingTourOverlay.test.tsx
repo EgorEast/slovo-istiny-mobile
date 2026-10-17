@@ -71,6 +71,8 @@ const TAP_PHASE_TIMEOUT_MS = 3500
 const EXIT_FLOW_TIMEOUT_MS = 5500
 const HOLD_TIMEOUT_MS = 1200
 const SECTIONS_RECT: OnboardingTargetRect = { height: 4, width: 3, x: 1, y: 2 }
+// A target id maps to a per-instance map; fixtures seed a single literal instance.
+const instances = (rect: OnboardingTargetRect) => ({ 'instance-1': rect })
 const OFFSCREEN_RECT: OnboardingTargetRect = { height: 60, width: 300, x: 0, y: 99999 }
 const SETTINGS_ITEM_RECT: OnboardingTargetRect = { height: 60, width: 90, x: 300, y: 760 }
 const EDGE_BACK_RECT: OnboardingTargetRect = { height: 400, width: 64, x: 0, y: 100 }
@@ -109,7 +111,7 @@ const renderAtDeck = (
     | 'search'
     | 'settings',
   deckIndex: number,
-  rects: Record<string, OnboardingTargetRect> = {},
+  rects: Record<string, Record<string, OnboardingTargetRect>> = {},
   setup?: (ctx: ReturnType<typeof createCtx>) => void,
 ) => {
   const ctx = createCtx()
@@ -134,7 +136,7 @@ describe('<OnboardingTourOverlay>', () => {
 
   test('renders the current card with next and close controls when the rect is ready', async () => {
     const { getByRole, getByText } = await renderAtDeck('listen', 0, {
-      'listen.sections': SECTIONS_RECT,
+      'listen.sections': instances(SECTIONS_RECT),
     })
 
     expect(getByText('Разделы проповедей')).toBeTruthy()
@@ -151,7 +153,7 @@ describe('<OnboardingTourOverlay>', () => {
     const { getByText } = await renderAtDeck(
       'listen',
       0,
-      { 'listen.sections': SECTIONS_RECT },
+      { 'listen.sections': instances(SECTIONS_RECT) },
       ctx =>
         dynamicSectionsAtom(ctx, [
           { itemsSize: 'middle', title: 'По Библии', transform: 'middle' },
@@ -194,7 +196,7 @@ describe('<OnboardingTourOverlay>', () => {
 
   test('advances to the next card when the primary button is pressed on a non-last card', async () => {
     const { ctx, getByText } = await renderAtDeck('listen', 0, {
-      'listen.sections': SECTIONS_RECT,
+      'listen.sections': instances(SECTIONS_RECT),
     })
 
     fireEvent.press(getByText(NEXT_LABEL))
@@ -209,7 +211,7 @@ describe('<OnboardingTourOverlay>', () => {
   test('counts only cards in the step counter', async () => {
     // playlist-add has six steps but only four cards (two are exit visualizations).
     const { getByText } = await renderAtDeck('playlist-add', 0, {
-      [PLAYLIST_FIRST_ROW]: PLAYLIST_ROW_RECT,
+      [PLAYLIST_FIRST_ROW]: instances(PLAYLIST_ROW_RECT),
     })
 
     expect(getByText('Шаг 1 из 4')).toBeTruthy()
@@ -238,7 +240,7 @@ describe('<OnboardingTourOverlay>', () => {
     mockPathname.mockReturnValue('/settings')
 
     const { getByTestId, getByText, queryByText } = await renderAtDeck('settings', 0, {
-      'more.settings-item': SETTINGS_ITEM_RECT,
+      'more.settings-item': instances(SETTINGS_ITEM_RECT),
     })
 
     // The blink is presented in a Modal (a fresh native window above app overlays):
@@ -254,7 +256,7 @@ describe('<OnboardingTourOverlay>', () => {
 
   test('presents a card exit visualization blink inside the keyed modal', async () => {
     const { getByTestId, getByText } = await renderAtDeck('playlist-add', 0, {
-      [PLAYLIST_FIRST_ROW]: PLAYLIST_ROW_RECT,
+      [PLAYLIST_FIRST_ROW]: instances(PLAYLIST_ROW_RECT),
     })
 
     fireEvent.press(getByText(NEXT_LABEL))
@@ -274,7 +276,11 @@ describe('<OnboardingTourOverlay>', () => {
     expect(queryByTestId(TAP_MODAL)).toBeNull()
 
     await act(async () => {
-      registerOnboardingTargetRect(ctx, { id: 'more.settings-item', rect: SETTINGS_ITEM_RECT })
+      registerOnboardingTargetRect(ctx, {
+        id: 'more.settings-item',
+        instanceId: 'instance-1',
+        rect: SETTINGS_ITEM_RECT,
+      })
     })
 
     await waitFor(() => expect(queryByTestId(TAP_MODAL)).toBeTruthy())
@@ -302,7 +308,7 @@ describe('<OnboardingTourOverlay>', () => {
     mockPathname.mockReturnValue('/settings')
 
     const { getByText, queryByText, rerender } = await renderAtDeck('settings', 0, {
-      'more.settings-item': SETTINGS_ITEM_RECT,
+      'more.settings-item': instances(SETTINGS_ITEM_RECT),
     })
 
     expect(getByText(TAP_INDICATOR)).toBeTruthy()
@@ -320,7 +326,7 @@ describe('<OnboardingTourOverlay>', () => {
     mockPathname.mockReturnValue('/settings')
 
     const { ctx, getByText, queryByText } = await renderAtDeck('settings', 0, {
-      'more.settings-item': SETTINGS_ITEM_RECT,
+      'more.settings-item': instances(SETTINGS_ITEM_RECT),
     })
 
     expect(getByText(TAP_INDICATOR)).toBeTruthy()
@@ -338,11 +344,11 @@ describe('<OnboardingTourOverlay>', () => {
     // A server playlist hides publish/clear/delete, so three menu cards are dropped and
     // the interactive sermon-menu card is the last visible one: 7 cards of 7.
     const { getByText, queryByText } = await renderAtDeck('playlist-menu', 9, {
-      'playlist.menu-add-all': MENU_RECT,
-      'playlist.menu-history-mark': MENU_RECT,
-      'playlist.menu-offline-add': MENU_RECT,
-      'playlist.menu-offline-remove': MENU_RECT,
-      'playlist.menu-share': MENU_RECT,
+      'playlist.menu-add-all': instances(MENU_RECT),
+      'playlist.menu-history-mark': instances(MENU_RECT),
+      'playlist.menu-offline-add': instances(MENU_RECT),
+      'playlist.menu-offline-remove': instances(MENU_RECT),
+      'playlist.menu-share': instances(MENU_RECT),
     })
 
     expect(getByText('Шаг 7 из 7')).toBeTruthy()
@@ -352,7 +358,7 @@ describe('<OnboardingTourOverlay>', () => {
 
   test('renders a centered card when the registered rect is below the viewport', async () => {
     const { getByText } = await renderAtDeck('listen', 3, {
-      'listen.my-playlists': OFFSCREEN_RECT,
+      'listen.my-playlists': instances(OFFSCREEN_RECT),
     })
 
     expect(getByText('Мои плейлисты')).toBeTruthy()
@@ -360,8 +366,8 @@ describe('<OnboardingTourOverlay>', () => {
 
   test('blocks the app under a registered area card with a spotlight modal', async () => {
     const { getAllByTestId, getByTestId, getByText } = await renderAtDeck('player-intro', 0, {
-      'player-fullscreen.edge-back': EDGE_BACK_RECT,
-      'player-fullscreen.edge-forward': EDGE_FORWARD_RECT,
+      'player-fullscreen.edge-back': instances(EDGE_BACK_RECT),
+      'player-fullscreen.edge-forward': instances(EDGE_FORWARD_RECT),
     })
 
     expect(getByTestId(TOUR_MODAL)).toBeTruthy()
@@ -375,8 +381,8 @@ describe('<OnboardingTourOverlay>', () => {
 
   test('advances from an area card when the primary button is pressed', async () => {
     const { ctx, getByText } = await renderAtDeck('player-intro', 0, {
-      'player-fullscreen.edge-back': EDGE_BACK_RECT,
-      'player-fullscreen.edge-forward': EDGE_FORWARD_RECT,
+      'player-fullscreen.edge-back': instances(EDGE_BACK_RECT),
+      'player-fullscreen.edge-forward': instances(EDGE_FORWARD_RECT),
     })
 
     fireEvent.press(getByText(NEXT_LABEL))
@@ -403,7 +409,7 @@ describe('<OnboardingTourOverlay>', () => {
 
   test('cuts a hole only for the registered area rects of the card', async () => {
     const { getAllByTestId, getByText, queryByText } = await renderAtDeck('player-intro', 0, {
-      'player-fullscreen.edge-back': EDGE_BACK_RECT,
+      'player-fullscreen.edge-back': instances(EDGE_BACK_RECT),
     })
 
     expect(getAllByTestId(AREA_HIGHLIGHT)).toHaveLength(1)
@@ -414,7 +420,7 @@ describe('<OnboardingTourOverlay>', () => {
   test('spotlights the sermon-row ⋯ menu on the final search card', async () => {
     const MENU_RECT: OnboardingTargetRect = { height: 40, width: 40, x: 300, y: 400 }
     const { getByTestId, getByText, queryByTestId, queryByText } = await renderAtDeck('search', 6, {
-      'search-results.first-sermon-menu': MENU_RECT,
+      'search-results.first-sermon-menu': instances(MENU_RECT),
     })
 
     expect(getByTestId(TOUR_MODAL)).toBeTruthy()
@@ -431,7 +437,7 @@ describe('<OnboardingTourOverlay>', () => {
     registerTourAction('close-sermon-playlist-picker', action)
 
     const MENU_RECT: OnboardingTargetRect = { height: 40, width: 40, x: 300, y: 400 }
-    await renderAtDeck('search', 6, { 'search-results.first-sermon-menu': MENU_RECT })
+    await renderAtDeck('search', 6, { 'search-results.first-sermon-menu': instances(MENU_RECT) })
 
     await waitFor(() => expect(action).toHaveBeenCalledTimes(1))
     unregisterTourAction('close-sermon-playlist-picker')
@@ -440,7 +446,7 @@ describe('<OnboardingTourOverlay>', () => {
   test('presents the playlist-picker card as a spotlight above the app modal', async () => {
     const PICKER_RECT: OnboardingTargetRect = { height: 200, width: 320, x: 40, y: 300 }
     const { getAllByTestId, getByTestId, getByText } = await renderAtDeck('search', 5, {
-      'search.picker-modal': PICKER_RECT,
+      'search.picker-modal': instances(PICKER_RECT),
     })
 
     expect(getByTestId(TOUR_MODAL)).toBeTruthy()
@@ -459,7 +465,7 @@ describe('<OnboardingTourOverlay>', () => {
     const { getByTestId, getByText } = await renderAtDeck(
       'search',
       1,
-      { 'tab.listen': SECTIONS_RECT },
+      { 'tab.listen': instances(SECTIONS_RECT) },
       ctx => onboardingEntryStepIndexAtom(ctx, 0),
     )
 
@@ -474,7 +480,7 @@ describe('<OnboardingTourOverlay>', () => {
     const { ctx, queryByTestId, queryByText } = await renderAtDeck(
       'search',
       1,
-      { 'tab.listen': SECTIONS_RECT },
+      { 'tab.listen': instances(SECTIONS_RECT) },
       setupCtx => onboardingEntryStepIndexAtom(setupCtx, 0),
     )
 
@@ -491,7 +497,7 @@ describe('<OnboardingTourOverlay>', () => {
     mockPathname.mockReturnValue('/more')
 
     const { getByTestId, getByText, queryByTestId } = await renderAtDeck('search', 0, {
-      'tab.listen': SECTIONS_RECT,
+      'tab.listen': instances(SECTIONS_RECT),
     })
 
     expect(getByTestId(TOUR_MODAL)).toBeTruthy()
@@ -505,8 +511,8 @@ describe('<OnboardingTourOverlay>', () => {
 
   test('blinks the search-toggle exit visualization before opening the search', async () => {
     const { getByTestId, getByText } = await renderAtDeck('search', 1, {
-      'listen.search-toggle': SECTIONS_RECT,
-      'tab.listen': SECTIONS_RECT,
+      'listen.search-toggle': instances(SECTIONS_RECT),
+      'tab.listen': instances(SECTIONS_RECT),
     })
 
     fireEvent.press(getByText(NEXT_LABEL))
@@ -521,8 +527,8 @@ describe('<OnboardingTourOverlay>', () => {
     registerTourAction('type-search-query', () => calls.push('type'))
 
     const { ctx, getByText } = await renderAtDeck('search', 1, {
-      'listen.search-toggle': SECTIONS_RECT,
-      'tab.listen': SECTIONS_RECT,
+      'listen.search-toggle': instances(SECTIONS_RECT),
+      'tab.listen': instances(SECTIONS_RECT),
     })
 
     fireEvent.press(getByText(NEXT_LABEL))
@@ -570,8 +576,8 @@ describe('<OnboardingTourOverlay>', () => {
 
   test('blinks the first-sermon exit visualization after the «Включить проповедь» card', async () => {
     const { getByTestId, getByText } = await renderAtDeck('search', 4, {
-      'search-results.first-sermon': SECTIONS_RECT,
-      'search-results.group-sermons': SECTIONS_RECT,
+      'search-results.first-sermon': instances(SECTIONS_RECT),
+      'search-results.group-sermons': instances(SECTIONS_RECT),
     })
 
     fireEvent.press(getByText(NEXT_LABEL))
@@ -586,7 +592,7 @@ describe('<OnboardingTourOverlay>', () => {
     const { getByTestId, getByText, queryByTestId, queryByText } = await renderAtDeck(
       'playlist-menu',
       9,
-      { 'playlist.first-row': ROW_RECT },
+      { 'playlist.first-row': instances(ROW_RECT) },
     )
 
     expect(queryByTestId(TOUR_MODAL)).toBeNull()
@@ -601,7 +607,9 @@ describe('<OnboardingTourOverlay>', () => {
     registerTourAction('close-playlist-menu', action)
 
     const ROW_RECT: OnboardingTargetRect = { height: 80, width: 320, x: 0, y: 400 }
-    const { rerender } = await renderAtDeck('playlist-menu', 9, { 'playlist.first-row': ROW_RECT })
+    const { rerender } = await renderAtDeck('playlist-menu', 9, {
+      'playlist.first-row': instances(ROW_RECT),
+    })
 
     await waitFor(() => expect(action).toHaveBeenCalledTimes(1))
 
@@ -625,7 +633,7 @@ describe('<OnboardingTourOverlay>', () => {
 
   test('shows the wait card without a modal dim while the condition is unmet', async () => {
     const { getByRole, getByText, queryByText } = await renderAtDeck('player', 0, {
-      'listen.sections': SECTIONS_RECT,
+      'listen.sections': instances(SECTIONS_RECT),
     })
 
     expect(getByText(HINT)).toBeTruthy()
@@ -638,7 +646,7 @@ describe('<OnboardingTourOverlay>', () => {
     const { getByText, queryByText } = await renderAtDeck(
       'player',
       0,
-      { 'listen.sections': SECTIONS_RECT },
+      { 'listen.sections': instances(SECTIONS_RECT) },
       ctx => currentAudioAtom(ctx, AUDIO),
     )
 
@@ -652,8 +660,8 @@ describe('<OnboardingTourOverlay>', () => {
     registerTourAction(PLAYLIST_ADD_ROW_ACTION, action)
 
     const { ctx, getByText } = await renderAtDeck('playlist-add', 1, {
-      [PLAYLIST_FIRST_ROW]: PLAYLIST_ROW_RECT,
-      [PLAYLIST_ROW_MENU_ADD]: PLAYLIST_ROW_RECT,
+      [PLAYLIST_FIRST_ROW]: instances(PLAYLIST_ROW_RECT),
+      [PLAYLIST_ROW_MENU_ADD]: instances(PLAYLIST_ROW_RECT),
     })
 
     fireEvent.press(getByText(BACK_LABEL))
@@ -673,7 +681,7 @@ describe('<OnboardingTourOverlay>', () => {
     registerTourAction(PLAYLIST_ADD_ROW_ACTION, action)
 
     const { ctx, getByText } = await renderAtDeck('playlist-add', 0, {
-      [PLAYLIST_FIRST_ROW]: PLAYLIST_ROW_RECT,
+      [PLAYLIST_FIRST_ROW]: instances(PLAYLIST_ROW_RECT),
     })
 
     fireEvent.press(getByText(NEXT_LABEL))
@@ -700,7 +708,10 @@ describe('<OnboardingTourOverlay>', () => {
     const { ctx, getByText } = await renderAtDeck(
       'player',
       2,
-      { 'player.mini': PLAYLIST_ROW_RECT, 'player.mini-play-pause': PLAYLIST_ROW_RECT },
+      {
+        'player.mini': instances(PLAYLIST_ROW_RECT),
+        'player.mini-play-pause': instances(PLAYLIST_ROW_RECT),
+      },
       setupCtx => currentAudioAtom(setupCtx, AUDIO),
     )
 

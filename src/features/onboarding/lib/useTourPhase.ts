@@ -1,16 +1,18 @@
 import { usePathname } from 'expo-router'
+import { useWindowDimensions } from 'react-native'
 import { type OnboardingTargetRect } from '../model/targets'
 import { resolveStepRoute } from './resolveStepRoute'
 import { type OnboardingScenario } from './scenarios'
 import { type TourDeckEntry } from './tourDeck'
 import { shouldSkipEntryTransition } from './tourEntry'
+import { pickOnboardingTargetRect } from './tourHole'
 import { useActiveTourStep } from './useActiveTourStep'
 import { useStepRoute } from './useStepRoute'
 
 interface TourPhaseInput {
   entry: TourDeckEntry | undefined
   isLastVisible: boolean
-  rects: Record<string, OnboardingTargetRect>
+  rects: Record<string, Record<string, OnboardingTargetRect>>
   scenario: OnboardingScenario | undefined
   stepDirection: 'backward' | 'forward'
   stepKey: string
@@ -28,6 +30,7 @@ export const useTourPhase = ({
   stepKey,
 }: TourPhaseInput) => {
   const pathname = usePathname()
+  const { height } = useWindowDimensions()
   const { activeStep, activeStepIndex, activeStepKey, exitIndex, isEntryPhase, isExitPhase } =
     useActiveTourStep({ entry, scenario, stepKey })
   const { effectiveRoute, isRouteReached, needsNavigation } = useStepRoute({
@@ -60,6 +63,9 @@ export const useTourPhase = ({
     isRouteReached,
     isTapFlow: (isActionStep || needsNavigation) && !isEntryStepSkipped,
     needsNavigation,
-    tapRect: activeStep?.tapTargetId === undefined ? undefined : rects[activeStep.tapTargetId],
+    tapRect:
+      activeStep?.tapTargetId === undefined
+        ? undefined
+        : pickOnboardingTargetRect(rects[activeStep.tapTargetId] ?? {}, height),
   }
 }

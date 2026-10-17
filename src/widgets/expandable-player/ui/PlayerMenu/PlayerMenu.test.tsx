@@ -433,7 +433,11 @@ describe('<PlayerMenuItems>', () => {
 
     await renderMenuItems(ctx)
 
-    await waitFor(() => expect(ctx.get(onboardingTargetRectsAtom)[DETAILS_TARGET_ID]).toEqual(RECT))
+    await waitFor(() =>
+      expect(Object.values(ctx.get(onboardingTargetRectsAtom)[DETAILS_TARGET_ID] ?? {})).toEqual([
+        RECT,
+      ]),
+    )
   })
 
   test('registers the speed menu target rect while its tour step is active', async () => {
@@ -445,7 +449,9 @@ describe('<PlayerMenuItems>', () => {
     await renderMenuItems(ctx)
 
     await waitFor(() =>
-      expect(ctx.get(onboardingTargetRectsAtom)['player-fullscreen.menu-speed']).toEqual(RECT),
+      expect(
+        Object.values(ctx.get(onboardingTargetRectsAtom)['player-fullscreen.menu-speed'] ?? {}),
+      ).toEqual([RECT]),
     )
   })
 
@@ -458,7 +464,9 @@ describe('<PlayerMenuItems>', () => {
     await renderMenuItems(ctx)
 
     await waitFor(() =>
-      expect(ctx.get(onboardingTargetRectsAtom)['player-fullscreen.menu-sound']).toEqual(RECT),
+      expect(
+        Object.values(ctx.get(onboardingTargetRectsAtom)['player-fullscreen.menu-sound'] ?? {}),
+      ).toEqual([RECT]),
     )
   })
 })

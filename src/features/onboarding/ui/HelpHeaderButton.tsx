@@ -9,9 +9,9 @@ import { type ScenarioScope } from '../lib/scenarios'
 import { OnboardingTarget } from './OnboardingTarget'
 import { ScenarioPickerModal } from './ScenarioPickerModal'
 
-// A fixed, app-wide target id: every «?» instance registers it while a tour is
-// active, but instances on hidden screens measure zero-size and are rejected by
-// the measurement guard, so only the active screen's button holds the rect.
+// A fixed, app-wide target id: every «?» instance registers its own rect while a
+// tour is active (the registry is keyed per instance), and the spotlight picks the
+// on-screen instance's rect — so a hidden screen's button cannot clobber it.
 const HELP_TARGET_ID = 'app.help-button'
 
 export const HelpHeaderButton = ({

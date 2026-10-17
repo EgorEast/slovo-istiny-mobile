@@ -9,6 +9,9 @@ import { useTargetMeasure } from './useTargetMeasure'
 const TARGET_ID = 'listen.search-toggle'
 const SAMPLE_WINDOW_MS = 700
 
+const registeredRectFor = (ctx: ReturnType<typeof createCtx>, id: string) =>
+  Object.values(ctx.get(onboardingTargetRectsAtom)[id] ?? {})[0]
+
 const mockAddListener = jest.fn(() => jest.fn())
 
 jest.mock('expo-router', () => ({
@@ -64,7 +67,7 @@ describe('useTargetMeasure', () => {
     await renderMeasure(getNode, ctx)
     await flush(SAMPLE_WINDOW_MS)
 
-    expect(ctx.get(onboardingTargetRectsAtom)[TARGET_ID]).toEqual({
+    expect(registeredRectFor(ctx, TARGET_ID)).toEqual({
       height: 20,
       width: 10,
       x: 2,
@@ -109,7 +112,7 @@ describe('useTargetMeasure', () => {
     const { unmount } = await renderMeasure(() => createNode(callback => callback(1, 2, 3, 4)), ctx)
     await flush(150)
 
-    expect(ctx.get(onboardingTargetRectsAtom)[TARGET_ID]).toEqual({
+    expect(registeredRectFor(ctx, TARGET_ID)).toEqual({
       height: 4,
       width: 3,
       x: 1,

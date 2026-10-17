@@ -24,6 +24,10 @@ const ABOVE_VIEWPORT_RECT = { height: 50, width: 300, x: 0, y: -120 }
 const ABOVE_VIEWPORT_SCROLL_OFFSET = 0
 const VISIBLE_RECT = { height: 50, width: 300, x: 0, y: 200 }
 
+// A target id is shared across instances; tests read the single instance's rect by value.
+const registeredRectFor = (ctx: ReturnType<typeof createCtx>, id: string) =>
+  Object.values(ctx.get(onboardingTargetRectsAtom)[id] ?? {})[0]
+
 const mockAddListener = jest.fn(() => jest.fn())
 
 jest.mock('expo-router', () => ({
@@ -67,6 +71,20 @@ const renderTarget = (ctx: ReturnType<typeof createCtx>) =>
     { ctx },
   )
 
+// Two mounted instances of the same target id: dropping one must keep the other's rect.
+const SharedTargetPair = ({ showFirst }: { showFirst: boolean }) => (
+  <>
+    {showFirst ? (
+      <OnboardingTarget id={TARGET_ID}>
+        <View />
+      </OnboardingTarget>
+    ) : null}
+    <OnboardingTarget id={TARGET_ID}>
+      <View />
+    </OnboardingTarget>
+  </>
+)
+
 describe('<OnboardingTarget>', () => {
   afterEach(() => {
     jest.restoreAllMocks()
@@ -90,9 +108,7 @@ describe('<OnboardingTarget>', () => {
     await renderTarget(ctx)
 
     await waitFor(() =>
-      expect(ctx.get(onboardingTargetRectsAtom)).toEqual({
-        [TARGET_ID]: { height: 4, width: 3, x: 1, y: 2 },
-      }),
+      expect(registeredRectFor(ctx, TARGET_ID)).toEqual({ height: 4, width: 3, x: 1, y: 2 }),
     )
   })
 
@@ -109,10 +125,31 @@ describe('<OnboardingTarget>', () => {
     )
 
     await waitFor(() =>
-      expect(ctx.get(onboardingTargetRectsAtom)).toEqual({
-        'listen.sections': { height: 4, width: 3, x: 1, y: 2 },
+      expect(registeredRectFor(ctx, 'listen.sections')).toEqual({
+        height: 4,
+        width: 3,
+        x: 1,
+        y: 2,
       }),
     )
+  })
+
+  test('releases only the unmounted instance of a shared target id', async () => {
+    mockMeasureInWindow({ height: 4, width: 3, x: 1, y: 2 })
+    const ctx = createCtx()
+    onboardingTourAtom(ctx, { deckIndex: 1, scenarioId: 'listen', skippedDeckIndexes: [] })
+
+    const { rerender } = await renderWithProviders(<SharedTargetPair showFirst />, { ctx })
+
+    await waitFor(() =>
+      expect(Object.keys(ctx.get(onboardingTargetRectsAtom)[TARGET_ID] ?? {})).toHaveLength(2),
+    )
+
+    await act(async () => {
+      rerender(<SharedTargetPair showFirst={false} />)
+    })
+
+    expect(Object.keys(ctx.get(onboardingTargetRectsAtom)[TARGET_ID] ?? {})).toHaveLength(1)
   })
 
   test('re-measures a non-active target when the tour scroll settles', async () => {
@@ -136,11 +173,7 @@ describe('<OnboardingTarget>', () => {
       bumpOnboardingScrollEpoch(ctx)
     })
 
-    await waitFor(() =>
-      expect(ctx.get(onboardingTargetRectsAtom)).toEqual({
-        'listen.sections': POST_SCROLL_RECT,
-      }),
-    )
+    await waitFor(() => expect(registeredRectFor(ctx, 'listen.sections')).toEqual(POST_SCROLL_RECT))
   })
 
   test('does not register a zero-size rect', async () => {
@@ -180,9 +213,7 @@ describe('<OnboardingTarget>', () => {
 
     await renderTarget(ctx)
 
-    await waitFor(() =>
-      expect(ctx.get(onboardingTargetRectsAtom)).toEqual({ [TARGET_ID]: BELOW_FOLD_RECT }),
-    )
+    await waitFor(() => expect(registeredRectFor(ctx, TARGET_ID)).toEqual(BELOW_FOLD_RECT))
   })
 
   test('scrolls a below-fold target into view and re-measures', async () => {
@@ -298,7 +329,7 @@ describe('<OnboardingTarget>', () => {
     onboardingTourAtom(ctx, { deckIndex: 1, scenarioId: 'listen', skippedDeckIndexes: [] })
     // The rect is registered before the fallback window can elapse, so the fallback is
     // never scheduled — the assertion must not race the initial measure.
-    onboardingTargetRectsAtom(ctx, { [TARGET_ID]: VISIBLE_RECT })
+    onboardingTargetRectsAtom(ctx, { [TARGET_ID]: { 'instance-1': VISIBLE_RECT } })
 
     await renderTarget(ctx)
 

@@ -1,7 +1,7 @@
 import { useAction, useAtom } from '@reatom/npm-react'
 import { useWindowDimensions } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { resolveAreaRects, resolveTourHole } from '../lib/tourHole'
+import { pickOnboardingTargetRect, resolveAreaRects, resolveTourHole } from '../lib/tourHole'
 import { useExpiredStepKey } from '../lib/useExpiredStepKey'
 import { useStepNavigation } from '../lib/useStepNavigation'
 import { useTourDeckProgress } from '../lib/useTourDeckProgress'
@@ -58,7 +58,7 @@ export const OnboardingTourOverlay = () => {
   // Pass-through steps keep the modal unmounted so the live UI stays interactive:
   // an interactive card the user must act on, or a card whose wait condition is unmet
   // yet. The card floats in a pass-through layer; only it is touchable.
-  const areaRects = resolveAreaRects(cardStep.areaTargetIds, rects)
+  const areaRects = resolveAreaRects(cardStep.areaTargetIds, rects, height)
   const isPassThrough = !isTapHint && (cardStep.interactive === true || !isWaitSatisfied)
   if (isPassThrough)
     return (
@@ -76,7 +76,11 @@ export const OnboardingTourOverlay = () => {
         isLastVisible={isLastVisible}
         isFirstVisible={isFirstVisible}
         isWaitSatisfied={isWaitSatisfied}
-        hole={activeTargetId === undefined ? null : (rects[activeTargetId] ?? null)}
+        hole={
+          activeTargetId === undefined
+            ? null
+            : (pickOnboardingTargetRect(rects[activeTargetId] ?? {}, height) ?? null)
+        }
       />
     )
 

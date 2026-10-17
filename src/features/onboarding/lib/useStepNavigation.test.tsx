@@ -23,7 +23,7 @@ const TARGET_RECT: OnboardingTargetRect = { height: 4, width: 3, x: 1, y: 2 }
 const renderNavigation = (
   scenario: OnboardingScenario,
   deckIndex: number,
-  rects: Record<string, OnboardingTargetRect> = {},
+  rects: Record<string, Record<string, OnboardingTargetRect>> = {},
   setup?: (ctx: ReturnType<typeof createCtx>) => void,
 ) => {
   const ctx = createCtx()
@@ -62,7 +62,7 @@ describe('useStepNavigation exit transitions', () => {
     const { ctx, result } = await renderNavigation(
       scenariosById['playlist-add'],
       0,
-      { 'playlist.first-row': TARGET_RECT },
+      { 'playlist.first-row': { 'instance-1': TARGET_RECT } },
       setupCtx => onboardingExitStepIndexAtom(setupCtx, 0),
     )
 
@@ -188,7 +188,7 @@ describe('useStepNavigation skipIfMissing cards', () => {
 
   test('skips a hidden card instantly when a sibling target has registered', async () => {
     const { ctx } = await renderNavigation(PLAYLIST_MENU, 1, {
-      'playlist.menu-add-all': TARGET_RECT,
+      'playlist.menu-add-all': { 'instance-1': TARGET_RECT },
     })
 
     await waitFor(
@@ -217,7 +217,9 @@ describe('useStepNavigation skipIfMissing cards', () => {
   })
 
   test('does not skip a hidden-capable card whose target is registered', async () => {
-    const { ctx } = await renderNavigation(PLAYLIST_MENU, 1, { 'playlist.menu-share': TARGET_RECT })
+    const { ctx } = await renderNavigation(PLAYLIST_MENU, 1, {
+      'playlist.menu-share': { 'instance-1': TARGET_RECT },
+    })
 
     await act(async () => {
       await new Promise(resolve => setTimeout(resolve, 800))

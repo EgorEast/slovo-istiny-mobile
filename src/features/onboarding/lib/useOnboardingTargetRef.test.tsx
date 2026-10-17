@@ -54,9 +54,9 @@ describe('useOnboardingTargetRef', () => {
     await renderRefTarget(ctx)
 
     await waitFor(() =>
-      expect(ctx.get(onboardingTargetRectsAtom)).toEqual({
-        [TARGET_ID]: { height: 4, width: 3, x: 1, y: 2 },
-      }),
+      expect(Object.values(ctx.get(onboardingTargetRectsAtom)[TARGET_ID] ?? {})).toEqual([
+        { height: 4, width: 3, x: 1, y: 2 },
+      ]),
     )
   })
 

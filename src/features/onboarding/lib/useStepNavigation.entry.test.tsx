@@ -40,9 +40,9 @@ jest.mock('expo-router', () => ({
 const TARGET_RECT: OnboardingTargetRect = { height: 4, width: 3, x: 1, y: 2 }
 const ENTRY_SCENARIO_ID = 'backup'
 const ENTRY_RECTS = {
-  'more.share-item': TARGET_RECT,
-  'tab.listen': TARGET_RECT,
-  'tab.more': TARGET_RECT,
+  'more.share-item': { 'instance-1': TARGET_RECT },
+  'tab.listen': { 'instance-1': TARGET_RECT },
+  'tab.more': { 'instance-1': TARGET_RECT },
 }
 const BLINK_BUDGET_MS = 15000
 

@@ -42,7 +42,9 @@ describe('<MoreMenuSettingsItem>', () => {
 
     await renderItem(ctx, TARGET_ID)
 
-    await waitFor(() => expect(ctx.get(onboardingTargetRectsAtom)).toEqual({ [TARGET_ID]: RECT }))
+    await waitFor(() =>
+      expect(Object.values(ctx.get(onboardingTargetRectsAtom)[TARGET_ID] ?? {})).toEqual([RECT]),
+    )
   })
 
   test('registers nothing without an onboardingTargetId', async () => {

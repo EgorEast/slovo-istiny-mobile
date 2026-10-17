@@ -214,9 +214,9 @@ describe('<MiniPlayer>', () => {
     await renderWithProviders(<MiniPlayer {...baseProps} />, { ctx })
 
     await waitFor(() =>
-      expect(ctx.get(onboardingTargetRectsAtom)).toEqual({
-        'player.mini-play-pause': { height: 4, width: 3, x: 1, y: 2 },
-      }),
+      expect(
+        Object.values(ctx.get(onboardingTargetRectsAtom)['player.mini-play-pause'] ?? {}),
+      ).toEqual([{ height: 4, width: 3, x: 1, y: 2 }]),
     )
 
     measureSpy.mockRestore()

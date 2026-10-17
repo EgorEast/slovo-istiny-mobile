@@ -1,7 +1,8 @@
 import { useAction, useAtom } from '@reatom/npm-react'
 import { useCallback, useEffect, useRef } from 'react'
-import { Dimensions, type View } from 'react-native'
+import { Dimensions, useWindowDimensions, type View } from 'react-native'
 import { bumpOnboardingScrollEpoch, onboardingTargetRectsAtom } from '../model/targets'
+import { pickOnboardingTargetRect } from './tourHole'
 import { getTourScrollable, isRectOutsideViewport, scrollOffsetFor } from './tourScrollable'
 
 // Two bounded re-measure attempts after an auto-scroll; no endless retry loop.
@@ -26,7 +27,8 @@ export const useTargetAutoScroll = ({
   measure,
 }: TargetAutoScrollInput) => {
   const [rects] = useAtom(onboardingTargetRectsAtom)
-  const rect = rects[id]
+  const { height: windowHeight } = useWindowDimensions()
+  const rect = pickOnboardingTargetRect(rects[id] ?? {}, windowHeight)
   const bumpScrollEpoch = useAction(bumpOnboardingScrollEpoch)
   const hasScrolledRef = useRef(false)
   const hasTriedLayoutFallbackRef = useRef(false)

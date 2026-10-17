@@ -1,6 +1,6 @@
 import { useAction, useAtom } from '@reatom/npm-react'
 import { useNavigation } from 'expo-router'
-import { useCallback, useEffect } from 'react'
+import { useCallback, useEffect, useId } from 'react'
 import { type View } from 'react-native'
 import { onboardingActiveStepIndexAtom } from '../model/derived'
 import { onboardingScrollEpochAtom, registerOnboardingTargetRect } from '../model/targets'
@@ -26,6 +26,9 @@ interface TransitionEndNavigation {
 }
 
 export const useTargetMeasure = ({ getNode, id }: TargetMeasureInput) => {
+  // A stable per-instance key: several components share one target id, and each must
+  // own its registry entry so no instance overwrites or releases another's rect.
+  const instanceId = useId()
   const navigation = useNavigation<TransitionEndNavigation>()
   const [tour] = useAtom(onboardingTourAtom)
   const [activeStepIndex] = useAtom(onboardingActiveStepIndexAtom)
@@ -41,9 +44,9 @@ export const useTargetMeasure = ({ getNode, id }: TargetMeasureInput) => {
 
   const measure = useCallback(() => {
     getNode()?.measureInWindow((x, y, width, height) => {
-      if (width > 0 && height > 0) register({ id, rect: { height, width, x, y } })
+      if (width > 0 && height > 0) register({ id, instanceId, rect: { height, width, x, y } })
     })
-  }, [getNode, id, register])
+  }, [getNode, id, instanceId, register])
 
   // Register every mounted target once the tour starts — a tap hint may reference
   // a target that is not the active step's own target.
@@ -78,10 +81,10 @@ export const useTargetMeasure = ({ getNode, id }: TargetMeasureInput) => {
     return navigation.addListener('transitionEnd', measure)
   }, [isActive, measure, navigation])
 
-  // Unmount releases the target's rect so the registry only ever reflects mounted
-  // targets: a stale rect from a closed surface would otherwise let the
+  // Unmount releases this instance's rect so the registry only ever reflects mounted
+  // instances: a stale rect from a closed surface would otherwise let the
   // `skipIfMissing` instant-skip drop a step whose target is merely not measured yet.
-  useEffect(() => () => register({ id, rect: null }), [id, register])
+  useEffect(() => () => register({ id, instanceId, rect: null }), [id, instanceId, register])
 
   return { isActive, measure }
 }

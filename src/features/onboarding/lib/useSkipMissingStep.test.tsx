@@ -47,7 +47,7 @@ describe('useSkipMissingStep', () => {
   test('skips the card instantly while a sibling target is registered', async () => {
     const ctx = createCtx()
     startSkipCardTour(ctx)
-    registerOnboardingTargetRect(ctx, { id: SIBLING_ID, rect: RECT })
+    registerOnboardingTargetRect(ctx, { id: SIBLING_ID, instanceId: 'instance-1', rect: RECT })
 
     await renderSkip(ctx)
 
@@ -57,10 +57,10 @@ describe('useSkipMissingStep', () => {
   test('holds the missing-target window once the sibling rect is released', async () => {
     const ctx = createCtx()
     startSkipCardTour(ctx)
-    registerOnboardingTargetRect(ctx, { id: SIBLING_ID, rect: RECT })
+    registerOnboardingTargetRect(ctx, { id: SIBLING_ID, instanceId: 'instance-1', rect: RECT })
     // The sibling unmounts and releases its rect: the registry no longer proves the
     // surface rendered, so the instant-skip must not fire and the hold applies instead.
-    registerOnboardingTargetRect(ctx, { id: SIBLING_ID, rect: null })
+    registerOnboardingTargetRect(ctx, { id: SIBLING_ID, instanceId: 'instance-1', rect: null })
 
     await renderSkip(ctx)
     await flush(HOLD_WINDOW_MS)
