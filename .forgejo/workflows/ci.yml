@@ -173,18 +173,11 @@ jobs:
           yarn check:patches
           echo "duration=$((EPOCHSECONDS-start))s" >> "$GITHUB_OUTPUT"
 
-      - name: Check types (tsc)
+      - name: "Check types (tsc: app + service worker)"
         id: types
         run: |
           start=$EPOCHSECONDS
           yarn check:types
-          echo "duration=$((EPOCHSECONDS-start))s" >> "$GITHUB_OUTPUT"
-
-      - name: Check service worker types (tsc)
-        id: sw-types
-        run: |
-          start=$EPOCHSECONDS
-          yarn check:sw
           echo "duration=$((EPOCHSECONDS-start))s" >> "$GITHUB_OUTPUT"
 
       - name: Check FSD architecture (steiger)
@@ -293,7 +286,6 @@ jobs:
             echo '|---|---|---|'
             echo "| check:patches | $(status_emoji '${{ steps.patches.outcome }}') | ${{ steps.patches.outputs.duration || '—' }} |"
             echo "| check:types | $(status_emoji '${{ steps.types.outcome }}') | ${{ steps.types.outputs.duration || '—' }} |"
-            echo "| check:sw | $(status_emoji '${{ steps.sw-types.outcome }}') | ${{ steps.sw-types.outputs.duration || '—' }} |"
             echo "| check:fsd | $(status_emoji '${{ steps.fsd.outcome }}') | ${{ steps.fsd.outputs.duration || '—' }} |"
             echo "| lint | $(status_emoji '${{ steps.lint.outcome }}') | ${{ steps.lint.outputs.duration || '—' }} |"
             echo "| jest tests | $(status_emoji '${{ steps.jest.outcome }}') | ${{ steps.jest.outputs.duration || '—' }} |"

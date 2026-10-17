@@ -15,8 +15,8 @@ npm run web:preview          # Build + serve dist/ with SPA fallback on :4173
 # Linting
 npm run lint                 # Run ESLint
 npm run lint:fix             # Run ESLint with auto-fix
-npm run check:types          # TypeScript type checking
-npm run check:sw             # Type-check public/sw.js (service worker)
+npm run check:types          # TypeScript type checking (app + service worker)
+npm run check:sw             # Type-check public/sw.js only (fast subset of check:types)
 npm run check:fsd            # FSD architecture linting (steiger)
 npm run check:fsd-watch      # FSD linting in watch mode
 npm run check:circular       # Check for circular dependencies (dependency-cruiser)
