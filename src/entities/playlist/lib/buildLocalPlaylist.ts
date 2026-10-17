@@ -1,5 +1,6 @@
-import { type LocalPlaylistData, type PlaylistData } from 'entities/playlist'
 import { type SermonShape } from 'shared/model'
+import { type LocalPlaylistData } from '../localPlaylists'
+import { type PlaylistData } from '../model'
 
 /**
  * Projects a local playlist into a renderable `PlaylistData`.

@@ -1,2 +1,2 @@
 export { mapSectionEntityToSectionData } from '../lib/mappers/mapSectionEntityToSectionData'
-export { sectionSchema } from '../model'
+export { type SectionData, sectionSchema } from '../model'

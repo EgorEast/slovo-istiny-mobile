@@ -1,9 +1,13 @@
 import { useAtom } from '@reatom/npm-react'
 import { useEffect, useMemo, useState } from 'react'
-import { myPlaylistsAtom, myPlaylistsLoadedAtom, type PlaylistData } from 'entities/playlist'
+import {
+  buildLocalPlaylist,
+  buildSermonIndex,
+  myPlaylistsAtom,
+  myPlaylistsLoadedAtom,
+  type PlaylistData,
+} from 'entities/playlist'
 import { dynamicSectionsAtom } from 'entities/section'
-import { buildLocalPlaylist } from './buildLocalPlaylist'
-import { buildSermonIndex } from './buildSermonIndex'
 import { resolvePlaylistFromApi } from './resolvePlaylistFromApi'
 import { resolvePlaylistFromCache } from './resolvePlaylistFromCache'
 

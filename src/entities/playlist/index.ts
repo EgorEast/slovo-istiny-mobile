@@ -1,6 +1,8 @@
 export { clearLocalPlaylistSermons } from './clearLocalPlaylistSermons'
 export { createLocalPlaylist } from './createLocalPlaylist'
 export { deleteLocalPlaylist } from './deleteLocalPlaylist'
+export { buildLocalPlaylist } from './lib/buildLocalPlaylist'
+export { buildSermonIndex } from './lib/buildSermonIndex'
 export {
   buildCustomPlaylistSearchParams,
   type CustomPlaylistPayload,

@@ -1,6 +1,6 @@
-import { type LocalPlaylistData } from 'entities/playlist'
-import { type SectionData } from 'entities/section'
+import { type SectionData } from 'entities/section/@x/playlist'
 import { type SermonShape } from 'shared/model'
+import { type LocalPlaylistData } from '../localPlaylists'
 
 /**
  * Indexes every sermon reachable without a network call — section playlists plus
