@@ -11,6 +11,8 @@ jest.mock('shared/lib/isExpoEnvironment', () => ({
 jest.mock('shared/lib/app-icon', () => ({
   ...jest.requireActual('shared/lib/app-icon'),
   getLocalAppIconUri: jest.fn(),
+  // These suites never exercise icon follow-up: keep the real download pending.
+  whenAppIconReady: jest.fn(() => new Promise<null>(() => undefined)),
 }))
 
 const metadataStub = { title: 'Проповедь' }

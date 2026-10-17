@@ -1,18 +1,19 @@
 import { type AudioPlayer } from 'expo-audio'
 import { AppState } from 'react-native'
-import { getLocalAppIconUri, hasUriProtocol } from 'shared/lib/app-icon'
 import { isExpoGo } from 'shared/lib/isExpoEnvironment'
 import { reportError } from 'shared/model/error-dialog'
 import { type LockScreenMetadata } from '../types'
+import { createIconFollowUp } from './IconFollowUp'
 import { loadedRetryScheduler } from './LoadedRetryScheduler'
+import { prepareMetadataPayload } from './prepareMetadataPayload'
 
 const LOCK_SCREEN_ERROR_MESSAGE = 'Не удалось обновить данные плеера на экране блокировки'
-
-type MetadataPayload = { artworkUrl?: string } & Omit<LockScreenMetadata, 'artworkUrl'>
 
 class LockScreenControls {
   public setMetadata = (player: AudioPlayer | null, metadata: LockScreenMetadata): void => {
     if (!player) return
+
+    this.iconFollowUp.track(player, metadata)
 
     // Same player (track switch): update metadata in place — keeps the existing
     // MediaSession/notification alive without a teardown race.
@@ -52,6 +53,7 @@ class LockScreenControls {
     this.pendingActivation = null
     this.activationSubscription?.remove()
     this.activationSubscription = null
+    this.iconFollowUp.clear()
 
     if (!player?.isLoaded || isExpoGo) return
 
@@ -88,18 +90,11 @@ class LockScreenControls {
     })
   }
 
-  private prepareMetadataPayload = (metadata: LockScreenMetadata): MetadataPayload => {
-    const artworkUrl = [metadata.artworkUrl, getLocalAppIconUri()].find(hasUriProtocol)
-    const { artworkUrl: _ignored, ...metadataWithoutArtwork } = metadata
-
-    return { ...metadataWithoutArtwork, ...(artworkUrl ? { artworkUrl } : {}) }
-  }
-
   private activateMetadata = (player: AudioPlayer, metadata: LockScreenMetadata): void => {
     if (isExpoGo) return
 
     try {
-      player.setActiveForLockScreen(true, this.prepareMetadataPayload(metadata), {
+      player.setActiveForLockScreen(true, prepareMetadataPayload(metadata), {
         isLiveStream: false,
         showSeekBackward: true,
         showSeekForward: true,
@@ -114,13 +109,14 @@ class LockScreenControls {
     if (isExpoGo) return
 
     try {
-      player.updateLockScreenMetadata(this.prepareMetadataPayload(metadata))
+      player.updateLockScreenMetadata(prepareMetadataPayload(metadata))
     } catch (error) {
       console.error('[LockScreenControls] updateLockScreenMetadata failed:', error)
       reportError(error, LOCK_SCREEN_ERROR_MESSAGE)
     }
   }
 
+  private readonly iconFollowUp = createIconFollowUp(this.setMetadata)
   private activePlayer: AudioPlayer | null = null
   private activationSubscription: null | ReturnType<typeof AppState.addEventListener> = null
   private pendingActivation: { metadata: LockScreenMetadata; player: AudioPlayer } | null = null
