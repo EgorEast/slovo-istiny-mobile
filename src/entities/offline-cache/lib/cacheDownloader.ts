@@ -80,7 +80,6 @@ export const downloadToCache = async (
   // Drop a stale `.part` orphaned by a killed app — the file is kept between
   // retries below, but must not survive from a previous (interrupted) session.
   deletePartFile(tempFile)
-  const throttledProgress = onProgress ? createThrottledProgress(onProgress) : undefined
 
   let lastError: unknown = null
   for (let attemptIndex = 0; attemptIndex < MAX_DOWNLOAD_ATTEMPTS; attemptIndex++) {
@@ -90,6 +89,10 @@ export const downloadToCache = async (
     }
     throwIfCancelled(audioUrl, tempFile, externalSignal)
     if (onProgress) onProgress(0)
+    // Throttle/estimated-guard state is per attempt: the bar resets to 0 above,
+    // so a fresh throttler keeps attempts independent (the previous attempt's
+    // high-water mark must not suppress this attempt's ticks).
+    const throttledProgress = onProgress ? createThrottledProgress(onProgress) : undefined
 
     try {
       await runDownloadAttempt({

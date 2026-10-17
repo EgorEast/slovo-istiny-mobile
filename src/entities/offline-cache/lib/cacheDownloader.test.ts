@@ -165,6 +165,42 @@ describe('downloadToCache', () => {
     expect(result).toContain('file://cache/')
   })
 
+  test('resets estimated progress across retries so the next attempt is not stuck at 0', async () => {
+    const onProgress = jest.fn()
+    ;(File.downloadFileAsync as jest.Mock)
+      .mockImplementationOnce(
+        (
+          _url: string,
+          _file: unknown,
+          opts: { onProgress?: (data: { bytesWritten: number; totalBytes: number }) => void },
+        ) => {
+          // First attempt climbs the estimated path to the 95% cap, then dies.
+          opts.onProgress?.({ bytesWritten: ESTIMATED_AUDIO_BYTES, totalBytes: 0 })
+          return Promise.reject(new Error('network lost'))
+        },
+      )
+      .mockImplementationOnce(
+        (
+          _url: string,
+          _file: unknown,
+          opts: { onProgress?: (data: { bytesWritten: number; totalBytes: number }) => void },
+        ) => {
+          opts.onProgress?.({ bytesWritten: ESTIMATED_AUDIO_BYTES / 2, totalBytes: 0 })
+          return Promise.resolve({ uri: 'file://downloaded.mp3' })
+        },
+      )
+
+    const result = await downloadToCache(EXAMPLE_URL, onProgress)
+
+    expect(File.downloadFileAsync).toHaveBeenCalledTimes(2)
+    expect(onProgress).toHaveBeenCalledWith(ESTIMATED_PROGRESS_CAP_PERCENT / 100)
+    // Per-attempt throttler resets the estimated guard: without it the second
+    // attempt's 50% tick would be suppressed by the 95% high-water mark.
+    expect(onProgress).toHaveBeenCalledWith(0.5)
+    expect(onProgress).toHaveBeenLastCalledWith(1)
+    expect(result).toContain('file://cache/')
+  })
+
   test('throws last error and retains the partial file after all attempts exhausted', async () => {
     mockFileState.part = true
     ;(File.downloadFileAsync as jest.Mock).mockRejectedValue(new Error('download failed'))
