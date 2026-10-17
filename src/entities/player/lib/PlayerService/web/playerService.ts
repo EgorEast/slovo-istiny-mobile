@@ -9,7 +9,7 @@ import { createWebMediaSession } from './mediaSession'
 import { createPubSub } from './playerPubSub'
 import { createWebPlayerState } from './playerState'
 import { createStatusTracker } from './playerStatusTracker'
-import { recoverStreamAfterReconnect as healStreamAfterReconnect } from './reconnectHeal'
+import { recoverStreamAfterReconnect as heal, resumeWebAfterPause } from './reconnectHeal'
 import { createTrackElement } from './trackElement'
 import { createTransport } from './transport'
 import { createVolumeControl } from './volumeControl'
@@ -31,11 +31,11 @@ export class WebPlayerService {
 
   public pause = (): Promise<void> => this.transport.pause()
 
-  // Web source-swap on resume is not implemented (see docs/debt.md)
-  public resumeAfterPause = async (): Promise<void> => this.play()
+  public resumeAfterPause = (audioUrl: string): Promise<void> =>
+    resumeWebAfterPause(this, this.audioInstance, audioUrl)
 
   public recoverStreamAfterReconnect = (audioUrl: string): Promise<void> =>
-    this.audioInstance ? healStreamAfterReconnect(this, audioUrl) : Promise.resolve()
+    this.audioInstance ? heal(this, audioUrl) : Promise.resolve()
 
   public setLockScreenMetadata = (metadata: LockScreenMetadata): void =>
     this.mediaSession.setMetadata(metadata)

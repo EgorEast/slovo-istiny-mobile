@@ -402,6 +402,34 @@ describe('WebPlayerService auto-cache on play', () => {
   })
 })
 
+describe('WebPlayerService resumeAfterPause', () => {
+  test('plays without rebuilding when the live element already serves the url', async () => {
+    await playerService.loadAudio(AUDIO_URL)
+    audioStubs[0].element.src = AUDIO_URL
+    const replaceSpy = jest.spyOn(playerService, 'replaceAudio').mockResolvedValue(null)
+    const playSpy = jest.spyOn(playerService, 'play').mockResolvedValue(undefined)
+
+    await playerService.resumeAfterPause(AUDIO_URL)
+
+    expect(replaceSpy).not.toHaveBeenCalled()
+    expect(playSpy).toHaveBeenCalled()
+  })
+
+  test('rebuilds the element at the saved position on a source mismatch', async () => {
+    await playerService.loadAudio(AUDIO_URL)
+    audioStubs[0].fireEvent(LOADED_METADATA_EVENT)
+    audioStubs[0].element.currentTime = 42
+    audioStubs[0].fireEvent('timeupdate')
+    const replaceSpy = jest.spyOn(playerService, 'replaceAudio').mockResolvedValue(null)
+    const playSpy = jest.spyOn(playerService, 'play').mockResolvedValue(undefined)
+
+    await playerService.resumeAfterPause(AUDIO_URL)
+
+    expect(replaceSpy).toHaveBeenCalledWith(AUDIO_URL, 42000)
+    expect(playSpy).toHaveBeenCalled()
+  })
+})
+
 describe('WebPlayerService recoverStreamAfterReconnect', () => {
   test('null URL does nothing', async () => {
     await playerService.loadAudio(AUDIO_URL)
