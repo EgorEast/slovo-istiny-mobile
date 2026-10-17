@@ -1,5 +1,5 @@
 import { type AudioPlayer } from 'expo-audio'
-import { getLocalAppIconUri, whenAppIconReady } from 'shared/lib/app-icon'
+import { getLocalAppIconUri, hasUriProtocol, whenAppIconReady } from 'shared/lib/app-icon'
 import { type LockScreenMetadata } from '../types'
 
 type ReapplyMetadata = (player: AudioPlayer, metadata: LockScreenMetadata) => void
@@ -39,7 +39,7 @@ export const createIconFollowUp = (reapply: ReapplyMetadata) => {
    * @param metadata - Метаданные показа.
    */
   const track = (player: AudioPlayer, metadata: LockScreenMetadata): void => {
-    if (metadata.artworkUrl || getLocalAppIconUri() !== null) {
+    if (hasUriProtocol(metadata.artworkUrl) || getLocalAppIconUri() !== null) {
       clearPayload()
       return
     }

@@ -105,4 +105,64 @@ describe('LockScreenControls icon follow-up', () => {
     expect(mockedWhenAppIconReady).not.toHaveBeenCalled()
     expect(updateLockScreenMetadata).not.toHaveBeenCalled()
   })
+
+  test('does not re-apply when cleared before the icon resolves', async () => {
+    const deferred = createDeferred()
+    mockedWhenAppIconReady.mockReturnValue(deferred.promise)
+    const { player, updateLockScreenMetadata } = createPlayer()
+
+    lockScreenControls.setMetadata(player, metadataStub)
+    lockScreenControls.clear(player)
+
+    mockedGetLocalAppIconUri.mockReturnValue(LOCAL_ICON_URI)
+    deferred.resolve(LOCAL_ICON_URI)
+    await flushMicrotasks()
+
+    expect(updateLockScreenMetadata).not.toHaveBeenCalled()
+  })
+
+  test('re-applies the latest payload when the track switched before the icon resolves', async () => {
+    const deferred = createDeferred()
+    mockedWhenAppIconReady.mockReturnValue(deferred.promise)
+    const { player, updateLockScreenMetadata } = createPlayer()
+    const firstMetadata = { title: 'Первая' }
+    const secondMetadata = { title: 'Вторая' }
+
+    lockScreenControls.setMetadata(player, firstMetadata)
+    lockScreenControls.setMetadata(player, secondMetadata)
+
+    mockedGetLocalAppIconUri.mockReturnValue(LOCAL_ICON_URI)
+    deferred.resolve(LOCAL_ICON_URI)
+    await flushMicrotasks()
+
+    expect(updateLockScreenMetadata).toHaveBeenCalledWith({
+      ...secondMetadata,
+      artworkUrl: LOCAL_ICON_URI,
+    })
+    expect(updateLockScreenMetadata).not.toHaveBeenCalledWith({
+      ...firstMetadata,
+      artworkUrl: LOCAL_ICON_URI,
+    })
+  })
+
+  test('arms the follow-up for a protocol-less artwork url', async () => {
+    const deferred = createDeferred()
+    mockedWhenAppIconReady.mockReturnValue(deferred.promise)
+    const { player, updateLockScreenMetadata } = createPlayer()
+
+    lockScreenControls.setMetadata(player, {
+      ...metadataStub,
+      artworkUrl: 'assets_fallbackartwork',
+    })
+    expect(mockedWhenAppIconReady).toHaveBeenCalledTimes(1)
+
+    mockedGetLocalAppIconUri.mockReturnValue(LOCAL_ICON_URI)
+    deferred.resolve(LOCAL_ICON_URI)
+    await flushMicrotasks()
+
+    expect(updateLockScreenMetadata).toHaveBeenCalledWith({
+      ...metadataStub,
+      artworkUrl: LOCAL_ICON_URI,
+    })
+  })
 })
