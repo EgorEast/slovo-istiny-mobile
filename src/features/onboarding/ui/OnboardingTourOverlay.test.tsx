@@ -2,6 +2,7 @@ import { createCtx } from '@reatom/framework'
 import { act, fireEvent, type screen, waitFor } from '@testing-library/react-native'
 import { StyleSheet } from 'react-native'
 import { currentAudioAtom } from 'entities/player/@x/onboarding'
+import { dynamicSectionsAtom } from 'entities/section'
 import { renderWithProviders } from 'shared/mocks'
 import { registerTourAction, unregisterTourAction } from '../lib/tourActions'
 import {
@@ -137,8 +138,30 @@ describe('<OnboardingTourOverlay>', () => {
     })
 
     expect(getByText('Разделы проповедей')).toBeTruthy()
+    expect(
+      getByText(
+        'Горизонтальные подборки: разделы — например, «По Библии», «По темам». Листайте вбок.',
+      ),
+    ).toBeTruthy()
     expect(getByText(NEXT_LABEL)).toBeTruthy()
     expect(getByRole('button', { name: 'Завершить обзор' })).toBeTruthy()
+  })
+
+  test('substitutes the live section titles into the sections card text', async () => {
+    const { getByText } = await renderAtDeck(
+      'listen',
+      0,
+      { 'listen.sections': SECTIONS_RECT },
+      ctx =>
+        dynamicSectionsAtom(ctx, [
+          { itemsSize: 'middle', title: 'По Библии', transform: 'middle' },
+          { itemsSize: 'middle', title: 'По темам', transform: 'middle' },
+        ]),
+    )
+
+    expect(
+      getByText('Горизонтальные подборки: разделы «По Библии», «По темам». Листайте вбок.'),
+    ).toBeTruthy()
   })
 
   test('renders a targetless card with a back button on its inherited route', async () => {

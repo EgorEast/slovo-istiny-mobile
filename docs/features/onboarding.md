@@ -64,6 +64,10 @@
 
 Повторяемая регистрация вынесена в общий хук `useTourActionRegistrar(id, action)` (`lib/useTourActionRegistrar.ts`): регистрирует действие, пока компонент-владелец смонтирован, перерегистрирует при смене `id`/хендлера и снимает на анмаунте (хендлер должен быть стабильным — `useCallback`). Хук `useSearchTourActions` (`src/pages/listen/lib/useSearchTourActions.ts`, вызывается на `ListenScreen`) регистрирует действия сценария `search`: `open-listen-search` (тур открывает поиск тем же хендлером, что и кнопка-лупа), `type-search-query` (печатает демо-запрос «лицемерие» посимвольно через `typeSearchInput` — он обновляет и `searchQueryAtom` (результаты), и `searchInputRequestAtom`, из которого `SearchBar` зеркалит текст в видимое поле; отменяется при размонтировании) и `press-first-sermon` (тап по первой строке). Финальное закрытие окна выбора — `close-sermon-playlist-picker`, которое `ListenScreen` регистрирует хендлером `closePicker` из `useSermonPlayback`. Всё это на странице, потому что фича `sermon-search` не импортирует онбординг (dependency inversion).
 
+## Динамический текст шага (`{sectionTitles}`)
+
+Текст карточки может содержать токен `{sectionTitles}`: при рендере `TourTooltip` подставляет вместо него реальные заголовки разделов через `useStepText` (`lib/useStepText.ts`). Источник — `dynamicSectionsAtom` (`entities/section`): чистая `buildSectionTitlesPhrase` (`lib/sectionTitlesPhrase.ts`) берёт до двух названий в кавычках-ёлочках и добавляет « и другие», если разделов больше; без загруженных заголовков (холодный старт, кэш/сеть ещё не пришли) возвращается фолбэк `'разделы — например, «По Библии», «По темам»'`. Так шаг «Разделы проповедей» (`welcome`, `listen`) не врёт про несуществующих «проповедников и рекомендации», а показывает настоящие разделы. Текст без токена рендерится как есть.
+
 ## Автозапуск
 
 Помимо ручного запуска через «?», два сценария стартуют автоматически при холодном старте (`useAutoTours`, `lib/useAutoTours.ts`; вызывается в `app/_RootLayout.tsx` рядом с другими стартовыми хуками):

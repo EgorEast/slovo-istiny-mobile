@@ -4,6 +4,7 @@ import { IconButton } from 'shared/ui/icon-button'
 import { PressableButton } from 'shared/ui/pressable-button/PressableButton'
 import { COLORS, FONT_SIZES, INDENTS, RADIUSES, useTheme } from 'shared/ui/theme'
 import { type OnboardingStep } from '../lib/scenarios'
+import { useStepText } from '../lib/useStepText'
 import { resolveWaitHint } from '../lib/waitHint'
 
 export const TourTooltip = ({
@@ -28,6 +29,7 @@ export const TourTooltip = ({
   step: OnboardingStep
 }) => {
   const { currentTheme } = useTheme()
+  const text = useStepText(step.text)
   const isWaiting = step.waitFor !== undefined && !isWaitSatisfied
   const waitHint = resolveWaitHint(step.waitFor)
 
@@ -41,7 +43,7 @@ export const TourTooltip = ({
           Icon={<Ionicons size={22} name='close-outline' color={currentTheme.text} />}
         />
       </View>
-      <Text style={[styles.text, { color: currentTheme.text }]}>{step.text}</Text>
+      <Text style={[styles.text, { color: currentTheme.text }]}>{text}</Text>
       <Text style={[styles.counter, { color: currentTheme.textMuted }]}>
         {`Шаг ${displayIndex + 1} из ${displayTotal}`}
       </Text>

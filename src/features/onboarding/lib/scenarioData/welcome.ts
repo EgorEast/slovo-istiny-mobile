@@ -1,4 +1,5 @@
 import { type OnboardingScenario } from '../scenarios'
+import { SECTION_TITLES_TOKEN } from '../sectionTitlesPhrase'
 
 export const welcomeScenario: OnboardingScenario = {
   description: 'Короткая экскурсия по приложению',
@@ -18,7 +19,7 @@ export const welcomeScenario: OnboardingScenario = {
     },
     {
       targetId: 'listen.sections',
-      text: 'Горизонтальные подборки: разделы, проповедники и рекомендации. Листайте вбок.',
+      text: `Горизонтальные подборки: ${SECTION_TITLES_TOKEN}. Листайте вбок.`,
       title: 'Разделы проповедей',
     },
     {
@@ -36,7 +37,7 @@ export const welcomeScenario: OnboardingScenario = {
       tapTargetId: 'tab.more',
       targetId: 'more.menu',
       text: 'Здесь история прослушивания, офлайн-режим и настройки.',
-      title: 'Меню «Ещё»',
+      title: 'Вкладка «Ещё»',
     },
     {
       route: '/settings',

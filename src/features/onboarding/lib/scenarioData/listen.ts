@@ -1,4 +1,5 @@
 import { type OnboardingScenario } from '../scenarios'
+import { SECTION_TITLES_TOKEN } from '../sectionTitlesPhrase'
 
 export const listenScenario: OnboardingScenario = {
   description: 'Поиск, разделы и плеер',
@@ -10,7 +11,7 @@ export const listenScenario: OnboardingScenario = {
       route: '/listen',
       tapTargetId: 'tab.listen',
       targetId: 'listen.sections',
-      text: 'Горизонтальные подборки: разделы, проповедники и рекомендации. Листайте вбок.',
+      text: `Горизонтальные подборки: ${SECTION_TITLES_TOKEN}. Листайте вбок.`,
       title: 'Разделы проповедей',
     },
     {
