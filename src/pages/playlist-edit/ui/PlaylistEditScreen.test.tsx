@@ -7,6 +7,7 @@ import {
   myPlaylistsAtom,
   myPlaylistsLoadedAtom,
 } from 'entities/playlist'
+import { dynamicSectionsAtom, type SectionData } from 'entities/section'
 import { renderWithProviders } from 'shared/mocks'
 import { type SermonShape } from 'shared/model'
 import { PlaylistEditScreen } from './PlaylistEditScreen'
@@ -92,6 +93,7 @@ const DELETE_LABEL = 'Удалить плейлист'
 const DRAG_LABEL = 'Переместить проповедь'
 const DELETE_DIALOG_TITLE = 'Удалить плейлист?'
 const DELETE_CONFIRM_TEXT = 'Удалить'
+const EMPTY_MESSAGE = 'В плейлисте пока нет проповедей'
 
 const SERMON_A: SermonShape = { artist: 'Автор A', artwork: null, id: 's1', title: 'Проповедь A' }
 const SERMON_B: SermonShape = { artist: 'Автор B', artwork: null, id: 's2', title: 'Проповедь B' }
@@ -103,10 +105,34 @@ const PLAYLIST: LocalPlaylistData = {
   title: 'Мой плейлист',
 }
 
-const renderScreen = async () => {
+// Imported-from-a-link playlist: authoritative ids, no snapshots. The edit screen
+// must resolve them against the locally loaded catalog (bug: it used to render an
+// empty list for these).
+const ID_ONLY_PLAYLIST: LocalPlaylistData = {
+  id: 'local-1',
+  sermonIds: ['s1', 's2'],
+  sermons: [],
+  title: 'Импортированный',
+}
+
+const CATALOG_SECTIONS: SectionData[] = [
+  {
+    id: 'section-1',
+    itemsSize: 'small',
+    playlists: [{ artwork: null, id: 'pl-1', sermons: [SERMON_A, SERMON_B], title: 'Каталог' }],
+    title: 'Раздел',
+    transform: 'short',
+  },
+]
+
+const renderScreen = async ({
+  playlist = PLAYLIST,
+  sections = [],
+}: { playlist?: LocalPlaylistData; sections?: SectionData[] } = {}) => {
   const ctx = createCtx()
-  myPlaylistsAtom(ctx, [FAVORITES_PLAYLIST, PLAYLIST])
+  myPlaylistsAtom(ctx, [FAVORITES_PLAYLIST, playlist])
   myPlaylistsLoadedAtom(ctx, true)
+  dynamicSectionsAtom(ctx, sections)
 
   return renderWithProviders(<PlaylistEditScreen />, { ctx })
 }
@@ -172,6 +198,40 @@ describe('<PlaylistEditScreen>', () => {
 
   test('reorders the sermons on save and goes back', async () => {
     const { getByText } = await renderScreen()
+
+    await act(async () => {
+      mockCapturedOnDragEnd?.({ data: [SERMON_B, SERMON_A] })
+    })
+    fireEvent.press(getByText(SAVE_LABEL))
+
+    await waitFor(() => expect(mockReorder).toHaveBeenCalledWith('local-1', ['s2', 's1']))
+    expect(mockRename).not.toHaveBeenCalled()
+    expect(mockBack).toHaveBeenCalledTimes(1)
+  })
+
+  test('resolves an id-only playlist against the loaded catalog', async () => {
+    const { getByText } = await renderScreen({
+      playlist: ID_ONLY_PLAYLIST,
+      sections: CATALOG_SECTIONS,
+    })
+
+    expect(getByText('Проповеди (2)')).toBeTruthy()
+    expect(getByText(SERMON_A.title)).toBeTruthy()
+    expect(getByText(SERMON_B.title)).toBeTruthy()
+  })
+
+  test('keeps an id-only playlist empty when no catalog sermon resolves', async () => {
+    const { getByText } = await renderScreen({ playlist: ID_ONLY_PLAYLIST })
+
+    expect(getByText('Проповеди (0)')).toBeTruthy()
+    expect(getByText(EMPTY_MESSAGE)).toBeTruthy()
+  })
+
+  test('saves the resolved order of an id-only playlist as sermonIds', async () => {
+    const { getByText } = await renderScreen({
+      playlist: ID_ONLY_PLAYLIST,
+      sections: CATALOG_SECTIONS,
+    })
 
     await act(async () => {
       mockCapturedOnDragEnd?.({ data: [SERMON_B, SERMON_A] })

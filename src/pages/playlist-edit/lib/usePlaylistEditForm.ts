@@ -22,20 +22,22 @@ import { type SermonShape } from 'shared/model'
  * монтируется лишь когда плейлист найден, поэтому локальные копии не
  * рассинхронизируются с асинхронной гидратацией атома.
  * @param playlist - Редактируемый локальный плейлист.
+ * @param displaySermons - Проповеди в порядке `sermonIds` (у id-only плейлиста —
+ * резолвленные) — база для отображения и детекта изменения порядка.
  * @returns Значение/сеттер названия, порядок и его сеттер, доступность и обработчик сохранения.
  */
-export const usePlaylistEditForm = (playlist: LocalPlaylistData) => {
+export const usePlaylistEditForm = (playlist: LocalPlaylistData, displaySermons: SermonShape[]) => {
   const router = useRouter()
   const rename = useAction(renameLocalPlaylist)
   const reorder = useAction(reorderLocalPlaylistSermons)
   const loadPlaylists = useAction(loadMyPlaylists)
   const [isLoaded] = useAtom(myPlaylistsLoadedAtom)
   const [title, setTitle] = useState(playlist.title)
-  const [orderedSermons, setOrderedSermons] = useState<SermonShape[]>(playlist.sermons)
+  const [orderedSermons, setOrderedSermons] = useState<SermonShape[]>(displaySermons)
 
   const trimmedTitle = title.trim()
   const isTitleChanged = trimmedTitle !== playlist.title.trim()
-  const isOrderChanged = hasOrderChanged(playlist.sermons, orderedSermons)
+  const isOrderChanged = hasOrderChanged(displaySermons, orderedSermons)
   const canSave = trimmedTitle.length > 0 && (isTitleChanged || isOrderChanged)
 
   const save = useCallback(async () => {

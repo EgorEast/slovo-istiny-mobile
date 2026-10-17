@@ -10,6 +10,7 @@ import { EmptyState } from 'shared/ui'
 import { FormField, FormSubmitContext } from 'shared/ui/form'
 import { PressableButton } from 'shared/ui/pressable-button'
 import { COLORS, useTheme } from 'shared/ui/theme'
+import { usePlaylistDisplaySermons } from '../lib/usePlaylistDisplaySermons'
 import { usePlaylistEditForm } from '../lib/usePlaylistEditForm'
 import { usePlaylistEditHeader } from '../lib/usePlaylistEditHeader'
 import { styles } from './styles'
@@ -31,8 +32,11 @@ const countTitle = (count: number) => `Проповеди (${count})`
 export const PlaylistEditForm = ({ playlist }: { playlist: LocalPlaylistData }) => {
   const { currentTheme } = useTheme()
   const router = useRouter()
-  const { canSave, orderedSermons, save, setOrderedSermons, setTitle, title } =
-    usePlaylistEditForm(playlist)
+  const displaySermons = usePlaylistDisplaySermons(playlist)
+  const { canSave, orderedSermons, save, setOrderedSermons, setTitle, title } = usePlaylistEditForm(
+    playlist,
+    displaySermons,
+  )
   const handleSave = useCallback(() => void save(), [save])
   usePlaylistEditHeader({ canSave, onSave: handleSave })
   const handleDeleted = useCallback(() => router.back(), [router])
