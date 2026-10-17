@@ -66,7 +66,8 @@ This will start the Expo development server. You can then scan the QR code with 
 
 - `yarn lint` — Run ESLint
 - `yarn lint:fix` — Run ESLint with auto-fix
-- `yarn check:types` — TypeScript type checking
+- `yarn check:types` — TypeScript type checking (app + service worker)
+- `yarn check:sw` — Type-check public/sw.js only (fast subset of check:types)
 - `yarn check:fsd` — FSD architecture linting (steiger)
 - `yarn check:fsd-watch` — FSD linting in watch mode
 - `yarn check:unused` — Check for unused code (knip)

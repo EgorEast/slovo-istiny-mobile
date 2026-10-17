@@ -36,7 +36,7 @@ For detailed environment setup (environment variables, emulator configuration, l
 | `yarn start` | Start Expo dev server |
 | `yarn lint` | Run ESLint |
 | `yarn lint:fix` | Run ESLint with auto-fix |
-| `yarn check:types` | TypeScript type checking |
+| `yarn check:types` | TypeScript type checking (app + service worker) |
 | `yarn check:fsd` | FSD architecture linting (steiger) |
 | `yarn test` | Jest in watch mode (changed files vs main) |
 | `yarn testFinal` | Run all tests once |
