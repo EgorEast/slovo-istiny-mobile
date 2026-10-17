@@ -66,7 +66,7 @@ class ApkInstallerModule : Module() {
           val statusMessage = intent.getStringExtra(PackageInstaller.EXTRA_STATUS_MESSAGE)
           val legacyStatus = intent.getIntExtra(EXTRA_LEGACY_STATUS, -1)
           promise.reject(
-            "ERR_APK_INSTALL_FAILED",
+            ApkInstallStatuses.failureCode(status, statusMessage),
             ApkInstallStatuses.failureMessage(status, statusMessage, legacyStatus),
             null,
           )

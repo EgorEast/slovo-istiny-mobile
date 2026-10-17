@@ -37,7 +37,7 @@ stack: CodedError ← applyMetadata ← anonymous (setInterval retry callback)
 
 - **Вход:** `installApk(apkPath)` принимает путь к APK. JS-граница (`src/shared/lib/update-service/updateService.ts`) проверяет `new File(apkPath).exists` ДО вызова; нативный код дополнительно резолвит `Uri.parse(apkPath).path` и повторно проверяет `File.exists()` — Fail Fast.
 - **Асинхронность:** промис резолвится из `BroadcastReceiver` (`STATUS_SUCCESS`), а не по завершении commit. При self-update процесс обычно убивается до этого — JS трактует промис как fire-and-forget.
-- **Ошибки:** failure-статусы (`STATUS_FAILURE*`) реджектят промис с описанием; `STATUS_PENDING_USER_ACTION` запускает системный диалог подтверждения без резолва.
+- **Ошибки:** failure-статусы (`STATUS_FAILURE*`) реджектят промис со стабильным машинным кодом (первый аргумент `Promise.reject`, в JS — `error.code`) и человекочитаемым описанием; коды — имена статусов, для несовпадения подписей — `INSTALL_SIGNATURE_MISMATCH`. `STATUS_PENDING_USER_ACTION` запускает системный диалог подтверждения без резолва.
 - **Разрешение:** `canRequestPackageInstalls()` / `openInstallPermissionSettings()` — проверка и открытие системного экрана «Разрешить установку из этого источника».
 
 ## expo-secure-store контракт
@@ -61,7 +61,7 @@ stack: CodedError ← applyMetadata ← anonymous (setInterval retry callback)
 
 Чистая логика нативных модулей вынесена в Kotlin-объекты **без Android-вызовов**, чтобы её можно было прогонять на JVM (обычный JUnit4, без Robolectric — SDK-константы `PackageInstaller.STATUS_*` инлайнятся на компиляции):
 
-- `ApkInstallStatuses` (`modules/apk-installer/android/src/main/java/ru/slovopropovedi/apkinstaller/ApkInstallStatuses.kt`) — маппинг `status → STATUS_FAILURE*` и формат `failureMessage` (`Install failed: <name>, message=<msg>, legacyStatus=<n>`), который разбирает JS-классификатор `installErrorMessage.ts`;
+- `ApkInstallStatuses` (`modules/apk-installer/android/src/main/java/ru/slovopropovedi/apkinstaller/ApkInstallStatuses.kt`) — маппинг `status → STATUS_FAILURE*`, стабильный код `failureCode` (его читает JS-классификатор `installErrorMessage.ts` как `error.code`) и формат `failureMessage` (`Install failed: <name>, message=<msg>, legacyStatus=<n>`) для диагностики/легаси-разбора;
 - `AudioEffectsMath` (`modules/audio-effects/android/src/main/java/ru/slovopropovedi/audioeffects/AudioEffectsMath.kt`) — коэффициенты баланса, `linearToDb` (пол −60 dB), `gainToMillibels`, resize persisted gains, `milliHzToHz`.
 
 Тесты лежат рядом: `modules/<module>/android/src/test/java/...`. Запуск — `yarn test:native` (gradle-проекты `:apk-installer` и `:audio-effects`, задача `testDebugUnitTest` для обоих); `yarn testFinal:all` выполняет их после `yarn testFinal` (только jest). JS-границы модулей покрыты обычными jest-тестами (`modules/apk-installer/index.test.ts`, `modules/audio-effects/platform.native.test.ts`, `.../native/audioEffectsCapabilities.test.ts`).

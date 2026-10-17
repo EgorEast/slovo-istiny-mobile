@@ -28,6 +28,25 @@ class ApkInstallStatusesTest {
   }
 
   @Test
+  fun `failureCode uses the status name as a stable rejection code`() {
+    assertEquals(
+      "STATUS_FAILURE_BLOCKED",
+      ApkInstallStatuses.failureCode(PackageInstaller.STATUS_FAILURE_BLOCKED, null),
+    )
+  }
+
+  @Test
+  fun `failureCode outranks the coarse status with a signature mismatch code`() {
+    assertEquals(
+      "INSTALL_SIGNATURE_MISMATCH",
+      ApkInstallStatuses.failureCode(
+        PackageInstaller.STATUS_FAILURE_INCOMPATIBLE,
+        "INSTALL_FAILED_UPDATE_INCOMPATIBLE: Package signatures do not match",
+      ),
+    )
+  }
+
+  @Test
   fun `failureMessage keeps the exact shape parsed by the JS classifier`() {
     val message = ApkInstallStatuses.failureMessage(
       PackageInstaller.STATUS_FAILURE_CONFLICT,

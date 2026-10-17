@@ -22,6 +22,11 @@ const INSTALL_GENERIC_KIND: UpdateErrorKind = 'install-generic'
 const nativeInstallError = (statusName: string, statusMessage = 'null'): Error =>
   new Error(`Install failed: ${statusName}, message=${statusMessage}, legacyStatus=-1`)
 
+// Expo modules surface the first `Promise.reject` argument as `error.code`
+// (a CodedError extends Error), so a coded error is an Error with `code` set.
+const codedError = (code: string, message = ''): Error =>
+  Object.assign(new Error(message), { code })
+
 describe('classifyUpdateError', () => {
   test('classifies a non-Error input as unknown', () => {
     expect(classifyUpdateError(null)).toEqual({ kind: 'unknown', message: GENERIC_MESSAGE })
@@ -60,6 +65,31 @@ describe('classifyUpdateError', () => {
     ['STATUS_FAILURE_STORAGE', 'install-storage', STORAGE_MESSAGE],
   ])('maps %s to a dedicated install error', (status, kind, message) => {
     expect(classifyUpdateError(nativeInstallError(status))).toEqual({ kind, message })
+  })
+
+  test.each([
+    ['STATUS_FAILURE_ABORTED', 'install-aborted', ABORTED_MESSAGE],
+    ['STATUS_FAILURE_BLOCKED', 'install-blocked', BLOCKED_MESSAGE],
+    ['STATUS_FAILURE_CONFLICT', 'install-conflict', CONFLICT_MESSAGE],
+    ['STATUS_FAILURE_INCOMPATIBLE', 'install-incompatible', INCOMPATIBLE_MESSAGE],
+    ['STATUS_FAILURE_INVALID', 'install-invalid', INVALID_MESSAGE],
+    ['STATUS_FAILURE_STORAGE', 'install-storage', STORAGE_MESSAGE],
+    ['INSTALL_SIGNATURE_MISMATCH', 'install-signature', SIGNATURE_MESSAGE],
+  ])('maps the %s rejection code without relying on the message', (code, kind, message) => {
+    expect(classifyUpdateError(codedError(code))).toEqual({ kind, message })
+  })
+
+  test('prefers the rejection code over a misleading legacy message', () => {
+    expect(
+      classifyUpdateError(codedError('STATUS_FAILURE_BLOCKED', 'STATUS_FAILURE_ABORTED')),
+    ).toEqual({ kind: 'install-blocked', message: BLOCKED_MESSAGE })
+  })
+
+  test('classifies an unknown code with no message as unknown', () => {
+    expect(classifyUpdateError(codedError('ERR_APK_INSTALL_FAILED'))).toEqual({
+      kind: 'unknown',
+      message: GENERIC_MESSAGE,
+    })
   })
 
   test.each([
