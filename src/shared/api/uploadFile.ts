@@ -4,6 +4,7 @@ import { axiosInstance } from './axiosInstance'
 import { type APITypes } from './generated'
 import {
   reportProgress,
+  reportUploadComplete,
   type UploadedFile,
   uploadFilePart,
   type UploadOptions,
@@ -58,11 +59,13 @@ const uploadNativePickedFile = async (
     uri: asset.uri,
   })
 
+  const uploadOptions: UploadOptions = { ...options, totalBytes: asset.size }
   try {
     const response = await axiosInstance.post<APITypes.IFileResponseDto>(UPLOAD_URL, formData, {
-      onUploadProgress: event => reportProgress(options, event),
+      onUploadProgress: event => reportProgress(uploadOptions, event),
       timeout: 0,
     })
+    reportUploadComplete(uploadOptions)
 
     return { fileName: response.data.fileName, fileUrl: response.data.fileUrl }
   } catch (error) {
