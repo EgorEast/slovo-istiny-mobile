@@ -1,9 +1,9 @@
 import { type Directory, File } from 'expo-file-system'
 import { _resetInflightCacheForTesting, audioCacheService } from './AudioCacheService'
 import { CacheCancelledError } from './CacheCancelledError'
-import { PROGRESS_TICK_MIN_INTERVAL_MS } from './cacheDownloader'
 import { getAudioCacheDirectory } from './getAudioCacheDirectory'
 import { inflightCache } from './inflightCache'
+import { PROGRESS_TICK_MIN_INTERVAL_MS } from './progressThrottler'
 
 jest.mock('expo-file-system', () => ({
   File: class MockFile {

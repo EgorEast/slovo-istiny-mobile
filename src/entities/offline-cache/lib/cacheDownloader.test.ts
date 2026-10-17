@@ -1,11 +1,11 @@
 import NetInfo from '@react-native-community/netinfo'
 import { type Directory, File } from 'expo-file-system'
-import { CacheCancelledError } from './CacheCancelledError'
 import {
-  createThrottledProgress,
-  downloadToCache,
-  PROGRESS_TICK_MIN_INTERVAL_MS,
-} from './cacheDownloader'
+  ESTIMATED_AUDIO_BYTES,
+  ESTIMATED_PROGRESS_CAP_PERCENT,
+} from 'shared/lib/progress/estimateBytesProgress'
+import { CacheCancelledError } from './CacheCancelledError'
+import { downloadToCache } from './cacheDownloader'
 import {
   DOWNLOAD_STALL_TIMEOUT_MS,
   RETRY_BACKOFF_DELAYS_MS,
@@ -13,6 +13,7 @@ import {
   STALL_CHECK_INTERVAL_MS,
 } from './downloadRetryPolicy'
 import { getAudioCacheDirectory } from './getAudioCacheDirectory'
+import { createThrottledProgress, PROGRESS_TICK_MIN_INTERVAL_MS } from './progressThrottler'
 
 jest.mock('@react-native-community/netinfo', () => ({
   __esModule: true,
@@ -112,6 +113,28 @@ describe('downloadToCache', () => {
     expect(onProgress).toHaveBeenCalledWith(1)
     expect(getPartFile()?.rename).toHaveBeenCalled()
     expect(getPartFile()?.delete).not.toHaveBeenCalled()
+    expect(result).toContain('file://cache/')
+  })
+
+  test('reports 100 on completion of a chunked download without totalBytes', async () => {
+    ;(File.downloadFileAsync as jest.Mock).mockImplementation(
+      (
+        _url: string,
+        _file: unknown,
+        opts: { onProgress?: (data: { bytesWritten: number; totalBytes: number }) => void },
+      ) => {
+        opts.onProgress?.({ bytesWritten: ESTIMATED_AUDIO_BYTES / 2, totalBytes: 0 })
+        opts.onProgress?.({ bytesWritten: ESTIMATED_AUDIO_BYTES, totalBytes: 0 })
+        return Promise.resolve({ uri: 'file://downloaded.mp3' })
+      },
+    )
+    const onProgress = jest.fn()
+
+    const result = await downloadToCache(EXAMPLE_URL, onProgress)
+
+    expect(onProgress).toHaveBeenCalledWith(0.5)
+    expect(onProgress).toHaveBeenCalledWith(ESTIMATED_PROGRESS_CAP_PERCENT / 100)
+    expect(onProgress).toHaveBeenLastCalledWith(1)
     expect(result).toContain('file://cache/')
   })
 
@@ -377,7 +400,7 @@ describe('downloadToCache', () => {
       expect(onProgress).toHaveBeenLastCalledWith(1)
     })
 
-    test('ignores non-positive totalBytes', () => {
+    test('ignores non-positive totalBytes for negligible byte counts', () => {
       const onProgress = jest.fn()
       const throttled = createThrottledProgress(onProgress)
 
@@ -385,6 +408,31 @@ describe('downloadToCache', () => {
       throttled({ bytesWritten: 500, totalBytes: -1 })
 
       expect(onProgress).not.toHaveBeenCalled()
+    })
+
+    test('emits an estimated monotonic capped percent when totalBytes is unknown', () => {
+      const onProgress = jest.fn()
+      const throttled = createThrottledProgress(onProgress)
+
+      throttled({ bytesWritten: ESTIMATED_AUDIO_BYTES / 2, totalBytes: 0 })
+      throttled({ bytesWritten: ESTIMATED_AUDIO_BYTES, totalBytes: 0 })
+      // Goes backwards: must be ignored (monotonic guard).
+      throttled({ bytesWritten: ESTIMATED_AUDIO_BYTES / 4, totalBytes: 0 })
+
+      expect(onProgress.mock.calls.map(([progress]) => progress)).toEqual([
+        0.5,
+        ESTIMATED_PROGRESS_CAP_PERCENT / 100,
+      ])
+      expect(onProgress).not.toHaveBeenCalledWith(1)
+    })
+
+    test('keeps the real percent when totalBytes is known', () => {
+      const onProgress = jest.fn()
+      const throttled = createThrottledProgress(onProgress)
+
+      throttled({ bytesWritten: 400, totalBytes: 1000 })
+
+      expect(onProgress).toHaveBeenCalledWith(0.4)
     })
 
     test('direct 0/1 progress calls bypass the throttle', async () => {

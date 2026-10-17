@@ -9,10 +9,10 @@ import {
   WAIT_ONLINE_BEFORE_RETRY_MS,
 } from './downloadRetryPolicy'
 import { getAudioCacheDirectory } from './getAudioCacheDirectory'
+import { createThrottledProgress } from './progressThrottler'
 
 const CACHED_EXTENSION = '.mp3'
 export const PART_SUFFIX = '.cache.mp3'
-export const PROGRESS_TICK_MIN_INTERVAL_MS = 250
 
 export const getUrlHash = (url: string): string => {
   let hash = 0
@@ -32,22 +32,6 @@ export const getCachedFile = (audioUrl: string): File => {
 export const ensureCacheDirectoryExists = (): void => {
   const cacheDir = getAudioCacheDirectory()
   if (!cacheDir.exists) cacheDir.create({ intermediates: true })
-}
-
-export const createThrottledProgress = (onProgress: (progress: number) => void) => {
-  let last = 0
-  let lastEmittedAt = 0
-  return (data: { bytesWritten: number; totalBytes: number }) => {
-    if (data.totalBytes <= 0) return
-    const fraction = Math.max(0, Math.min(1, data.bytesWritten / data.totalBytes))
-    const now = Date.now()
-    const elapsed = now - lastEmittedAt
-    if ((fraction - last >= 0.01 && elapsed >= PROGRESS_TICK_MIN_INTERVAL_MS) || fraction === 1) {
-      last = fraction
-      lastEmittedAt = now
-      onProgress(fraction)
-    }
-  }
 }
 
 const deletePartFile = (partFile: File): void => {
