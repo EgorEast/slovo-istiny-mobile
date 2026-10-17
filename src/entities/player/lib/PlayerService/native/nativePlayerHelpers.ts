@@ -13,6 +13,7 @@ import {
 } from '../../../model'
 import { pauseTypeAtom, setPauseTypeAction } from '../../../pauseType'
 import { setIsStalledOfflineAction } from '../../stalledOffline'
+import { type StatusCallbacks } from '../types'
 import { audioLoader } from './AudioLoader'
 import { playerStatusListener } from './PlayerStatusListener'
 import { trackAutoAdvanceService } from './TrackAutoAdvanceService/TrackAutoAdvanceService'
@@ -20,12 +21,14 @@ import { trackAutoAdvanceService } from './TrackAutoAdvanceService/TrackAutoAdva
 /** Native position must land this close to the seek target before the guard lifts. */
 const SEEK_TARGET_CONFIRM_TOLERANCE_MS = 500
 
+type PlayerLifecycleCallbacks = Pick<StatusCallbacks, 'onAudioInterruption' | 'onPlaybackError'>
+
 export const setupPlayerListeners = (
   player: AudioPlayer,
-  onAudioInterruption: (isInterrupted: boolean) => void,
+  lifecycle: PlayerLifecycleCallbacks,
 ): void => {
   playerStatusListener.setupListeners(player, {
-    onAudioInterruption,
+    ...lifecycle,
     onBufferingChange: isBuffering => void setIsBufferingAction(ctx, isBuffering),
     // A partial source reports the truncated duration; the timeline is governed
     // by applyPartialDuration instead.

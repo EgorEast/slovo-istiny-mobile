@@ -27,6 +27,11 @@ const getPlaybackStatusHandler = (player: AudioPlayer): StatusUpdateHandler => {
   return handler as StatusUpdateHandler
 }
 
+const createLifecycleCallbacks = () => ({
+  onAudioInterruption: jest.fn(),
+  onPlaybackError: jest.fn(),
+})
+
 const statusWith = (overrides: Partial<AudioStatus>): AudioStatus =>
   ({
     currentTime: 60,
@@ -53,7 +58,7 @@ describe('setupPlayerListeners position sync during seek', () => {
 
   test('native position does not overwrite positionAtom while seeking', async () => {
     const player = createPlayerStub()
-    setupPlayerListeners(player, jest.fn())
+    setupPlayerListeners(player, createLifecycleCallbacks())
     const handler = getPlaybackStatusHandler(player)
 
     positionAtom(ctx, 60000)
@@ -69,7 +74,7 @@ describe('setupPlayerListeners position sync during seek', () => {
 
   test('clears seeking flag when native position confirms the target', async () => {
     const player = createPlayerStub()
-    setupPlayerListeners(player, jest.fn())
+    setupPlayerListeners(player, createLifecycleCallbacks())
     const handler = getPlaybackStatusHandler(player)
 
     positionAtom(ctx, 60000)
@@ -85,7 +90,7 @@ describe('setupPlayerListeners position sync during seek', () => {
 
   test('keeps seeking flag when native position is far from target', async () => {
     const player = createPlayerStub()
-    setupPlayerListeners(player, jest.fn())
+    setupPlayerListeners(player, createLifecycleCallbacks())
     const handler = getPlaybackStatusHandler(player)
 
     positionAtom(ctx, 60000)
@@ -100,7 +105,7 @@ describe('setupPlayerListeners position sync during seek', () => {
 
   test('updates positionAtom normally when not seeking', async () => {
     const player = createPlayerStub()
-    setupPlayerListeners(player, jest.fn())
+    setupPlayerListeners(player, createLifecycleCallbacks())
     const handler = getPlaybackStatusHandler(player)
 
     isSeekingAtom(ctx, false)
@@ -121,7 +126,7 @@ describe('setupPlayerListeners duration sync for partial sources', () => {
 
   test('duration event from a full source updates durationAtom', async () => {
     const player = createPlayerStub()
-    setupPlayerListeners(player, jest.fn())
+    setupPlayerListeners(player, createLifecycleCallbacks())
     const handler = getPlaybackStatusHandler(player)
 
     handler(statusWith({ duration: 45 }))
@@ -133,7 +138,7 @@ describe('setupPlayerListeners duration sync for partial sources', () => {
   test('duration event from a partial source does not update durationAtom', async () => {
     ;(audioLoader.isPartialSource as jest.Mock).mockReturnValue(true)
     const player = createPlayerStub()
-    setupPlayerListeners(player, jest.fn())
+    setupPlayerListeners(player, createLifecycleCallbacks())
     const handler = getPlaybackStatusHandler(player)
 
     handler(statusWith({ duration: 45 }))

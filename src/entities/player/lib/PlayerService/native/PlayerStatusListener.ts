@@ -1,6 +1,6 @@
-import { type AudioPlayer, type AudioStatus } from 'expo-audio'
+import { type AudioPlayer } from 'expo-audio'
 import { type StatusCallbacks } from '../types'
-const STALE_TRACK_END_TOLERANCE_MS = 3000
+import { isGenuineTrackEnd } from './isGenuineTrackEnd'
 
 /**
  * Manages playback status listeners for the audio player.
@@ -42,6 +42,7 @@ class PlayerStatusListener {
     this.wasPlayingBeforeInterruption = false
     this.staleTrackEndWarned = false
     this.listenerArmed = false
+    this.errorReported = false
   }
 
   /**
@@ -63,7 +64,7 @@ class PlayerStatusListener {
 
       // Guard: stale didJustFinish from the previous source (expo-audio #34301) —
       // production Android fires it right after a source change with the old position
-      if (!this.isGenuineTrackEnd(status)) {
+      if (!isGenuineTrackEnd(status)) {
         this.warnStaleTrackEndOnce()
         return
       }
@@ -71,15 +72,6 @@ class PlayerStatusListener {
       this.trackEndHandled = true
       onTrackEnd()
     })
-  }
-
-  private isGenuineTrackEnd = (status: AudioStatus): boolean => {
-    // Unknown duration — cannot distinguish, treat as genuine
-    if (status.duration <= 0) return true
-
-    const remainingMs = Math.floor(status.duration * 1000) - Math.floor(status.currentTime * 1000)
-
-    return remainingMs <= STALE_TRACK_END_TOLERANCE_MS
   }
 
   private warnStaleTrackEndOnce = (): void => {
@@ -92,8 +84,15 @@ class PlayerStatusListener {
 
   private setupPlaybackStatusListener(player: AudioPlayer, callbacks: StatusCallbacks): void {
     this.playbackStatusSubscription = player.addListener('playbackStatusUpdate', status => {
-      // Arm the didJustFinish handler on the first healthy tick of the new source
-      if (status.isLoaded && status.duration > 0 && !status.didJustFinish) this.listenerArmed = true
+      if (typeof status.error === 'string' && status.error.length > 0) {
+        if (!this.errorReported) {
+          this.errorReported = true
+          callbacks.onPlaybackError?.(status.error)
+        }
+      } else if (status.isLoaded && status.duration > 0 && !status.didJustFinish) {
+        this.listenerArmed = true
+        this.errorReported = false
+      }
 
       const currentPlaying = status.playing
 
@@ -125,6 +124,7 @@ class PlayerStatusListener {
   private wasPlayingBeforeInterruption = false
   private staleTrackEndWarned = false
   private listenerArmed = false
+  private errorReported = false
 }
 
 export const playerStatusListener = new PlayerStatusListener()

@@ -57,6 +57,8 @@ export interface StatusCallbacks {
   onBufferingChange: (isBuffering: boolean) => void
   /** Called when track duration becomes available. */
   onDurationChange: (durationMs: number) => void
+  /** Called once per episode when expo-audio reports a playback error. */
+  onPlaybackError?: (message: string) => void
   /** Called when playing state changes. */
   onPlayingChange: (isPlaying: boolean) => void
   /** Called when playback position changes. */

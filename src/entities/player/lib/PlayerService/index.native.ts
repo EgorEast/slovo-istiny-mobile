@@ -6,8 +6,9 @@ import { type PlaybackRate } from '../../playback-rate'
 import { audioLoader } from './native/AudioLoader'
 import { audioModeManager } from './native/AudioModeManager'
 import { lockScreenControls } from './native/LockScreenControls'
-import { createAudioInterruptionHandler, setupPlayerListeners } from './native/nativePlayerHelpers'
+import { setupPlayerListeners } from './native/nativePlayerHelpers'
 import { playbackController } from './native/PlaybackController'
+import { createPlayerServiceCallbacks } from './native/playerServiceCallbacks'
 import { playerStatusListener } from './native/PlayerStatusListener'
 import { recoverStreamAfterReconnect as healStreamAfterReconnect } from './native/reconnectHeal'
 import { resumeWithSourceSwap } from './native/resumeWithSourceSwap'
@@ -114,13 +115,10 @@ export class PlayerService {
 
   private setupListeners = (): void => {
     if (!this.playerInstance) return
-    setupPlayerListeners(this.playerInstance, this.handleAudioInterruption)
+    setupPlayerListeners(this.playerInstance, this.callbacks)
   }
 
-  private handleAudioInterruption = createAudioInterruptionHandler({
-    pause: this.pause,
-    play: this.play,
-  })
+  private callbacks = createPlayerServiceCallbacks(this)
 
   private playerInstance: AudioPlayer | null = null
   private sourceSwap = { play: this.play, replaceAudio: this.replaceAudio }

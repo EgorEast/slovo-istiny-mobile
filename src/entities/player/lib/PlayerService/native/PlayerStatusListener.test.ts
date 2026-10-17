@@ -11,6 +11,7 @@ const createCallbacks = (): StatusCallbacks => ({
   onAudioInterruption: jest.fn(),
   onBufferingChange: jest.fn(),
   onDurationChange: jest.fn(),
+  onPlaybackError: jest.fn(),
   onPlayingChange: jest.fn(),
   onPositionChange: jest.fn(),
   onTrackEnd: jest.fn(),
@@ -163,6 +164,43 @@ describe('PlayerStatusListener track end', () => {
       ([msg]) => typeof msg === 'string' && msg.includes('Ignored stale didJustFinish event'),
     )
     expect(staleWarnings).toHaveLength(1)
+  })
+})
+
+describe('PlayerStatusListener playback error', () => {
+  let player: AudioPlayer
+  let callbacks: StatusCallbacks
+
+  beforeEach(() => {
+    jest.clearAllMocks()
+    player = createPlayerStub()
+    callbacks = createCallbacks()
+    playerStatusListener.setupListeners(player, callbacks)
+  })
+
+  test('reports the same error only once per episode', () => {
+    const errorStatus = statusWith({ error: 'stream failed', playing: false })
+
+    getPlaybackStatusHandler(player)(errorStatus)
+    getPlaybackStatusHandler(player)(errorStatus)
+
+    expect(callbacks.onPlaybackError).toHaveBeenCalledWith('stream failed')
+    expect(callbacks.onPlaybackError).toHaveBeenCalledTimes(1)
+  })
+
+  test('a healthy tick re-arms reporting for a later distinct error', () => {
+    getPlaybackStatusHandler(player)(statusWith({ error: 'first failure' }))
+    armListener(player)
+    getPlaybackStatusHandler(player)(statusWith({ error: 'second failure' }))
+
+    expect(callbacks.onPlaybackError).toHaveBeenCalledTimes(2)
+    expect(callbacks.onPlaybackError).toHaveBeenLastCalledWith('second failure')
+  })
+
+  test('ignores an empty error payload', () => {
+    getPlaybackStatusHandler(player)(statusWith({ error: '', playing: false }))
+
+    expect(callbacks.onPlaybackError).not.toHaveBeenCalled()
   })
 })
 
