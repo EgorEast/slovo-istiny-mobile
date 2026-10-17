@@ -5,6 +5,183 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.28.0] - 2026-10-17
+
+### Added
+
+- Estimated byte progress helper for unknown totals
+- Share playlist via QR modal instead of immediate share sheet
+- Rework the share tour lead-up with a tab blink and screen-local intro
+- Open backup tour from «Ещё» with a screen-local intro card
+- Show the typing card while the query types
+- Same-screen starts skip the lead-up including the intro
+- Merge the settings intro and split the theme step
+- Merge the offline tour intro with the entry step
+- Restore the offline-remove step in the playlist tour
+- Rename the playlists tour and spotlight the section title
+- Complete the search tour flow
+- Highlight the playlist picker window in the tour
+- Search tour groups per screen with global fallback
+- Tab navigation as entry transitions in search and share
+- GlobalFallback for backup and share tours
+- Refine the offline playlist tour
+- Add offline playlist tour
+- Player tour belongs to the listen screen
+- Search tour is global
+- Global share tour with tab visualization
+- Entry transitions attach to the following card
+- Make the backup tour global and drop the More-screen step
+- Search tour leads to the listen screen
+- Share tour leads to the share screen
+- Screen-local tours appear only on their screens
+- Backup tour with the full path from any screen
+- Add backup tour
+- Start local tours at the current screen
+- Offline tour waits for the cache and clearer entry steps
+- Action visualizations leave the step deck
+- Intro steps before action-first tours
+- Pause button highlight and tour-driven fullscreen expand
+- Offer the player tour from every screen
+- Present playlist-add steps above the app modal
+- Add-tour checks favorites and highlights save
+- Tour walks the playlist row menu
+- Add add-to-playlist tour on the playlist screen
+- Rename playlist tour and add sermon menu steps
+- Spotlight the disabled offline-remove row in the playlist tour
+- Skip tour steps for hidden menu items
+- Spotlight the help button in intro tours
+- Playlist menu tour opens the menu and walks its items
+- Dim the background around highlighted tour areas
+- Interactive tour via inverted onboarding deps
+- Show clickable areas in the player tour
+- Search tour opens the search and waits for a query
+- Tour opens the menu and shows details
+- Tour-performed tap actions with auto-advance
+- Add playlist menu scenario
+- Add search results scenario
+- Fullscreen onboarding button and player scenarios
+- Scenario scope for the player picker
+- Add share app scenario
+- Copy link together with app description
+- Group picker scenarios by current screen
+- Open scenario picker directly and allow replaying auto tours
+- Add player scenario with interactive steps
+- Simulate taps when the tour navigates
+- Scroll off-screen onboarding targets into view
+- Auto-start welcome and whats-new tours
+- Support multi-screen tours
+- Add tours disabled setting with backup support
+- Add onboarding targets across user screens
+- Add help button to headerless tab screens
+- Merge help button into custom header actions
+- Add help button to root and listen stack headers
+- Add onboarding feature slice with spotlight tour
+- Edge-hold scrubbing and double-tap seek in fullscreen player (#123)
+- Offer a playlist to continue after removing the active sermon
+- Set playlist sermon artworks from the playlist artwork
+- Close player when removing the current sermon from its playlist
+- Add clear playlist action with player reset
+- Add all playlist sermons to a custom playlist from menu
+- Apply add-to-playlist changes on save with draft state
+- Preserve custom playlist share links and dedupe imports
+- Add remove-from-current-playlist item to player menu
+- Add confirmed remove-from-playlist item to sermon menu
+- Add divider before create row on my playlists screen
+- Cache feature flags for offline-first startup
+
+### Changed
+
+- Extract install status errors into a module
+- Move local playlist resolve into entities
+- Mirror native signature in youtubeSource web stub
+- Keep youtubei.js out of the web bundle via platform split
+- Extract TOTAL_SIZE into a constants module
+- Drop inert entry-step texts and isolate the share return-entry test
+- Smooth the cached sermons list rendering
+- Move import settings storage to shared model
+- Inline player tour actions and add speed/sound
+- Drop unused homeRoute field from scenarios
+- Declare component targets via onboardingTargetId prop
+- Snapshot player menu membership on menu open
+- Extract progress buffered color to COLORS and drop unused colors
+- Reuse server playlist list UI for my playlists screen
+
+### Fixed
+
+- Marquee title and scripture reference in sermon rows
+- Tighten icon follow-up artwork check
+- Reset estimated progress guard across download retries
+- Re-apply lock screen metadata once the fallback icon resolves
+- Estimated upload progress when total is unknown
+- Approximate progress for chunked downloads
+- Keep edit form reactive to late sections hydration
+- Persist zero position when pausing near track end
+- Classify install errors by stable native codes
+- Resolve id-only playlists on the edit screen
+- Web resumeAfterPause rebinds on source mismatch
+- Resume after interruption through the cached-source swap
+- Abort stalled downloads instead of only an absolute budget
+- Proactively prune legacy search cache keys on startup
+- Fallback reload when SW activation stalls
+- Bump Expo SDK 57 patch versions, regenerate expo-router patch
+- Re-measure targets after tour scrolls
+- Remove ocx config
+- Scroll to tour targets that cannot measure off-screen
+- Open playlists tour with section card before title tap
+- Type the query into the visible search input
+- Register the type-query action and type the full word
+- Release target rects on unmount
+- Ensure the lead-up tab tap is visualized (only from foreign screens)
+- Backup tour intro card and tab entry transition
+- Position the playlist-picker card below the modal
+- Return to the tab bar before tab visualizations
+- Visualize search taps and present the picker step on top
+- Visualize the More tab tap in the backup tour
+- Settings tour steps follow the screen order
+- Cap tour card width on wide screens
+- Present the tap visualization above app overlays
+- Skip hidden steps instantly when the surface rendered
+- Export tour atoms via the public barrel
+- Intro step and forward-only actions in the add tour
+- Close the playlist menu for the row-menu step
+- Real step count in tours with skipped steps
+- Make the fullscreen player menu trigger white
+- Make the scenario picker list fully scrollable
+- Keep pass-through tour card interactive
+- Block the app under area-highlight tour steps
+- Correct edge seek wording in the tour
+- Group playlist menu items with dividers
+- Follow the theme for the help icon color
+- Defer lock-screen activation until the app is foreground
+- Use full app name in the shared message
+- First-step tap hint and inset-consistent auto-scroll
+- Let users interact during waitFor steps
+- Show screen tours on the More screen picker
+- Let users interact during the tap phase
+- Re-measure active target as the screen settles
+- Inherit step routes and reveal navigation transitions
+- Scroll to targets above the viewport and animate scrolls
+- Keep tour tooltip visible for off-screen targets
+- End tour on the final step button
+- Keep tour tooltip above the system navigation bar
+- Highlight history header menu in tour
+- Preserve layout of wrapped onboarding targets
+- Harden tour timing and cover flags in tests
+- Keep the player queue in sync with removals from the playing playlist
+- Fetch sermon memberships for the continue chooser and rename player menu item
+- Preserve sermon playlist memberships through persistence
+- Overwrite history entry playlist when flush carries explicit playlist
+- Keep removed sermon forgotten and collapse fullscreen on reset
+- Forget removed sermon in history and resume state on player reset
+- Reset player whenever the current sermon leaves its playlist
+- Downgrade resolvePlaylistFromApi failure log to warn
+- Refetch feature flags after session restore and skip identical writes
+- Use fullscreen buffering color for miniplayer strip
+- Indent my playlists edit rows like the favorites row
+- Detect local playlists by my playlists membership for menus
+- Detect admin session loss before download and at upload
+- Clear tokens only when refresh endpoint rejects authentication
+
 ## [0.27.0] - 2026-10-11
 
 ### Added
@@ -1145,6 +1322,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add AGENTS.md
 - Remove old packages and notifications for correct app running
 
+[0.28.0]: https://git.lightnode.ru/Slovo_Propovedi/slovo-propovedi-mobile/src/tag/v0.28.0
 [0.27.0]: https://git.lightnode.ru/Slovo_Propovedi/slovo-propovedi-mobile/src/tag/v0.27.0
 [0.26.1]: https://git.lightnode.ru/Slovo_Propovedi/slovo-propovedi-mobile/src/tag/v0.26.1
 [0.26.0]: https://git.lightnode.ru/Slovo_Propovedi/slovo-propovedi-mobile/src/tag/v0.26.0

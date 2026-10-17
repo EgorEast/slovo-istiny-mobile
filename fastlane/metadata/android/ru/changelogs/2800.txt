@@ -1,0 +1,9 @@
+Marquee title and scripture reference in sermon rows
+Tighten icon follow-up artwork check
+Reset estimated progress guard across download retries
+Re-apply lock screen metadata once the fallback icon resolves
+Estimated upload progress when total is unknown
+Approximate progress for chunked downloads
+Estimated byte progress helper for unknown totals
+
+Полный список изменений: https://git.lightnode.ru/Slovo_Propovedi/slovo-propovedi-mobile/src/branch/main/CHANGELOG.md
