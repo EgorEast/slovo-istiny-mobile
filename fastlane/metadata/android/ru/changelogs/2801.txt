@@ -1,0 +1,5 @@
+Show tab and settings tap path in whatsNew tour
+Per-instance spotlight rects stop help-button flicker
+Dynamic section titles in welcome tour, rename More tab step
+
+Полный список изменений: https://git.lightnode.ru/Slovo_Propovedi/slovo-propovedi-mobile/src/branch/main/CHANGELOG.md
