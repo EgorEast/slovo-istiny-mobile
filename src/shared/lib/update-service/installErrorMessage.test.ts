@@ -1,8 +1,5 @@
-import {
-  classifyUpdateError,
-  isUnexpectedUpdateError,
-  type UpdateErrorKind,
-} from './installErrorMessage'
+import { classifyUpdateError, isUnexpectedUpdateError } from './installErrorMessage'
+import { type UpdateErrorKind } from './installStatusErrors'
 
 const GENERIC_MESSAGE = 'Не удалось установить обновление'
 const SIGNATURE_MESSAGE =

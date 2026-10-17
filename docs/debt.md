@@ -76,7 +76,6 @@
 - [ ] `src/shared/api/axiosInstance.ts` — TODO перехода на экран логина (см. Auth flow).
 - [ ] `src/shared/api/books.ts` — TODO заменить на реальный вызов (см. Local DB → API migration).
 - [ ] **Require-циклы book-reader (pre-existing, warn-уровень).** `getParagraphElement.tsx` → `getElementsInBlockElement.ts` → `parseObjectToStylizedElements.ts` → `getParagraphElement.tsx` и `getBlockElement.tsx` → та же цепочка — `src/pages/book-reader/lib/*` — зафиксированы как warn в `.dependency-cruiser.cjs` (`no-circular-legacy-book-reader`); вернуться при рефакторинге book-reader (вынести общие хелперы).
-- [ ] **`installErrorMessage.ts` упёрся в потолок 130 строк** — `src/shared/lib/update-service/installErrorMessage.ts` — при следующей новой подсказке/виде ошибки вынести `STATUS_ERRORS` (чистая таблица маппинга) в отдельный модуль рядом с `findCodeError`.
 
 ## Gradle wrapper
 

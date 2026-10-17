@@ -1,5 +1,5 @@
 import { atom } from '@reatom/framework'
-import { type UpdateErrorKind } from '../lib/update-service/installErrorMessage'
+import { type UpdateErrorKind } from '../lib/update-service/installStatusErrors'
 
 export type UpdateState =
   'downloading' | 'error' | 'extracting' | 'idle' | 'installing' | 'permission'
