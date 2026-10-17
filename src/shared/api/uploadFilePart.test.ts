@@ -114,4 +114,37 @@ describe('uploadFilePart', () => {
     expect(onProgress).toHaveBeenLastCalledWith(100)
     expect(result).toEqual({ fileName: FILE_NAME, fileUrl: FILE_URL })
   })
+
+  test('does not emit 100 on a failed upload and leaves the next call unpoisoned', async () => {
+    const file = new Blob(['x'.repeat(1000)])
+    mockUploadPart
+      .mockImplementationOnce(
+        (_params: unknown, config: { onUploadProgress: (event: AxiosProgressEvent) => void }) => {
+          config.onUploadProgress(createProgressEvent(500))
+          return Promise.reject(new Error('upload failed'))
+        },
+      )
+      .mockImplementationOnce(
+        (_params: unknown, config: { onUploadProgress: (event: AxiosProgressEvent) => void }) => {
+          config.onUploadProgress(createProgressEvent(500))
+          config.onUploadProgress(createProgressEvent(1000))
+          return Promise.resolve({ fileName: FILE_NAME, fileUrl: FILE_URL })
+        },
+      )
+    const onProgress = jest.fn()
+    const options: UploadOptions = { onProgress }
+
+    await expect(uploadFilePart(file, options)).rejects.toThrow('upload failed')
+
+    expect(onProgress).not.toHaveBeenCalledWith(100)
+
+    onProgress.mockClear()
+    const result = await uploadFilePart(file, options)
+
+    // The same options object reports normally again: the failed upload left no
+    // stale percent in the WeakMap keyed by the options object.
+    expect(onProgress).toHaveBeenCalledWith(50)
+    expect(onProgress).toHaveBeenLastCalledWith(100)
+    expect(result).toEqual({ fileName: FILE_NAME, fileUrl: FILE_URL })
+  })
 })
