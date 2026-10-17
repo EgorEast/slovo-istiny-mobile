@@ -12,6 +12,18 @@ import { renderWithProviders } from 'shared/mocks'
 import { type SermonShape } from 'shared/model'
 import { PlaylistEditScreen } from './PlaylistEditScreen'
 
+// MarqueeText renders the title twice (visible + measurer), so a single-Text
+// stub keeps text queries unambiguous in list-row tests.
+jest.mock('shared/ui/marquee-text/marquee-text', () => {
+  const { Text } = jest.requireActual('react-native')
+
+  return {
+    MarqueeText: ({ testID, text }: { testID?: string; text: string }) => (
+      <Text testID={testID}>{text}</Text>
+    ),
+  }
+})
+
 const mockBack = jest.fn()
 const mockPush = jest.fn()
 const mockRename = jest.fn()
@@ -96,7 +108,15 @@ const DELETE_CONFIRM_TEXT = 'Удалить'
 const EMPTY_MESSAGE = 'В плейлисте пока нет проповедей'
 const TWO_SERMONS_TITLE = 'Проповеди (2)'
 
-const SERMON_A: SermonShape = { artist: 'Автор A', artwork: null, id: 's1', title: 'Проповедь A' }
+const SERMON_A: SermonShape = {
+  artist: 'Автор A',
+  artwork: null,
+  book: 'От Матфея',
+  chapter: 5,
+  id: 's1',
+  title: 'Проповедь A',
+  verse: [3, 5],
+}
 const SERMON_B: SermonShape = { artist: 'Автор B', artwork: null, id: 's2', title: 'Проповедь B' }
 
 const PLAYLIST: LocalPlaylistData = {
@@ -171,6 +191,8 @@ describe('<PlaylistEditScreen>', () => {
     expect(getByText(TWO_SERMONS_TITLE)).toBeTruthy()
     expect(getByText(SERMON_A.title)).toBeTruthy()
     expect(getByText(SERMON_B.title)).toBeTruthy()
+    expect(getByText('Автор A · От Матфея 5:3-5')).toBeTruthy()
+    expect(getByText('Автор B')).toBeTruthy()
     expect(getAllByLabelText(DRAG_LABEL)).toHaveLength(2)
   })
 
