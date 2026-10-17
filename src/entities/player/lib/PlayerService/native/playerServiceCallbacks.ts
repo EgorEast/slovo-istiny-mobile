@@ -20,6 +20,7 @@ export const createPlayerServiceCallbacks = (actions: PlaybackActions) => ({
   onAudioInterruption: createAudioInterruptionHandler({
     pause: actions.pause,
     play: () => {
+      // Атом свеж к resume-ребру (setCurrentAudioAction успевает его записать до конца загрузки трека); даже устаревшее чтение replaceAudio пере-резолвит и сведётся к no-op play().
       const audioUrl = ctx.get(currentAudioAtom)?.audioUrl
       return audioUrl ? actions.resumeAfterPause(audioUrl) : actions.play()
     },

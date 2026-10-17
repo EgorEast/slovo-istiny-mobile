@@ -39,5 +39,7 @@ export const resumeInterruptedPlayback = (
   // would be a surprise, so only genuine interruptions may auto-resume.
   if (audio.ended) return
 
+  // Намеренно играем напрямую, в обход resumeWebAfterPause: src живого элемента уже
+  // совпадает с текущим URL (свап — no-op), а тянуть resume-колбэк через контроллер — over-engineer.
   playWithAbortRetry(audio, true)
 }
