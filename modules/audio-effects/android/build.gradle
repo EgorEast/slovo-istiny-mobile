@@ -14,21 +14,17 @@ android {
   }
 }
 
-// Track the INSTALLED expo-audio version instead of a hardcoded pin —
-// a stale pin breaks resolution on every expo-audio upgrade (the AAR ships
-// in expo-audio's local-maven-repo under its exact version).
-def expoAudioDir = new File(rootProject.projectDir, '../node_modules/expo-audio')
-def expoAudioVersion = new groovy.json.JsonSlurper().parseText(new File(expoAudioDir, 'package.json').text).version
+// expo-audio is built from source (expo.autolinking.buildFromSource in package.json)
+// because the loop-getter patch requires compiling expo-audio's Kotlin sources;
+// `:expo-audio` resolves to the project in node_modules/expo-audio/android and
+// carries the patch.
 
 repositories {
   mavenCentral()
-  maven { url = uri(new File(expoAudioDir, 'local-maven-repo')) }
 }
 
 dependencies {
-  // expo-audio is consumed as a prebuilt AAR (no `:expo-audio` gradle project exists),
-  // so depend on its maven coordinates and add its local repository explicitly.
-  implementation "expo.modules.audio:expo.modules.audio:$expoAudioVersion"
+  implementation project(':expo-audio')
 
   // Explicit media3 copies so this module compiles against ExoPlayer types even
   // if the expo-audio publication stops exposing them as `api`.

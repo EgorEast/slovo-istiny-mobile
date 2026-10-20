@@ -23,6 +23,12 @@ stack: CodedError ← applyMetadata ← anonymous (setInterval retry callback)
 - `artworkUrl` — только полный URI с протоколом (`https://`, `http://`, `file://`, `asset:///`, `content://`). Иначе ключ **опускается совсем** — никогда не отправляется как `undefined`/голое значение. Валидация — `hasUriProtocol` (`src/shared/lib/app-icon.ts`).
 - Вызов всегда в try-catch + `reportError` (deep import из `shared/model/error-dialog`) + `console.error`. Обложка и метаданные lock screen — косметика и не имеют права крашить приложение.
 
+**Сборка из исходников и патчи.** `expo-audio` подключён к gradle-сборке **из исходников**: `package.json` → `expo.autolinking.buildFromSource: ["expo-audio"]`. Autolinking создаёт gradle-проект `:expo-audio` из `node_modules/expo-audio/android` на этапе конфигурации (отдельный `expo prebuild` не нужен), поэтому:
+
+- правки Kotlin-исходников в `node_modules/expo-audio/android/**` через `patch-package` **эффективны** — они попадают в компиляцию (пример: `patches/expo-audio+58.0.9.patch` оборачивает JS-геттер `loop` у `AudioPlaylist` в `runOnMain`). Prebuilt AAR такие правки игнорировал;
+- `modules/audio-effects` подключается к тому же ExoPlayer через `project(':expo-audio')` (не maven-координату) и видит те же типы `expo.modules.audio.AudioPlayer`;
+- при апгрейде expo-audio патч может перестать применяться — `yarn check:patches` падает по дизайну (сверка версии из имени патча), это сигнал пересмотреть патч до сборки.
+
 ## expo-asset контракт
 
 `Asset.fromModule(...)` + `downloadAsync()` (`src/shared/lib/app-icon.ts`):

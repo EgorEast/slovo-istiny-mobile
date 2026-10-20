@@ -147,6 +147,9 @@
   },
   "expo": {
     "autolinking": {
+      "buildFromSource": [
+        "expo-audio"
+      ],
       "exclude": [
         "expo-updates"
       ]
