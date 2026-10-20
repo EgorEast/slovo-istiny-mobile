@@ -11,6 +11,7 @@ export {
   setEqGainsAction,
   setPitchAction,
 } from './audio-settings'
+export { applyRepeatMode } from './lib/applyRepeatMode'
 export {
   bufferedProgressStateAtom,
   downloadingAudioUrlAtom,

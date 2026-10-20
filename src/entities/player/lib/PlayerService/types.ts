@@ -32,18 +32,15 @@ export interface PlaybackStatus {
 }
 
 /**
- * Player control actions used to swap the source and resume playback.
- * Mirrors the SourceSwapPlayer shape passed to resumeWithSourceSwap.
+ * Player control actions used to swap the native queue source and resume.
+ * `swapSource` rebinds the current queue index to an already-resolved URI
+ * (cached file, retained partial or network URL) at the target position.
  */
 export interface SeekSourceSwap {
-  /** Resumes playback on the current (possibly swapped) player instance. */
+  /** Resumes playback on the current (possibly swapped) playlist. */
   play: () => Promise<void>
-  /** Replaces the player source at the given position in milliseconds. */
-  replaceAudio: (
-    audioUrl: string,
-    initialPositionMs: number,
-    options?: { preserveSeekGuard?: boolean },
-  ) => Promise<unknown>
+  /** Rebinds the current queue index to a resolved source at a position in ms. */
+  swapSource: (resolvedUrl: string, positionMs: number) => Promise<unknown>
 }
 
 /**
@@ -53,16 +50,4 @@ export interface SeekSourceSwap {
 export interface StatusCallbacks {
   /** Called when audio is interrupted (phone call) or interruption ends. */
   onAudioInterruption: (isInterrupted: boolean) => void
-  /** Called when buffering state changes. */
-  onBufferingChange: (isBuffering: boolean) => void
-  /** Called when track duration becomes available. */
-  onDurationChange: (durationMs: number) => void
-  /** Called once per episode when expo-audio reports a playback error. */
-  onPlaybackError?: (message: string) => void
-  /** Called when playing state changes. */
-  onPlayingChange: (isPlaying: boolean) => void
-  /** Called when playback position changes. */
-  onPositionChange: (positionMs: number) => void
-  /** Called when track finishes playing. */
-  onTrackEnd: () => void
 }

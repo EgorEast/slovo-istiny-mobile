@@ -4,6 +4,7 @@ import { useCallback } from 'react'
 import { type StyleProp, StyleSheet, type ViewStyle } from 'react-native'
 import { IconButton } from 'shared/ui/icon-button'
 import { FONT_SIZES, useTheme } from 'shared/ui/theme'
+import { applyRepeatMode } from '../lib/applyRepeatMode'
 import { type RepeatMode, repeatModeAtom, setRepeatModeAction } from '../model'
 
 const REPEAT_MODES: RepeatMode[] = ['off', 'track', 'queue']
@@ -43,7 +44,9 @@ export const PlayerRepeatToggle = ({ style }: { style?: StyleProp<ViewStyle> }) 
   const handlePress = useCallback(() => {
     const currentIndex = REPEAT_MODES.indexOf(repeatMode)
     const nextIndex = (currentIndex + 1) % REPEAT_MODES.length
-    void setRepeatMode(REPEAT_MODES[nextIndex])
+    const nextMode = REPEAT_MODES[nextIndex]
+    void setRepeatMode(nextMode)
+    applyRepeatMode(nextMode)
   }, [repeatMode, setRepeatMode])
 
   const iconConfig = getRepeatIcon(repeatMode, currentTheme.primary)

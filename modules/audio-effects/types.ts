@@ -1,4 +1,4 @@
-import { type AudioPlayer } from 'expo-audio'
+import { type AudioPlayer, type AudioPlaylist } from 'expo-audio'
 
 export interface AudioEffectsInfo {
   balanceSupported: boolean
@@ -35,7 +35,7 @@ export const DEFAULT_AUDIO_EFFECTS_INFO: AudioEffectsInfo = {
  */
 export interface AudioEffectsPlatformModule {
   attachAudioEffects: (
-    playerHandle: AudioPlayer,
+    playerHandle: AudioPlayer | AudioPlaylist,
     settings: AudioEffectsSettings,
   ) => Promise<AudioEffectsInfo>
   detachAudioEffects: () => void

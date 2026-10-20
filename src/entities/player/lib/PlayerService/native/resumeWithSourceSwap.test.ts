@@ -1,6 +1,5 @@
 import { ctx } from 'shared/lib/reatom-ctx'
 import { positionAtom } from '../../../model'
-import { audioLoader } from './AudioLoader'
 import { resumeWithSourceSwap } from './resumeWithSourceSwap'
 
 const AUDIO_URL = 'https://example.com/audio.mp3'
@@ -15,16 +14,11 @@ jest.mock('entities/offline-cache/@x/player', () => ({
   PART_SUFFIX: '.cache.mp3',
 }))
 
-jest.mock('./AudioLoader', () => ({
-  audioLoader: { getLastResolvedUrl: jest.fn() },
-}))
-
-const mockedGetLastResolvedUrl = jest.mocked(audioLoader.getLastResolvedUrl)
-
 const createPlayerStub = () => {
   const play = jest.fn().mockResolvedValue(undefined)
-  const replaceAudio = jest.fn().mockResolvedValue(undefined)
-  return { play, replaceAudio }
+  const getCurrentSourceUri = jest.fn<null | string, []>()
+  const swapSource = jest.fn().mockResolvedValue(true)
+  return { getCurrentSourceUri, play, swapSource }
 }
 
 describe('resumeWithSourceSwap', () => {
@@ -33,7 +27,6 @@ describe('resumeWithSourceSwap', () => {
     jest.spyOn(console, 'error').mockImplementation(() => {})
     positionAtom(ctx, 0)
     mockGetCachedUri.mockResolvedValue(null)
-    mockedGetLastResolvedUrl.mockReturnValue(null)
   })
 
   afterEach(() => {
@@ -42,82 +35,84 @@ describe('resumeWithSourceSwap', () => {
 
   test('uncached → only play called', async () => {
     const player = createPlayerStub()
+    player.getCurrentSourceUri.mockReturnValue(AUDIO_URL)
     mockGetCachedUri.mockResolvedValue(null)
 
     await resumeWithSourceSwap(player, AUDIO_URL)
 
     expect(player.play).toHaveBeenCalledTimes(1)
-    expect(player.replaceAudio).not.toHaveBeenCalled()
+    expect(player.swapSource).not.toHaveBeenCalled()
   })
 
-  test('cached + lastResolvedUrl file:// → only play called', async () => {
+  test('cached + current source file:// → only play called', async () => {
     const player = createPlayerStub()
     mockGetCachedUri.mockResolvedValue(CACHED_URI)
-    mockedGetLastResolvedUrl.mockReturnValue(CACHED_URI)
+    player.getCurrentSourceUri.mockReturnValue(CACHED_URI)
 
     await resumeWithSourceSwap(player, AUDIO_URL)
 
     expect(player.play).toHaveBeenCalledTimes(1)
-    expect(player.replaceAudio).not.toHaveBeenCalled()
+    expect(player.swapSource).not.toHaveBeenCalled()
   })
 
-  test('cached + lastResolvedUrl partial file:// → replaceAudio with position then play', async () => {
+  test('cached + current source partial file:// → swaps to the final file then plays', async () => {
     const player = createPlayerStub()
     mockGetCachedUri.mockResolvedValue('file:///data/cache/audio-final.mp3')
-    mockedGetLastResolvedUrl.mockReturnValue('file:///data/cache/audio-hash.cache.mp3')
+    player.getCurrentSourceUri.mockReturnValue('file:///data/cache/audio-hash.cache.mp3')
     positionAtom(ctx, 123456)
 
     await resumeWithSourceSwap(player, AUDIO_URL)
 
-    expect(player.replaceAudio).toHaveBeenCalledWith(AUDIO_URL, 123456)
+    expect(player.swapSource).toHaveBeenCalledWith('file:///data/cache/audio-final.mp3', 123456)
     expect(player.play).toHaveBeenCalledTimes(1)
   })
 
-  test('cached + lastResolvedUrl network URL → replaceAudio with position then play', async () => {
+  test('cached + current source network URL → swaps to the cached file then plays', async () => {
     const player = createPlayerStub()
     mockGetCachedUri.mockResolvedValue(CACHED_URI)
-    mockedGetLastResolvedUrl.mockReturnValue(AUDIO_URL)
+    player.getCurrentSourceUri.mockReturnValue(AUDIO_URL)
     positionAtom(ctx, 123456)
 
     await resumeWithSourceSwap(player, AUDIO_URL)
 
-    expect(player.replaceAudio).toHaveBeenCalledWith(AUDIO_URL, 123456)
+    expect(player.swapSource).toHaveBeenCalledWith(CACHED_URI, 123456)
     expect(player.play).toHaveBeenCalledTimes(1)
   })
 
-  test('cached + lastResolvedUrl null → replaceAudio then play', async () => {
+  test('cached + current source null → swaps then plays', async () => {
     const player = createPlayerStub()
     mockGetCachedUri.mockResolvedValue(CACHED_URI)
-    mockedGetLastResolvedUrl.mockReturnValue(null)
+    player.getCurrentSourceUri.mockReturnValue(null)
 
     await resumeWithSourceSwap(player, AUDIO_URL)
 
-    expect(player.replaceAudio).toHaveBeenCalledWith(AUDIO_URL, 0)
+    expect(player.swapSource).toHaveBeenCalledWith(CACHED_URI, 0)
     expect(player.play).toHaveBeenCalledTimes(1)
   })
 
   test('getCachedUri rejects → only play called', async () => {
     const player = createPlayerStub()
+    player.getCurrentSourceUri.mockReturnValue(AUDIO_URL)
     mockGetCachedUri.mockRejectedValue(new Error('cache check failed'))
 
     await resumeWithSourceSwap(player, AUDIO_URL)
 
     expect(player.play).toHaveBeenCalledTimes(1)
-    expect(player.replaceAudio).not.toHaveBeenCalled()
+    expect(player.swapSource).not.toHaveBeenCalled()
   })
 
-  // Disabling sermon caching wipes the cache directory under the running player,
-  // so `getCachedUri` answers null while the player stays bound to the deleted
+  // Disabling sermon caching wipes the cache directory under the running queue,
+  // so `getCachedUri` answers null while the queue stays bound to the deleted
   // file:// source. A bare play is a silent no-op there — the source must be rebound.
-  test('uncached + lastResolvedUrl file:// → replaceAudio with position then play', async () => {
+  test('uncached + current source file:// → swaps to the network URL then plays', async () => {
     const player = createPlayerStub()
     mockGetCachedUri.mockResolvedValue(null)
-    mockedGetLastResolvedUrl.mockReturnValue(CACHED_URI)
+    player.getCurrentSourceUri.mockReturnValue(CACHED_URI)
     positionAtom(ctx, 123456)
 
     await resumeWithSourceSwap(player, AUDIO_URL)
 
-    expect(player.replaceAudio).toHaveBeenCalledWith(AUDIO_URL, 123456)
+    expect(player.swapSource).toHaveBeenCalledWith(AUDIO_URL, 123456)
     expect(player.play).toHaveBeenCalledTimes(1)
   })
 })

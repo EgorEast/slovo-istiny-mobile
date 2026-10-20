@@ -3,10 +3,6 @@ import { currentAudioAtom } from '../../../model'
 import { pauseTypeAtom } from '../../../pauseType'
 import { createPlayerServiceCallbacks } from './playerServiceCallbacks'
 
-jest.mock('./AudioLoader', () => ({
-  audioLoader: { isPartialSource: jest.fn() },
-}))
-
 const AUDIO_URL = 'https://example.com/audio.mp3'
 
 const AUDIO_DATA = {

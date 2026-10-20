@@ -1,11 +1,11 @@
 import { audioCacheService, PART_SUFFIX } from 'entities/offline-cache/@x/player'
 import { ctx } from 'shared/lib/reatom-ctx'
 import { positionAtom } from '../../../model'
-import { audioLoader } from './AudioLoader'
 
 interface SourceSwapPlayer {
+  getCurrentSourceUri: () => null | string
   play: () => Promise<void>
-  replaceAudio: (audioUrl: string, initialPositionMs: number) => Promise<unknown>
+  swapSource: (resolvedUrl: string, positionMs: number) => Promise<unknown>
 }
 
 const CACHE_URI_PREFIX = 'file://'
@@ -16,25 +16,22 @@ const sourceAlreadyServesCache = (sourceUrl: null | string): boolean =>
   sourceUrl !== null && isLocalFileUri(sourceUrl) && !sourceUrl.endsWith(PART_SUFFIX)
 
 /**
- * Resumes playback after pause, swapping the player source to the cached file
- * when the background download finished after the track had started streaming
- * from the server (issue #107). Without the swap the AudioPlayer stays bound
- * to the dead server URI and pressing play silently fails even though the
- * track is already cached. A local PARTIAL uri (still downloading) must also
- * be swapped for the completed final file once the download finishes.
+ * Resumes playback after pause, swapping the queue's current source to the
+ * cached file when the background download finished after the track had
+ * started streaming from the server (issue #107). Without the swap the native
+ * queue stays bound to the dead server URI and pressing play silently fails
+ * even though the track is already cached. A local PARTIAL uri (still
+ * downloading) must also be swapped for the completed final file once the
+ * download finishes.
  *
- * The swap is symmetric: the player may also be bound to a cache file that is
+ * The swap is symmetric: the queue may also be bound to a cache file that is
  * GONE, and then it must be re-resolved too. Disabling sermon caching wipes the
- * cache directory under the running player, leaving it pointing at a deleted
- * `file://` source — `PlaybackController.play` returns early on the resulting
- * unloaded instance, so a bare play silently does nothing. Rebinding through
- * `replaceAudio` re-runs `AudioLoader` → `resolvePlaybackUrl`, which with caching
- * off yields the network URL, and `AudioLoader.replaceAudio` overwrites
- * `lastResolvedUrl` — the stale memo cannot outlive the rebind.
- * @param player - Player control actions used to swap the source and resume.
- * @param audioUrl - Network URL of the track being resumed. Always pass the original server URL —
- * replaceAudio re-resolves it through AudioLoader → resolvePlaybackUrl; passing a resolved file:// URI
- * would miss the cache key and enqueue a bogus re-download.
+ * cache directory under the running queue, leaving it pointing at a deleted
+ * `file://` source — a bare play silently does nothing. Rebinding through
+ * `swapSource` re-resolves the source and keeps the current position.
+ * @param player - Queue control actions used to swap the source and resume.
+ * @param audioUrl - Network URL of the track being resumed. Always pass the
+ * original server URL: the cache key and the re-resolve are computed from it.
  */
 export const resumeWithSourceSwap = async (
   player: SourceSwapPlayer,
@@ -48,13 +45,12 @@ export const resumeWithSourceSwap = async (
   }
 
   const isTrackCached = cachedUri !== null
-  const isPlayerBoundToCache = sourceAlreadyServesCache(audioLoader.getLastResolvedUrl())
+  const isPlayerBoundToCache = sourceAlreadyServesCache(player.getCurrentSourceUri())
 
-  // Agreement means the source the player is bound to still exists — the file is
-  // there, or no cache is involved at all. Anything else is a mismatch that only a
-  // re-resolve can fix.
+  // Agreement means the bound source still exists — the file is there, or no
+  // cache is involved at all. Anything else needs a re-resolve.
   if (isTrackCached === isPlayerBoundToCache) return player.play()
 
-  await player.replaceAudio(audioUrl, ctx.get(positionAtom))
+  await player.swapSource(cachedUri ?? audioUrl, ctx.get(positionAtom))
   return player.play()
 }

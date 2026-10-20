@@ -1,55 +1,7 @@
-import { type AudioPlayer } from 'expo-audio'
 import { ctx } from 'shared/lib/reatom-ctx'
-import {
-  isBufferingAtom,
-  isSeekingAtom,
-  seekTargetPositionAtom,
-  setDurationAction,
-  setIsBufferingAction,
-  setIsPlayingAction,
-  setIsSeekingAction,
-  setPositionAction,
-  setSeekTargetAction,
-} from '../../../model'
+import { isBufferingAtom } from '../../../model'
 import { pauseTypeAtom, setPauseTypeAction } from '../../../pauseType'
 import { setIsStalledOfflineAction } from '../../stalledOffline'
-import { type StatusCallbacks } from '../types'
-import { audioLoader } from './AudioLoader'
-import { playerStatusListener } from './PlayerStatusListener'
-import { trackAutoAdvanceService } from './TrackAutoAdvanceService/TrackAutoAdvanceService'
-
-/** Native position must land this close to the seek target before the guard lifts. */
-const SEEK_TARGET_CONFIRM_TOLERANCE_MS = 500
-
-type PlayerLifecycleCallbacks = Pick<StatusCallbacks, 'onAudioInterruption' | 'onPlaybackError'>
-
-export const setupPlayerListeners = (
-  player: AudioPlayer,
-  lifecycle: PlayerLifecycleCallbacks,
-): void => {
-  playerStatusListener.setupListeners(player, {
-    ...lifecycle,
-    onBufferingChange: isBuffering => void setIsBufferingAction(ctx, isBuffering),
-    // A partial source reports the truncated duration; the timeline is governed
-    // by applyPartialDuration instead.
-    onDurationChange: durationMs => {
-      if (!audioLoader.isPartialSource()) void setDurationAction(ctx, durationMs)
-    },
-    onPlayingChange: isPlaying => void setIsPlayingAction(ctx, isPlaying),
-    onPositionChange: positionMs => {
-      if (ctx.get(isSeekingAtom)) {
-        const target = ctx.get(seekTargetPositionAtom)
-        if (target !== null && Math.abs(positionMs - target) < SEEK_TARGET_CONFIRM_TOLERANCE_MS) {
-          void setIsSeekingAction(ctx, false)
-          void setSeekTargetAction(ctx, null)
-        }
-        return
-      }
-      void setPositionAction(ctx, positionMs)
-    },
-    onTrackEnd: () => void trackAutoAdvanceService.handleTrackEnd(),
-  })
-}
 
 interface InterruptionCallbacks {
   pause: (pauseType?: 'auto') => Promise<void>
@@ -62,14 +14,14 @@ export const createAudioInterruptionHandler = (callbacks: InterruptionCallbacks)
   // Any playing→false edge is treated as an interruption: pause('auto') is idempotent
   // (flush no-op guard, pause on a paused player is a no-op), so user-pause and
   // natural-track-end also route through it harmlessly. User-pause discrimination is
-  // unnecessary — stop()/unload() detach the status listener first (see index.native.ts).
+  // unnecessary — stop()/unload() pause outside the status stream.
   return (isInterrupted: boolean): void => {
     if (isInterrupted) {
       wasPlayingBeforeInterruption = true
       // A buffering stall is stream starvation regardless of the NetInfo-reported
       // state — the NetInfo flip lags the buffer underrun (Issue #109). Manual
       // pause also routes here, but then isBuffering is false — the flag stays
-      // untouched. The flag is cleared by AudioLoader chokepoints and consumed
+      // untouched. The flag is cleared by queue build chokepoints and consumed
       // only by the reconnect heal.
       if (ctx.get(isBufferingAtom)) void setIsStalledOfflineAction(ctx, true)
 

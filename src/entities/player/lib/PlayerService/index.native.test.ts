@@ -1,4 +1,4 @@
-import { type AudioPlayer } from 'expo-audio'
+import { type AudioPlaylist } from 'expo-audio'
 import { ctx } from 'shared/lib/reatom-ctx'
 import {
   currentAudioAtom,
@@ -11,17 +11,23 @@ import {
 } from '../../model'
 import { isStalledOfflineAtom } from '../stalledOffline'
 import { playerService } from './index.native'
-import { audioLoader } from './native/AudioLoader'
 import { lockScreenControls } from './native/LockScreenControls'
 import { playbackController } from './native/PlaybackController'
-import { playerStatusListener } from './native/PlayerStatusListener'
+import { playlistEngine } from './native/PlaylistEngine'
+import { loadQueue, replaceQueueTrack } from './native/queueLoader'
 
-jest.mock('./native/AudioLoader', () => ({
-  audioLoader: {
-    getLastResolvedUrl: jest.fn(),
-    isPlayerLoaded: jest.fn(),
-    loadAudio: jest.fn(),
-    replaceAudio: jest.fn(),
+jest.mock('./native/queueLoader', () => ({
+  loadQueue: jest.fn(),
+  replaceQueueTrack: jest.fn(),
+}))
+
+jest.mock('./native/PlaylistEngine', () => ({
+  playlistEngine: {
+    destroy: jest.fn(),
+    getCurrentSourceUri: jest.fn(),
+    getPlaylist: jest.fn(),
+    isLoaded: jest.fn(),
+    setLoopMode: jest.fn(),
   },
 }))
 
@@ -31,52 +37,34 @@ jest.mock('./native/LockScreenControls', () => ({
   lockScreenControls: { reassertMetadata: jest.fn() },
 }))
 
-jest.mock('./native/nativePlayerHelpers', () => ({
-  createAudioInterruptionHandler: jest.fn(() => jest.fn()),
-  setupPlayerListeners: jest.fn(),
-}))
+jest.mock('./native/playlistStatusHandler', () => ({ wirePlaylistStatus: jest.fn() }))
 
-jest.mock('./native/PlayerStatusListener', () => ({ playerStatusListener: { cleanup: jest.fn() } }))
+const mockedLoadQueue = jest.mocked(loadQueue)
+const mockedReplaceQueueTrack = jest.mocked(replaceQueueTrack)
+const mockedEngine = jest.mocked(playlistEngine)
 
-jest.mock('./native/TrackAutoAdvanceService/TrackAutoAdvanceService', () => ({
-  trackAutoAdvanceService: { setPlayerActions: jest.fn() },
-}))
-
-const createPlayerStub = (): AudioPlayer => ({ isLoaded: true }) as unknown as AudioPlayer
+const createPlaylistStub = (): AudioPlaylist => ({ isLoaded: true }) as unknown as AudioPlaylist
 
 const NEXT_AUDIO_URL = 'https://example.com/next.mp3'
 
-const flushMicrotasks = async () => {
-  await Promise.resolve()
-  await Promise.resolve()
-}
-
-describe('PlayerService.replaceAudio', () => {
+describe('PlayerService loadAudio / replaceAudio', () => {
   beforeEach(() => {
     jest.clearAllMocks()
     isSeekingAtom(ctx, false)
     seekTargetPositionAtom(ctx, null)
+    mockedLoadQueue.mockResolvedValue(createPlaylistStub())
+    mockedReplaceQueueTrack.mockResolvedValue(createPlaylistStub())
+    mockedEngine.getPlaylist.mockReturnValue(createPlaylistStub())
   })
 
   afterEach(() => {
     jest.restoreAllMocks()
   })
 
-  test('resets the seek guard so the new track position events are not ignored', async () => {
+  test('replaceAudio resets the seek guard so new track position events are not ignored', async () => {
     isSeekingAtom(ctx, true)
     seekTargetPositionAtom(ctx, 60000)
-    ;(audioLoader.replaceAudio as jest.Mock).mockResolvedValue(createPlayerStub())
-
-    await playerService.replaceAudio(NEXT_AUDIO_URL)
-    await flushMicrotasks()
-
-    expect(ctx.get(isSeekingAtom)).toBe(false)
-    expect(ctx.get(seekTargetPositionAtom)).toBe(null)
-  })
-
-  test('default replaceAudio resets the seek guard', async () => {
     const resetSpy = jest.spyOn(playbackController, 'resetSeekGuard')
-    ;(audioLoader.replaceAudio as jest.Mock).mockResolvedValue(createPlayerStub())
 
     await playerService.replaceAudio(NEXT_AUDIO_URL)
 
@@ -85,57 +73,58 @@ describe('PlayerService.replaceAudio', () => {
 
   test('preserveSeekGuard option skips the seek guard reset', async () => {
     const resetSpy = jest.spyOn(playbackController, 'resetSeekGuard')
-    ;(audioLoader.replaceAudio as jest.Mock).mockResolvedValue(createPlayerStub())
 
-    await playerService.replaceAudio(NEXT_AUDIO_URL, 0, {
-      preserveSeekGuard: true,
-    })
+    await playerService.replaceAudio(NEXT_AUDIO_URL, 0, { preserveSeekGuard: true })
 
     expect(resetSpy).not.toHaveBeenCalled()
   })
-})
 
-describe('PlayerService.stop', () => {
-  beforeEach(() => {
-    jest.clearAllMocks()
+  test('loadAudio delegates to the queue loader and returns the playlist', async () => {
+    const playlist = createPlaylistStub()
+    mockedLoadQueue.mockResolvedValue(playlist)
+
+    const result = await playerService.loadAudio(NEXT_AUDIO_URL, 5000)
+
+    expect(mockedLoadQueue).toHaveBeenCalledWith(NEXT_AUDIO_URL, 5000)
+    expect(result).toBe(playlist)
   })
 
-  test('detaches the status listener before pausing (no post-stop interruption flush)', async () => {
-    const cleanupSpy = jest.mocked(playerStatusListener.cleanup)
+  test('replaceAudio delegates the in-queue switch to the queue loader', async () => {
+    await playerService.replaceAudio(NEXT_AUDIO_URL, 42000)
+
+    expect(mockedReplaceQueueTrack).toHaveBeenCalledWith(NEXT_AUDIO_URL, 42000)
+  })
+
+  test('setRepeatMode maps the app mode onto the native loop', () => {
+    playerService.setRepeatMode('queue')
+    expect(mockedEngine.setLoopMode).toHaveBeenCalledWith('all')
+
+    playerService.setRepeatMode('track')
+    expect(mockedEngine.setLoopMode).toHaveBeenCalledWith('single')
+
+    playerService.setRepeatMode('off')
+    expect(mockedEngine.setLoopMode).toHaveBeenCalledWith('none')
+  })
+})
+
+describe('PlayerService.stop / unload', () => {
+  beforeEach(() => {
+    jest.clearAllMocks()
+    mockedEngine.getPlaylist.mockReturnValue(createPlaylistStub())
+  })
+
+  test('stop delegates the pause+reset to the controller', async () => {
     const stopSpy = jest.spyOn(playbackController, 'stop').mockResolvedValue(undefined)
 
     await playerService.stop()
 
-    expect(cleanupSpy).toHaveBeenCalled()
     expect(stopSpy).toHaveBeenCalled()
-    expect(cleanupSpy.mock.invocationCallOrder[0]).toBeLessThan(stopSpy.mock.invocationCallOrder[0])
-  })
-})
-
-describe('PlayerService volume restore', () => {
-  beforeEach(async () => {
-    jest.clearAllMocks()
-    await playerService.setVolume(1)
   })
 
-  test('applies the restored volume to a fresh player after loadAudio', async () => {
-    const player = createPlayerStub()
-    ;(audioLoader.loadAudio as jest.Mock).mockResolvedValue(player)
+  test('unload destroys the native queue and the effects chain', async () => {
+    await playerService.unload()
 
-    await playerService.setVolume(0.4)
-    await playerService.loadAudio('https://example.com/audio.mp3')
-
-    expect(player.volume).toBe(0.4)
-  })
-
-  test('re-applies the stored volume after replaceAudio', async () => {
-    const player = createPlayerStub()
-    ;(audioLoader.replaceAudio as jest.Mock).mockResolvedValue(player)
-
-    await playerService.setVolume(0.4)
-    await playerService.replaceAudio(NEXT_AUDIO_URL)
-
-    expect(player.volume).toBe(0.4)
+    expect(mockedEngine.destroy).toHaveBeenCalled()
   })
 })
 
@@ -158,8 +147,8 @@ describe('PlayerService.recoverStreamAfterReconnect', () => {
     isBufferingAtom(ctx, false)
     positionAtom(ctx, 0)
     isStalledOfflineAtom(ctx, false)
-    ;(audioLoader.getLastResolvedUrl as jest.Mock).mockReturnValue(NETWORK_URL)
-    ;(audioLoader.isPlayerLoaded as jest.Mock).mockReturnValue(true)
+    mockedEngine.getCurrentSourceUri.mockReturnValue(NETWORK_URL)
+    mockedEngine.isLoaded.mockReturnValue(true)
   })
 
   afterEach(() => {
@@ -179,20 +168,7 @@ describe('PlayerService.recoverStreamAfterReconnect', () => {
   })
 
   test('local file source does nothing', async () => {
-    ;(audioLoader.getLastResolvedUrl as jest.Mock).mockReturnValue('file:///cache/abc.mp3')
-    const replaceSpy = jest.spyOn(playerService, 'replaceAudio').mockResolvedValue(null)
-    const loadSpy = jest.spyOn(playerService, 'loadAudio').mockResolvedValue(null)
-    const playSpy = jest.spyOn(playerService, 'play').mockResolvedValue(undefined)
-
-    await playerService.recoverStreamAfterReconnect(NETWORK_URL)
-
-    expect(replaceSpy).not.toHaveBeenCalled()
-    expect(loadSpy).not.toHaveBeenCalled()
-    expect(playSpy).not.toHaveBeenCalled()
-  })
-
-  test('partial file source (file:// .cache.mp3) does nothing', async () => {
-    ;(audioLoader.getLastResolvedUrl as jest.Mock).mockReturnValue('file:///cache/abc.cache.mp3')
+    mockedEngine.getCurrentSourceUri.mockReturnValue('file:///cache/abc.mp3')
     const replaceSpy = jest.spyOn(playerService, 'replaceAudio').mockResolvedValue(null)
     const loadSpy = jest.spyOn(playerService, 'loadAudio').mockResolvedValue(null)
     const playSpy = jest.spyOn(playerService, 'play').mockResolvedValue(undefined)
@@ -236,13 +212,11 @@ describe('PlayerService.recoverStreamAfterReconnect', () => {
     isBufferingAtom(ctx, true)
     positionAtom(ctx, 1000)
     const replaceSpy = jest.spyOn(playerService, 'replaceAudio').mockResolvedValue(null)
-    const loadSpy = jest.spyOn(playerService, 'loadAudio').mockResolvedValue(null)
     const playSpy = jest.spyOn(playerService, 'play').mockResolvedValue(undefined)
 
     await playerService.recoverStreamAfterReconnect(NETWORK_URL)
 
     expect(replaceSpy).toHaveBeenCalledWith(NETWORK_URL, 1000)
-    expect(loadSpy).not.toHaveBeenCalled()
     expect(playSpy).toHaveBeenCalled()
   })
 
@@ -250,49 +224,24 @@ describe('PlayerService.recoverStreamAfterReconnect', () => {
     isStalledOfflineAtom(ctx, true)
     positionAtom(ctx, 2000)
     const replaceSpy = jest.spyOn(playerService, 'replaceAudio').mockResolvedValue(null)
-    const loadSpy = jest.spyOn(playerService, 'loadAudio').mockResolvedValue(null)
     const playSpy = jest.spyOn(playerService, 'play').mockResolvedValue(undefined)
 
     await playerService.recoverStreamAfterReconnect(NETWORK_URL)
 
     expect(replaceSpy).toHaveBeenCalledWith(NETWORK_URL, 2000)
-    expect(loadSpy).not.toHaveBeenCalled()
     expect(playSpy).toHaveBeenCalled()
   })
 
-  test('offline-stalled heal re-asserts lock screen metadata after replaceAudio and play resolve', async () => {
-    isStalledOfflineAtom(ctx, true)
-    currentAudioAtom(ctx, AUDIO_DATA)
-    const replaceSpy = jest
-      .spyOn(playerService, 'replaceAudio')
-      .mockResolvedValue(createPlayerStub())
-    const playSpy = jest.spyOn(playerService, 'play').mockResolvedValue(undefined)
-
-    await playerService.recoverStreamAfterReconnect(NETWORK_URL)
-
-    expect(replaceSpy).toHaveBeenCalled()
-    expect(playSpy).toHaveBeenCalled()
-    expect(reassertMetadataSpy).toHaveBeenCalledTimes(1)
-    expect(reassertMetadataSpy.mock.invocationCallOrder[0]).toBeGreaterThan(
-      replaceSpy.mock.invocationCallOrder[0],
-    )
-    expect(reassertMetadataSpy.mock.invocationCallOrder[0]).toBeGreaterThan(
-      playSpy.mock.invocationCallOrder[0],
-    )
-  })
-
-  test('never-loaded player routes through loadAudio', async () => {
-    ;(audioLoader.isPlayerLoaded as jest.Mock).mockReturnValue(false)
+  test('never-loaded queue routes through loadAudio', async () => {
+    mockedEngine.isLoaded.mockReturnValue(false)
     positionAtom(ctx, 5000)
     const replaceSpy = jest.spyOn(playerService, 'replaceAudio').mockResolvedValue(null)
     const loadSpy = jest.spyOn(playerService, 'loadAudio').mockResolvedValue(null)
-    const playSpy = jest.spyOn(playerService, 'play').mockResolvedValue(undefined)
 
     await playerService.recoverStreamAfterReconnect(NETWORK_URL)
 
     expect(loadSpy).toHaveBeenCalledWith(NETWORK_URL, 5000)
     expect(replaceSpy).not.toHaveBeenCalled()
-    expect(playSpy).not.toHaveBeenCalled()
   })
 
   test('successful replace heal re-asserts lock screen metadata after replaceAudio', async () => {
@@ -305,13 +254,11 @@ describe('PlayerService.recoverStreamAfterReconnect', () => {
     })
     const replaceSpy = jest
       .spyOn(playerService, 'replaceAudio')
-      .mockResolvedValue(createPlayerStub())
-    const playSpy = jest.spyOn(playerService, 'play').mockResolvedValue(undefined)
+      .mockResolvedValue(createPlaylistStub())
 
     await playerService.recoverStreamAfterReconnect(NETWORK_URL)
 
     expect(replaceSpy).toHaveBeenCalled()
-    expect(playSpy).not.toHaveBeenCalled()
     expect(reassertMetadataSpy).toHaveBeenCalledTimes(1)
     expect(reassertMetadataSpy.mock.calls[0][1]).toEqual({
       albumTitle: 'Test Playlist',
@@ -319,106 +266,14 @@ describe('PlayerService.recoverStreamAfterReconnect', () => {
       artworkUrl: null,
       title: AUDIO_DATA.title,
     })
-    expect(reassertMetadataSpy.mock.invocationCallOrder[0]).toBeGreaterThan(
-      replaceSpy.mock.invocationCallOrder[0],
-    )
   })
 
-  test('healthy playing stream does not re-assert lock screen metadata', async () => {
-    isPlayingAtom(ctx, true)
-    isBufferingAtom(ctx, false)
-    const replaceSpy = jest
-      .spyOn(playerService, 'replaceAudio')
-      .mockResolvedValue(createPlayerStub())
-
-    await playerService.recoverStreamAfterReconnect(NETWORK_URL)
-
-    expect(replaceSpy).not.toHaveBeenCalled()
-    expect(reassertMetadataSpy).not.toHaveBeenCalled()
-  })
-
-  test('local file source does not re-assert lock screen metadata', async () => {
-    ;(audioLoader.getLastResolvedUrl as jest.Mock).mockReturnValue('file:///cache/abc.mp3')
-    const replaceSpy = jest
-      .spyOn(playerService, 'replaceAudio')
-      .mockResolvedValue(createPlayerStub())
-
-    await playerService.recoverStreamAfterReconnect(NETWORK_URL)
-
-    expect(replaceSpy).not.toHaveBeenCalled()
-    expect(reassertMetadataSpy).not.toHaveBeenCalled()
-  })
-
-  test('loadAudio heal success re-asserts lock screen metadata', async () => {
-    ;(audioLoader.isPlayerLoaded as jest.Mock).mockReturnValue(false)
+  test('replace heal failure (null playlist) does not re-assert lock screen metadata', async () => {
     currentAudioAtom(ctx, AUDIO_DATA)
-    const loadSpy = jest.spyOn(playerService, 'loadAudio').mockResolvedValue(createPlayerStub())
+    jest.spyOn(playerService, 'replaceAudio').mockResolvedValue(null)
 
     await playerService.recoverStreamAfterReconnect(NETWORK_URL)
 
-    expect(loadSpy).toHaveBeenCalled()
-    expect(reassertMetadataSpy).toHaveBeenCalledTimes(1)
-    expect(reassertMetadataSpy.mock.calls[0][1]).toEqual({
-      artist: AUDIO_DATA.artist,
-      artworkUrl: null,
-      title: AUDIO_DATA.title,
-    })
-  })
-
-  test('stalled-stream heal re-asserts lock screen metadata after replaceAudio and play resolve', async () => {
-    isPlayingAtom(ctx, true)
-    isBufferingAtom(ctx, true)
-    currentAudioAtom(ctx, AUDIO_DATA)
-    const replaceSpy = jest
-      .spyOn(playerService, 'replaceAudio')
-      .mockResolvedValue(createPlayerStub())
-    const playSpy = jest.spyOn(playerService, 'play').mockResolvedValue(undefined)
-
-    await playerService.recoverStreamAfterReconnect(NETWORK_URL)
-
-    expect(replaceSpy).toHaveBeenCalled()
-    expect(playSpy).toHaveBeenCalled()
-    expect(reassertMetadataSpy).toHaveBeenCalledTimes(1)
-    expect(reassertMetadataSpy.mock.invocationCallOrder[0]).toBeGreaterThan(
-      replaceSpy.mock.invocationCallOrder[0],
-    )
-    expect(reassertMetadataSpy.mock.invocationCallOrder[0]).toBeGreaterThan(
-      playSpy.mock.invocationCallOrder[0],
-    )
-  })
-
-  test('loadAudio heal re-asserts lock screen metadata after loadAudio resolves', async () => {
-    ;(audioLoader.isPlayerLoaded as jest.Mock).mockReturnValue(false)
-    currentAudioAtom(ctx, AUDIO_DATA)
-    const loadSpy = jest.spyOn(playerService, 'loadAudio').mockResolvedValue(createPlayerStub())
-
-    await playerService.recoverStreamAfterReconnect(NETWORK_URL)
-
-    expect(loadSpy).toHaveBeenCalled()
-    expect(reassertMetadataSpy).toHaveBeenCalledTimes(1)
-    expect(reassertMetadataSpy.mock.invocationCallOrder[0]).toBeGreaterThan(
-      loadSpy.mock.invocationCallOrder[0],
-    )
-  })
-
-  test('replace heal failure (null player) does not re-assert lock screen metadata', async () => {
-    currentAudioAtom(ctx, AUDIO_DATA)
-    const replaceSpy = jest.spyOn(playerService, 'replaceAudio').mockResolvedValue(null)
-
-    await playerService.recoverStreamAfterReconnect(NETWORK_URL)
-
-    expect(replaceSpy).toHaveBeenCalled()
-    expect(reassertMetadataSpy).not.toHaveBeenCalled()
-  })
-
-  test('loadAudio heal failure (null player) does not re-assert lock screen metadata', async () => {
-    ;(audioLoader.isPlayerLoaded as jest.Mock).mockReturnValue(false)
-    currentAudioAtom(ctx, AUDIO_DATA)
-    const loadSpy = jest.spyOn(playerService, 'loadAudio').mockResolvedValue(null)
-
-    await playerService.recoverStreamAfterReconnect(NETWORK_URL)
-
-    expect(loadSpy).toHaveBeenCalled()
     expect(reassertMetadataSpy).not.toHaveBeenCalled()
   })
 })

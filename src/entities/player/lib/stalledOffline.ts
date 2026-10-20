@@ -1,7 +1,7 @@
 import { action, atom } from '@reatom/framework'
 
 // True while the stream stalled offline (buffering with no network) and playback
-// was auto-paused. Cleared when a new source is loaded (AudioLoader) or playback
+// was auto-paused. Cleared when the queue is built for a new source or playback
 // resumes (web 'playing' event). Drives auto-resume on reconnect (Issue #109).
 export const isStalledOfflineAtom = atom<boolean>(false, 'isStalledOfflineAtom')
 

@@ -4,7 +4,7 @@ import { isOnlineAtom } from 'shared/model/network'
 import { currentAudioAtom, isPlayingAtom } from '../../../model'
 import { isStalledOfflineAtom } from '../../stalledOffline'
 import { type SeekSourceSwap } from '../types'
-import { audioLoader } from './AudioLoader'
+import { playlistEngine } from './PlaylistEngine'
 import { swapSourceForSeek } from './seekSourceSwapCore'
 import {
   shouldSwapPartialForNetworkSeek,
@@ -16,7 +16,7 @@ const CACHE_URI_PREFIX = 'file://'
 /** Offline seek fallback: swap the stalled network source to the retained partial file (issue #109). */
 const shouldSeekViaPartialSource = async (): Promise<null | string> => {
   if (ctx.get(isOnlineAtom)) return null
-  const resolvedUrl = audioLoader.getLastResolvedUrl()
+  const resolvedUrl = playlistEngine.getCurrentSourceUri()
   if (!resolvedUrl || resolvedUrl.startsWith(CACHE_URI_PREFIX)) return null
   const audioUrl = ctx.get(currentAudioAtom)?.audioUrl
   if (!audioUrl) return null
@@ -26,7 +26,7 @@ const shouldSeekViaPartialSource = async (): Promise<null | string> => {
 
 /** Seek swap for a loaded partial: swap to the completed cached file at the target position (issue #109). */
 const shouldSwapPartialForCachedSeek = async (): Promise<null | string> => {
-  const resolvedUrl = audioLoader.getLastResolvedUrl()
+  const resolvedUrl = playlistEngine.getCurrentSourceUri()
   if (!resolvedUrl?.endsWith(PART_SUFFIX)) return null
   const audioUrl = ctx.get(currentAudioAtom)?.audioUrl
   if (!audioUrl) return null
@@ -48,12 +48,15 @@ export const seekViaPartialSource = async (
   audioUrl: string,
   clampedPosition: number,
 ): Promise<void> => {
+  const partialUri = await getPartialFileUri(audioUrl)
+  if (!partialUri) return
   const wasPlaying = ctx.get(isPlayingAtom)
   const stalledOffline = ctx.get(isStalledOfflineAtom)
   const shouldResume = wasPlaying || stalledOffline
   await swapSourceForSeek(
     sourceSwap,
     audioUrl,
+    partialUri,
     clampedPosition,
     shouldResume,
     '[seekViaPartialSource]',
@@ -72,10 +75,13 @@ export const swapPartialForCachedSeek = async (
   audioUrl: string,
   clampedPosition: number,
 ): Promise<void> => {
+  const cachedUri = await audioCacheService.getCachedUri(audioUrl)
+  if (!cachedUri) return
   const wasPlaying = ctx.get(isPlayingAtom)
   await swapSourceForSeek(
     sourceSwap,
     audioUrl,
+    cachedUri,
     clampedPosition,
     wasPlaying,
     '[swapPartialForCachedSeek]',

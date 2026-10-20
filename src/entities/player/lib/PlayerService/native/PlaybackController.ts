@@ -1,4 +1,3 @@
-import { type AudioPlayer } from 'expo-audio'
 import { ctx } from 'shared/lib/reatom-ctx'
 import { reportError } from 'shared/model/error-dialog'
 import {
@@ -12,6 +11,7 @@ import { flushProgress, scheduleHistoryFlush } from '../progressFlusher'
 import { type PlaybackStatus, type SeekSourceSwap } from '../types'
 import { audioEffectsAttach } from './audioEffectsAttach'
 import { audioEffectsPreferences } from './audioEffectsPreferences'
+import { type PlayableAudio } from './playableAudio'
 import { playbackPreferences } from './playbackPreferences'
 import { resolvePlaybackStatus } from './playbackStatus'
 import { seekGuard } from './SeekGuard'
@@ -22,13 +22,13 @@ import { seekWithSourceSwap } from './seekViaPartialSource'
  * Works with an external player instance passed as parameter.
  */
 class PlaybackController {
-  public play = async (player: AudioPlayer | null): Promise<void> => {
+  public play = async (player: null | PlayableAudio): Promise<void> => {
     if (!player?.isLoaded) return
 
     player.play()
   }
 
-  public pause = async (player: AudioPlayer | null): Promise<void> => {
+  public pause = async (player: null | PlayableAudio): Promise<void> => {
     if (!player?.isLoaded) return
 
     const positionMs = Math.floor(player.currentTime * 1000)
@@ -37,7 +37,7 @@ class PlaybackController {
     flushProgress(positionMs)
   }
 
-  public stop = async (player: AudioPlayer | null): Promise<void> => {
+  public stop = async (player: null | PlayableAudio): Promise<void> => {
     if (!player?.isLoaded) return
 
     const positionMs = Math.floor(player.currentTime * 1000)
@@ -53,7 +53,7 @@ class PlaybackController {
   }
 
   public seekTo = async (
-    player: AudioPlayer | null,
+    player: null | PlayableAudio,
     positionMs: number,
     sourceSwap?: SeekSourceSwap,
   ): Promise<void> => {
@@ -84,7 +84,7 @@ class PlaybackController {
   }
 
   public setPlaybackRate = async (
-    player: AudioPlayer | null,
+    player: null | PlayableAudio,
     rate: PlaybackRate,
   ): Promise<void> => {
     playbackPreferences.setPlaybackRate(player, rate)
@@ -95,30 +95,30 @@ class PlaybackController {
     audioEffectsPreferences.reassertPitch()
   }
 
-  public setVolume = async (player: AudioPlayer | null, volume: number): Promise<void> => {
+  public setVolume = async (player: null | PlayableAudio, volume: number): Promise<void> => {
     playbackPreferences.setVolume(player, volume)
   }
 
-  public applyVolume = (player: AudioPlayer | null, volume: number): void => {
+  public applyVolume = (player: null | PlayableAudio, volume: number): void => {
     playbackPreferences.applyVolume(player, volume)
   }
 
-  public applyPreferences = (player: AudioPlayer | null): void => {
+  public applyPreferences = (player: null | PlayableAudio): void => {
     this.applyPlaybackRate(player)
     this.reassertVolume(player)
     // Attach last: rate application resets pitch, attach re-applies the stored one.
     audioEffectsAttach.attach(audioEffectsPreferences, player)
   }
 
-  public applyPlaybackRate = (player: AudioPlayer | null): void => {
+  public applyPlaybackRate = (player: null | PlayableAudio): void => {
     playbackPreferences.applyPlaybackRate(player)
   }
 
-  public reassertVolume = (player: AudioPlayer | null): void => {
+  public reassertVolume = (player: null | PlayableAudio): void => {
     playbackPreferences.reassertVolume(player)
   }
 
-  public getStatus = (player: AudioPlayer | null): PlaybackStatus => resolvePlaybackStatus(player)
+  public getStatus = (player: null | PlayableAudio): PlaybackStatus => resolvePlaybackStatus(player)
 
   public getPlaybackRate = (): PlaybackRate => playbackPreferences.getPlaybackRate()
 

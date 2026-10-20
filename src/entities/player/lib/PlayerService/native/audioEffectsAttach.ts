@@ -1,7 +1,7 @@
 import { type AudioEffectsInfo, type AudioEffectsSettings, detachAudioEffects } from 'audio-effects'
-import { type AudioPlayer } from 'expo-audio'
 import { applyNativeSafely } from './applyNativeSafely'
 import { attachWithCapabilities, refreshCapabilities } from './audioEffectsCapabilities'
+import { type PlayableAudio } from './playableAudio'
 
 // Surface the attach lifecycle needs from the preferences values store.
 interface AudioEffectsSource {
@@ -11,13 +11,13 @@ interface AudioEffectsSource {
 
 /**
  * Attach lifecycle for the audio-effects chain: stored settings must be
- * re-attached on every loadAudio/replaceAudio (expo-audio recreates the
- * AudioPlayer per track) and detached before the player dies with its audio
+ * re-attached on every queue build/replace (a fresh AudioPlaylist owns the
+ * ExoPlayer per build) and detached before the player dies with its audio
  * session. Attach runs last in applyPreferences — rate application resets
  * pitch natively, attach restores it.
  */
 class AudioEffectsAttach {
-  public attach = (source: AudioEffectsSource, player: AudioPlayer | null): void => {
+  public attach = (source: AudioEffectsSource, player: null | PlayableAudio): void => {
     if (!player) return
     this.currentPlayer = player
     applyNativeSafely(() => {
@@ -40,7 +40,7 @@ class AudioEffectsAttach {
     applyNativeSafely(() => detachAudioEffects())
   }
 
-  private currentPlayer: AudioPlayer | null = null
+  private currentPlayer: null | PlayableAudio = null
 }
 
 export const audioEffectsAttach = new AudioEffectsAttach()

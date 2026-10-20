@@ -1,8 +1,8 @@
-import { type AudioPlayer } from 'expo-audio'
 import { getLocalAppIconUri, hasUriProtocol, whenAppIconReady } from 'shared/lib/app-icon'
 import { type LockScreenMetadata } from '../types'
+import { type PlayableAudio } from './playableAudio'
 
-type ReapplyMetadata = (player: AudioPlayer, metadata: LockScreenMetadata) => void
+type ReapplyMetadata = (player: PlayableAudio, metadata: LockScreenMetadata) => void
 
 /**
  * Догоняет первый показ метаданных lock screen, если фолбэк-иконка ещё не
@@ -12,7 +12,7 @@ type ReapplyMetadata = (player: AudioPlayer, metadata: LockScreenMetadata) => vo
  * @param reapply - Переустанавливает метаданные для того же плеера.
  */
 export const createIconFollowUp = (reapply: ReapplyMetadata) => {
-  let lastPlayer: AudioPlayer | null = null
+  let lastPlayer: null | PlayableAudio = null
   let lastMetadata: LockScreenMetadata | null = null
   let subscribed = false
 
@@ -38,7 +38,7 @@ export const createIconFollowUp = (reapply: ReapplyMetadata) => {
    * @param player - Плеер, которому принадлежит показ.
    * @param metadata - Метаданные показа.
    */
-  const track = (player: AudioPlayer, metadata: LockScreenMetadata): void => {
+  const track = (player: PlayableAudio, metadata: LockScreenMetadata): void => {
     if (hasUriProtocol(metadata.artworkUrl) || getLocalAppIconUri() !== null) {
       clearPayload()
       return

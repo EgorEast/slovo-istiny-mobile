@@ -29,9 +29,11 @@ const handleSeekSwapFailure = (error: unknown, tag: string): void => {
 }
 
 /**
- * Swaps the player source at the tapped position and resumes when requested.
+ * Rebinds the current queue index to a resolved source at the tapped position
+ * and resumes when requested.
  * @param sourceSwap - Player control actions used to swap the source and resume.
- * @param audioUrl - Vetted network URL of the track to swap.
+ * @param audioUrl - Vetted network URL of the track (identity guard).
+ * @param resolvedUrl - Already-resolved URI to bind (partial, cached or network).
  * @param clampedPosition - Target position in milliseconds to continue from.
  * @param resumePlayback - Whether playback should continue after the swap.
  * @param logTag - Tag used to identify the swap path in failure logs.
@@ -39,6 +41,7 @@ const handleSeekSwapFailure = (error: unknown, tag: string): void => {
 export const swapSourceForSeek = async (
   sourceSwap: SeekSourceSwap,
   audioUrl: string,
+  resolvedUrl: string,
   clampedPosition: number,
   resumePlayback: boolean,
   logTag: string,
@@ -48,10 +51,10 @@ export const swapSourceForSeek = async (
   if (ctx.get(currentAudioAtom)?.audioUrl !== audioUrl) return
   armSeekSwap(clampedPosition)
   try {
-    // Keep the seek guard armed through the swap: the same native player keeps
+    // Keep the seek guard armed through the swap: the native queue keeps
     // firing its already-attached status listeners, and a cleared guard would
     // leak the new source's currentTime≈0 into positionAtom (progress flash).
-    await sourceSwap.replaceAudio(audioUrl, clampedPosition, { preserveSeekGuard: true })
+    await sourceSwap.swapSource(resolvedUrl, clampedPosition)
     if (resumePlayback) await sourceSwap.play()
     clearSeekSwapState()
   } catch (error) {

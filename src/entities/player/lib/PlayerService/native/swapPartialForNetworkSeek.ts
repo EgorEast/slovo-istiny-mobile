@@ -3,12 +3,12 @@ import { ctx } from 'shared/lib/reatom-ctx'
 import { isOnlineAtom } from 'shared/model/network'
 import { currentAudioAtom, isPlayingAtom } from '../../../model'
 import { type SeekSourceSwap } from '../types'
-import { audioLoader } from './AudioLoader'
+import { playlistEngine } from './PlaylistEngine'
 import { swapSourceForSeek } from './seekSourceSwapCore'
 
 /** Online seek past the partial: swap to the network stream while the download continues (issue #109). */
 export const shouldSwapPartialForNetworkSeek = async (): Promise<null | string> => {
-  const resolvedUrl = audioLoader.getLastResolvedUrl()
+  const resolvedUrl = playlistEngine.getCurrentSourceUri()
   if (!resolvedUrl?.endsWith(PART_SUFFIX)) return null
   if (!ctx.get(isOnlineAtom)) return null
   const audioUrl = ctx.get(currentAudioAtom)?.audioUrl
@@ -34,6 +34,7 @@ export const swapPartialForNetworkSeek = async (
   const wasPlaying = ctx.get(isPlayingAtom)
   await swapSourceForSeek(
     sourceSwap,
+    audioUrl,
     audioUrl,
     clampedPosition,
     wasPlaying,

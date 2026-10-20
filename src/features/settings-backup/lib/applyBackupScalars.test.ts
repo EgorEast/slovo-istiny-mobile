@@ -1,6 +1,7 @@
 import { createCtx, type Ctx } from '@reatom/framework'
 import { setSermonCachingEnabled } from 'entities/offline-cache'
 import {
+  applyRepeatMode,
   setBalanceAction,
   setEqEnabledAction,
   setEqGainsAction,
@@ -20,6 +21,7 @@ import { setDynamicColors, setThemeMode } from 'shared/ui/theme'
 import { applyPlayerScalars, applySettingsScalars, applyYouTubeImport } from './applyBackupScalars'
 
 jest.mock('entities/player', () => ({
+  applyRepeatMode: jest.fn(),
   setBalanceAction: jest.fn(),
   setEqEnabledAction: jest.fn(),
   setEqGainsAction: jest.fn(),
@@ -111,6 +113,7 @@ describe('applyPlayerScalars', () => {
 
     expect(setPlaybackRateAction).toHaveBeenCalledWith(ctx, 1.25)
     expect(setRepeatModeAction).toHaveBeenCalledWith(ctx, 'queue')
+    expect(applyRepeatMode).toHaveBeenCalledWith('queue')
     expect(setBalanceAction).toHaveBeenCalledWith(ctx, -0.5)
     expect(setPitchAction).toHaveBeenCalledWith(ctx, 1.5)
     expect(setEqEnabledAction).toHaveBeenCalledWith(ctx, true)
@@ -121,6 +124,7 @@ describe('applyPlayerScalars', () => {
     await applyPlayerScalars(ctx, { repeatMode: 'track' })
 
     expect(setRepeatModeAction).toHaveBeenCalledWith(ctx, 'track')
+    expect(applyRepeatMode).toHaveBeenCalledWith('track')
     expect(setPlaybackRateAction).not.toHaveBeenCalled()
     expect(setBalanceAction).not.toHaveBeenCalled()
     expect(setEqGainsAction).not.toHaveBeenCalled()

@@ -1,58 +1,59 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { type PlaylistData } from 'entities/playlist/@x/player'
 import { type AudioPlayerData } from 'entities/sermon/@x/player'
-import { CURRENT_AUDIO, CURRENT_PLAYLIST, CURRENT_REPEAT_MODE } from 'shared/config'
-import { isOnlineAtom } from 'shared/model/network'
+import { CURRENT_AUDIO, CURRENT_PLAYLIST } from 'shared/config'
+import { playlistEngine } from '../PlaylistEngine'
 import { trackAutoAdvanceService } from './TrackAutoAdvanceService'
 
-const mockGuardOfflinePlayback = jest.fn()
-const mockPlayNextTrack = jest.fn().mockResolvedValue(undefined)
-const mockRepeatCurrentTrack = jest.fn().mockResolvedValue(undefined)
-const mockPlayFirstTrackInQueue = jest.fn().mockResolvedValue(undefined)
-const mockMarkHistoryCompleted = jest.fn()
-const mockCtxGet = jest.fn()
-const mockIsPartialSource = jest.fn()
+const HISTORY_ATOM = '@@TEST_HISTORY_ATOM'
+const mockGetResumePosition = jest.fn().mockReturnValue(0)
+const mockMarkHistoryCompleted = jest.fn().mockResolvedValue(undefined)
+const mockRecordSermonSwitch = jest.fn().mockResolvedValue(undefined)
+const mockSavePlaybackProgress = jest.fn().mockResolvedValue(undefined)
+const mockStartBackgroundCaching = jest.fn()
+const mockSetMetadata = jest.fn()
 
 jest.mock('shared/lib/reatom-ctx', () => ({
-  ctx: {
-    get: (...args: unknown[]) => mockCtxGet(...args),
-    schedule: jest.fn((fn: () => void) => Promise.resolve().then(fn)),
-  },
-}))
-
-jest.mock('shared/model/network', () => ({
-  isOnlineAtom: '@@TEST_IS_ONLINE_ATOM',
-}))
-
-jest.mock('../../../../model', () => ({
-  durationAtom: '@@TEST_DURATION_ATOM',
-  positionAtom: '@@TEST_POSITION_ATOM',
-  RepeatMode: { Off: 'off', Queue: 'queue', Track: 'track' },
-  repeatModeSchema: {
-    safeParse: (value: string | undefined) => {
-      if (value === 'queue') return { data: 'queue' }
-      if (value === 'track') return { data: 'track' }
-      return { data: 'off' }
-    },
-  },
+  ctx: { get: (atom: unknown) => (atom === HISTORY_ATOM ? [] : undefined) },
 }))
 
 jest.mock('entities/listening-history/@x/player', () => ({
+  COMPLETION_REMAINING_MS: 5000,
+  getResumePosition: (...args: unknown[]) => mockGetResumePosition(...args),
+  historyAtom: HISTORY_ATOM,
   markHistoryCompletedAction: (...args: unknown[]) => mockMarkHistoryCompleted(...args),
+  recordSermonSwitchAction: (...args: unknown[]) => mockRecordSermonSwitch(...args),
 }))
 
-jest.mock('../../../playOfflineGuard', () => ({
-  guardOfflinePlayback: (...args: unknown[]) => mockGuardOfflinePlayback(...args),
+jest.mock('../../../../model', () => ({ setCurrentAudioAction: jest.fn() }))
+jest.mock('../../../playbackProgress', () => ({
+  savePlaybackProgress: (...args: unknown[]) => mockSavePlaybackProgress(...args),
+}))
+jest.mock('../../BackgroundCachingService', () => ({
+  startBackgroundCaching: (...args: unknown[]) => mockStartBackgroundCaching(...args),
+}))
+jest.mock('../LockScreenControls', () => ({
+  lockScreenControls: { setMetadata: (...args: unknown[]) => mockSetMetadata(...args) },
+}))
+jest.mock('./parsers', () => ({
+  parseAudioPlayerData: (raw: null | string) => (raw ? JSON.parse(raw) : null),
+  parsePlaylistData: (raw: null | string) => (raw ? JSON.parse(raw) : null),
 }))
 
-jest.mock('../AudioLoader', () => ({
-  audioLoader: { isPartialSource: (...args: unknown[]) => mockIsPartialSource(...args) },
-}))
+const mockPlaylist = { title: 'Playlist' } as unknown as PlaylistData
 
-jest.mock('./playback', () => ({
-  playFirstTrackInQueue: (...args: unknown[]) => mockPlayFirstTrackInQueue(...args),
-  playNextTrack: (...args: unknown[]) => mockPlayNextTrack(...args),
-  repeatCurrentTrack: (...args: unknown[]) => mockRepeatCurrentTrack(...args),
+jest.mock('../PlaylistEngine', () => ({
+  playlistEngine: {
+    getCurrentIndex: jest.fn(),
+    getLoop: jest.fn(),
+    getPlaylist: jest.fn(() => mockPlaylist),
+    getSnapshot: jest.fn(),
+    getStatus: jest.fn(),
+    getTrackAt: jest.fn(),
+    getTrackCount: jest.fn(),
+    pause: jest.fn(),
+    seekTo: jest.fn(),
+  },
 }))
 
 const audio: AudioPlayerData = {
@@ -60,7 +61,7 @@ const audio: AudioPlayerData = {
   artwork: 'https://example.com/art.jpg',
   audioUrl: 'https://example.com/audio.mp3',
   id: 'sermon-1',
-  title: 'Test Sermon',
+  title: 'Sermon 1',
 }
 
 const secondAudio: AudioPlayerData = {
@@ -68,7 +69,7 @@ const secondAudio: AudioPlayerData = {
   artwork: 'https://example.com/art2.jpg',
   audioUrl: 'https://example.com/audio2.mp3',
   id: 'sermon-2',
-  title: 'Test Sermon 2',
+  title: 'Sermon 2',
 }
 
 const playlist: PlaylistData = {
@@ -79,160 +80,145 @@ const playlist: PlaylistData = {
   title: 'Test Playlist',
 }
 
-const playerActions = {
-  pause: jest.fn().mockResolvedValue(undefined),
-  play: jest.fn().mockResolvedValue(undefined),
-  replaceAudio: jest.fn().mockResolvedValue(null),
+const mockedEngine = jest.mocked(playlistEngine)
+
+const seedStorage = async (current: AudioPlayerData): Promise<void> => {
+  await AsyncStorage.setItem(CURRENT_AUDIO, JSON.stringify(current))
+  await AsyncStorage.setItem(CURRENT_PLAYLIST, JSON.stringify(playlist))
 }
 
-interface SeedOptions {
-  currentAudio?: AudioPlayerData
-  repeatMode?: string
-  sermons?: PlaylistData['sermons']
+const setTracks = (tracks: AudioPlayerData[]): void => {
+  mockedEngine.getTrackAt.mockImplementation(index => tracks[index] ?? null)
+  mockedEngine.getTrackCount.mockReturnValue(tracks.length)
 }
 
-const seedStorage = async ({
-  currentAudio: seedAudio = audio,
-  repeatMode = 'off',
-  sermons = playlist.sermons,
-}: SeedOptions = {}): Promise<void> => {
-  await AsyncStorage.setItem(CURRENT_AUDIO, JSON.stringify(seedAudio))
-  await AsyncStorage.setItem(CURRENT_PLAYLIST, JSON.stringify({ ...playlist, sermons }))
-  await AsyncStorage.setItem(CURRENT_REPEAT_MODE, repeatMode)
+const setStatus = (durationMs: number): void => {
+  mockedEngine.getStatus.mockReturnValue({
+    durationMs,
+    isBuffering: false,
+    isLoaded: true,
+    isPlaying: true,
+    playbackRate: 1,
+    positionMs: 0,
+    volume: 1,
+  })
 }
 
-const setOnline = (online: boolean): void => {
-  mockCtxGet.mockImplementation((atom: unknown) => (atom === isOnlineAtom ? online : 0))
-}
-
-describe('TrackAutoAdvanceService offline guard', () => {
+describe('TrackAutoAdvanceService.handleTrackChanged', () => {
   beforeEach(async () => {
     jest.clearAllMocks()
     await AsyncStorage.clear()
-    trackAutoAdvanceService.setPlayerActions(playerActions)
-    mockIsPartialSource.mockReturnValue(false)
+    mockGetResumePosition.mockReturnValue(0)
+    setTracks([audio, secondAudio])
+    setStatus(100000)
+    mockedEngine.getSnapshot.mockImplementation(index =>
+      index === 0 ? { currentTime: 50, duration: 100 } : null,
+    )
   })
 
-  test('blocks auto-advance when offline and next track not cached', async () => {
-    setOnline(false)
-    mockGuardOfflinePlayback.mockResolvedValue(true)
-    await seedStorage()
+  test('flushes the old track from the engine snapshot values', async () => {
+    await seedStorage(audio)
 
-    await trackAutoAdvanceService.handleTrackEnd()
+    await trackAutoAdvanceService.handleTrackChanged(0, 1)
 
-    expect(mockGuardOfflinePlayback).toHaveBeenCalledWith(secondAudio.audioUrl, false)
-    expect(mockPlayNextTrack).not.toHaveBeenCalled()
+    expect(mockRecordSermonSwitch).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        markOldCompleted: true,
+        oldDurationMs: 100000,
+        oldPositionMs: 50000,
+        oldSermonId: audio.id,
+      }),
+    )
   })
 
-  test('auto-advances when offline and next track is cached', async () => {
-    setOnline(false)
-    mockGuardOfflinePlayback.mockResolvedValue(false)
-    await seedStorage()
+  test('writes the new track with the playlist artwork and arms background caching', async () => {
+    await seedStorage(audio)
 
-    await trackAutoAdvanceService.handleTrackEnd()
+    await trackAutoAdvanceService.handleTrackChanged(0, 1)
 
-    expect(mockGuardOfflinePlayback).toHaveBeenCalledWith(secondAudio.audioUrl, false)
-    expect(mockPlayNextTrack).toHaveBeenCalled()
+    expect(mockRecordSermonSwitch).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        newAudio: { ...secondAudio, artwork: playlist.artwork },
+      }),
+    )
+    expect(mockSetMetadata).toHaveBeenCalledWith(mockPlaylist, {
+      albumTitle: playlist.title,
+      artist: secondAudio.artist,
+      artworkUrl: playlist.artwork,
+      title: secondAudio.title,
+    })
+    expect(mockStartBackgroundCaching).toHaveBeenCalledWith(secondAudio.audioUrl)
   })
 
-  test('auto-advances when online even if next track not cached', async () => {
-    setOnline(true)
-    mockGuardOfflinePlayback.mockResolvedValue(false)
-    await seedStorage()
+  test('seeks to the stored resume position before saving progress', async () => {
+    await seedStorage(audio)
+    mockGetResumePosition.mockReturnValue(30000)
 
-    await trackAutoAdvanceService.handleTrackEnd()
+    await trackAutoAdvanceService.handleTrackChanged(0, 1)
 
-    expect(mockGuardOfflinePlayback).toHaveBeenCalledWith(secondAudio.audioUrl, true)
-    expect(mockPlayNextTrack).toHaveBeenCalled()
+    expect(mockedEngine.seekTo).toHaveBeenCalledWith(30)
+    expect(mockSavePlaybackProgress).toHaveBeenCalledWith(expect.anything(), {
+      positionMs: 30000,
+      sermonId: secondAudio.id,
+    })
   })
 
-  test('preserves existing behavior when next track has no audioUrl', async () => {
-    setOnline(false)
-    mockGuardOfflinePlayback.mockResolvedValue(true)
-    await seedStorage({ sermons: [audio, { ...secondAudio, audioUrl: undefined }] })
+  test('does not seek when the resume position is within the completion window', async () => {
+    await seedStorage(audio)
+    mockGetResumePosition.mockReturnValue(97000)
 
-    await trackAutoAdvanceService.handleTrackEnd()
+    await trackAutoAdvanceService.handleTrackChanged(0, 1)
 
-    expect(mockGuardOfflinePlayback).not.toHaveBeenCalled()
-    expect(mockPlayNextTrack).not.toHaveBeenCalled()
+    expect(mockedEngine.seekTo).not.toHaveBeenCalled()
   })
 
-  test('blocks repeat-current-track when offline and current track not cached', async () => {
-    setOnline(false)
-    mockGuardOfflinePlayback.mockResolvedValue(true)
-    await seedStorage({ repeatMode: 'track' })
+  test('ignores a switch already committed by the JS funnel (manual next/prev)', async () => {
+    await seedStorage(secondAudio)
 
-    await trackAutoAdvanceService.handleTrackEnd()
+    await trackAutoAdvanceService.handleTrackChanged(0, 1)
 
-    expect(mockGuardOfflinePlayback).toHaveBeenCalledWith(audio.audioUrl, false)
-    expect(mockRepeatCurrentTrack).not.toHaveBeenCalled()
-    expect(mockGuardOfflinePlayback).toHaveBeenCalledTimes(1)
-    expect(mockPlayNextTrack).not.toHaveBeenCalled()
-    expect(mockPlayFirstTrackInQueue).not.toHaveBeenCalled()
-  })
-
-  test('repeats current track when offline and it is cached', async () => {
-    setOnline(false)
-    mockGuardOfflinePlayback.mockResolvedValue(false)
-    await seedStorage({ repeatMode: 'track' })
-
-    await trackAutoAdvanceService.handleTrackEnd()
-
-    expect(mockGuardOfflinePlayback).toHaveBeenCalledWith(audio.audioUrl, false)
-    expect(mockRepeatCurrentTrack).toHaveBeenCalled()
-    expect(mockGuardOfflinePlayback).toHaveBeenCalledTimes(1)
-    expect(mockPlayNextTrack).not.toHaveBeenCalled()
-    expect(mockPlayFirstTrackInQueue).not.toHaveBeenCalled()
-  })
-
-  test('blocks restart-queue when offline and first track not cached', async () => {
-    setOnline(false)
-    mockGuardOfflinePlayback.mockResolvedValue(true)
-    await seedStorage({ currentAudio: secondAudio, repeatMode: 'queue' })
-
-    await trackAutoAdvanceService.handleTrackEnd()
-
-    expect(mockGuardOfflinePlayback).toHaveBeenCalledWith(audio.audioUrl, false)
-    expect(mockPlayFirstTrackInQueue).not.toHaveBeenCalled()
-    expect(mockGuardOfflinePlayback).toHaveBeenCalledTimes(1)
-    expect(playerActions.pause).not.toHaveBeenCalled()
-    expect(mockMarkHistoryCompleted).not.toHaveBeenCalled()
-  })
-
-  test('restarts queue when offline and first track is cached', async () => {
-    setOnline(false)
-    mockGuardOfflinePlayback.mockResolvedValue(false)
-    await seedStorage({ currentAudio: secondAudio, repeatMode: 'queue' })
-
-    await trackAutoAdvanceService.handleTrackEnd()
-
-    expect(mockGuardOfflinePlayback).toHaveBeenCalledWith(audio.audioUrl, false)
-    expect(mockPlayFirstTrackInQueue).toHaveBeenCalled()
-    expect(mockGuardOfflinePlayback).toHaveBeenCalledTimes(1)
-    expect(playerActions.pause).not.toHaveBeenCalled()
-    expect(mockMarkHistoryCompleted).not.toHaveBeenCalled()
+    expect(mockRecordSermonSwitch).not.toHaveBeenCalled()
+    expect(mockSetMetadata).not.toHaveBeenCalled()
+    expect(mockStartBackgroundCaching).not.toHaveBeenCalled()
   })
 })
 
-describe('TrackAutoAdvanceService partial-source edge', () => {
+describe('TrackAutoAdvanceService.handleQueueEnd', () => {
   beforeEach(async () => {
     jest.clearAllMocks()
     await AsyncStorage.clear()
-    trackAutoAdvanceService.setPlayerActions(playerActions)
-    mockIsPartialSource.mockReturnValue(true)
+    setTracks([audio, secondAudio])
+    setStatus(100000)
+    mockedEngine.getCurrentIndex.mockReturnValue(1)
+    mockedEngine.getLoop.mockReturnValue('none')
+    mockedEngine.getSnapshot.mockReturnValue({ currentTime: 100, duration: 100 })
   })
 
-  test('pauses instead of advancing when the source is a partial download', async () => {
-    setOnline(true)
-    mockGuardOfflinePlayback.mockResolvedValue(false)
-    await seedStorage()
+  test('marks the last track completed and pauses once', async () => {
+    await trackAutoAdvanceService.handleQueueEnd()
+    await trackAutoAdvanceService.handleQueueEnd()
 
-    await trackAutoAdvanceService.handleTrackEnd()
+    expect(mockMarkHistoryCompleted).toHaveBeenCalledTimes(1)
+    expect(mockMarkHistoryCompleted).toHaveBeenCalledWith(expect.anything(), secondAudio.id, 100000)
+    expect(mockedEngine.pause).toHaveBeenCalledTimes(1)
+  })
 
-    expect(playerActions.pause).toHaveBeenCalledTimes(1)
-    expect(mockPlayNextTrack).not.toHaveBeenCalled()
-    expect(mockRepeatCurrentTrack).not.toHaveBeenCalled()
-    expect(mockPlayFirstTrackInQueue).not.toHaveBeenCalled()
+  test('does nothing when the queue loops', async () => {
+    mockedEngine.getLoop.mockReturnValue('all')
+
+    await trackAutoAdvanceService.handleQueueEnd()
+
+    expect(mockMarkHistoryCompleted).not.toHaveBeenCalled()
+    expect(mockedEngine.pause).not.toHaveBeenCalled()
+  })
+
+  test('does nothing when the queue is not at the last track', async () => {
+    mockedEngine.getCurrentIndex.mockReturnValue(0)
+
+    await trackAutoAdvanceService.handleQueueEnd()
+
     expect(mockMarkHistoryCompleted).not.toHaveBeenCalled()
   })
 })

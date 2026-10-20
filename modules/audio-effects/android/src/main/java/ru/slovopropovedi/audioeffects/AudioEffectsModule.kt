@@ -13,7 +13,7 @@ import androidx.media3.common.PlaybackParameters
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
-import expo.modules.audio.AudioPlayer
+import expo.modules.audio.BaseAudioPlayer
 import expo.modules.kotlin.exception.Exceptions
 import expo.modules.kotlin.functions.Coroutine
 import expo.modules.kotlin.modules.Module
@@ -63,14 +63,15 @@ data class AttachSettings(
 
 /**
  * Attaches system audio effects (equalizer, balance via DynamicsProcessing and
- * pitch correction) to the ExoPlayer instance owned by expo-audio.
+ * pitch correction) to the ExoPlayer instance owned by expo-audio (AudioPlayer
+ * or AudioPlaylist — both share BaseAudioPlayer and its ExoPlayer ref).
  *
  * The player is created on the main looper and is not thread-safe, so every
  * player interaction below runs on the main queue: `attach` is a suspend
  * AsyncFunction that resolves the capability snapshot after the main-queue hop,
  * all other functions are fire-and-forget launches. Module state is only touched
- * inside those queued bodies. The player is recreated on every track load, so JS
- * re-calls `attach` after each loadAudio/replaceAudio. Every effect call is
+ * inside those queued bodies. The native player is recreated on every queue
+ * build, so JS re-calls `attach` after each build. Every effect call is
  * guarded: a missing/failed effect degrades the capability flag but errors are
  * never thrown to JS.
  */
@@ -108,7 +109,7 @@ class AudioEffectsModule : Module() {
     // the args (SharedRef player + Record settings) and resolves the JS promise
     // with the returned capability snapshot; the body hops to the main queue so
     // every player/effect access keeps the main-queue invariant.
-    AsyncFunction("attach") Coroutine { player: AudioPlayer, settings: AttachSettings ->
+    AsyncFunction("attach") Coroutine { player: BaseAudioPlayer, settings: AttachSettings ->
       withContext(appContext.mainQueue.coroutineContext) {
         try {
           attachEffects(player, settings)
@@ -151,7 +152,7 @@ class AudioEffectsModule : Module() {
     Function("detach") { launchOnMain { releaseAll() } }
   }
 
-  private fun attachEffects(player: AudioPlayer, settings: AttachSettings): Map<String, Any?> {
+  private fun attachEffects(player: BaseAudioPlayer, settings: AttachSettings): Map<String, Any?> {
     releaseAll()
 
     val exoPlayer = player.ref

@@ -1,53 +1,69 @@
-import { type AudioPlayer } from 'expo-audio'
+import { type AudioPlaylist } from 'expo-audio'
 import { ctx } from 'shared/lib/reatom-ctx'
-import { setIsBufferingAction, setPositionAction } from '../../model'
+import { type RepeatMode, setIsBufferingAction, setPositionAction } from '../../model'
 import { setPauseTypeAction } from '../../pauseType'
 import { type PlaybackRate } from '../../playback-rate'
-import { audioLoader } from './native/AudioLoader'
+import { setIsStalledOfflineAction } from '../stalledOffline'
+import { audioEffectsAttach } from './native/audioEffectsAttach'
 import { audioModeManager } from './native/AudioModeManager'
 import { lockScreenControls } from './native/LockScreenControls'
-import { setupPlayerListeners } from './native/nativePlayerHelpers'
+import { mapRepeatMode } from './native/mapRepeatMode'
 import { playbackController } from './native/PlaybackController'
 import { createPlayerServiceCallbacks } from './native/playerServiceCallbacks'
-import { playerStatusListener } from './native/PlayerStatusListener'
+import { playlistEngine } from './native/PlaylistEngine'
+import { wirePlaylistStatus } from './native/playlistStatusHandler'
+import { loadQueue, replaceQueueTrack } from './native/queueLoader'
+import { createQueueSourceSwap } from './native/queueSourceSwap'
 import { recoverStreamAfterReconnect as healStreamAfterReconnect } from './native/reconnectHeal'
 import { resumeWithSourceSwap } from './native/resumeWithSourceSwap'
-import { wireTrackAutoAdvance } from './native/wireTrackAutoAdvance'
 import { type LockScreenMetadata } from './types'
 
 export class PlayerService {
-  public getStatus = () => playbackController.getStatus(this.playerInstance)
+  public getStatus = () => playbackController.getStatus(playlistEngine.getPlaylist())
 
   public getVolume = () => playbackController.getVolume()
 
   public loadAudio = async (
     audioUrl: string,
     initialPositionMs = 0,
-  ): Promise<AudioPlayer | null> => {
+  ): Promise<AudioPlaylist | null> => {
     if (!audioUrl) return null
     void setIsBufferingAction(ctx, true)
     void setPositionAction(ctx, 0)
+    void setIsStalledOfflineAction(ctx, false)
     await audioModeManager.configure()
+    this.rewireStatusHandler()
 
-    const player = await audioLoader.loadAudio(audioUrl, initialPositionMs)
-    if (!player) {
+    const playlist = await loadQueue(audioUrl, initialPositionMs)
+    if (!playlist) {
       void setIsBufferingAction(ctx, false)
       return null
     }
+    if (initialPositionMs > 0) void setPositionAction(ctx, initialPositionMs)
+    return playlist
+  }
 
-    this.playerInstance = player
-    playbackController.applyPreferences(player)
-    this.setupListeners()
-    return player
+  public replaceAudio = async (
+    audioUrl: string,
+    initialPositionMs = 0,
+    options?: { preserveSeekGuard?: boolean },
+  ): Promise<AudioPlaylist | null> => {
+    if (!audioUrl) return null
+    if (!options?.preserveSeekGuard) playbackController.resetSeekGuard()
+    void setIsStalledOfflineAction(ctx, false)
+    await audioModeManager.configure()
+    this.rewireStatusHandler()
+
+    return replaceQueueTrack(audioUrl, initialPositionMs)
   }
 
   public pause = async (pauseType?: 'auto'): Promise<void> => {
     if (pauseType === 'auto') void setPauseTypeAction(ctx, 'auto')
-    await playbackController.pause(this.playerInstance)
+    await playbackController.pause(playlistEngine.getPlaylist())
   }
 
   public play = async (): Promise<void> => {
-    await playbackController.play(this.playerInstance)
+    await playbackController.play(playlistEngine.getPlaylist())
   }
 
   public resumeAfterPause = async (audioUrl: string): Promise<void> =>
@@ -56,73 +72,57 @@ export class PlayerService {
   public recoverStreamAfterReconnect = (audioUrl: string): Promise<void> =>
     healStreamAfterReconnect(this, audioUrl)
 
-  public replaceAudio = async (
-    audioUrl: string,
-    initialPositionMs = 0,
-    options?: { preserveSeekGuard?: boolean },
-  ): Promise<AudioPlayer | null> => {
-    if (!audioUrl) return null
-    if (!options?.preserveSeekGuard) playbackController.resetSeekGuard()
-    playerStatusListener.cleanup()
-
-    // Replace-in-place strategy: the same AudioPlayer (and thus the same MediaSession,
-    // foreground service and notification ID) survives the track switch. Tearing down
-    // the lock-screen session here stopped the Android foreground service mid-transition,
-    await audioModeManager.configure()
-
-    const player = await audioLoader.replaceAudio(audioUrl, initialPositionMs)
-    if (player) this.playerInstance = player
-    playbackController.applyPreferences(this.playerInstance)
-    this.setupListeners()
-    return player
-  }
-
   public seekTo = async (newPositionMs: number): Promise<void> => {
-    await playbackController.seekTo(this.playerInstance, newPositionMs, this.sourceSwap)
+    await playbackController.seekTo(playlistEngine.getPlaylist(), newPositionMs, this.sourceSwap)
   }
 
   public setLockScreenMetadata = (metadata: LockScreenMetadata): void => {
-    lockScreenControls.setMetadata(this.playerInstance, metadata)
+    lockScreenControls.setMetadata(playlistEngine.getPlaylist(), metadata)
   }
 
   public reassertLockScreenMetadata = (metadata: LockScreenMetadata): void => {
-    lockScreenControls.reassertMetadata(this.playerInstance, metadata)
+    lockScreenControls.reassertMetadata(playlistEngine.getPlaylist(), metadata)
   }
 
   public setPlaybackRate = async (rate: PlaybackRate): Promise<void> => {
-    await playbackController.setPlaybackRate(this.playerInstance, rate)
+    await playbackController.setPlaybackRate(playlistEngine.getPlaylist(), rate)
   }
 
   public setVolume = async (newVolume: number): Promise<void> => {
-    await playbackController.setVolume(this.playerInstance, newVolume)
+    await playbackController.setVolume(playlistEngine.getPlaylist(), newVolume)
   }
 
   public applyVolume = (newVolume: number): void => {
-    playbackController.applyVolume(this.playerInstance, newVolume)
+    playbackController.applyVolume(playlistEngine.getPlaylist(), newVolume)
+  }
+
+  public setRepeatMode = (mode: RepeatMode): void => {
+    playlistEngine.setLoopMode(mapRepeatMode(mode))
   }
 
   public stop = async (): Promise<void> => {
-    playerStatusListener.cleanup() // Detach first: the post-stop status tick must not flush position 0.
-    await playbackController.stop(this.playerInstance)
+    // Suppress the post-stop playing→false edge: it must not re-arm auto-pause.
+    this.statusMuted = true
+    await playbackController.stop(playlistEngine.getPlaylist())
   }
 
   public unload = async (): Promise<void> => {
-    // No lockScreenControls.clear(): release() removes the notification natively (issue #50).
-    playerStatusListener.cleanup()
-    audioLoader.releaseAndReset()
-    this.playerInstance = null
+    // No lockScreenControls.clear(): teardown removes the notification natively (issue #50).
+    this.statusMuted = true
+    audioEffectsAttach.detach()
+    playlistEngine.destroy()
   }
 
-  private setupListeners = (): void => {
-    if (!this.playerInstance) return
-    setupPlayerListeners(this.playerInstance, this.callbacks)
+  private rewireStatusHandler = (): void => {
+    wirePlaylistStatus(this.callbacks, () => this.statusMuted)
+    this.statusMuted = false
   }
 
   private callbacks = createPlayerServiceCallbacks(this)
 
-  private playerInstance: AudioPlayer | null = null
-  private sourceSwap = { play: this.play, replaceAudio: this.replaceAudio }
+  private statusMuted = false
+
+  private sourceSwap = createQueueSourceSwap(this.play)
 }
 
 export const playerService = new PlayerService()
-wireTrackAutoAdvance(playerService)

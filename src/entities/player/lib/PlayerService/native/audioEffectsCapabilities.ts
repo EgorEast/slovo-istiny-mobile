@@ -4,9 +4,9 @@ import {
   type AudioEffectsSettings,
   getAudioEffectsInfo,
 } from 'audio-effects'
-import { type AudioPlayer } from 'expo-audio'
 import { ctx } from 'shared/lib/reatom-ctx'
 import { audioEffectsInfoAtom } from '../../../audio-settings'
+import { type PlayableAudio } from './playableAudio'
 
 const DEFAULT_BAND_GAIN_DB = 0
 
@@ -36,7 +36,7 @@ export const gainsForDevice = (gains: number[], info: AudioEffectsInfo): null | 
  * @param settings - Persisted balance / equalizer / pitch / rate snapshot.
  */
 export const attachWithCapabilities = async (
-  player: AudioPlayer,
+  player: PlayableAudio,
   settings: AudioEffectsSettings,
 ): Promise<AudioEffectsInfo> => {
   const info = await attachAudioEffects(player, settings)

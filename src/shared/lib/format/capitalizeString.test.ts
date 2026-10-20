@@ -9,11 +9,11 @@ describe('capitalizeString', () => {
 
   test('argument is string', () => {
     //@ts-expect-error - [] is a not a string
-    expect(() => capitalizeString([])).toThrowError(
+    expect(() => capitalizeString([])).toThrow(
       'В функцию capitalizeString можно передать только строку',
     )
     //@ts-expect-error - 0 is a not a string
-    expect(() => capitalizeString(0)).toThrowError(
+    expect(() => capitalizeString(0)).toThrow(
       'В функцию capitalizeString можно передать только строку',
     )
   })

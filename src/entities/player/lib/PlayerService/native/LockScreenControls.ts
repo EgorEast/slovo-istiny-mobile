@@ -1,16 +1,16 @@
-import { type AudioPlayer } from 'expo-audio'
 import { AppState } from 'react-native'
 import { isExpoGo } from 'shared/lib/isExpoEnvironment'
 import { reportError } from 'shared/model/error-dialog'
 import { type LockScreenMetadata } from '../types'
 import { createIconFollowUp } from './IconFollowUp'
 import { loadedRetryScheduler } from './LoadedRetryScheduler'
+import { type PlayableAudio } from './playableAudio'
 import { prepareMetadataPayload } from './prepareMetadataPayload'
 
 const LOCK_SCREEN_ERROR_MESSAGE = 'Не удалось обновить данные плеера на экране блокировки'
 
 class LockScreenControls {
-  public setMetadata = (player: AudioPlayer | null, metadata: LockScreenMetadata): void => {
+  public setMetadata = (player: null | PlayableAudio, metadata: LockScreenMetadata): void => {
     if (!player) return
 
     this.iconFollowUp.track(player, metadata)
@@ -34,7 +34,7 @@ class LockScreenControls {
   // Unlike setMetadata's in-place update path, this re-binds the media session
   // natively — required when the OS/OEM killed the foreground service and every
   // track switch went through the (silently dropped) update path.
-  public reassertMetadata = (player: AudioPlayer | null, metadata: LockScreenMetadata): void => {
+  public reassertMetadata = (player: null | PlayableAudio, metadata: LockScreenMetadata): void => {
     if (!player) return
 
     // Force full activation on subsequent setMetadata calls too
@@ -46,7 +46,7 @@ class LockScreenControls {
     )
   }
 
-  public clear = (player: AudioPlayer | null): void => {
+  public clear = (player: null | PlayableAudio): void => {
     // Invalidate any in-flight retry loop and pending activation from a previous call
     loadedRetryScheduler.invalidate()
     this.activePlayer = null
@@ -71,7 +71,7 @@ class LockScreenControls {
   // expo-audio foreground service...". Cold-start restore can reach this while
   // paused/backgrounded, so defer to the next foreground transition: lock-screen
   // controls still appear via the notification fallback and activate then.
-  private activateWhenForeground = (player: AudioPlayer, metadata: LockScreenMetadata): void => {
+  private activateWhenForeground = (player: PlayableAudio, metadata: LockScreenMetadata): void => {
     if (AppState.currentState === 'active') return this.activateMetadata(player, metadata)
 
     this.pendingActivation = { metadata, player }
@@ -90,12 +90,14 @@ class LockScreenControls {
     })
   }
 
-  private activateMetadata = (player: AudioPlayer, metadata: LockScreenMetadata): void => {
+  private activateMetadata = (player: PlayableAudio, metadata: LockScreenMetadata): void => {
     if (isExpoGo) return
 
     try {
       player.setActiveForLockScreen(true, prepareMetadataPayload(metadata), {
         isLiveStream: false,
+        showNextTrack: true,
+        showPreviousTrack: true,
         showSeekBackward: true,
         showSeekForward: true,
       })
@@ -105,7 +107,7 @@ class LockScreenControls {
     }
   }
 
-  private updateMetadata = (player: AudioPlayer, metadata: LockScreenMetadata): void => {
+  private updateMetadata = (player: PlayableAudio, metadata: LockScreenMetadata): void => {
     if (isExpoGo) return
 
     try {
@@ -117,9 +119,9 @@ class LockScreenControls {
   }
 
   private readonly iconFollowUp = createIconFollowUp(this.setMetadata)
-  private activePlayer: AudioPlayer | null = null
+  private activePlayer: null | PlayableAudio = null
   private activationSubscription: null | ReturnType<typeof AppState.addEventListener> = null
-  private pendingActivation: { metadata: LockScreenMetadata; player: AudioPlayer } | null = null
+  private pendingActivation: { metadata: LockScreenMetadata; player: PlayableAudio } | null = null
 }
 
 export const lockScreenControls = new LockScreenControls()

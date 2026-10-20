@@ -1,6 +1,7 @@
 import { type Ctx } from '@reatom/framework'
 import { setSermonCachingEnabled } from 'entities/offline-cache'
 import {
+  applyRepeatMode,
   setBalanceAction,
   setEqEnabledAction,
   setEqGainsAction,
@@ -54,7 +55,10 @@ export const applyPlayerScalars = async (
   if (!player) return
 
   if (player.playbackRate !== undefined) await setPlaybackRateAction(ctx, player.playbackRate)
-  if (player.repeatMode !== undefined) await setRepeatModeAction(ctx, player.repeatMode)
+  if (player.repeatMode !== undefined) {
+    await setRepeatModeAction(ctx, player.repeatMode)
+    applyRepeatMode(player.repeatMode)
+  }
   if (player.balance !== undefined) await setBalanceAction(ctx, player.balance)
   if (player.pitch !== undefined) await setPitchAction(ctx, player.pitch)
   if (player.equalizerEnabled !== undefined) await setEqEnabledAction(ctx, player.equalizerEnabled)

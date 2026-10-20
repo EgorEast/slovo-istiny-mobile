@@ -1,4 +1,4 @@
-import { type AudioPlayer } from 'expo-audio'
+import { type AudioPlayer, type AudioPlaylist } from 'expo-audio'
 import { requireNativeModule } from 'expo-modules-core'
 import { Platform } from 'react-native'
 import {
@@ -8,7 +8,10 @@ import {
 } from './types'
 
 interface AudioEffectsNativeModule {
-  attach: (playerHandle: AudioPlayer, settings: AudioEffectsSettings) => Promise<AudioEffectsInfo>
+  attach: (
+    playerHandle: AudioPlayer | AudioPlaylist,
+    settings: AudioEffectsSettings,
+  ) => Promise<AudioEffectsInfo>
   detach: () => void
   getInfo: () => AudioEffectsInfo
   openOutputSwitcher: () => void
@@ -33,7 +36,7 @@ const nativeModule = (() => {
 })()
 
 export const attachAudioEffects = async (
-  playerHandle: AudioPlayer,
+  playerHandle: AudioPlayer | AudioPlaylist,
   settings: AudioEffectsSettings,
 ): Promise<AudioEffectsInfo> => {
   // The native attach hops to the main queue (ExoPlayer lives there) and

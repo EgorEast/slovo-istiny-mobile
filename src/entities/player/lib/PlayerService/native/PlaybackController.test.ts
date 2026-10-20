@@ -4,6 +4,8 @@ import { currentAudioAtom, durationAtom } from '../../../model'
 import { savePlaybackProgress } from '../../playbackProgress'
 import { playbackController } from './PlaybackController'
 
+jest.mock('expo-audio', () => ({ createAudioPlaylist: jest.fn() }))
+
 jest.mock('shared/lib/reatom-ctx', () => ({ ctx: { get: jest.fn() } }))
 
 jest.mock('shared/model/error-dialog', () => ({ reportError: jest.fn() }))
@@ -23,10 +25,6 @@ jest.mock('../../../model', () => ({
 jest.mock('../../../playback-rate', () => ({ setPlaybackRateAction: jest.fn() }))
 
 jest.mock('../../playbackProgress', () => ({ savePlaybackProgress: jest.fn() }))
-
-jest.mock('./AudioLoader', () => ({
-  audioLoader: { getLastResolvedUrl: jest.fn() },
-}))
 
 jest.mock('entities/listening-history/@x/player', () => ({
   flushHistoryProgressAction: jest.fn(),

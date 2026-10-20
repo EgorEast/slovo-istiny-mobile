@@ -1,28 +1,25 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import { markHistoryCompletedAction } from 'entities/listening-history/@x/player'
-import { CURRENT_AUDIO, CURRENT_PLAYLIST, CURRENT_REPEAT_MODE } from 'shared/config'
+import {
+  COMPLETION_REMAINING_MS,
+  getResumePosition,
+  historyAtom,
+  markHistoryCompletedAction,
+  recordSermonSwitchAction,
+} from 'entities/listening-history/@x/player'
+import { CURRENT_AUDIO, CURRENT_PLAYLIST } from 'shared/config'
 import { ctx } from 'shared/lib/reatom-ctx'
 import { reportError } from 'shared/model/error-dialog'
-import { isOnlineAtom } from 'shared/model/network'
-import { durationAtom, positionAtom, RepeatMode, repeatModeSchema } from '../../../../model'
-import { guardOfflinePlayback } from '../../../playOfflineGuard'
-import { audioLoader } from '../AudioLoader'
-import {
-  findCurrentTrackIndex,
-  getNextTrack,
-  isLastTrackInPlaylist,
-  shouldRepeatTrack,
-  shouldRestartQueue,
-} from './navigation'
+import { setCurrentAudioAction } from '../../../../model'
+import { savePlaybackProgress } from '../../../playbackProgress'
+import { startBackgroundCaching } from '../../BackgroundCachingService'
+import { lockScreenControls } from '../LockScreenControls'
+import { playlistEngine } from '../PlaylistEngine'
 import { parseAudioPlayerData, parsePlaylistData } from './parsers'
-import { playFirstTrackInQueue, playNextTrack, repeatCurrentTrack } from './playback'
-import { type OldTrackFlush, type PlayerActions } from './types'
 
-const buildOldFlush = (sermonId: string): OldTrackFlush => ({
-  oldDurationMs: ctx.get(durationAtom),
-  oldPositionMs: ctx.get(positionAtom),
-  oldSermonId: sermonId,
-})
+const ADVANCE_ERROR_MESSAGE = 'Ошибка при автоматическом переходе к следующей проповеди'
+const COMPLETION_ERROR_MESSAGE = 'Ошибка при завершении записи истории'
+
+const toMs = (seconds: number | undefined): number => Math.floor((seconds ?? 0) * 1000)
 
 const reportParseFailure = (
   key: string,
@@ -34,93 +31,89 @@ const reportParseFailure = (
   reportError(new Error(`Не удалось прочитать данные ${label} из хранилища`))
 }
 
-const isAdvanceBlocked = (audioUrl: null | string | undefined): Promise<boolean> =>
-  audioUrl ? guardOfflinePlayback(audioUrl, ctx.get(isOnlineAtom)) : Promise.resolve(false)
-
+/**
+ * Native-switch coordinator: the playlist advances tracks natively (surviving a
+ * frozen JS process), and JS reconciles the switch after the fact. Manual
+ * next/prev switches are already committed by the JS funnel before skipTo —
+ * storage then already holds the new track id, so the event is ignored here.
+ */
 class TrackAutoAdvanceService {
-  public ensurePlayerActions(): PlayerActions {
-    if (!this.playerActions)
-      throw new Error('PlayerActions not set. Call setPlayerActions() before using the service.')
-    return this.playerActions
-  }
-
-  public setPlayerActions(actions: PlayerActions): void {
-    this.playerActions = actions
-  }
-
-  public async handleTrackEnd(): Promise<void> {
+  public async handleTrackChanged(previousIndex: number, currentIndex: number): Promise<void> {
     try {
-      // Partial download end = buffer edge — pause; advance only after FULL recording finishes.
-      if (audioLoader.isPartialSource()) {
-        await this.ensurePlayerActions().pause()
-        return
-      }
-      await this.advanceToNextTrack()
-    } catch (error) {
-      console.error('[TrackAutoAdvanceService] handleTrackEnd failed:', error)
-      reportError(error, 'Ошибка при автоматическом переходе к следующей проповеди')
-    }
-  }
-
-  private async advanceToNextTrack(): Promise<void> {
-    const storedMap = Object.fromEntries(
-      await AsyncStorage.multiGet([CURRENT_AUDIO, CURRENT_PLAYLIST, CURRENT_REPEAT_MODE]),
-    )
-    const storedCurrentAudio = storedMap[CURRENT_AUDIO]
-    const storedCurrentPlaylist = storedMap[CURRENT_PLAYLIST]
-    const storedRepeatMode = storedMap[CURRENT_REPEAT_MODE]
-    const { data: repeatMode = RepeatMode.Off } = repeatModeSchema.safeParse(storedRepeatMode)
-    const currentAudio = parseAudioPlayerData(storedCurrentAudio)
-    const currentPlaylist = parsePlaylistData(storedCurrentPlaylist)
-
-    if (!currentAudio) {
-      reportParseFailure('CURRENT_AUDIO', storedCurrentAudio, 'проповеди')
-      return
-    }
-    if (!currentPlaylist) {
-      reportParseFailure('CURRENT_PLAYLIST', storedCurrentPlaylist, 'плейлиста')
-      return
-    }
-
-    const playerActions = this.ensurePlayerActions()
-    const currentIndex = findCurrentTrackIndex(currentAudio.id, currentPlaylist.sermons)
-    const isLastTrack = isLastTrackInPlaylist(currentIndex, currentPlaylist.sermons.length)
-    const oldFlush = buildOldFlush(currentAudio.id)
-
-    if (shouldRepeatTrack(repeatMode)) {
-      if (!currentAudio.audioUrl || (await isAdvanceBlocked(currentAudio.audioUrl))) return
-
-      await repeatCurrentTrack(
-        playerActions,
-        currentAudio,
-        currentPlaylist,
-        currentAudio.audioUrl,
-        oldFlush,
+      if (previousIndex < 0 || previousIndex === currentIndex) return
+      const storedMap = Object.fromEntries(
+        await AsyncStorage.multiGet([CURRENT_AUDIO, CURRENT_PLAYLIST]),
       )
-      return
-    }
-
-    if (isLastTrack) {
-      if (shouldRestartQueue(repeatMode, isLastTrack)) {
-        if (await isAdvanceBlocked(currentPlaylist.sermons[0]?.audioUrl)) return
-        await playFirstTrackInQueue(playerActions, currentPlaylist, oldFlush)
+      const storedAudio = parseAudioPlayerData(storedMap[CURRENT_AUDIO])
+      const playlist = parsePlaylistData(storedMap[CURRENT_PLAYLIST])
+      if (!playlist) {
+        reportParseFailure('CURRENT_PLAYLIST', storedMap[CURRENT_PLAYLIST], 'плейлиста')
         return
       }
-      void markHistoryCompletedAction(ctx, currentAudio.id, ctx.get(durationAtom)).catch(error => {
-        console.error('[TrackAutoAdvanceService] markHistoryCompletedAction failed:', error)
-        reportError(error, 'Ошибка при завершении записи истории')
+      const newTrack = playlistEngine.getTrackAt(currentIndex)
+      if (!newTrack) return
+      if (storedAudio?.id === newTrack.id) return
+
+      const previousTrack = playlistEngine.getTrackAt(previousIndex)
+      const oldSermonId = previousTrack?.id ?? storedAudio?.id
+      if (!oldSermonId) return
+
+      this.completedQueueEndIndex = -1
+      const newAudio = { ...newTrack, artwork: playlist.artwork }
+      const snapshot = playlistEngine.getSnapshot(previousIndex)
+      await setCurrentAudioAction(ctx, newAudio)
+      void recordSermonSwitchAction(ctx, {
+        markOldCompleted: true,
+        newAudio,
+        newPlaylist: playlist,
+        oldDurationMs: toMs(snapshot?.duration),
+        oldPositionMs: toMs(snapshot?.currentTime),
+        oldSermonId,
       })
-      await playerActions.pause()
-      return
+
+      const resumeMs = getResumePosition(ctx.get(historyAtom), newTrack.id)
+      await this.seekToResume(resumeMs)
+      await savePlaybackProgress(ctx, { positionMs: resumeMs, sermonId: newTrack.id })
+      lockScreenControls.setMetadata(playlistEngine.getPlaylist(), {
+        albumTitle: playlist.title,
+        artist: newAudio.artist,
+        artworkUrl: newAudio.artwork,
+        title: newAudio.title,
+      })
+      startBackgroundCaching(newAudio.audioUrl)
+    } catch (error) {
+      console.error('[TrackAutoAdvanceService] handleTrackChanged failed:', error)
+      reportError(error, ADVANCE_ERROR_MESSAGE)
     }
-
-    const nextTrack = getNextTrack(currentPlaylist, currentIndex)
-    if (!nextTrack?.audioUrl || (await isAdvanceBlocked(nextTrack.audioUrl))) return
-
-    await playNextTrack(playerActions, nextTrack, currentPlaylist, nextTrack.audioUrl, oldFlush)
   }
 
-  private playerActions: null | PlayerActions = null
+  public async handleQueueEnd(): Promise<void> {
+    try {
+      const lastIndex = playlistEngine.getTrackCount() - 1
+      if (playlistEngine.getCurrentIndex() !== lastIndex) return
+      if (playlistEngine.getLoop() !== 'none') return
+      if (this.completedQueueEndIndex === lastIndex) return
+      const lastTrack = playlistEngine.getTrackAt(lastIndex)
+      if (!lastTrack) return
+
+      this.completedQueueEndIndex = lastIndex
+      const snapshot = playlistEngine.getSnapshot(lastIndex)
+      await markHistoryCompletedAction(ctx, lastTrack.id, toMs(snapshot?.duration))
+      playlistEngine.pause()
+    } catch (error) {
+      console.error('[TrackAutoAdvanceService] handleQueueEnd failed:', error)
+      reportError(error, COMPLETION_ERROR_MESSAGE)
+    }
+  }
+
+  private async seekToResume(resumeMs: number): Promise<void> {
+    if (resumeMs <= 0) return
+    const durationMs = playlistEngine.getStatus().durationMs
+    if (durationMs > 0 && resumeMs >= durationMs - COMPLETION_REMAINING_MS) return
+    await playlistEngine.seekTo(resumeMs / 1000)
+  }
+
+  private completedQueueEndIndex = -1
 }
 
 export const trackAutoAdvanceService = new TrackAutoAdvanceService()

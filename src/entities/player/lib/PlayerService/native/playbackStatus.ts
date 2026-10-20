@@ -1,5 +1,5 @@
-import { type AudioPlayer } from 'expo-audio'
 import { type PlaybackStatus } from '../types'
+import { type PlayableAudio } from './playableAudio'
 
 const DEFAULT_PLAYBACK_STATUS: PlaybackStatus = {
   duration: 0,
@@ -7,7 +7,7 @@ const DEFAULT_PLAYBACK_STATUS: PlaybackStatus = {
   position: 0,
 }
 
-export const resolvePlaybackStatus = (player: AudioPlayer | null): PlaybackStatus => {
+export const resolvePlaybackStatus = (player: null | PlayableAudio): PlaybackStatus => {
   if (!player?.isLoaded) return DEFAULT_PLAYBACK_STATUS
 
   return {

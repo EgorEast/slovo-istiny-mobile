@@ -8,9 +8,7 @@ import { ctx } from 'shared/lib/reatom-ctx'
 import { currentAudioAtom, durationAtom } from '../../../model'
 import { playbackController } from './PlaybackController'
 
-jest.mock('./AudioLoader', () => ({
-  audioLoader: { getLastResolvedUrl: jest.fn() },
-}))
+jest.mock('expo-audio', () => ({ createAudioPlaylist: jest.fn() }))
 
 const createPlayerStub = (): AudioPlayer =>
   ({ isLoaded: true, seekTo: jest.fn().mockResolvedValue(undefined) }) as unknown as AudioPlayer
