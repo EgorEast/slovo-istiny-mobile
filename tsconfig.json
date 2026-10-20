@@ -1,6 +1,6 @@
 {
   // Relative path on purpose: expo's package.json "exports" map does not expose the tsconfig
-  // subpath, so require.resolve-based tooling (steiger/tsconfck) cannot resolve "expo/tsconfig.base". See docs/debt.md
+  // subpath, so require.resolve-based tooling (steiger/tsconfck) cannot resolve "expo/tsconfig.base". See docs/decisions.md
   "extends": "./node_modules/expo/tsconfig.base.json",
   "compilerOptions": {
     "strict": true,
