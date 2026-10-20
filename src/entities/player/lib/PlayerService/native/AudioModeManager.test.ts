@@ -51,6 +51,13 @@ describe('AudioModeManager', () => {
     await audioModeManager.configure()
 
     expect(mockedSetAudioModeAsync).toHaveBeenCalledTimes(1)
+    expect(mockedSetAudioModeAsync).toHaveBeenCalledWith(
+      expect.objectContaining({
+        interruptionMode: 'doNotMixPersistent',
+        playsInSilentMode: true,
+        shouldPlayInBackground: true,
+      }),
+    )
   })
 
   test('calling configure() twice sequentially invokes setAudioModeAsync twice (re-assert)', async () => {

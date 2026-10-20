@@ -3,11 +3,13 @@ import { AppState } from 'react-native'
 
 /**
  * Audio mode configuration for expo-audio.
- * Using 'doNotMix' interruption mode ensures playback pauses completely
- * on interruptions (like phone calls) instead of just ducking/muting.
+ * Using 'doNotMixPersistent' interruption mode requests PERMANENT audio focus
+ * (Android AUDIOFOCUS_GAIN instead of AUDIOFOCUS_GAIN_TRANSIENT, iOS
+ * shouldNotifyOthersOnDeactivation=false), so other apps don't auto-resume over
+ * us. Upstream expo-audio 58 (PR #49101) replaces the old native patch.
  */
 const AUDIO_MODE_CONFIG: Partial<AudioMode> = {
-  interruptionMode: 'doNotMix',
+  interruptionMode: 'doNotMixPersistent',
   playsInSilentMode: true,
   shouldPlayInBackground: true,
 }
