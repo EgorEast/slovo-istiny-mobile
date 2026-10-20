@@ -148,5 +148,6 @@
 ## Tooling
 
 - [ ] **`yarn check:unused` без загруженного `.env` падает при загрузке `app.config.ts`.** knip не читает `.env`, а `app.config.ts` требует `EXPO_PUBLIC_*` → процесс завершается с кодом 2 ещё до анализа. Обход: `set -a; . ./.env; set +a; yarn check:unused` (находок 0 в обоих случаях). — `scripts/`, `knip.config.ts` — пред-существующее; вернуться при настройке env-загрузки в скриптах.
+- [ ] Revert tsconfig.json to the idiomatic extends "expo/tsconfig.base" — tsconfig.json — once expo's package.json exports map exposes ./tsconfig.base.json (currently require.resolve of the subpath fails and crashes steiger/tsconfck; see the comment in tsconfig.json)
 
 
