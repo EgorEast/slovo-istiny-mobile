@@ -5,22 +5,22 @@
 
 ## Обзор
 
-Аудиоплеер построен на `expo-audio` (`~57.0.5`) и отвечает за воспроизведение проповедей, очередь, режимы повтора, lock-screen-управление и фоновое воспроизведение.
+Аудиоплеер построен на `expo-audio` (`~58.0.9`) и отвечает за воспроизведение проповедей, очередь, режимы повтора, lock-screen-управление и фоновое воспроизведение.
 
 - **iOS:** фоновое воспроизведение включено через `infoPlist.UIBackgroundModes: ["audio"]` и плагин `expo-audio` с `enableBackgroundPlayback: true` (`app.config.ts`).
 - **Android:** foreground-service через permission `FOREGROUND_SERVICE` / `FOREGROUND_SERVICE_MEDIA_PLAYBACK` (`app.config.ts`).
-- Управление аудио-режимом — `src/entities/player/lib/PlayerService/native/AudioModeManager.ts` (`interruptionMode: 'doNotMix'`, `playsInSilentMode: true`, `shouldPlayInBackground: true`).
+- Управление аудио-режимом — `src/entities/player/lib/PlayerService/native/AudioModeManager.ts` (`interruptionMode: 'doNotMixPersistent'`, `playsInSilentMode: true`, `shouldPlayInBackground: true`).
 
-### Нативный патч audio-focus (expo-audio 57.0.5)
+### Android audio-focus (expo-audio 58, без патча)
 
-`expo-audio@57.0.5` содержит два Android-бага audio-focus (исправлены апстримом только в 58.0.0):
+До SDK 58 Android-фокус приходилось чинить патчем `patches/expo-audio+57.0.5.patch` — в `57.0.x` было два бага: запрос фокуса для `doNotMix` шёл как `AUDIOFOCUS_GAIN_TRANSIENT`/`USAGE_UNKNOWN` (чужое приложение могло вернуться поверх проповеди), а фокус освобождался при входе ExoPlayer в `Player.STATE_BUFFERING` (на время буферизации `isPlaying` = `false`) и больше не запрашивался.
 
-- запрос фокуса для `doNotMix` использовал `AUDIOFOCUS_GAIN_TRANSIENT` и `USAGE_UNKNOWN` — временный фокус позволял другим приложениям (будильник, чужая музыка) автоматически возвращаться поверх нашей проповеди;
-- фокус освобождался при входе ExoPlayer в `STATE_BUFFERING` (на время буферизации `isPlaying` становится `false`) и больше не запрашивался — после первой перебуферизации воспроизведение становилось невидимым для focus-стека и микшировалось с другими приложениями.
+В 58.0.9 поведение нативное, патч **удалён**:
 
-Патч `patches/expo-audio+57.0.5.patch` (файл `node_modules/expo-audio/android/src/main/java/expo/modules/audio/AudioModule.kt`) меняет `requestAudioFocus()` на `AUDIOFOCUS_GAIN` + `USAGE_MEDIA` для `doNotMix` и `shouldReleaseFocus()` — не бросает фокус при `Player.STATE_BUFFERING`. Патч накладывается автоматически `postinstall`'ом (`patch-package`, см. `package.json`).
+- `Playable.hasActivePlaybackIntent()` удерживает фокус во время `Player.STATE_BUFFERING` — перебуферизация больше не делает воспроизведение невидимым для focus-стека;
+- добавлен режим `interruptionMode: 'doNotMixPersistent'` — постоянный `AUDIOFOCUS_GAIN` вместо transient (expo-audio CHANGELOG 58.0.9, PR #49101). Приложение мигрировало на него в `AudioModeManager.ts` (`'doNotMix'` → `'doNotMixPersistent'`).
 
-Апстрим: `expo/expo#50072`, `expo/expo#48682`; исправлено в 58.0.0 (PR #49101, #49108). **Удалить/перепроверить при апгрейде `expo-audio` до 58** — тогда патч станет лишним.
+Апстрим по-прежнему **не** ставит `USAGE_MEDIA` в `AudioAttributes` — принято: постоянный gain закрывает проблему авто-возврата чужого звука, ради которой старый патч добавлял `USAGE_MEDIA`. Верификация при апгрейде пакета — `yarn check:patches` (generic-гвард сверяет версии в именах патчей с установленными).
 
 ## Архитектура PlayerService
 

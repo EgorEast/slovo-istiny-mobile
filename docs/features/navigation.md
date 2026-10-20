@@ -48,9 +48,9 @@
 
 Провайдеры — `app/_layout.tsx`: `reatomContext.Provider` (единый `ctx`), `ThemeProvider`, `GestureHandlerRootView`, `ErrorBoundary` + `GlobalErrorHandler`. Здесь же модульные `initializePlayer()` и `initServerUrlAction(ctx)`.
 
-### Патч expo-router: guard для `onUnhandledLinking` (SDK 57)
+### Патч expo-router: guard для `onUnhandledLinking` (удалён в SDK 58)
 
-`patches/expo-router+57.0.28.patch` (имя файла следует за версией пакета) — устраняет DEV-only warning «Can't perform a React state update on a component that hasn't mounted yet» при старте приложения. Корень: в `useLinking.native.js` промис `getInitialState()` резолвится до монтирования `ContextNavigator`/`NavigationContainer`, и `onUnhandledLinking` (= `setLastUnhandledLink`, setState) вызывается в `.then()` во время рендера. Без патча warning срабатывает детерминированно (setState в `.then()` до маунта); патч (а) оборачивает вызов в `setTimeout(..., 0)` и (б) пропускает его через guard `isMountedRef` (`useRef(false)` → `true` в mount-эффекте → `false` в cleanup), поэтому setState не диспатчится ни до первого коммита дерева приложения под React 19, ни после анмаунта (стек: `build/fork/useLinking.native.js:127`). К коду приложения отношения не имеет. Удалить при миграции на Expo SDK 58 — апстрим переписывает `getInitialState` (expo#47659 bot-closed, PR #46653 closed unmerged, направление фикса — PR #49063).
+`patches/expo-router+57.0.28.patch` **удалён** при миграции на SDK 58: в expo-router 58.0.24 символ `onUnhandledLinking` полностью убран из сборки, поэтому и источника DEV-warning'а «Can't perform a React state update on a component that hasn't mounted yet» больше нет. В SDK 57 патч правил `build/fork/useLinking.native.js`, где `.then()` `getInitialState()` до монтирования `NavigationContainer` дёргал `onUnhandledLinking` (= `setLastUnhandledLink`, setState); патч откладывал вызов через `setTimeout(..., 0)` и пропускал его через guard `isMountedRef`. К коду приложения отношения не имел — Reatom-атомы не трогают навигационное состояние. Отдельно от этого живёт workaround cold-start гонки 150 мс — `useColdStartLinkRecovery` остаётся (см. [`../debt.md`](../debt.md) → Navigation).
 
 ## Табы
 

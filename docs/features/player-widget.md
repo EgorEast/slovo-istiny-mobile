@@ -11,7 +11,7 @@
 
 ## Текущее состояние проекта (что уже помогает)
 
-- Плеер: `expo-audio` (`~57.0.5`), обёртка `src/entities/player/lib/PlayerService/index.native.ts` (singleton `playerService`).
+- Плеер: `expo-audio` (`~58.0.9`), обёртка `src/entities/player/lib/PlayerService/index.native.ts` (singleton `playerService`).
 - expo-audio уже поднимает Media3 `MediaSessionService` (`expo.modules.audio.service.AudioControlsService`, foreground, `mediaPlayback`) — объявлен в генерируемом манифесте; разрешения FOREGROUND_SERVICE, FOREGROUND_SERVICE_MEDIA_PLAYBACK, POST_NOTIFICATIONS, MODIFY_AUDIO_SETTINGS уже в `app.config.ts`.
 - `AudioControlsService.onStartCommand` принимает explicit intent-экшены: `expo.modules.audio.action.PLAY / PAUSE / TOGGLE / SEEK_FORWARD / SEEK_BACKWARD` (seek ±10s). Именно так работают кнопки media-уведомления на Android ≤12 → кнопки виджета могут переиспользовать этот механизм напрямую, без MediaController handshake и без JS round-trip.
 - Ограничение expo-audio: НЕТ нативных next/prev экшенов (`AudioMediaSessionCallback` намеренно удаляет COMMAND_SEEK_TO_NEXT/PREVIOUS) — очередь живёт в JS (`src/entities/player/ui/PlayerControls/usePlayerToggleTrack.ts`, `TrackAutoAdvanceService/`).

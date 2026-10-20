@@ -147,14 +147,14 @@ Plain ES2018, без бандлера. `// @ts-check` + `/// <reference lib="web
 
 ### Патч RNGH: `setPointerCapture` / `releasePointerCapture` на web
 
-`patches/react-native-gesture-handler+2.32.0.patch` оборачивает вызовы `target.setPointerCapture(pointerId)` и `target.releasePointerCapture(pointerId)` в `PointerEventManager` (обе сборки: `lib/module/` — web, `lib/commonjs/` — main-фолбэк) в try/catch. Защищены все три call-site'а: `pointerDownCallback` (set), `pointerUpCallback` (release) и `pointerMoveCallback` (set). Без этого клик по кнопке внутри `GestureDetector` (весь полноэкранный плеер обёрнут в `Gesture.Pan()`, поэтому триггерится на любой клик) ронял в консоль:
+`patches/react-native-gesture-handler+3.3.0.patch` оборачивает вызовы `target.setPointerCapture(pointerId)` и `target.releasePointerCapture(pointerId)` в `PointerEventManager` в try/catch. Патчатся два файла: `src/web/tools/PointerEventManager.ts` (исходник) и `lib/module/web/tools/PointerEventManager.js` (web-сборка); `lib/commonjs` в RNGH 3.x больше не существует. Защищены все три call-site'а: `pointerDownCallback` (set), `pointerUpCallback` (release) и `pointerMoveCallback` (set). Без этого клик по кнопке внутри `GestureDetector` (весь полноэкранный плеер обёрнут в `Gesture.Pan()`, поэтому триггерится на любой клик) ронял в консоль:
 
 ```
 Web ERROR [NotFoundError: Failed to execute 'releasePointerCapture' on 'Element': No active pointer with the given id is found.]
-pointerUpCallback (node_modules/react-native-gesture-handler/lib/module/web/tools/PointerEventManager.js:61)
+pointerUpCallback (node_modules/react-native-gesture-handler/lib/module/web/tools/PointerEventManager.js)
 ```
 
-Причина — stale/synthetic pointer id: к моменту обработки события указатель уже не активен (быстрый клик), либо события синтетические — браузерные расширения вроде Vimium (`f`-хинты) диспатчат pointer-события без активного OS-указателя, и браузер кидает `NotFoundError`. Потеря capture косметическая — RNGH продолжает работать через per-element tracking. Патч применяется `postinstall: patch-package` (web-сборка резолвит `lib/module/` через mainFields `['browser', 'module', 'main']`). **Убрать патч, когда RNGH выпустит версию с апстрим-guard'ом** (см. [`../debt.md`](../debt.md)).
+Причина — stale/synthetic pointer id: к моменту обработки события указатель уже не активен (быстрый клик), либо события синтетические — браузерные расширения вроде Vimium (`f`-хинты) диспатчат pointer-события без активного OS-указателя, и браузер кидает `NotFoundError`. Потеря capture косметическая — RNGH продолжает работать через per-element tracking. Патч применяется `postinstall: patch-package` (web-сборка резолвит `lib/module/` через mainFields `['browser', 'module', 'main']`). **В RNGH 3.3.0 апстрим добавил только guard `role !== 'button'` — try/catch вокруг pointer capture по-прежнему нет**, поэтому патч пересоздан против 3.3.0 (SDK 58, 2026-10-20) и остаётся; убрать, когда появится апстрим-guard (см. [`../debt.md`](../debt.md)).
 
 ## Десктопный layout
 

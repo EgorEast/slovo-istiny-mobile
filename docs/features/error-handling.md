@@ -103,8 +103,10 @@
 `Font.loadAsync`: async-отклонение шрифта (`FontObserver` 12-сек таймаут, крупные
 TTF ~1.3 МБ) утекало как unhandled promise rejection, которое ловил
 `GlobalErrorHandler`. Шрифт при этом всё равно загружался через `@font-face` CSS,
-поэтому модалка была шумом. Исправлено патчем expo-font (глотает async-отклонение),
-см. [`decisions.md`](../decisions.md) → «Патч expo-font». Фильтрация в `GlobalErrorHandler`
+поэтому модалка была шумом. Исправлено патчем expo-font (глотает async-отклонение);
+патч пересоздан против 58.0.9 после переписывания апстримом `FontLoader.web.js` —
+тот же `.catch(() => {})`, та же мотивация. См.
+[`decisions.md`](../decisions.md) → «Патч expo-font». Фильтрация в `GlobalErrorHandler`
 сознательно не добавлялась.
 
 ## Информационный диалог (не ошибка)
