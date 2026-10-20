@@ -1,6 +1,6 @@
 # Состояние (Reatom)
 
-**Стек:** `@reatom/framework` (`^3.4.68`), `@reatom/npm-react` (`^3.10.6`)
+**Стек:** `@reatom/framework`, `@reatom/npm-react`
 
 ## Reatom в проекте
 

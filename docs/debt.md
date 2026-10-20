@@ -74,7 +74,7 @@
 
 ## Native build (Gradle)
 
-- [ ] **Kotlin-каталог RN 0.88.0 декларирует 2.2.0, а KGP в сборке — 2.2.10 (не-фатальный warning ExpoRootProject).** `node_modules/react-native/gradle/libs.versions.toml` (upstream) — сборка использует версию плагина, warning косметический. Вернуться при апгрейде RN; руками не чиним — `android/` генерат (`expo prebuild`), правка upstream-файла в `node_modules` бессмысленна.
+- [ ] **Kotlin-каталог RN 0.88 декларирует 2.2.0, а KGP в сборке — 2.2.10 (не-фатальный warning ExpoRootProject).** `node_modules/react-native/gradle/libs.versions.toml` (upstream) — сборка использует версию плагина, warning косметический. Вернуться при апгрейде RN; руками не чиним — `android/` генерат (`expo prebuild`), правка upstream-файла в `node_modules` бессмысленна.
 
 ## Build flavors
 

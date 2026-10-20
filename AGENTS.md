@@ -168,6 +168,8 @@ See [`docs/BUILD-LOCAL.md`](docs/BUILD-LOCAL.md) → «Prebuild и config-пла
    - Шаги-визуализации (tapActionId, мигание таба) не считаются шагами тура: прикрепляются как переходы (exit — к предыдущей карточке, entry — к следующей), не учитываются в «Шаг N из M»; «Назад» всегда возвращается к карточке.
    - Если тур стартует на экране из его `screens` — подводка (интро-карточка и таб-переходы) пропускается: первый показанный шаг — первая карточка этого экрана, счётчик «Шаг 1 из N»; интро-текст в данных остаётся для стартов с чужих экранов.
 
+7. **Версии пакетов в доках.** По возможности не указывать версии пакетов вовсе; где версия необходима — минимальный порог («v12.4+», «SDK 58+»). Era-маркеры («SDK 58», «RN 0.88») — только там, где текст привязан к поведению конкретной эпохи. Исторические версии в past-tense и литеральные имена патчей — исключения. Точная текущая версия пакета в доке — ошибка ревью. Источник истины — `package.json` и `yarn.lock`; подробнее — в [`docs/conventions.md`](docs/conventions.md) → «Ведение документации docs/».
+
 Полные правила ведения docs — в `docs/README.md` и `docs/conventions.md`. AGENTS.md и docs/ должны оставаться консистентными.
 
 ### Обязательное покрытие резервной копией
@@ -747,5 +749,5 @@ await tokenStorage.clearTokens()
 
 3. **FSD Insignificant Slice:** Rule set to 'warn' - single-use features should be relocated eventually
 4. **No Semicolons:** Project uses no semicolons, enforced by ESLint
-5. **React 19:** Project uses React 19.3.0
-6. **Expo SDK 58:** Using Expo SDK ~58.0.16
+5. **React 19:** Project uses React 19
+6. **Expo SDK 58:** Using Expo SDK 58 (RN 0.88)

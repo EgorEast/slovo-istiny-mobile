@@ -11,10 +11,10 @@
 
 ## Текущее состояние проекта (что уже помогает)
 
-- Плеер: `expo-audio` (`~58.0.9`), обёртка `src/entities/player/lib/PlayerService/index.native.ts` (singleton `playerService`).
+- Плеер: `expo-audio`, обёртка `src/entities/player/lib/PlayerService/index.native.ts` (singleton `playerService`).
 - expo-audio уже поднимает Media3 `MediaSessionService` (`expo.modules.audio.service.AudioControlsService`, foreground, `mediaPlayback`) — объявлен в генерируемом манифесте; разрешения FOREGROUND_SERVICE, FOREGROUND_SERVICE_MEDIA_PLAYBACK, POST_NOTIFICATIONS, MODIFY_AUDIO_SETTINGS уже в `app.config.ts`.
 - `AudioControlsService.onStartCommand` принимает explicit intent-экшены: `expo.modules.audio.action.PLAY / PAUSE / TOGGLE / SEEK_FORWARD / SEEK_BACKWARD` (seek ±10s). Именно так работают кнопки media-уведомления на Android ≤12 → кнопки виджета могут переиспользовать этот механизм напрямую, без MediaController handshake и без JS round-trip.
-- Нативная очередь `AudioPlaylist` появилась в expo-audio 58: очередь живёт в нативном движке (`native/PlaylistEngine.ts`), JS только сверяет `trackChanged` (см. `native/TrackAutoAdvanceService/`). **Кнопки next/prev на lock screen и в уведомлении сейчас не выставляются** (продуктовый выбор: `showNextTrack`/`showPreviousTrack` опущены — нативный дефолт `false`, остаются только seek backward/forward). Ранее вторая причина была технической: апстрим-баг 58.0.9 — JS-геттер `loop` у `AudioPlaylist` без main-thread hop; он исправлен локальным патчем `patches/expo-audio+58.0.9.patch` (expo-audio собирается из исходников, см. [decisions.md](../decisions.md)), поэтому включение next/prev теперь безопасно. Для виджета это значит, что next/prev теоретически можно отправлять нативной media-командой (MediaController/MediaSession), но пока этот канал не включаем — это продуктовое решение; `AudioControlsService` по-прежнему принимает только explicit intents `PLAY/PAUSE/TOGGLE/SEEK_*`, поэтому next/prev через сервис-интенты не пойдут.
+- Нативная очередь `AudioPlaylist` появилась в expo-audio из SDK 58: очередь живёт в нативном движке (`native/PlaylistEngine.ts`), JS только сверяет `trackChanged` (см. `native/TrackAutoAdvanceService/`). **Кнопки next/prev на lock screen и в уведомлении сейчас не выставляются** (продуктовый выбор: `showNextTrack`/`showPreviousTrack` опущены — нативный дефолт `false`, остаются только seek backward/forward). Ранее вторая причина была технической: апстрим-баг 58.0.9 — JS-геттер `loop` у `AudioPlaylist` без main-thread hop; он исправлен локальным патчем `patches/expo-audio+58.0.9.patch` (expo-audio собирается из исходников, см. [decisions.md](../decisions.md)), поэтому включение next/prev теперь безопасно. Для виджета это значит, что next/prev теоретически можно отправлять нативной media-командой (MediaController/MediaSession), но пока этот канал не включаем — это продуктовое решение; `AudioControlsService` по-прежнему принимает только explicit intents `PLAY/PAUSE/TOGGLE/SEEK_*`, поэтому next/prev через сервис-интенты не пойдут.
 - Канонический тип метаданных: `LockScreenMetadata { title, artist?, albumTitle?, artworkUrl }` в `src/entities/player/lib/PlayerService/types.ts`; artwork обязан проходить `hasUriProtocol` (`src/shared/lib/app-icon.ts`, контракт `docs/contracts/native-modules.md`, Issue #45).
 - Reatom-состояние для синхронизации: `currentAudioAtom`, `isPlayingAtom`, `positionAtom`, `durationAtom` в `src/entities/player/model.ts`.
 - `playsInSilentMode: true` уже выставлен (`AudioModeManager.ts`) — иначе play с виджета игнорируется в беззвучном режиме.
@@ -23,7 +23,7 @@
 
 ## Выбранный подход: react-native-android-widget (rnaw)
 
-- Почему: Expo SDK 58 НЕ имеет собственного API для Android-виджетов (`expo-widgets` — iOS-only). rnaw (v0.22.1, активно поддерживается, peer expo >= 54) — единственный поддерживаемый вариант; есть свой config plugin (`app.plugin.js`) → совместим с prebuild.
+- Почему: Expo SDK 58 НЕ имеет собственного API для Android-виджетов (`expo-widgets` — iOS-only). rnaw (активно поддерживается, peer expo >= 54) — единственный поддерживаемый вариант; есть свой config plugin (`app.plugin.js`) → совместим с prebuild.
 - Ключевой факт: rnaw рендерит React-дерево В BITMAP, а не RemoteViews. Следствия: обновления относительно дорогие (пушить только при смене состояния, не каждый тик), возможны баги кроппинга на лаунчерах с некорректным size-reporting.
 - Риск версии: rnaw dev-тестируется на RN 0.83 / Expo 54–55; наш SDK 58 = RN 0.88. Peers открытые, блокеров в issues нет, но заложить полдня на spike перед стартом.
 
@@ -67,7 +67,7 @@
 - **Битмап-рендеринг:** не рисовать progress bar с обновлением раз в секунду; обновления только по переходам состояния.
 - **Валидация на JS→native границе:** artwork через `hasUriProtocol`, try-catch + `reportError` вокруг нативных вызовов (`docs/contracts/native-modules.md`, Issue #45).
 - **Expo Go:** не работает (нужен dev build) — проект и так на prebuild-воркфлоу.
-- **clickAction требует Android 7+** — для minSdk SDK 58 не проблема. Опционально: `requestPinWidget` (rnaw 0.22) — кнопка «Добавить виджет» из настроек приложения, зависит от лаунчера.
+- **clickAction требует Android 7+** — для minSdk SDK 58 не проблема. Опционально: `requestPinWidget` (rnaw) — кнопка «Добавить виджет» из настроек приложения, зависит от лаунчера.
 
 ## Fallback: полностью нативный RemoteViews-виджет
 

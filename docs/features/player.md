@@ -5,7 +5,7 @@
 
 ## Обзор
 
-Аудиоплеер построен на `expo-audio` (`~58.0.9`) и отвечает за воспроизведение проповедей, очередь, режимы повтора, lock-screen-управление и фоновое воспроизведение.
+Аудиоплеер построен на `expo-audio` и отвечает за воспроизведение проповедей, очередь, режимы повтора, lock-screen-управление и фоновое воспроизведение.
 
 - **Очередь (native):** на native воспроизведение ведёт единственная нативная очередь `AudioPlaylist`, которой владеет `native/PlaylistEngine.ts`. Переход между треками выполняет движок (ExoPlayer на Android, AVQueuePlayer на iOS) **без участия JS** — это цель миграции: воспроизведение продолжается при заблокированном экране и замороженном JS-процессе. JS — наблюдатель: `trackChanged` → `TrackAutoAdvanceService.handleTrackChanged` (история, resume-seek, метаданные, кэш). Web-сервис не менялся и по-прежнему управляет треками в JS.
 - **Платформы:** Android — релизная платформа миграции (проверено на устройстве); iOS компилируется, но на устройстве не тестировался; web — прежняя реализация (`HTMLAudioElement`).
@@ -14,7 +14,7 @@
 - **Android:** foreground-service через permission `FOREGROUND_SERVICE` / `FOREGROUND_SERVICE_MEDIA_PLAYBACK` (`app.config.ts`).
 - Управление аудио-режимом — `src/entities/player/lib/PlayerService/native/AudioModeManager.ts` (`interruptionMode: 'doNotMixPersistent'`, `playsInSilentMode: true`, `shouldPlayInBackground: true`).
 
-### Android audio-focus (expo-audio 58, без патча)
+### Android audio-focus (expo-audio из SDK 58, без патча)
 
 До SDK 58 Android-фокус приходилось чинить патчем `patches/expo-audio+57.0.5.patch` — в `57.0.x` было два бага: запрос фокуса для `doNotMix` шёл как `AUDIOFOCUS_GAIN_TRANSIENT`/`USAGE_UNKNOWN` (чужое приложение могло вернуться поверх проповеди), а фокус освобождался при входе ExoPlayer в `Player.STATE_BUFFERING` (на время буферизации `isPlaying` = `false`) и больше не запрашивался.
 

@@ -12,8 +12,8 @@ maintainers, should the project ever decide to eject from Expo SDK.
 
 ## Current State
 
-- Expo SDK 58.0.16 (MIT)
-- React Native 0.88.0 (MIT)
+- Expo SDK (MIT)
+- React Native (MIT)
 - Local builds supported (see [BUILD-LOCAL.md](./BUILD-LOCAL.md))
 - EAS Cloud is optional, not required
 - No proprietary dependencies in distributed APK
