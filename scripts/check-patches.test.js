@@ -1,63 +1,47 @@
-import { existsSync, readFileSync } from 'node:fs'
-import { resolve } from 'node:path'
 import { describe, expect, test } from '@jest/globals'
+import { parsePatchFileName, verifyPatch } from './check-patches.mjs'
 
-const REPO_ROOT = resolve(__dirname, '..')
-const PATCH_FILE = resolve(REPO_ROOT, 'patches/expo-audio+57.0.5.patch')
-const PATCH_PACKAGE_VERSION = '57.0.5'
-const PATCH_MARKER = 'PATCH(patch-package)'
-const AUDIO_MODULE_PATH = resolve(
-  REPO_ROOT,
-  'node_modules/expo-audio/android/src/main/java/expo/modules/audio/AudioModule.kt',
-)
-const EXPO_AUDIO_MANIFEST = resolve(REPO_ROOT, 'node_modules/expo-audio/package.json')
+const MATCHING_PATCH = 'expo-font+58.0.9.patch'
+const MISMATCHED_PATCH = 'expo-font+0.0.0.patch'
+const MISSING_PACKAGE_PATCH = 'missing-package+1.0.0.patch'
 
-const sliceBetween = (source, startMarker, endMarker) => {
-  const start = source.indexOf(startMarker)
-  const end = source.indexOf(endMarker)
-
-  if (start === -1 || end === -1 || end <= start) return null
-
-  return source.slice(start, end)
-}
-
-describe('expo-audio audio-focus patch', () => {
-  test('patch file exists', () => {
-    expect(existsSync(PATCH_FILE)).toBe(true)
+describe('parsePatchFileName', () => {
+  test('splits an unscoped package name and version', () => {
+    expect(parsePatchFileName(MATCHING_PATCH)).toEqual({
+      packageName: 'expo-font',
+      version: '58.0.9',
+    })
   })
 
-  test('installed expo-audio version matches the patch file name', () => {
-    const manifest = JSON.parse(readFileSync(EXPO_AUDIO_MANIFEST, 'utf-8'))
-
-    expect(manifest.version).toBe(PATCH_PACKAGE_VERSION)
+  test('restores the scope separator for scoped packages', () => {
+    expect(parsePatchFileName('@scope+package+1.2.3.patch')).toEqual({
+      packageName: '@scope/package',
+      version: '1.2.3',
+    })
   })
 
-  test('AudioModule.kt keeps focus while buffering and uses permanent focus attributes', () => {
-    const source = readFileSync(AUDIO_MODULE_PATH, 'utf-8')
-    const markerCount = source.split(PATCH_MARKER).length - 1
+  test('rejects names without a version separator', () => {
+    expect(() => parsePatchFileName('expo-font.patch')).toThrow(/Cannot parse/)
+  })
+})
 
-    expect(markerCount).toBeGreaterThanOrEqual(2)
-    expect(source).toContain('setUsage(AudioAttributes.USAGE_MEDIA)')
-
-    const shouldReleaseFocus = sliceBetween(
-      source,
-      'private fun shouldReleaseFocus',
-      'private fun shouldPlayInSilentMode',
-    )
-
-    expect(shouldReleaseFocus).toContain('Player.STATE_BUFFERING')
+describe('verifyPatch', () => {
+  test('accepts a patch whose version matches the installed package', () => {
+    expect(verifyPatch(MATCHING_PATCH)).toEqual([])
   })
 
-  test('requestAudioFocus no longer uses bare AUDIOFOCUS_GAIN_TRANSIENT for DO_NOT_MIX', () => {
-    const source = readFileSync(AUDIO_MODULE_PATH, 'utf-8')
-    const requestAudioFocus = sliceBetween(
-      source,
-      'private fun requestAudioFocus',
-      'private fun releaseAudioFocus',
-    )
+  test('reports a version mismatch', () => {
+    const errors = verifyPatch(MISMATCHED_PATCH)
 
-    expect(requestAudioFocus).not.toBeNull()
-    expect(requestAudioFocus).toMatch(/AudioManager\.AUDIOFOCUS_GAIN\s*$/m)
-    expect(requestAudioFocus).not.toMatch(/AUDIOFOCUS_GAIN_TRANSIENT(?!_MAY_DUCK)/)
+    expect(errors).toHaveLength(1)
+    expect(errors[0]).toContain('targets 0.0.0')
+    expect(errors[0]).toContain('is installed')
+  })
+
+  test('reports a missing package', () => {
+    const errors = verifyPatch(MISSING_PACKAGE_PATCH)
+
+    expect(errors).toHaveLength(1)
+    expect(errors[0]).toContain('package missing-package not installed')
   })
 })

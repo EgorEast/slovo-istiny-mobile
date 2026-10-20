@@ -1,0 +1,14 @@
+diff --git a/node_modules/expo-font/build/FontLoader.web.js b/node_modules/expo-font/build/FontLoader.web.js
+index 8fefb03..0d45064 100644
+--- a/node_modules/expo-font/build/FontLoader.web.js
++++ b/node_modules/expo-font/build/FontLoader.web.js
+@@ -85,7 +85,8 @@ export function loadSingleFontAsync(name, input) {
+     if (typeof input !== 'object' || typeof input.uri !== 'string' || input.downloadAsync) {
+         throwInvalidSourceError(input);
+     }
+-    return ExpoFontLoader.loadAsync(name, input);
++    // PATCH(patch-package): swallow async font-load rejections (FontObserver timeouts on mobile web) to avoid false unhandledrejection dialogs — restored from expo-font 57 patch after SDK 58 rewrite
++    return ExpoFontLoader.loadAsync(name, input).catch(() => {});
+ }
+ 
+ //# sourceMappingURL=FontLoader.web.js.map
