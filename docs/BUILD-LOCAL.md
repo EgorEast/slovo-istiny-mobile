@@ -9,9 +9,9 @@ Local builds are the FLOSS-compliant path — no proprietary services required.
 | ----------- | -------------- | ----------------------------------------------------- |
 | Node.js     | >= 22.x        | Current LTS. Check with `node --version`.             |
 | Yarn        | 1.22.x         | Classic Yarn. No `dlx` support.                       |
-| JDK         | >= 17          | OpenJDK 17 or newer. Expo SDK 57 + React Native 0.86. |
+| JDK         | >= 17          | OpenJDK 17 or newer. Expo SDK 58 + React Native 0.88. |
 | Android SDK | API 35+        | Install via Android Studio or `sdkmanager`.           |
-| NDK         | 27.1.12297006  | Pinned by React Native 0.86 (`react-native/gradle/libs.versions.toml`). Install via `sdkmanager "ndk;27.1.12297006"`. |
+| NDK         | 27.1.12297006  | Pinned by React Native 0.88 (`react-native/gradle/libs.versions.toml`). Install via `sdkmanager "ndk;27.1.12297006"`. |
 | Xcode       | 16+            | macOS only. Required for iOS builds.                  |
 
 ## Android Release Build
@@ -296,7 +296,7 @@ sdkmanager --list
 
 ### Build fails: "JDK version incompatible"
 
-Expo SDK 57 requires JDK 17 or newer. Check your version:
+Expo SDK 58 requires JDK 17 or newer. Check your version:
 
 ```bash
 java -version

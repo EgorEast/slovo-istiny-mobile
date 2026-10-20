@@ -104,13 +104,13 @@ The app requests only the permissions it needs: audio settings, a foreground ser
 
 | Technology | Version |
 | --- | --- |
-| <img src="https://img.shields.io/badge/React_Native-0.86.3-61DAFB?style=flat-square&logo=react&logoColor=black" alt="React Native" /> | 0.86.3 |
-| <img src="https://img.shields.io/badge/Expo-SDK_57-000020?style=flat-square&logo=expo&logoColor=white" alt="Expo" /> | ~57.0.24 |
+| <img src="https://img.shields.io/badge/React_Native-0.88.0-61DAFB?style=flat-square&logo=react&logoColor=black" alt="React Native" /> | 0.88.0 |
+| <img src="https://img.shields.io/badge/Expo-SDK_58-000020?style=flat-square&logo=expo&logoColor=white" alt="Expo" /> | ~58.0.16 |
 | <img src="https://img.shields.io/badge/TypeScript-6.0.3-3178C6?style=flat-square&logo=typescript&logoColor=white" alt="TypeScript" /> | ~6.0.3 |
 | <img src="https://img.shields.io/badge/Reatom-state_management-8A2BE2?style=flat-square" alt="Reatom" /> | @reatom/* |
 | <img src="https://img.shields.io/badge/Expo_Router-navigation-000020?style=flat-square&logo=expo&logoColor=white" alt="Expo Router" /> | expo-router |
 | <img src="https://img.shields.io/badge/expo--audio-playback-4630EB?style=flat-square&logo=expo&logoColor=white" alt="expo-audio" /> | expo-audio |
-| <img src="https://img.shields.io/badge/axios-1.19.0-5A29E4?style=flat-square" alt="axios" /> | ^1.19.0 |
+| <img src="https://img.shields.io/badge/axios-1.20.0-5A29E4?style=flat-square" alt="axios" /> | ^1.20.0 |
 | <img src="https://img.shields.io/badge/xml--js-FB2_parsing-FF6600?style=flat-square" alt="xml-js" /> | ^1.6.11 |
 
 ## 🚀 Roadmap

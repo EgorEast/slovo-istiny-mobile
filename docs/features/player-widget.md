@@ -23,9 +23,9 @@
 
 ## Выбранный подход: react-native-android-widget (rnaw)
 
-- Почему: Expo SDK 57 НЕ имеет собственного API для Android-виджетов (`expo-widgets` — iOS-only). rnaw (v0.22.1, активно поддерживается, peer expo >= 54) — единственный поддерживаемый вариант; есть свой config plugin (`app.plugin.js`) → совместим с prebuild.
+- Почему: Expo SDK 58 НЕ имеет собственного API для Android-виджетов (`expo-widgets` — iOS-only). rnaw (v0.22.1, активно поддерживается, peer expo >= 54) — единственный поддерживаемый вариант; есть свой config plugin (`app.plugin.js`) → совместим с prebuild.
 - Ключевой факт: rnaw рендерит React-дерево В BITMAP, а не RemoteViews. Следствия: обновления относительно дорогие (пушить только при смене состояния, не каждый тик), возможны баги кроппинга на лаунчерах с некорректным size-reporting.
-- Риск версии: rnaw dev-тестируется на RN 0.83 / Expo 54–55; наш SDK 57 = RN 0.86. Peers открытые, блокеров в issues нет, но заложить полдня на spike перед стартом.
+- Риск версии: rnaw dev-тестируется на RN 0.83 / Expo 54–55; наш SDK 58 = RN 0.88. Peers открытые, блокеров в issues нет, но заложить полдня на spike перед стартом.
 
 ## Архитектура
 
@@ -48,7 +48,7 @@
 
 ## План реализации (этапы)
 
-1. **Spike (0.5 дня):** `yarn add react-native-android-widget`, минимальный статичный виджет на девайсе, проверка совместимости с RN 0.86 / flavors / prebuild.
+1. **Spike (0.5 дня):** `yarn add react-native-android-widget`, минимальный статичный виджет на девайсе, проверка совместимости с RN 0.88 / flavors / prebuild.
 2. **Регистрация виджета:** `app.config.ts` → `plugins: [['react-native-android-widget', { widgets: [{ name: 'Player', label, targetCellWidth: 4, targetCellHeight: 2, previewImage, updatePeriodMillis: 0 }] }]]`. `updatePeriodMillis: 0` — виджет медиа, пушит обновления сам (системный минимум — 30 мин, для плеера непригоден). Плюс запись в `docs/decisions.md` (новая зависимость — только через decisions по правилам репо).
 3. **Кастомный entry-файл:** корневой `index.ts` + `"main": "index.ts"` в package.json: `import 'expo-router/entry'` + `registerWidgetTaskHandler(widgetTaskHandler)`. Единственная «хитрая» точка интеграции — проверить совместимость с jest/expo entry.
 4. **UI виджета:** `src/widgets/player-widget/ui/PlayerWidget.tsx` (rnaw-примитивы, `clickAction="TOGGLE_PLAY"` и т.п.; соблюдать лимит 130 строк — разбить на title row / controls row).
@@ -67,7 +67,7 @@
 - **Битмап-рендеринг:** не рисовать progress bar с обновлением раз в секунду; обновления только по переходам состояния.
 - **Валидация на JS→native границе:** artwork через `hasUriProtocol`, try-catch + `reportError` вокруг нативных вызовов (`docs/contracts/native-modules.md`, Issue #45).
 - **Expo Go:** не работает (нужен dev build) — проект и так на prebuild-воркфлоу.
-- **clickAction требует Android 7+** — для minSdk SDK 57 не проблема. Опционально: `requestPinWidget` (rnaw 0.22) — кнопка «Добавить виджет» из настроек приложения, зависит от лаунчера.
+- **clickAction требует Android 7+** — для minSdk SDK 58 не проблема. Опционально: `requestPinWidget` (rnaw 0.22) — кнопка «Добавить виджет» из настроек приложения, зависит от лаунчера.
 
 ## Fallback: полностью нативный RemoteViews-виджет
 

@@ -1,7 +1,7 @@
 # Migration from Expo SDK
 
 > **Status**: Planning document. No active migration. The project
-> remains on Expo SDK 57.
+> remains on Expo SDK 58.
 
 ## Why This Document Exists
 
@@ -12,8 +12,8 @@ maintainers, should the project ever decide to eject from Expo SDK.
 
 ## Current State
 
-- Expo SDK 57.0.8 (MIT)
-- React Native 0.86.0 (MIT)
+- Expo SDK 58.0.16 (MIT)
+- React Native 0.88.0 (MIT)
 - Local builds supported (see [BUILD-LOCAL.md](./BUILD-LOCAL.md))
 - EAS Cloud is optional, not required
 - No proprietary dependencies in distributed APK
