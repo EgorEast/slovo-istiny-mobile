@@ -56,6 +56,7 @@ const PlaylistSheetListComponent = ({
 }) => {
   const {
     footerHeight,
+    getItemLayout,
     handleContentSizeChange,
     handleScrollEvent,
     handleWrapperLayout,
@@ -90,6 +91,7 @@ const PlaylistSheetListComponent = ({
         renderItem={renderItem}
         keyExtractor={keyExtractor}
         onScrollEndDrag={onDragEnd}
+        getItemLayout={getItemLayout}
         onScrollBeginDrag={onDragStart}
         onMomentumScrollEnd={onMomentumEnd}
         ItemSeparatorComponent={ItemSeparator}

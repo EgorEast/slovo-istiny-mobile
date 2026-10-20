@@ -54,6 +54,7 @@ export const buildQueue = async (
     return null
   }
   state.playlist = playlist
+  state.loop = loop
   state.audioTracks = [...tracks]
   state.sources = [...sources]
   state.currentSourceUri = sources[startIndex] ?? null
@@ -101,7 +102,7 @@ export const swapCurrentSource = async (
   if (!playlist) return false
   const index = playlist.currentIndex
   const track = state.audioTracks[index]
-  const loop = playlist.loop
+  const loop = state.loop
   const targetMs = positionMs ?? Math.floor(playlist.currentTime * 1000)
 
   try {

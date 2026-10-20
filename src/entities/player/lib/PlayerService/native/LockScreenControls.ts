@@ -96,8 +96,6 @@ class LockScreenControls {
     try {
       player.setActiveForLockScreen(true, prepareMetadataPayload(metadata), {
         isLiveStream: false,
-        showNextTrack: true,
-        showPreviousTrack: true,
         showSeekBackward: true,
         showSeekForward: true,
       })

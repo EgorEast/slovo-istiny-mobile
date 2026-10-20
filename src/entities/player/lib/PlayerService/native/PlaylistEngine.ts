@@ -39,8 +39,7 @@ class PlaylistEngine {
   public swapCurrentSource = (source: string, positionMs?: number): Promise<boolean> =>
     swapCurrentSource(this.state, source, positionMs)
 
-  public setLoopMode = (loop: AudioPlaylistLoopMode): void =>
-    setPlaylistLoop(this.state.playlist, loop)
+  public setLoopMode = (loop: AudioPlaylistLoopMode): void => setPlaylistLoop(this.state, loop)
 
   public skipToIndex = (index: number): void => skipPlaylistTo(this.state.playlist, index)
 
@@ -63,7 +62,7 @@ class PlaylistEngine {
 
   public getCurrentIndex = (): number => this.state.playlist?.currentIndex ?? -1
 
-  public getLoop = (): AudioPlaylistLoopMode => this.state.playlist?.loop ?? 'none'
+  public getLoop = (): AudioPlaylistLoopMode => this.state.loop
 
   public getCurrentSourceUri = (): null | string => this.state.currentSourceUri
 

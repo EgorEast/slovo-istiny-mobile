@@ -2,7 +2,7 @@ import { useCallback, useMemo } from 'react'
 import { View } from 'react-native'
 import { type PlaylistData } from 'entities/playlist'
 import { type AudioPlayerData, formatSermonReference } from 'entities/sermon'
-import { type createStyles } from './PlaylistBottomSheet.styles'
+import { type createStyles, PLAYLIST_SHEET_ROW_STRIDE } from './PlaylistBottomSheet.styles'
 import { PlaylistSheetRow } from './PlaylistSheetRow'
 import { useScrollGuarantee } from './useScrollGuarantee'
 import { useSheetMenuActions } from './useSheetMenuActions'
@@ -72,6 +72,16 @@ export const usePlaylistSheetList = ({
     [onScroll],
   )
   const buildMenuActions = useSheetMenuActions(playlist, progressMap, onAddToPlaylist)
+  // Every row has the same fixed height, so the exact offset is known upfront:
+  // scrollToIndex lands in one scroll instead of estimate + retries.
+  const getItemLayout = useCallback(
+    (_data: ArrayLike<TrackListItemData> | null | undefined, index: number) => ({
+      index,
+      length: PLAYLIST_SHEET_ROW_STRIDE,
+      offset: PLAYLIST_SHEET_ROW_STRIDE * index,
+    }),
+    [],
+  )
   const renderItem = useCallback(
     ({ index, item }: { index: number; item: TrackListItemData }) => (
       <PlaylistSheetRow
@@ -94,6 +104,7 @@ export const usePlaylistSheetList = ({
 
   return {
     footerHeight,
+    getItemLayout,
     handleContentSizeChange,
     handleScrollEvent,
     handleWrapperLayout,

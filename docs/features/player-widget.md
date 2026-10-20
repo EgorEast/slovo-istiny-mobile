@@ -5,7 +5,7 @@
 
 ## Резюме
 
-- Цель: home-screen виджет с обложкой/названием трека и кнопками play/pause (+ опционально seek ±10s, next).
+- Цель: home-screen виджет с обложкой/названием трека и кнопками play/pause (+ опционально seek ±10s; next/prev — только после апстрим-фикса expo-audio, см. ниже).
 - Оценка: 3–5 дней (вариант rnaw), 4–6 дней (полностью нативный RemoteViews — fallback).
 - Статус: план, не реализовано.
 
@@ -14,7 +14,7 @@
 - Плеер: `expo-audio` (`~58.0.9`), обёртка `src/entities/player/lib/PlayerService/index.native.ts` (singleton `playerService`).
 - expo-audio уже поднимает Media3 `MediaSessionService` (`expo.modules.audio.service.AudioControlsService`, foreground, `mediaPlayback`) — объявлен в генерируемом манифесте; разрешения FOREGROUND_SERVICE, FOREGROUND_SERVICE_MEDIA_PLAYBACK, POST_NOTIFICATIONS, MODIFY_AUDIO_SETTINGS уже в `app.config.ts`.
 - `AudioControlsService.onStartCommand` принимает explicit intent-экшены: `expo.modules.audio.action.PLAY / PAUSE / TOGGLE / SEEK_FORWARD / SEEK_BACKWARD` (seek ±10s). Именно так работают кнопки media-уведомления на Android ≤12 → кнопки виджета могут переиспользовать этот механизм напрямую, без MediaController handshake и без JS round-trip.
-- Нативные next/prev **появились** в expo-audio 58 через `AudioPlaylist`: очередь живёт в нативном движке (`native/PlaylistEngine.ts`), а кнопки lock screen/уведомления включены (`showNextTrack`/`showPreviousTrack`). JS только сверяет `trackChanged` (см. `native/TrackAutoAdvanceService/`). Для виджета это значит, что next/prev можно отправлять нативной media-командой (MediaController/MediaSession), а не гонять через JS-очередь; `AudioControlsService` по-прежнему принимает только explicit intents `PLAY/PAUSE/TOGGLE/SEEK_*`, поэтому next/prev через сервис-интенты не пойдут.
+- Нативная очередь `AudioPlaylist` появилась в expo-audio 58: очередь живёт в нативном движке (`native/PlaylistEngine.ts`), JS только сверяет `trackChanged` (см. `native/TrackAutoAdvanceService/`). **Кнопки next/prev на lock screen и в уведомлении сейчас не выставляются** (`showNextTrack`/`showPreviousTrack` = `false`, остаются только seek backward/forward): продуктовый фидбек + апстрим-баг 58.0.9 — JS-геттер `loop` у `AudioPlaylist` не обёрнут в main-thread hop и роняет плеер из JS-потока (см. [debt.md](../debt.md)). Для виджета это значит, что next/prev теоретически можно отправлять нативной media-командой (MediaController/MediaSession), но **до апстрим-фикса такой канал не включаем**; `AudioControlsService` по-прежнему принимает только explicit intents `PLAY/PAUSE/TOGGLE/SEEK_*`, поэтому next/prev через сервис-интенты не пойдут.
 - Канонический тип метаданных: `LockScreenMetadata { title, artist?, albumTitle?, artworkUrl }` в `src/entities/player/lib/PlayerService/types.ts`; artwork обязан проходить `hasUriProtocol` (`src/shared/lib/app-icon.ts`, контракт `docs/contracts/native-modules.md`, Issue #45).
 - Reatom-состояние для синхронизации: `currentAudioAtom`, `isPlayingAtom`, `positionAtom`, `durationAtom` в `src/entities/player/model.ts`.
 - `playsInSilentMode: true` уже выставлен (`AudioModeManager.ts`) — иначе play с виджета игнорируется в беззвучном режиме.
@@ -38,11 +38,12 @@
    → локальный Expo module `player-widget-bridge.sendMediaCommand('toggle')`
    → Kotlin: context.startService(Intent(ACTION_TOGGLE на AudioControlsService))
    → сервис expo-audio управляет реальным плеером
-[Клики next/prev] нативная media-команда (MediaController/MediaSession)
+[Клики next/prev — опционально, после апстрим-фикса] нативная media-команда (MediaController/MediaSession)
    → нативная очередь AudioPlaylist переключает трек
    → приложение (если JS жив) получает trackChanged и синкает виджет
-   Если app JS мёртв: next/prev всё равно работают в нативном движке;
-   виджет обновится при следующей синхронизации после пробуждения JS.
+   Если app JS мёртв: авто-переход очереди всё равно идёт в нативном движке
+   (кнопок next/prev на lock screen сейчас нет); виджет обновится при
+   следующей синхронизации после пробуждения JS.
 ```
 
 ## План реализации (этапы)
@@ -53,14 +54,14 @@
 4. **UI виджета:** `src/widgets/player-widget/ui/PlayerWidget.tsx` (rnaw-примитивы, `clickAction="TOGGLE_PLAY"` и т.п.; соблюдать лимит 130 строк — разбить на title row / controls row).
 5. **Task handler:** `src/widgets/player-widget/lib/widgetTaskHandler.ts` (WIDGET_ADDED/UPDATE/RESIZED/CLICK).
 6. **Синхронизация состояния:** `src/widgets/player-widget/lib/syncPlayerWidget.ts` через `requestWidgetUpdate`; вызывать из переходов состояния плеера (play/pause/track change/`setActiveForLockScreen`), НЕ на каждый position tick.
-7. **Нативный мост:** `modules/player-widget-bridge/` (Kotlin ~40–60 строк + expo-module.config.json + локальный config plugin в `plugins/`): `sendMediaCommand(cmd)` → `startService(ACTION_*)` на AudioControlsService для play/pause/seek, next/prev — нативной media-командой к MediaSession (`AudioPlaylist`). Добавить модуль в `yarn test:native`.
+7. **Нативный мост:** `modules/player-widget-bridge/` (Kotlin ~40–60 строк + expo-module.config.json + локальный config plugin в `plugins/`): `sendMediaCommand(cmd)` → `startService(ACTION_*)` на AudioControlsService для play/pause/seek, next/prev — только после апстрим-фикса expo-audio, нативной media-командой к MediaSession (`AudioPlaylist`). Добавить модуль в `yarn test:native`.
 8. **Prebuild + сборка:** `npx expo prebuild --platform android --clean` → проверить `git status android/` → gradle build → закоммитить регенерированный `android/` в том же PR (политика AGENTS.md).
 9. **QA:** Pixel Launcher + Samsung OneUI (кроппинг bitmap-рендера), повороты, темная тема (rnaw поддерживает с 0.19), TalkBack (с 0.20), поведение при убитом процессе.
 
 ## Грабли и осознанные компромиссы
 
 - **Нативная очередь — не рвать сессию:** смена трека внутри `AudioPlaylist` не teardown'ит MediaSession/notification; интеграция виджета не должна пересобирать очередь (см. `docs/features/player.md` → «Смена трека: нативная очередь и подмена источника»).
-- **Cold start:** при убитом процессе play/pause через сервис no-op (`currentPlayerRef == null`), но next/prev теперь работают нативно в очереди `AudioPlaylist`; виджет в этом сценарии показывает последнее синхронизированное состояние и обновится после пробуждения JS. → записать в `docs/debt.md` при реализации.
+- **Cold start:** при убитом процессе play/pause через сервис no-op (`currentPlayerRef == null`), но авто-переход очереди по-прежнему работает нативно в `AudioPlaylist` (кнопок next/prev в интерфейсе сейчас нет — см. «Текущее состояние»); виджет в этом сценарии показывает последнее синхронизированное состояние и обновится после пробуждения JS. → записать в `docs/debt.md` при реализации.
 - **`ACTION_PLAY` гейтится silent mode:** ок, т.к. у нас `playsInSilentMode: true`.
 - **Нет lock-screen виджетов на Android** — эта поверхность и так занята MediaStyle-уведомлением expo-audio (`setActiveForLockScreen`), делать «виджет на локскрин» не нужно.
 - **Битмап-рендеринг:** не рисовать progress bar с обновлением раз в секунду; обновления только по переходам состояния.

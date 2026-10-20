@@ -1,5 +1,6 @@
 import { type AudioPlaylist, type AudioPlaylistLoopMode } from 'expo-audio'
 import { reportError } from 'shared/model/error-dialog'
+import { type PlaylistEngineState } from './playlistEngineState'
 
 const CONTROL_ERROR_MESSAGE = 'Ошибка при управлении очередью воспроизведения'
 
@@ -25,10 +26,24 @@ export const withPlaylist = (
   }
 }
 
-export const setPlaylistLoop = (
-  playlist: AudioPlaylist | null,
-  loop: AudioPlaylistLoopMode,
-): void => withPlaylist(playlist, instance => (instance.loop = loop))
+/**
+ * Applies the loop mode natively and mirrors it into engine state. The state
+ * copy is the only safe read path: the native `loop` getter is thread-unsafe.
+ * Recording the mode after a successful write keeps state and native in sync.
+ * @param state - Mutable engine state.
+ * @param loop - Native loop mode to apply.
+ */
+export const setPlaylistLoop = (state: PlaylistEngineState, loop: AudioPlaylistLoopMode): void => {
+  const playlist = state.playlist
+  if (!playlist) {
+    state.loop = loop
+    return
+  }
+  withPlaylist(playlist, instance => {
+    instance.loop = loop
+    state.loop = loop
+  })
+}
 
 export const skipPlaylistTo = (playlist: AudioPlaylist | null, index: number): void =>
   withPlaylist(playlist, instance => instance.skipTo(index))
