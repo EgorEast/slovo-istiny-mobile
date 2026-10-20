@@ -1,5 +1,5 @@
 import { forwardRef, type ReactNode } from 'react'
-import { StyleSheet, type View } from 'react-native'
+import { StyleSheet, type ViewInstance } from 'react-native'
 import { PressableButton, type PressableButtonProps } from '../pressable-button/PressableButton'
 import { MIN_TOUCH_TARGET } from '../theme/themed'
 
@@ -13,7 +13,7 @@ type IconButtonProps = {
   testID?: never
 } & Omit<PressableButtonProps, 'accessibilityLabel' | 'children' | 'testID'>
 
-export const IconButton = forwardRef<View, IconButtonProps>(
+export const IconButton = forwardRef<ViewInstance, IconButtonProps>(
   ({ accessibilityLabel, Icon, style, ...rest }, ref) => (
     <PressableButton
       {...rest}

@@ -1,7 +1,7 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons'
 import { useAction, useAtom } from '@reatom/npm-react'
 import { useCallback, useRef, useState } from 'react'
-import { StyleSheet, View } from 'react-native'
+import { StyleSheet, View, type ViewInstance } from 'react-native'
 import { OnboardingTarget } from 'features/onboarding'
 import { activeCacheUrlAtom, cacheQueueAtom, clearAudioCacheAction } from 'entities/offline-cache'
 import { ConfirmDialog } from 'shared/ui/confirm-dialog'
@@ -25,7 +25,7 @@ export const OfflineHeaderMenu = ({ onboardingTargetId }: { onboardingTargetId?:
   const [menuVisible, setMenuVisible] = useState(false)
   const [dialogVisible, setDialogVisible] = useState(false)
   const [menuAnchor, setMenuAnchor] = useState<AnchorRect | null>(null)
-  const buttonRef = useRef<View>(null)
+  const buttonRef = useRef<ViewInstance>(null)
   const clearCache = useAction(clearAudioCacheAction)
   const [queue] = useAtom(cacheQueueAtom)
   const [activeUrl] = useAtom(activeCacheUrlAtom)

@@ -1,7 +1,7 @@
 import { createCtx } from '@reatom/framework'
 import { act } from '@testing-library/react-native'
 import { type RefObject } from 'react'
-import { Dimensions, type View } from 'react-native'
+import { Dimensions, type ViewInstance } from 'react-native'
 import { renderHookWithProviders } from 'shared/mocks/renderWithProviders'
 import { isGlowVisibleAtom, isListenScrollingAtom } from '../model'
 import { useGlowVisibility } from './useGlowVisibility'
@@ -18,12 +18,15 @@ interface Measurement {
   y: number
 }
 
-const attachMeasurableNode = (ref: RefObject<null | View>, measurement: Measurement): jest.Mock => {
+const attachMeasurableNode = (
+  ref: RefObject<null | ViewInstance>,
+  measurement: Measurement,
+): jest.Mock => {
   const measureInWindow = jest.fn((callback: MeasureCallback) => {
     callback(0, measurement.y, measurement.width, measurement.height)
   })
 
-  ref.current = { measureInWindow } as unknown as View
+  ref.current = { measureInWindow } as unknown as ViewInstance
 
   return measureInWindow
 }

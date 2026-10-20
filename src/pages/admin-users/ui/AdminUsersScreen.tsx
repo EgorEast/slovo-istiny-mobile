@@ -94,7 +94,7 @@ export const AdminUsersScreen = () => {
                   {LOAD_MORE_FAILED_LABEL}
                 </Text>
               </TouchableItem>
-            ) : null
+            ) : undefined
           }
           ListHeaderComponent={
             <View style={styles.header}>

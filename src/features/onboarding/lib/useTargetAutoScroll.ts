@@ -1,6 +1,6 @@
 import { useAction, useAtom } from '@reatom/npm-react'
 import { useCallback, useEffect, useRef } from 'react'
-import { Dimensions, useWindowDimensions, type View } from 'react-native'
+import { Dimensions, useWindowDimensions, type ViewInstance } from 'react-native'
 import { bumpOnboardingScrollEpoch, onboardingTargetRectsAtom } from '../model/targets'
 import { pickOnboardingTargetRect } from './tourHole'
 import { getTourScrollable, isRectOutsideViewport, scrollOffsetFor } from './tourScrollable'
@@ -13,7 +13,7 @@ const FALLBACK_SCROLL_DELAY_MS = 600
 
 interface TargetAutoScrollInput {
   bottomInset: number
-  getNode: () => null | View
+  getNode: () => null | ViewInstance
   id: string
   isActive: boolean
   measure: () => void

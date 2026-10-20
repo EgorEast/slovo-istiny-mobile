@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons'
 import { type ColorValue } from 'react-native'
 import { IconButton } from 'shared/ui/icon-button'
-import { useTheme } from 'shared/ui/theme'
+import { resolveColor, useTheme } from 'shared/ui/theme'
 import { headerMenuButtonStyles } from './styles'
 
 const ICON_SIZE = 24
@@ -29,7 +29,13 @@ export const PlaylistEditButton = ({
       onPress={onPress}
       accessibilityLabel={EDIT_LABEL}
       style={headerMenuButtonStyles.button}
-      Icon={<Ionicons size={ICON_SIZE} name={EDIT_ICON} color={iconColor ?? currentTheme.text} />}
+      Icon={
+        <Ionicons
+          size={ICON_SIZE}
+          name={EDIT_ICON}
+          color={resolveColor(iconColor, currentTheme.text)}
+        />
+      }
     />
   )
 }

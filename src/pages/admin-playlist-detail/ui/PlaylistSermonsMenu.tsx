@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons'
 import { useCallback, useRef, useState } from 'react'
-import { View } from 'react-native'
+import { View, type ViewInstance } from 'react-native'
 import { type APITypes } from 'shared/api'
 import { ConfirmDialog } from 'shared/ui/confirm-dialog'
 import { IconButton } from 'shared/ui/icon-button'
@@ -26,7 +26,7 @@ export const PlaylistSermonsMenu = ({
   sermons: APITypes.PlaylistSermon[]
 }) => {
   const { currentTheme } = useTheme()
-  const buttonRef = useRef<View>(null)
+  const buttonRef = useRef<ViewInstance>(null)
   const [anchor, setAnchor] = useState<AnchorRect | null>(null)
   const [isMenuVisible, setMenuVisible] = useState(false)
   const { closeConfirm, confirm, isConfirmVisible, openConfirm } = useSetArtworkFromPlaylist({

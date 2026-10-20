@@ -8,29 +8,24 @@ import {
   StyleSheet,
   useWindowDimensions,
   View,
+  type ViewInstance,
   type ViewStyle,
 } from 'react-native'
 import { useEscapeKey } from '../../lib/escape-key/useEscapeKey'
 import { hapticLight } from '../../lib/haptics'
+import { type AnchorRect } from './anchorRect'
 import { computeMenuPosition } from './computeMenuPosition'
 import { useViewportSync } from './useViewportSync'
 
 export interface AnchoredDropdownProps {
   anchor: AnchorRect | null
-  anchorRef?: RefObject<null | View>
+  anchorRef?: RefObject<null | ViewInstance>
   children: ReactNode
   gap?: number
   menuStyle?: StyleProp<ViewStyle>
   onClose: () => void
   testID?: string
   visible: boolean
-}
-
-export interface AnchorRect {
-  height: number
-  width: number
-  x: number
-  y: number
 }
 
 const DEFAULT_GAP = 4

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { type LayoutChangeEvent, useWindowDimensions, type View } from 'react-native'
+import { type LayoutChangeEvent, useWindowDimensions, type ViewInstance } from 'react-native'
 import {
   computeBelowScreenOffset,
   computeFooterHeight,
@@ -17,7 +17,7 @@ export const useScrollGuarantee = ({
   const { height: windowHeight } = useWindowDimensions()
   const [footerHeight, setFooterHeight] = useState(MIN_GUARANTEE)
   const [chromeOffset, setChromeOffset] = useState<null | number>(null)
-  const wrapperRef = useRef<null | View>(null)
+  const wrapperRef = useRef<null | ViewInstance>(null)
   const frameHeightRef = useRef(0)
   const footerHeightRef = useRef(MIN_GUARANTEE)
   const rawContentHeightRef = useRef(0)

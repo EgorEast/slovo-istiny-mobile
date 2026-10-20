@@ -1,10 +1,11 @@
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons'
 import { type ComponentProps, Fragment, type ReactElement, type RefObject } from 'react'
-import { StyleSheet, Text, type View } from 'react-native'
+import { StyleSheet, Text, type ViewInstance } from 'react-native'
 import { PressableButton } from '../pressable-button/PressableButton'
 import { useTheme } from '../theme/ThemeContext/useTheme'
 import { FONT_SIZES, INDENTS, RADIUSES } from '../theme/themed'
-import { AnchoredDropdown, type AnchorRect } from './AnchoredDropdown'
+import { AnchoredDropdown } from './AnchoredDropdown'
+import { type AnchorRect } from './anchorRect'
 
 export type MenuItem = IoniconMenuItem | MaterialMenuItem
 
@@ -39,7 +40,7 @@ export const MenuDropdown = ({
   visible,
 }: {
   anchor: AnchorRect | null
-  anchorRef?: RefObject<null | View>
+  anchorRef?: RefObject<null | ViewInstance>
   items: ReadonlyArray<MenuItem>
   onClose: () => void
   /** Wraps each rendered row; falls back to the bare row when omitted. */

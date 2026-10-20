@@ -1,7 +1,7 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons'
 import { useAction, useAtom } from '@reatom/npm-react'
 import { useCallback } from 'react'
-import { type ColorValue, type StyleProp, StyleSheet, type ViewStyle } from 'react-native'
+import { type StyleProp, StyleSheet, type ViewStyle } from 'react-native'
 import { IconButton } from 'shared/ui/icon-button'
 import { FONT_SIZES, useTheme } from 'shared/ui/theme'
 import { type RepeatMode, repeatModeAtom, setRepeatModeAction } from '../model'
@@ -9,11 +9,11 @@ import { type RepeatMode, repeatModeAtom, setRepeatModeAction } from '../model'
 const REPEAT_MODES: RepeatMode[] = ['off', 'track', 'queue']
 
 interface IconConfig {
-  color: ColorValue
+  color: string
   name: keyof typeof MaterialCommunityIcons.glyphMap
 }
 
-const getRepeatIcon = (mode: RepeatMode, primaryColor: ColorValue): IconConfig => {
+const getRepeatIcon = (mode: RepeatMode, primaryColor: string): IconConfig => {
   switch (mode) {
     case 'off':
       return { color: '#9ca3af', name: 'repeat-off' }

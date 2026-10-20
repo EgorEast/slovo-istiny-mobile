@@ -1,5 +1,5 @@
 import { type RefObject, useCallback, useMemo, useRef, useState } from 'react'
-import { type LayoutChangeEvent, PanResponder, type View } from 'react-native'
+import { type LayoutChangeEvent, PanResponder, type ViewInstance } from 'react-native'
 
 // toFixed precision: kills float noise from step math (0.05-step drags would
 // otherwise produce values like 0.35000000000000003).
@@ -22,7 +22,7 @@ interface UseSliderPanResponderParams {
 }
 
 interface UseSliderPanResponderResult {
-  containerRef: RefObject<null | View>
+  containerRef: RefObject<null | ViewInstance>
   handleLayout: (event: LayoutChangeEvent) => void
   panResponder: PanResponderInstance
   trackWidth: number
@@ -46,7 +46,7 @@ export const useSliderPanResponder = ({
   step,
 }: UseSliderPanResponderParams): UseSliderPanResponderResult => {
   const [geometry, setGeometry] = useState<null | SliderGeometry>(null)
-  const containerRef = useRef<null | View>(null)
+  const containerRef = useRef<null | ViewInstance>(null)
   const latestValueRef = useRef(min)
   const hasGestureValueRef = useRef(false)
 

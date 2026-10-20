@@ -20,11 +20,16 @@ interface CustomTabBarProps extends TabBarProps {
 
 type TabBarProps = Parameters<NonNullable<React.ComponentProps<typeof Tabs>['tabBar']>>[0]
 
-export const CustomTabBar = ({ hideFloatingPlayer: _, navigation, state }: CustomTabBarProps) => {
+export const CustomTabBar = ({
+  emitter,
+  hideFloatingPlayer: _,
+  navigateToTab,
+  state,
+}: CustomTabBarProps) => {
   const setMeasuredTabBarHeight = useAction(setTabBarHeight)
   const { bottom } = useSafeAreaInsets()
   const { isLight } = useTheme()
-  const { handleTabPress, isTabAvailable } = useTabPress({ navigation })
+  const { handleTabPress, isTabAvailable } = useTabPress({ emitter, navigateToTab })
 
   return (
     <View style={styles.floatingContainer}>

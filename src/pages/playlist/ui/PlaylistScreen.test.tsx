@@ -1,7 +1,6 @@
 import { createCtx } from '@reatom/framework'
 import { act, fireEvent, screen, waitFor } from '@testing-library/react-native'
 import { type ComponentType } from 'react'
-import { View as RNView } from 'react-native'
 import { useTourActionRegistrar } from 'features/onboarding'
 import {
   FAVORITES_PLAYLIST,
@@ -12,6 +11,7 @@ import {
 import { dynamicSectionsAtom, type SectionData } from 'entities/section'
 import { type AudioPlayerData, toAudioPlayerData } from 'entities/sermon'
 import { renderWithProviders } from 'shared/mocks'
+import { mockMeasureInWindow } from 'shared/mocks/measure'
 import { isOnlineAtom } from 'shared/model'
 import { PlaylistScreen } from './PlaylistScreen'
 
@@ -570,10 +570,7 @@ describe('<PlaylistScreen> header menu integration', () => {
     jest.clearAllMocks()
     mockParams.playlist = PLAYLIST_ID
     delete mockParams.custom
-    jest.spyOn(RNView.prototype, 'measureInWindow').mockImplementation(cb => {
-      cb(300, 100, 44, 44)
-      return undefined
-    })
+    mockMeasureInWindow({ height: 44, width: 44, x: 300, y: 100 })
   })
 
   afterEach(() => {

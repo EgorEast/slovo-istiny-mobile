@@ -1,8 +1,9 @@
 import { act, fireEvent, render, screen } from '@testing-library/react-native'
 import { createRef } from 'react'
-import { Dimensions, Platform, StyleSheet, Text, View } from 'react-native'
+import { Dimensions, Platform, StyleSheet, Text, View, type ViewInstance } from 'react-native'
 import { createKeyDownEvent } from '../../lib/testing/createKeyEvent'
 import { installFakeDom } from '../../lib/testing/installFakeDom'
+import { spyOnMeasureInWindow } from '../../mocks/measure'
 import { AnchoredDropdown } from './AnchoredDropdown'
 
 const BACKDROP_TEST_ID = 'anchored-dropdown-backdrop'
@@ -118,13 +119,10 @@ describe('<AnchoredDropdown>', () => {
   })
 
   test('re-anchors to the button when the window resizes', async () => {
-    const anchorRef = createRef<View>()
-    const measureInWindow = jest
-      .spyOn(View.prototype, 'measureInWindow')
-      .mockImplementation((cb: (x: number, y: number, width: number, height: number) => void) => {
-        cb(300, 500, 44, 36)
-        return undefined
-      })
+    const anchorRef = createRef<ViewInstance>()
+    const measureInWindow = spyOnMeasureInWindow().mockImplementation(cb => {
+      cb(300, 500, 44, 36)
+    })
 
     await render(
       <View ref={anchorRef} collapsable={false}>
@@ -144,12 +142,9 @@ describe('<AnchoredDropdown>', () => {
 
     expect(getMenuStyle()).toMatchObject({ right: 46, top: 396 })
 
-    measureInWindow.mockImplementation(
-      (cb: (x: number, y: number, width: number, height: number) => void) => {
-        cb(150, 300, 44, 36)
-        return undefined
-      },
-    )
+    measureInWindow.mockImplementation(cb => {
+      cb(150, 300, 44, 36)
+    })
 
     // useWindowDimensions re-syncs from Dimensions.get on every change, so the
     // mock must return the new window before the resize event fires.

@@ -1,11 +1,11 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons'
 import { useAction, useAtom } from '@reatom/npm-react'
 import { useCallback, useMemo, useRef, useState } from 'react'
-import { type ColorValue, StyleSheet, View } from 'react-native'
+import { type ColorValue, StyleSheet, View, type ViewInstance } from 'react-native'
 import { authStatusAtom, authUserAtom, signOut, useAdminEntry } from 'entities/auth'
 import { IconButton } from 'shared/ui/icon-button'
 import { type AnchorRect, MenuDropdown, type MenuItem } from 'shared/ui/menu'
-import { useTheme } from 'shared/ui/theme'
+import { resolveColor, useTheme } from 'shared/ui/theme'
 
 const ICON_SIZE = 24
 const BUTTON_SIZE = 44
@@ -23,7 +23,7 @@ export const SettingsHeaderMenu = ({ tintColor }: { tintColor?: ColorValue }) =>
   const [user] = useAtom(authUserAtom)
   const [menuVisible, setMenuVisible] = useState(false)
   const [menuAnchor, setMenuAnchor] = useState<AnchorRect | null>(null)
-  const buttonRef = useRef<View>(null)
+  const buttonRef = useRef<ViewInstance>(null)
 
   const isAuthenticated = status === 'authenticated' && user !== null
 
@@ -65,7 +65,7 @@ export const SettingsHeaderMenu = ({ tintColor }: { tintColor?: ColorValue }) =>
             <MaterialCommunityIcons
               size={ICON_SIZE}
               name='dots-vertical'
-              color={tintColor ?? currentTheme.text}
+              color={resolveColor(tintColor, currentTheme.text)}
             />
           }
         />

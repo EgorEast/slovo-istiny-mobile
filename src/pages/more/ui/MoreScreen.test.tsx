@@ -30,6 +30,7 @@ jest.mock('shared/ui/theme', () => ({
   INDENTS: { high: 16, low: 8, medium: 12 },
   MIN_TOUCH_TARGET: 48,
   RADIUSES: { middle: 12 },
+  resolveColor: (color: unknown, fallback: string) => color ?? fallback,
   useTheme: () => ({
     currentTheme: {
       background: '#ffffff',

@@ -2,7 +2,7 @@ import { useAction, useAtom, useCtx } from '@reatom/npm-react'
 import * as NavigationBar from 'expo-navigation-bar'
 import { StatusBar } from 'expo-status-bar'
 import { useEffect } from 'react'
-import { Appearance, Platform, StatusBar as RNStatusBar, useColorScheme } from 'react-native'
+import { Appearance, Platform, useColorScheme } from 'react-native'
 import { reportError } from '../../../model/error-dialog'
 import { updateCOLORS } from '../colors'
 import {
@@ -75,13 +75,6 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     void updateThemeBasedOnModeAction()
   }, [themeMode, dynamicEnabled, systemTheme, updateThemeBasedOnModeAction])
-
-  useEffect(() => {
-    if (Platform.OS === 'android') {
-      RNStatusBar.setTranslucent(true)
-      RNStatusBar.setBackgroundColor('transparent')
-    }
-  }, [])
 
   useEffect(() => {
     if (Platform.OS !== 'android') return

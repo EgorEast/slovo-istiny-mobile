@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router'
 import { type RefObject } from 'react'
-import { type ColorValue, StyleSheet, View } from 'react-native'
+import { type ColorValue, StyleSheet, View, type ViewInstance } from 'react-native'
 import { useNavigationGuard } from 'shared/routing'
 import { PlaylistEditButton } from './PlaylistEditButton'
 import { PlaylistHeaderMenuButton } from './PlaylistHeaderMenuButton'
@@ -28,7 +28,7 @@ export const PlaylistHeaderActions = ({
   playlistId,
 }: {
   accessibilityLabel: string
-  buttonRef: RefObject<null | View>
+  buttonRef: RefObject<null | ViewInstance>
   iconColor?: ColorValue
   isEditable: boolean
   onboardingTargetId?: string

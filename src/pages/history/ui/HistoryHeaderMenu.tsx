@@ -1,7 +1,7 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons'
 import { useCtx } from '@reatom/npm-react'
 import { useCallback, useRef, useState } from 'react'
-import { StyleSheet, View } from 'react-native'
+import { StyleSheet, View, type ViewInstance } from 'react-native'
 import { clearHistoryAction } from 'entities/listening-history'
 import { ConfirmDialog } from 'shared/ui/confirm-dialog'
 import { IconButton } from 'shared/ui/icon-button'
@@ -23,7 +23,7 @@ export const HistoryHeaderMenu = () => {
   const [menuVisible, setMenuVisible] = useState(false)
   const [dialogVisible, setDialogVisible] = useState(false)
   const [menuAnchor, setMenuAnchor] = useState<AnchorRect | null>(null)
-  const buttonRef = useRef<View>(null)
+  const buttonRef = useRef<ViewInstance>(null)
 
   const handleOpenMenu = useCallback(() => {
     buttonRef.current?.measureInWindow((x: number, y: number, width: number, height: number) => {

@@ -1,5 +1,5 @@
 import { type PropsWithChildren, useCallback, useRef } from 'react'
-import { type StyleProp, View, type ViewStyle } from 'react-native'
+import { type StyleProp, View, type ViewInstance, type ViewStyle } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useTargetAutoScroll } from '../lib/useTargetAutoScroll'
 import { useTargetMeasure } from '../lib/useTargetMeasure'
@@ -12,7 +12,7 @@ const MeasuredTarget = ({
   id,
   style,
 }: PropsWithChildren<{ id: string; style?: StyleProp<ViewStyle> }>) => {
-  const ref = useRef<View>(null)
+  const ref = useRef<ViewInstance>(null)
   const getNode = useCallback(() => ref.current, [])
   const insets = useSafeAreaInsets()
   const { isActive, measure } = useTargetMeasure({ getNode, id })

@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons'
 import { forwardRef, type ReactElement } from 'react'
-import { Text, View } from 'react-native'
+import { Text, View, type ViewInstance } from 'react-native'
 import { CoverImage } from 'shared/ui/cover-image'
 import { IconButton } from 'shared/ui/icon-button'
 import { MovingText } from 'shared/ui/MovingText'
@@ -10,7 +10,7 @@ import { PlayingStatusOrChacheIcon } from './PlayingStatusOrChacheIcon'
 import { createTracksListStyles } from './styles'
 
 export const TracksListItemContent = forwardRef<
-  View,
+  ViewInstance,
   {
     artwork?: null | string
     dotsOnPress: () => void

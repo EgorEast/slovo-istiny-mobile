@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { type ColorValue } from 'react-native'
 import { toursDisabledAtom } from 'shared/model'
 import { IconButton } from 'shared/ui/icon-button'
-import { INDENTS, useTheme } from 'shared/ui/theme'
+import { INDENTS, resolveColor, useTheme } from 'shared/ui/theme'
 import { type ScenarioScope } from '../lib/scenarios'
 import { OnboardingTarget } from './OnboardingTarget'
 import { ScenarioPickerModal } from './ScenarioPickerModal'
@@ -35,7 +35,11 @@ export const HelpHeaderButton = ({
           onPress={() => setPickerOpen(true)}
           accessibilityLabel='Онбординг и помощь'
           Icon={
-            <Ionicons size={22} name='help-circle-outline' color={tintColor ?? currentTheme.text} />
+            <Ionicons
+              size={22}
+              name='help-circle-outline'
+              color={resolveColor(tintColor, currentTheme.text)}
+            />
           }
         />
       </OnboardingTarget>

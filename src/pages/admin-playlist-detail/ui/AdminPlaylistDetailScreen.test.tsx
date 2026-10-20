@@ -1,7 +1,7 @@
 import { fireEvent, waitFor } from '@testing-library/react-native'
-import { View as RNView } from 'react-native'
 import { playlistsMocks } from 'shared/api/generated'
 import { renderWithProviders } from 'shared/mocks'
+import { mockMeasureInWindow } from 'shared/mocks/measure'
 import { AdminPlaylistDetailScreen } from './AdminPlaylistDetailScreen'
 
 // MarqueeText renders the title twice (visible + measurer), so a single-Text
@@ -124,10 +124,7 @@ describe('<AdminPlaylistDetailScreen>', () => {
     jest.clearAllMocks()
     mockRemove.mockResolvedValue({ status: 'ok' })
     mockSermonUpdate.mockResolvedValue({ status: 'ok' })
-    jest.spyOn(RNView.prototype, 'measureInWindow').mockImplementation(cb => {
-      cb(0, 0, 44, 44)
-      return undefined
-    })
+    mockMeasureInWindow({ height: 44, width: 44, x: 0, y: 0 })
   })
 
   afterEach(() => {

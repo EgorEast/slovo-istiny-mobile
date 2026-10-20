@@ -106,7 +106,7 @@ export const AdminPlaylistsScreen = () => {
                   {LOAD_MORE_FAILED_LABEL}
                 </Text>
               </TouchableItem>
-            ) : null
+            ) : undefined
           }
         />
       </PullToRefresh>

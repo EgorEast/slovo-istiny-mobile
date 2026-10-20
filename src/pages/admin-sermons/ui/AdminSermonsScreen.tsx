@@ -116,7 +116,7 @@ export const AdminSermonsScreen = () => {
                   {LOAD_MORE_FAILED_LABEL}
                 </Text>
               </TouchableItem>
-            ) : null
+            ) : undefined
           }
         />
       </PullToRefresh>

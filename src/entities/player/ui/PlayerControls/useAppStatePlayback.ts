@@ -23,7 +23,7 @@ export const useAppStatePlayback = ({
     let appState = AppState.currentState
 
     const handleAppStateChange = async (nextAppState: AppStateStatus) => {
-      if (appState.match(/inactive|background/) && nextAppState === 'active') {
+      if (appState?.match(/inactive|background/) && nextAppState === 'active') {
         const audioStatus = getStatus()
 
         // Full re-activation (not the in-place update): if the OS killed the

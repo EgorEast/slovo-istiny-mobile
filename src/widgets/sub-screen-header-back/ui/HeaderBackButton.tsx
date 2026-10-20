@@ -2,6 +2,7 @@ import Ionicons from '@expo/vector-icons/Ionicons'
 import { type Href, router } from 'expo-router'
 import { type ColorValue, StyleSheet } from 'react-native'
 import { IconButton } from 'shared/ui/icon-button'
+import { resolveColor } from 'shared/ui/theme'
 
 // A reloaded web page has no navigation history, so react-navigation's own
 // back button never appears. This one always works, falling back to
@@ -39,7 +40,7 @@ export const HeaderBackButton = ({
       onPress={handlePress}
       style={styles.container}
       accessibilityLabel='Назад'
-      Icon={<Ionicons size={24} color={tintColor} name='chevron-back' />}
+      Icon={<Ionicons size={24} name='chevron-back' color={resolveColor(tintColor)} />}
     />
   )
 }

@@ -1,5 +1,5 @@
 import { forwardRef } from 'react'
-import { Pressable, type PressableProps, type View } from 'react-native'
+import { Pressable, type PressableProps, type ViewInstance } from 'react-native'
 import { hapticLight } from '../../lib/haptics'
 
 // On web react-native-web only renders a real <button> (Vimium hints and
@@ -10,7 +10,7 @@ export interface PressableButtonProps extends Omit<PressableProps, 'accessibilit
   accessibilityRole?: PressableProps['accessibilityRole']
 }
 
-export const PressableButton = forwardRef<View, PressableButtonProps>(
+export const PressableButton = forwardRef<ViewInstance, PressableButtonProps>(
   ({ accessibilityRole, disabled, onPressIn, ...props }, ref) => (
     <Pressable
       {...props}

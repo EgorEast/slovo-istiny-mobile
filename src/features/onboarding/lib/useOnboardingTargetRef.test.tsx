@@ -2,6 +2,7 @@ import { createCtx } from '@reatom/framework'
 import { act, waitFor } from '@testing-library/react-native'
 import { View } from 'react-native'
 import { renderWithProviders } from 'shared/mocks'
+import { mockMeasureInWindow } from 'shared/mocks/measure'
 import { onboardingTargetRectsAtom } from '../model/targets'
 import { onboardingTourAtom } from '../model/tour'
 import { useOnboardingTargetRef } from './useOnboardingTargetRef'
@@ -14,14 +15,6 @@ const mockAddListener = jest.fn(() => jest.fn())
 jest.mock('expo-router', () => ({
   useNavigation: () => ({ addListener: mockAddListener }),
 }))
-
-const mockMeasureInWindow = (rect: { height: number; width: number; x: number; y: number }) =>
-  jest
-    .spyOn(View.prototype, 'measureInWindow')
-    .mockImplementation((cb: (x: number, y: number, width: number, height: number) => void) => {
-      cb(rect.x, rect.y, rect.width, rect.height)
-      return undefined
-    })
 
 const RefTargetView = ({ id }: { id: string }) => {
   const targetRef = useOnboardingTargetRef(id)

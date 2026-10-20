@@ -1,5 +1,12 @@
 import { type RefObject } from 'react'
-import { Platform, Text, TextInput, type TextInputProps, View } from 'react-native'
+import {
+  Platform,
+  Text,
+  TextInput,
+  type TextInputInstance,
+  type TextInputProps,
+  View,
+} from 'react-native'
 import { useTheme } from 'shared/ui/theme'
 import { styles } from './styles'
 
@@ -27,7 +34,7 @@ export const AdminLoginField = ({
   autoComplete?: TextInputProps['autoComplete']
   autoFocus?: boolean
   importantForAutofill?: TextInputProps['importantForAutofill']
-  inputRef?: RefObject<null | TextInput>
+  inputRef?: RefObject<null | TextInputInstance>
   label: string
   onChangeText: (value: string) => void
   onSubmitEditing?: () => void

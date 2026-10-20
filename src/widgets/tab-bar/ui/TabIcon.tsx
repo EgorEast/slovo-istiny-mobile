@@ -1,5 +1,4 @@
 import { AntDesign, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons'
-import { type ColorValue } from 'react-native'
 
 interface IconSet<TName> {
   active: TName
@@ -37,7 +36,7 @@ export const TabIcon = ({
   isActive,
   routeName,
 }: {
-  color: ColorValue
+  color: string
   isActive: boolean
   routeName: string
 }) => {

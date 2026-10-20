@@ -1,6 +1,6 @@
 import { BlurTargetView, BlurView } from 'expo-blur'
 import { useRef } from 'react'
-import { StyleSheet, Text, View } from 'react-native'
+import { StyleSheet, Text, View, type ViewInstance } from 'react-native'
 import { CoverImage } from './cover-image/cover-image'
 import { RADIUSES, useTheme } from './theme'
 import { COLORS } from './theme/colors'
@@ -48,7 +48,7 @@ export const PlaylistLetterAvatar = ({
   title: string
 }) => {
   const { currentTheme, isLight } = useTheme()
-  const blurTargetRef = useRef<View>(null)
+  const blurTargetRef = useRef<ViewInstance>(null)
   const letter = title.trim().charAt(0).toUpperCase()
   const scrimColor = isLight
     ? withAlpha(COLORS.white, LIGHT_SCRIM_OPACITY)

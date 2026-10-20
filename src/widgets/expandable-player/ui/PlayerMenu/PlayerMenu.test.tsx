@@ -1,6 +1,5 @@
 import { createCtx } from '@reatom/framework'
 import { act, fireEvent, waitFor } from '@testing-library/react-native'
-import { View } from 'react-native'
 import { type TestInstance } from 'test-renderer'
 import {
   onboardingExitStepIndexAtom,
@@ -10,6 +9,7 @@ import {
 import { type TrackCacheVisualState } from 'entities/offline-cache'
 import { type PlaybackRate } from 'entities/player'
 import { type AudioPlayerData } from 'entities/sermon'
+import { mockMeasureInWindow } from 'shared/mocks/measure'
 import { renderWithProviders } from 'shared/mocks/renderWithProviders'
 import { isOnlineAtom } from 'shared/model'
 import { PlayerMenu } from './PlayerMenu'
@@ -400,14 +400,6 @@ describe('<PlayerMenuItems>', () => {
     expect(mockOnToggleCache).toHaveBeenCalledTimes(1)
   })
 
-  const mockMeasureInWindow = () =>
-    jest
-      .spyOn(View.prototype, 'measureInWindow')
-      .mockImplementation((cb: (x: number, y: number, width: number, height: number) => void) => {
-        cb(RECT.x, RECT.y, RECT.width, RECT.height)
-        return undefined
-      })
-
   const renderMenuItems = (ctx: ReturnType<typeof createCtx>) =>
     renderWithProviders(
       <PlayerMenuItems
@@ -422,7 +414,7 @@ describe('<PlayerMenuItems>', () => {
     )
 
   test('registers the details target rect while its tour step is active', async () => {
-    mockMeasureInWindow()
+    mockMeasureInWindow(RECT)
     const ctx = createCtx()
     onboardingTourAtom(ctx, {
       deckIndex: 0,
@@ -441,7 +433,7 @@ describe('<PlayerMenuItems>', () => {
   })
 
   test('registers the speed menu target rect while its tour step is active', async () => {
-    mockMeasureInWindow()
+    mockMeasureInWindow(RECT)
     const ctx = createCtx()
     onboardingTourAtom(ctx, { deckIndex: 0, scenarioId: 'player-speed', skippedDeckIndexes: [] })
     onboardingExitStepIndexAtom(ctx, 1)
@@ -456,7 +448,7 @@ describe('<PlayerMenuItems>', () => {
   })
 
   test('registers the sound menu target rect while its tour step is active', async () => {
-    mockMeasureInWindow()
+    mockMeasureInWindow(RECT)
     const ctx = createCtx()
     onboardingTourAtom(ctx, { deckIndex: 0, scenarioId: 'player-sound', skippedDeckIndexes: [] })
     onboardingExitStepIndexAtom(ctx, 1)

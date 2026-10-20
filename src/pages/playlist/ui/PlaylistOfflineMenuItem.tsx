@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons'
 import { type ColorValue } from 'react-native'
-import { useTheme } from 'shared/ui/theme'
+import { resolveColor, useTheme } from 'shared/ui/theme'
 import { PlaylistMenuRow } from './PlaylistMenuRow'
 
 const ICON_SIZE = 18
@@ -12,7 +12,7 @@ export interface PlaylistOfflineMenuItemProps {
   onboardingTargetId?: string
   onPress: () => void
   text: string
-  textColor?: ColorValue
+  textColor?: string
 }
 
 export const PlaylistOfflineMenuItem = ({
@@ -37,7 +37,7 @@ export const PlaylistOfflineMenuItem = ({
         <MaterialCommunityIcons
           name={icon}
           size={ICON_SIZE}
-          color={iconColor || (isDisabled ? currentTheme.textMuted : currentTheme.icon)}
+          color={resolveColor(iconColor, isDisabled ? currentTheme.textMuted : currentTheme.icon)}
         />
       }
     />

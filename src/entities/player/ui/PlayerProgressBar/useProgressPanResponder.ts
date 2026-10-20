@@ -1,5 +1,5 @@
 import { type RefObject, useCallback, useMemo, useRef, useState } from 'react'
-import { type LayoutChangeEvent, PanResponder, type View } from 'react-native'
+import { type LayoutChangeEvent, PanResponder, type ViewInstance } from 'react-native'
 
 const MIN_MOVE_PX = 5
 
@@ -18,7 +18,7 @@ interface SeekCallbacks {
 }
 
 interface UseProgressPanResponderResult {
-  containerRef: RefObject<null | View>
+  containerRef: RefObject<null | ViewInstance>
   handleLayout: (event: LayoutChangeEvent) => void
   panResponder: PanResponderInstance
   trackWidth: number
@@ -29,7 +29,7 @@ export const useProgressPanResponder = (
   { onSeekCancel, onSeekEnd, onSeekStart, onSeekUpdate }: SeekCallbacks,
 ): UseProgressPanResponderResult => {
   const [layoutInfo, setLayoutInfo] = useState<LayoutInfo | null>(null)
-  const containerRef = useRef<null | View>(null)
+  const containerRef = useRef<null | ViewInstance>(null)
   const lastAcceptedXRef = useRef<null | number>(null)
 
   const handleLayout = useCallback((event: LayoutChangeEvent) => {

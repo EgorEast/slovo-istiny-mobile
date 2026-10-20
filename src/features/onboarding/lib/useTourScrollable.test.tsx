@@ -1,4 +1,4 @@
-import { type FlatList, type ScrollView } from 'react-native'
+import { type FlatListInstance, type ScrollViewInstance } from 'react-native'
 import { renderHookWithProviders } from 'shared/mocks'
 import { getTourScrollable, unregisterTourScrollable } from './tourScrollable'
 import { useTourScrollable } from './useTourScrollable'
@@ -12,7 +12,7 @@ describe('useTourScrollable', () => {
 
   test('registers the scroll view, forwards scrollTo, and unregisters on detach', async () => {
     const scrollTo = jest.fn()
-    const node = { scrollTo } as unknown as ScrollView
+    const node = { scrollTo } as unknown as ScrollViewInstance
     const { result } = await renderHookWithProviders(() => useTourScrollable())
 
     result.current(node)
@@ -30,7 +30,7 @@ describe('useTourScrollable', () => {
 
   test('forwards scrollToOffset when a FlatList registers itself', async () => {
     const scrollToOffset = jest.fn()
-    const node = { scrollToOffset } as unknown as FlatList
+    const node = { scrollToOffset } as unknown as FlatListInstance
     const { result } = await renderHookWithProviders(() => useTourScrollable())
 
     result.current(node)

@@ -1,6 +1,6 @@
 import { BlurTargetView, BlurView } from 'expo-blur'
 import { useRef } from 'react'
-import { Text, View } from 'react-native'
+import { Text, View, type ViewInstance } from 'react-native'
 import Animated, { type useAnimatedStyle } from 'react-native-reanimated'
 import { OnboardingTarget } from 'features/onboarding'
 import { CoverImage } from 'shared/ui'
@@ -30,7 +30,7 @@ export const PlaylistHeader = ({
   title: string
 }) => {
   const headerStyles = createHeaderStyles(theme)
-  const blurTargetRef = useRef<View>(null)
+  const blurTargetRef = useRef<ViewInstance>(null)
 
   return (
     <>

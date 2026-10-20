@@ -1,5 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Animated, type StyleProp, StyleSheet, View, type ViewStyle } from 'react-native'
+import {
+  Animated,
+  type StyleProp,
+  StyleSheet,
+  View,
+  type ViewInstance,
+  type ViewStyle,
+} from 'react-native'
 import { GestureHandlerRootView, PanGestureHandler } from 'react-native-gesture-handler'
 import { COLORS } from '../theme/colors'
 import { useTheme } from '../theme/ThemeContext/useTheme'
@@ -32,7 +39,7 @@ export const Progress = ({
 
   const safeTotal = Math.max(total, 1)
 
-  const viewElementRef = useRef<View>(null)
+  const viewElementRef = useRef<ViewInstance>(null)
 
   const calculateAndCallChangeProgressValue = (coordinateX: number) =>
     viewElementRef.current?.measure((...args) => {

@@ -1,10 +1,10 @@
 import { type RefObject } from 'react'
-import { type View } from 'react-native'
+import { type ViewInstance } from 'react-native'
 import { type AnchorRect, MenuDropdown } from 'shared/ui/menu'
 
 export interface HistoryHeaderMenuDropdownProps {
   anchor: AnchorRect | null
-  anchorRef?: RefObject<null | View>
+  anchorRef?: RefObject<null | ViewInstance>
   onClear: () => void
   onClose: () => void
   visible: boolean

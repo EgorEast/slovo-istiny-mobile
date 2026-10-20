@@ -1,8 +1,8 @@
 import { useEffect, useRef } from 'react'
-import { Keyboard, Platform, type TextInput } from 'react-native'
+import { Keyboard, Platform, type TextInputInstance } from 'react-native'
 
 export const useSearchAutofocus = () => {
-  const inputRef = useRef<TextInput>(null)
+  const inputRef = useRef<TextInputInstance>(null)
   const hasFocusedOnMount = useRef(false)
 
   useEffect(() => {

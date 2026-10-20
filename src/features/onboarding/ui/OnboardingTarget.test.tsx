@@ -2,6 +2,11 @@ import { createCtx } from '@reatom/framework'
 import { act, waitFor } from '@testing-library/react-native'
 import { Dimensions, Text, View } from 'react-native'
 import { renderWithProviders } from 'shared/mocks'
+import {
+  mockMeasureInWindow as spyMeasureInWindow,
+  spyOnMeasureInWindow,
+  spyOnMeasureLayout,
+} from 'shared/mocks/measure'
 import { registerTourScrollable, unregisterTourScrollable } from '../lib/tourScrollable'
 import {
   bumpOnboardingScrollEpoch,
@@ -35,33 +40,23 @@ jest.mock('expo-router', () => ({
 }))
 
 const mockMeasureInWindow = (rect: { height: number; width: number; x: number; y: number }) =>
-  jest
-    .spyOn(View.prototype, 'measureInWindow')
-    .mockImplementation((cb: (x: number, y: number, width: number, height: number) => void) => {
-      cb(rect.x, rect.y, rect.width, rect.height)
-      return undefined
-    })
+  spyMeasureInWindow(rect)
 
 // The first measurement (the target's single +100 ms one) reports a clipped zero-size
 // rect and never registers; later calls report a real, on-screen rect.
 const mockMeasureInWindowSequence = () => {
   let calls = 0
-  return jest
-    .spyOn(View.prototype, 'measureInWindow')
-    .mockImplementation((cb: (x: number, y: number, width: number, height: number) => void) => {
-      calls += 1
-      const rect = calls === 1 ? ZERO_RECT : POST_SCROLL_RECT
-      cb(rect.x, rect.y, rect.width, rect.height)
-      return undefined
-    })
+  return spyOnMeasureInWindow().mockImplementation(cb => {
+    calls += 1
+    const rect = calls === 1 ? ZERO_RECT : POST_SCROLL_RECT
+    cb(rect.x, rect.y, rect.width, rect.height)
+  })
 }
 
 const mockMeasureLayout = (rect: { height: number; width: number; x: number; y: number }) =>
-  jest
-    .spyOn(View.prototype, 'measureLayout')
-    .mockImplementation((_relativeToNativeNode, onSuccess) => {
-      onSuccess(rect.x, rect.y, rect.width, rect.height)
-    })
+  spyOnMeasureLayout().mockImplementation((_relativeToNativeNode, onSuccess) => {
+    onSuccess(rect.x, rect.y, rect.width, rect.height)
+  })
 
 const renderTarget = (ctx: ReturnType<typeof createCtx>) =>
   renderWithProviders(

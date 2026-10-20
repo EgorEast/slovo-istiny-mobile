@@ -1,11 +1,11 @@
 import { createCtx } from '@reatom/framework'
 import { fireEvent, waitFor } from '@testing-library/react-native'
 import { type ComponentProps } from 'react'
-import { View } from 'react-native'
 import { type GestureType } from 'react-native-gesture-handler'
 import { onboardingTargetRectsAtom, onboardingTourAtom } from 'features/onboarding'
 import { type PlaylistData } from 'entities/playlist'
 import { type AudioPlayerData } from 'entities/sermon'
+import { mockMeasureInWindow } from 'shared/mocks/measure'
 import { renderWithProviders } from 'shared/mocks/renderWithProviders'
 import { LightTheme } from 'shared/ui/theme'
 import { MiniPlayer } from './MiniPlayer'
@@ -200,14 +200,7 @@ describe('<MiniPlayer>', () => {
   })
 
   test('registers the play/pause onboarding target while the pause step is active', async () => {
-    const measureSpy = jest
-      .spyOn(View.prototype, 'measureInWindow')
-      .mockImplementation(
-        (callback: (x: number, y: number, width: number, height: number) => void) => {
-          callback(1, 2, 3, 4)
-          return undefined
-        },
-      )
+    const measureSpy = mockMeasureInWindow({ height: 4, width: 3, x: 1, y: 2 })
     const ctx = createCtx()
     onboardingTourAtom(ctx, { deckIndex: 2, scenarioId: 'player', skippedDeckIndexes: [] })
 

@@ -1,5 +1,4 @@
 import { type Ctx } from '@reatom/framework'
-import { type ColorValue } from 'react-native'
 import { currentThemeAtom } from './model'
 
 const STATIC_COLORS = {
@@ -17,17 +16,17 @@ const STATIC_COLORS = {
 } as const
 
 interface MutableColorSlots {
-  backdrop: ColorValue
-  background: ColorValue
-  card: ColorValue
-  icon: ColorValue
-  maximumTrackTintColor: ColorValue
-  minimumTrackTintColor: ColorValue
-  primary: ColorValue
-  skeleton: ColorValue
-  surface: ColorValue
-  text: ColorValue
-  textMuted: ColorValue
+  backdrop: string
+  background: string
+  card: string
+  icon: string
+  maximumTrackTintColor: string
+  minimumTrackTintColor: string
+  primary: string
+  skeleton: string
+  surface: string
+  text: string
+  textMuted: string
 }
 
 type StaticColorsOnly = Omit<typeof STATIC_COLORS, keyof MutableColorSlots>

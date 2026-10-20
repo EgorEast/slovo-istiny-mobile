@@ -1,10 +1,10 @@
 import { type RefObject, useCallback, useEffect, useRef, useState } from 'react'
-import { type View } from 'react-native'
+import { type ViewInstance } from 'react-native'
 import { type AnchorRect } from 'shared/ui/menu'
 import { type TrackListMenuControls } from './types'
 
 interface TrackListItemMenu {
-  dotsButtonRef: RefObject<null | View>
+  dotsButtonRef: RefObject<null | ViewInstance>
   handleItemPress: () => void
   handleToggleCache: () => Promise<void>
   handleToggleMenu: () => void
@@ -28,7 +28,7 @@ export const useTrackListItemMenu = ({
 }): TrackListItemMenu => {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [menuAnchor, setMenuAnchor] = useState<AnchorRect | null>(null)
-  const dotsButtonRef = useRef<View>(null)
+  const dotsButtonRef = useRef<ViewInstance>(null)
 
   // The menu renders in a viewport-fixed Modal portal, so the anchor must be
   // measured in viewport coords. measure() returns page coords on web (offset

@@ -1,7 +1,7 @@
 import { useAction, useAtom } from '@reatom/npm-react'
 import { useNavigation } from 'expo-router'
 import { useCallback, useEffect, useId } from 'react'
-import { type View } from 'react-native'
+import { type ViewInstance } from 'react-native'
 import { onboardingActiveStepIndexAtom } from '../model/derived'
 import { onboardingScrollEpochAtom, registerOnboardingTargetRect } from '../model/targets'
 import { onboardingTourAtom } from '../model/tour'
@@ -15,7 +15,7 @@ const MEASURE_DELAY_MS = 100
 const MEASURE_SAMPLE_DELAYS_MS = [100, 500, 1200, 2500]
 
 interface TargetMeasureInput {
-  getNode: () => null | View
+  getNode: () => null | ViewInstance
   id: string
 }
 

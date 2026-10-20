@@ -1,5 +1,5 @@
 import { type ReactNode } from 'react'
-import { type ColorValue, StyleSheet, Text, View } from 'react-native'
+import { StyleSheet, Text, View } from 'react-native'
 import { OnboardingTarget } from 'features/onboarding'
 import { PressableButton } from 'shared/ui/pressable-button'
 import { FONT_SIZES, INDENTS, useTheme } from 'shared/ui/theme'
@@ -10,7 +10,7 @@ export interface PlaylistMenuRowProps {
   onboardingTargetId?: string
   onPress: () => void
   text: string
-  textColor?: ColorValue
+  textColor?: string
 }
 
 export const PlaylistMenuRow = ({
@@ -38,7 +38,7 @@ export const PlaylistMenuRow = ({
           style={[
             styles.dropdownItemText,
             { color: isDisabled ? currentTheme.textMuted : currentTheme.text },
-            textColor && { color: textColor },
+            textColor !== undefined && { color: textColor },
           ]}
         >
           {text}

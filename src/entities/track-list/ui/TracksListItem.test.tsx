@@ -1,5 +1,6 @@
 import { act, fireEvent, screen, waitFor } from '@testing-library/react-native'
-import { Text as MockText, View } from 'react-native'
+import { Text as MockText } from 'react-native'
+import { mockMeasureInWindow } from 'shared/mocks/measure'
 import { renderWithProviders } from 'shared/mocks/renderWithProviders'
 import { type TrackCacheState } from './trackCacheState'
 import { TracksListItem } from './TracksListItem'
@@ -89,12 +90,12 @@ describe('<TracksListItem>', () => {
     mockLastSermonCachingEnabled = undefined
     // In Jest, host-component measureInWindow never fires its callback, so the
     // menu would never receive a position. Mock the measurement with fixed geometry.
-    jest
-      .spyOn(View.prototype, 'measureInWindow')
-      .mockImplementation((cb: (x: number, y: number, width: number, height: number) => void) => {
-        cb(MOCK_MEASURE_WINDOW_X, MOCK_MEASURE_WINDOW_Y, MOCK_MEASURE_WIDTH, MOCK_MEASURE_HEIGHT)
-        return undefined
-      })
+    mockMeasureInWindow({
+      height: MOCK_MEASURE_HEIGHT,
+      width: MOCK_MEASURE_WIDTH,
+      x: MOCK_MEASURE_WINDOW_X,
+      y: MOCK_MEASURE_WINDOW_Y,
+    })
   })
 
   afterEach(() => {

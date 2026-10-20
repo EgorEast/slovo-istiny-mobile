@@ -1,6 +1,6 @@
 import { useAtom } from '@reatom/npm-react'
 import { useCallback, useEffect, useRef } from 'react'
-import { Dimensions, type View } from 'react-native'
+import { Dimensions, type ViewInstance } from 'react-native'
 import { isGlowVisibleAtom, isListenScrollingAtom } from '../model'
 
 interface UseGlowVisibilityOptions {
@@ -13,7 +13,7 @@ interface UseGlowVisibilityOptions {
 export const useGlowVisibility = ({ isFocused }: UseGlowVisibilityOptions) => {
   const [isGlowVisible, setIsGlowVisible] = useAtom(isGlowVisibleAtom)
   const [isScrolling] = useAtom(isListenScrollingAtom)
-  const ref = useRef<View>(null)
+  const ref = useRef<ViewInstance>(null)
   const isMountedRef = useRef(true)
   const visibilityRef = useRef(isGlowVisible)
 

@@ -1,5 +1,12 @@
 import { forwardRef } from 'react'
-import { ActivityIndicator, Platform, Text, View, type ViewStyle } from 'react-native'
+import {
+  ActivityIndicator,
+  Platform,
+  Text,
+  View,
+  type ViewInstance,
+  type ViewStyle,
+} from 'react-native'
 import { GestureDetector, type GestureType } from 'react-native-gesture-handler'
 import Animated, { type AnimatedStyle } from 'react-native-reanimated'
 import { OnboardingTarget } from 'features/onboarding'
@@ -34,7 +41,7 @@ interface MiniPlayerProps {
   showSpinner: boolean
 }
 
-export const MiniPlayer = forwardRef<View, MiniPlayerProps>(
+export const MiniPlayer = forwardRef<ViewInstance, MiniPlayerProps>(
   (
     {
       audio,

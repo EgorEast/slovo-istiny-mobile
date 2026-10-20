@@ -1,9 +1,9 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons'
 import { type RefObject } from 'react'
-import { type ColorValue, View } from 'react-native'
+import { type ColorValue, View, type ViewInstance } from 'react-native'
 import { OnboardingTarget } from 'features/onboarding'
 import { IconButton } from 'shared/ui/icon-button'
-import { useTheme } from 'shared/ui/theme'
+import { resolveColor, useTheme } from 'shared/ui/theme'
 import { headerMenuButtonStyles } from './styles'
 
 const ICON_SIZE = 24
@@ -25,7 +25,7 @@ export const PlaylistHeaderMenuButton = ({
   onPress,
 }: {
   accessibilityLabel: string
-  buttonRef: RefObject<null | View>
+  buttonRef: RefObject<null | ViewInstance>
   iconColor?: ColorValue
   onboardingTargetId?: string
   onPress: () => void
@@ -44,7 +44,7 @@ export const PlaylistHeaderMenuButton = ({
             <MaterialCommunityIcons
               size={ICON_SIZE}
               name='dots-vertical'
-              color={iconColor ?? currentTheme.text}
+              color={resolveColor(iconColor, currentTheme.text)}
             />
           }
         />

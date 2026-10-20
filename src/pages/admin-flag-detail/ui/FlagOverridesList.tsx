@@ -107,7 +107,7 @@ export const FlagOverridesList = ({
               {LOAD_MORE_FAILED_LABEL}
             </Text>
           </TouchableItem>
-        ) : null
+        ) : undefined
       }
     />
   )

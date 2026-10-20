@@ -1,6 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons'
 import { useRef, useState } from 'react'
-import { StyleSheet, Text, TextInput, View } from 'react-native'
+import { StyleSheet, Text, TextInput, type TextInputInstance, View } from 'react-native'
 import { IconButton } from '../icon-button'
 import { useTheme } from '../theme/ThemeContext/useTheme'
 import { INDENTS, RADIUSES } from '../theme/themed'
@@ -30,7 +30,7 @@ export const EditableUrlField = ({
   const { currentTheme } = useTheme()
   const [isEditing, setIsEditing] = useState(false)
   const [isFocused, setIsFocused] = useState(false)
-  const inputRef = useRef<TextInput>(null)
+  const inputRef = useRef<TextInputInstance>(null)
 
   const borderStyle = isFocused
     ? { borderColor: currentTheme.primary, borderWidth: 2 }

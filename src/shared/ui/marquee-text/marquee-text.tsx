@@ -75,9 +75,7 @@ export const MarqueeText = memo(function MarqueeTextComponent({
   if (!text) return null
 
   const alignSelf = needsRepeat ? 'flex-start' : centerWhenStatic ? 'center' : 'flex-start'
-  // @ts-expect-error - web-only measurer width 'max-content' is not in RN DimensionValue
   const measurerStyle: StyleProp<TextStyle> = isWeb ? WEB_MEASURER_STYLE : NATIVE_MEASURER_STYLE
-  // @ts-expect-error - web-only whiteSpace is not in RN TextStyle
   const visibleTextStyle: StyleProp<TextStyle> = isWeb ? [textStyle, WEB_TEXT_STYLE] : textStyle
 
   // alignSelf:'stretch' overrides a parent's alignItems:'center'; without it the

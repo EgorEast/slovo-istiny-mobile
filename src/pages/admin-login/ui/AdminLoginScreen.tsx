@@ -1,7 +1,7 @@
 import { useAction } from '@reatom/npm-react'
 import { useRouter } from 'expo-router'
 import { useRef, useState } from 'react'
-import { ActivityIndicator, ScrollView, Text, type TextInput, View } from 'react-native'
+import { ActivityIndicator, ScrollView, Text, type TextInputInstance, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { signIn } from 'entities/auth'
 import { getErrorMessage } from 'shared/lib/error-utils'
@@ -24,7 +24,7 @@ export const AdminLoginScreen = () => {
   const [password, setPassword] = useState('')
   const [error, setError] = useState<null | string>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const passwordInputRef = useRef<TextInput>(null)
+  const passwordInputRef = useRef<TextInputInstance>(null)
   const autofillRemountKey = useAndroidAutofillRemountKey()
 
   const canSubmit = username.trim().length > 0 && password.length > 0 && !isSubmitting

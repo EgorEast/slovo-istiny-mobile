@@ -1,6 +1,5 @@
 import { createCtx } from '@reatom/framework'
 import { act, fireEvent, waitFor } from '@testing-library/react-native'
-import { View } from 'react-native'
 import {
   clearHistoryAction,
   historyAtom,
@@ -11,6 +10,7 @@ import {
 } from 'entities/listening-history'
 import { usePlayNewSermon } from 'entities/player'
 import { FAVORITES_PLAYLIST, myPlaylistsAtom, type PlaylistData } from 'entities/playlist'
+import { mockMeasureInWindow } from 'shared/mocks/measure'
 import { renderWithProviders } from 'shared/mocks/renderWithProviders'
 import { HistoryHeaderMenu } from './HistoryHeaderMenu'
 import { HistoryScreen } from './HistoryScreen'
@@ -159,12 +159,7 @@ describe('<HistoryScreen>', () => {
     )
     // In Jest, host-component measureInWindow never fires its callback, so the
     // header menu would never open. Mock the measurement with fixed geometry.
-    jest
-      .spyOn(View.prototype, 'measureInWindow')
-      .mockImplementation((cb: (x: number, y: number, width: number, height: number) => void) => {
-        cb(300, 100, 44, 44)
-        return undefined
-      })
+    mockMeasureInWindow({ height: 44, width: 44, x: 300, y: 100 })
   })
 
   afterEach(() => {

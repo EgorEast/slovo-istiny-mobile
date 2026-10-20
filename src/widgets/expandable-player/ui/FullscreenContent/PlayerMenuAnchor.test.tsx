@@ -1,11 +1,12 @@
 import { createCtx } from '@reatom/framework'
 import { act, fireEvent, waitFor } from '@testing-library/react-native'
 import { useState } from 'react'
-import { StyleSheet, View } from 'react-native'
+import { StyleSheet } from 'react-native'
 import { onboardingTargetRectsAtom, onboardingTourAtom } from 'features/onboarding'
 import { currentPlaylistAtom } from 'entities/player'
 import { myPlaylistsAtom } from 'entities/playlist'
 import { type AudioPlayerData } from 'entities/sermon'
+import { mockMeasureInWindow } from 'shared/mocks/measure'
 import { renderWithProviders } from 'shared/mocks/renderWithProviders'
 import { type createStyles } from '../ExpandablePlayer/styles'
 import { expandedControlsStyles } from './expandedControlsStyles'
@@ -262,12 +263,7 @@ describe('<PlayerMenuAnchor>', () => {
   })
 
   test('registers its spotlight rect for the player menu target', async () => {
-    jest
-      .spyOn(View.prototype, 'measureInWindow')
-      .mockImplementation((cb: (x: number, y: number, width: number, height: number) => void) => {
-        cb(RECT.x, RECT.y, RECT.width, RECT.height)
-        return undefined
-      })
+    mockMeasureInWindow(RECT)
     const ctx = createCtx()
     onboardingTourAtom(ctx, { deckIndex: 4, scenarioId: 'player-intro', skippedDeckIndexes: [] })
 

@@ -1,11 +1,11 @@
 import { type RefObject } from 'react'
-import { type View } from 'react-native'
+import { type ViewInstance } from 'react-native'
 import { type AnchorRect } from 'shared/ui/menu'
 
 export interface PlaylistHeaderMenuDropdownProps {
   allCached: boolean
   anchor: AnchorRect | null
-  anchorRef?: RefObject<null | View>
+  anchorRef?: RefObject<null | ViewInstance>
   canClear: boolean
   canDelete: boolean
   canMarkAll: boolean

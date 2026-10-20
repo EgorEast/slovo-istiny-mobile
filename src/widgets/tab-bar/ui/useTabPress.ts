@@ -2,9 +2,11 @@ import { type Tabs } from 'expo-router'
 import { useFeatureFlag } from 'entities/feature-flags'
 import { showInfo } from 'shared/model/info-dialog'
 
-type TabBarNavigation = Parameters<
-  NonNullable<React.ComponentProps<typeof Tabs>['tabBar']>
->[0]['navigation']
+type NavigateToTab = TabBarProps['navigateToTab']
+
+type TabBarEmitter = TabBarProps['emitter']
+
+type TabBarProps = Parameters<NonNullable<React.ComponentProps<typeof Tabs>['tabBar']>>[0]
 
 interface TabRoute {
   key: string
@@ -12,13 +14,14 @@ interface TabRoute {
 }
 
 interface UseTabPressParams {
-  navigation: TabBarNavigation
+  emitter: TabBarEmitter
+  navigateToTab: NavigateToTab
 }
 
 export const UNAVAILABLE_TAB_TITLE = 'Скоро будет доступно'
 export const UNAVAILABLE_TAB_MESSAGE = 'Этот раздел будет реализован в будущих обновлениях'
 
-export const useTabPress = ({ navigation }: UseTabPressParams) => {
+export const useTabPress = ({ emitter, navigateToTab }: UseTabPressParams) => {
   // Табы «Читать» и «Учиться» открываются по фича-флагу. Пока флаги не
   // загружены, доступ закрыт (useFeatureFlag → false), то есть поведение
   // сохраняется прежним.
@@ -38,13 +41,13 @@ export const useTabPress = ({ navigation }: UseTabPressParams) => {
       return
     }
 
-    const event = navigation.emit({
+    const event = emitter.emit({
       canPreventDefault: true,
       target: route.key,
       type: 'tabPress',
     })
 
-    if (!isActive && !event.defaultPrevented) navigation.navigate(route.name)
+    if (!isActive && !event.defaultPrevented) navigateToTab(route.key)
   }
 
   return { handleTabPress, isTabAvailable }

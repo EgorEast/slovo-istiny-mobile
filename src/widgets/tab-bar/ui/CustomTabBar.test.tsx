@@ -34,22 +34,22 @@ const createMockState = (activeIndex: number) => ({
   type: 'tab' as const,
 })
 
-const createMockNavigation = () =>
+const createMockEmitter = () =>
   ({
     emit: jest.fn(() => ({ defaultPrevented: false })),
-    navigate: mockNavigate,
-  }) as unknown as Parameters<typeof CustomTabBar>[0]['navigation']
+  }) as unknown as Parameters<typeof CustomTabBar>[0]['emitter']
 
 const renderTabBar = async (activeIndex = 0) => {
   const state = createMockState(activeIndex)
-  const navigation = createMockNavigation()
+  const emitter = createMockEmitter()
 
   return renderWithProviders(
     <CustomTabBar
       state={state}
       descriptors={{}}
-      navigation={navigation}
+      emitter={emitter}
       hideFloatingPlayer={false}
+      navigateToTab={mockNavigate}
       insets={{ bottom: 0, left: 0, right: 0, top: 0 }}
     />,
   )

@@ -76,7 +76,7 @@ export const AdminSectionsScreen = () => {
               <View style={styles.reordering}>
                 <AdminSectionRow.Skeleton />
               </View>
-            ) : null
+            ) : undefined
           }
         />
       </PullToRefresh>

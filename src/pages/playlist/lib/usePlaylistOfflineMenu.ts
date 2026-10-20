@@ -1,6 +1,6 @@
 import { useAtom, useCtx } from '@reatom/npm-react'
 import { useCallback, useRef, useState } from 'react'
-import { type View } from 'react-native'
+import { type ViewInstance } from 'react-native'
 import {
   activeCacheUrlAtom,
   audioCacheService,
@@ -29,7 +29,7 @@ export const usePlaylistOfflineMenu = (tracksData: TrackToCache[], playlistTitle
   const [clearDialogVisible, setClearDialogVisible] = useState(false)
   const [menuVisible, setMenuVisible] = useState(false)
   const [menuAnchor, setMenuAnchor] = useState<AnchorRect | null>(null)
-  const buttonRef = useRef<View>(null)
+  const buttonRef = useRef<ViewInstance>(null)
 
   const { allCached, cachedCount } = usePlaylistCacheStatus(tracksData, cacheTrigger)
   // Caching off in settings: the queue is inert and the cache was cleared, so

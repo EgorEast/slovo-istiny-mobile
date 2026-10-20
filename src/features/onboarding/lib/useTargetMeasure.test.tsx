@@ -1,6 +1,6 @@
 import { createCtx } from '@reatom/framework'
 import { act } from '@testing-library/react-native'
-import { type View } from 'react-native'
+import { type ViewInstance } from 'react-native'
 import { renderHookWithProviders } from 'shared/mocks'
 import { onboardingTargetRectsAtom } from '../model/targets'
 import { endOnboardingTour, onboardingTourAtom } from '../model/tour'
@@ -23,9 +23,9 @@ type MeasureCallback = (x: number, y: number, width: number, height: number) => 
 // The hook only calls `measureInWindow` on the node, so a minimal stand-in is
 // enough to drive it without mounting a real View.
 const createNode = (measureInWindow: (callback: MeasureCallback) => void) =>
-  ({ measureInWindow }) as unknown as View
+  ({ measureInWindow }) as unknown as ViewInstance
 
-const renderMeasure = (getNode: () => null | View, ctx: ReturnType<typeof createCtx>) =>
+const renderMeasure = (getNode: () => null | ViewInstance, ctx: ReturnType<typeof createCtx>) =>
   renderHookWithProviders(() => useTargetMeasure({ getNode, id: TARGET_ID }), { ctx })
 
 const activateTarget = (ctx: ReturnType<typeof createCtx>) => {

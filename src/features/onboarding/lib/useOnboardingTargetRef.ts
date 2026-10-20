@@ -1,5 +1,5 @@
 import { useCallback, useRef } from 'react'
-import { type View } from 'react-native'
+import { type ViewInstance } from 'react-native'
 import { useTargetMeasure } from './useTargetMeasure'
 
 /**
@@ -9,12 +9,12 @@ import { useTargetMeasure } from './useTargetMeasure'
  * @param id - Target id matching the active scenario step's targetId.
  */
 export const useOnboardingTargetRef = (id: string) => {
-  const nodeRef = useRef<null | View>(null)
+  const nodeRef = useRef<null | ViewInstance>(null)
   const getNode = useCallback(() => nodeRef.current, [])
 
   useTargetMeasure({ getNode, id })
 
-  return useCallback((node: null | View) => {
+  return useCallback((node: null | ViewInstance) => {
     nodeRef.current = node
   }, [])
 }

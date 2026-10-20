@@ -8,7 +8,7 @@ import { registerTourScrollable, unregisterTourScrollable } from './tourScrollab
 type TourScrollableNode = (
   | { scrollTo: (params: { animated?: boolean; y?: number }) => void }
   | { scrollToOffset: (params: { animated?: boolean; offset: number }) => void }
-) & { getInnerViewNode?: () => number }
+) & { getInnerViewNode?: () => number | undefined }
 
 const scrollNodeTo = (node: TourScrollableNode, y: number, animated: boolean) => {
   if ('scrollTo' in node) {
