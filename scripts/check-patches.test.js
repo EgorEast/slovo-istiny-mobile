@@ -1,9 +1,53 @@
 import { describe, expect, test } from '@jest/globals'
-import { parsePatchFileName, verifyPatch } from './check-patches.mjs'
+import {
+  collectExpoAudioProblems,
+  collectFileProblems,
+  parsePatchFileName,
+  verifyPatch,
+} from './check-patches.mjs'
 
 const MATCHING_PATCH = 'expo-font+58.0.9.patch'
 const MISMATCHED_PATCH = 'expo-font+0.0.0.patch'
 const MISSING_PACKAGE_PATCH = 'missing-package+1.0.0.patch'
+const PATCH_MARKER = 'PATCH(patch-package)'
+const PACKAGE_JSON_WITH_SOURCE_BUILD = {
+  expo: { autolinking: { buildFromSource: ['expo-audio'] } },
+}
+
+const PATCHED_SOURCE = `
+  // ${PATCH_MARKER}: the loop getter touched the player off the main thread
+  Property("loop") { playlist ->
+    runOnMain {
+      playlist.loopMode.value
+    }
+  }.set { playlist, mode -> playlist.loopMode = mode }
+`
+
+const PROBE_FILE_PATH = 'node_modules/example/build/Module.js'
+const PROBE_FIX_SIGNATURE = 'loadAsync(name, input).catch'
+const MARKED_PROBE_SOURCE = `// ${PATCH_MARKER}: swallow async rejections
+return loadAsync(name, input).catch(() => {})`
+const UPSTREAM_FIXED_PROBE_SOURCE = 'return loadAsync(name, input).catch(() => {})'
+const UNPATCHED_PROBE_SOURCE = 'return loadAsync(name, input)'
+
+const UNWRAPPED_LOOP_GETTER = `
+  // ${PATCH_MARKER}: the loop getter touched the player off the main thread
+  Property("loop") { playlist ->
+    playlist.loopMode.value
+  }.set { playlist, mode -> playlist.loopMode = mode }
+`
+
+const PLAYER_AND_UNPATCHED_PLAYLIST = `
+  Property("loop") { player ->
+    runOnMain {
+      player.ref.repeatMode == Player.REPEAT_MODE_ONE
+    }
+  }.set { player, isLooping -> player.ref.repeatMode = isLooping }
+  // ${PATCH_MARKER}: the playlist loop getter needs a main-thread hop
+  Property("loop") { playlist ->
+    playlist.loopMode.value
+  }.set { playlist, mode -> playlist.loopMode = mode }
+`
 
 describe('parsePatchFileName', () => {
   test('splits an unscoped package name and version', () => {
@@ -43,5 +87,131 @@ describe('verifyPatch', () => {
 
     expect(errors).toHaveLength(1)
     expect(errors[0]).toContain('package missing-package not installed')
+  })
+})
+
+describe('collectFileProblems', () => {
+  const collect = source =>
+    collectFileProblems({
+      filePath: PROBE_FILE_PATH,
+      fixSignature: PROBE_FIX_SIGNATURE,
+      source,
+    })
+
+  test('accepts a patched file', () => {
+    expect(collect(MARKED_PROBE_SOURCE)).toEqual([])
+  })
+
+  test('accepts a patched file even when the upstream fix is present', () => {
+    expect(collect(MARKED_PROBE_SOURCE + UPSTREAM_FIXED_PROBE_SOURCE)).toEqual([])
+  })
+
+  test('reports an upstream fix applied without a patch marker', () => {
+    expect(collect(UPSTREAM_FIXED_PROBE_SOURCE)).toEqual([
+      `${PROBE_FILE_PATH}: upstream fix detected without a patch marker — ` +
+        'delete the patch if it covers this',
+    ])
+  })
+
+  test('reports a missing patch signature', () => {
+    expect(collect(UNPATCHED_PROBE_SOURCE)).toEqual([
+      `${PROBE_FILE_PATH}: patch signature missing — patch did not apply (reinstall or re-create)`,
+    ])
+  })
+
+  test('reports a missing target file', () => {
+    expect(collect(null)).toEqual([
+      `${PROBE_FILE_PATH}: target not found — package layout changed, review the patch`,
+    ])
+  })
+
+  test('reports a missing signature when no fix signature is declared', () => {
+    const problems = collectFileProblems({
+      filePath: PROBE_FILE_PATH,
+      source: UNPATCHED_PROBE_SOURCE,
+    })
+
+    expect(problems).toHaveLength(1)
+    expect(problems[0]).toContain('patch signature missing')
+  })
+})
+
+describe('collectExpoAudioProblems', () => {
+  test('accepts a patched source built from source', () => {
+    expect(
+      collectExpoAudioProblems({
+        audioModuleSource: PATCHED_SOURCE,
+        packageJson: PACKAGE_JSON_WITH_SOURCE_BUILD,
+      }),
+    ).toEqual([])
+  })
+
+  test('reports a loop getter that is not wrapped in runOnMain', () => {
+    const problems = collectExpoAudioProblems({
+      audioModuleSource: UNWRAPPED_LOOP_GETTER,
+      packageJson: PACKAGE_JSON_WITH_SOURCE_BUILD,
+    })
+
+    expect(problems).toHaveLength(1)
+    expect(problems[0]).toContain('is not wrapped in runOnMain')
+  })
+
+  test('targets the patched playlist getter when an earlier loop property exists', () => {
+    const problems = collectExpoAudioProblems({
+      audioModuleSource: PLAYER_AND_UNPATCHED_PLAYLIST,
+      packageJson: PACKAGE_JSON_WITH_SOURCE_BUILD,
+    })
+
+    expect(problems).toHaveLength(1)
+    expect(problems[0]).toContain('is not wrapped in runOnMain')
+  })
+
+  test('reports a missing patch marker', () => {
+    const problems = collectExpoAudioProblems({
+      audioModuleSource: PATCHED_SOURCE.replace(PATCH_MARKER, ''),
+      packageJson: PACKAGE_JSON_WITH_SOURCE_BUILD,
+    })
+
+    expect(problems).toHaveLength(1)
+    expect(problems[0]).toContain('patch marker PATCH(patch-package) missing')
+  })
+
+  test('reports a missing buildFromSource list', () => {
+    const problems = collectExpoAudioProblems({
+      audioModuleSource: PATCHED_SOURCE,
+      packageJson: { expo: { autolinking: {} } },
+    })
+
+    expect(problems).toHaveLength(1)
+    expect(problems[0]).toContain('is not in expo.autolinking.buildFromSource')
+  })
+
+  test('reports a buildFromSource list without expo-audio', () => {
+    const problems = collectExpoAudioProblems({
+      audioModuleSource: PATCHED_SOURCE,
+      packageJson: { expo: { autolinking: { buildFromSource: ['expo-font'] } } },
+    })
+
+    expect(problems).toHaveLength(1)
+    expect(problems[0]).toContain('is not in expo.autolinking.buildFromSource')
+  })
+
+  test('reports an unreadable package.json', () => {
+    const problems = collectExpoAudioProblems({
+      audioModuleSource: PATCHED_SOURCE,
+      packageJson: null,
+    })
+
+    expect(problems).toHaveLength(1)
+    expect(problems[0]).toContain('cannot read package.json')
+  })
+
+  test('reports a missing AudioModule.kt', () => {
+    expect(
+      collectExpoAudioProblems({
+        audioModuleSource: '',
+        packageJson: PACKAGE_JSON_WITH_SOURCE_BUILD,
+      }),
+    ).toEqual(['expo-audio AudioModule.kt not found — cannot verify the loop-getter patch'])
   })
 })

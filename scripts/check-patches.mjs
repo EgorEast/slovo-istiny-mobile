@@ -5,6 +5,32 @@ import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 
 const PATCHES_DIR = 'patches'
+const EXPO_AUDIO = 'expo-audio'
+const EXPO_AUDIO_MODULE_PATH =
+  'node_modules/expo-audio/android/src/main/java/expo/modules/audio/AudioModule.kt'
+const PACKAGE_JSON_PATH = 'package.json'
+const PATCH_MARKER = 'PATCH(patch-package)'
+const LOOP_PROPERTY = 'Property("loop")'
+
+// Per-package probes for the tri-state check. `fixSignature` is the upstream
+// equivalent of the patched code: seeing it without the marker means the
+// package fixed the issue itself and the patch must be deleted.
+const PATCH_PROBES = {
+  'expo-audio': {
+    files: [EXPO_AUDIO_MODULE_PATH],
+  },
+  'expo-font': {
+    files: ['node_modules/expo-font/build/FontLoader.web.js'],
+    fixSignature: 'ExpoFontLoader.loadAsync(name, input).catch',
+  },
+  'react-native-gesture-handler': {
+    files: [
+      'node_modules/react-native-gesture-handler/src/web/tools/PointerEventManager.ts',
+      'node_modules/react-native-gesture-handler/lib/module/web/tools/PointerEventManager.js',
+    ],
+    fixSignature: 'catch',
+  },
+}
 
 const GREEN = '\x1b[32m'
 const RED = '\x1b[31m'
@@ -46,6 +72,98 @@ const readInstalledVersion = packageName => {
   }
 }
 
+const sliceBetween = (source, startMarker, endMarker) => {
+  const start = source.indexOf(startMarker)
+  const end = source.indexOf(endMarker, start + 1)
+
+  if (start === -1 || end === -1) {
+    return null
+  }
+
+  return source.slice(start, end)
+}
+
+const findLoopGetter = source => {
+  const markerIndex = source.indexOf(PATCH_MARKER)
+  const loopIndex =
+    markerIndex === -1
+      ? source.lastIndexOf(LOOP_PROPERTY)
+      : source.indexOf(LOOP_PROPERTY, markerIndex)
+
+  return loopIndex === -1 ? null : sliceBetween(source.slice(loopIndex), LOOP_PROPERTY, '.set')
+}
+
+const readFileOrNull = path => {
+  try {
+    return readFileSync(path, 'utf-8')
+  } catch {
+    return null
+  }
+}
+
+const readJsonOrNull = path => {
+  try {
+    return JSON.parse(readFileOrNull(path))
+  } catch {
+    return null
+  }
+}
+
+export const collectFileProblems = ({ filePath, source, fixSignature }) => {
+  if (!source) {
+    return [`${filePath}: target not found — package layout changed, review the patch`]
+  }
+
+  if (source.includes(PATCH_MARKER)) {
+    return []
+  }
+
+  if (fixSignature && source.includes(fixSignature)) {
+    return [
+      `${filePath}: upstream fix detected without a patch marker — delete the patch if it covers this`,
+    ]
+  }
+
+  return [
+    `${filePath}: patch signature missing — patch did not apply (reinstall or re-create)`,
+  ]
+}
+
+export const collectExpoAudioProblems = ({ audioModuleSource, packageJson }) => {
+  if (!audioModuleSource) {
+    return ['expo-audio AudioModule.kt not found — cannot verify the loop-getter patch']
+  }
+
+  const problems = []
+
+  if (!audioModuleSource.includes(PATCH_MARKER)) {
+    problems.push('patch marker PATCH(patch-package) missing in AudioModule.kt')
+  }
+
+  // AudioModule.kt has two "loop" properties; anchor to the patched AudioPlaylist one
+  // when the marker is present so the earlier player getter cannot mask a regression.
+  const loopGetter = findLoopGetter(audioModuleSource)
+
+  if (!loopGetter?.includes('runOnMain')) {
+    problems.push('Property("loop") getter is not wrapped in runOnMain — the patch did not apply')
+  }
+
+  if (!packageJson) {
+    problems.push('cannot read package.json — cannot verify the source-build invariant')
+    return problems
+  }
+
+  const buildFromSource = packageJson.expo?.autolinking?.buildFromSource
+
+  if (!Array.isArray(buildFromSource) || !buildFromSource.includes(EXPO_AUDIO)) {
+    problems.push(
+      'expo-audio is not in expo.autolinking.buildFromSource — the patch is inert (prebuilt AAR)',
+    )
+  }
+
+  return problems
+}
+
 export const verifyPatch = file => {
   let parsed
 
@@ -73,7 +191,25 @@ export const verifyPatch = file => {
     ]
   }
 
-  return []
+  const probe = PATCH_PROBES[packageName]
+  const probeProblems = probe
+    ? probe.files.flatMap(filePath =>
+        collectFileProblems({
+          filePath,
+          source: readFileOrNull(filePath),
+          fixSignature: probe.fixSignature,
+        }),
+      )
+    : []
+
+  if (packageName !== EXPO_AUDIO) {
+    return probeProblems
+  }
+
+  return collectExpoAudioProblems({
+    audioModuleSource: readFileOrNull(EXPO_AUDIO_MODULE_PATH),
+    packageJson: readJsonOrNull(PACKAGE_JSON_PATH),
+  }).map(problem => `${file}: ${problem}`)
 }
 
 const main = () => {
