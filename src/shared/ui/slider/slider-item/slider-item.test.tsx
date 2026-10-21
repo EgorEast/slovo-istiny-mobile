@@ -1,4 +1,4 @@
-import { screen } from '@testing-library/react-native'
+import { screen, within } from '@testing-library/react-native'
 import { StyleSheet, Text } from 'react-native'
 import { APP_ICON_URI as IMAGE_PLACEHOLDER } from '../../../lib/app-icon'
 import { renderWithProviders } from '../../../mocks/renderWithProviders'
@@ -49,6 +49,11 @@ const BOTTOM_TITLE_PLATE_BACKGROUND = 'rgba(0, 0, 0, 0.55)'
 // shared scrim stack that carries the plate for title and description alike.
 const readBottomStackStyle = (title: string) =>
   StyleSheet.flatten(screen.getByText(title).parent?.parent?.props.style)
+
+// The title's Text style lives inside the on-card overlay; flatten it there so
+// the assertion targets the exact node whose boldness depends on placement.
+const readCardTitleTextStyle = (title: string) =>
+  StyleSheet.flatten(within(screen.getByTestId(TITLE_ON_CARD_TEST_ID)).getByText(title).props.style)
 
 const iconStub = <Text>icon</Text>
 
@@ -197,6 +202,9 @@ describe('<SliderItem/>', () => {
     )
 
     expect(screen.getByTestId(TITLE_ON_CARD_TEST_ID)).toBeTruthy()
+    expect(readCardTitleTextStyle(propsStub.title)).toEqual(
+      expect.objectContaining({ fontWeight: 'bold' }),
+    )
   })
 
   test('renders the bottom-stacked title without the letter when whereIsSlideTitleLocated is Both', async () => {
@@ -258,6 +266,9 @@ describe('<SliderItem/>', () => {
     expect(screen.getByTestId(TITLE_ON_CARD_TEST_ID)).toBeTruthy()
     expect(readBottomStackStyle(propsStub.title)).toEqual(
       expect.objectContaining({ backgroundColor: BOTTOM_TITLE_PLATE_BACKGROUND }),
+    )
+    expect(readCardTitleTextStyle(propsStub.title)).not.toEqual(
+      expect.objectContaining({ fontWeight: 'bold' }),
     )
   })
 
