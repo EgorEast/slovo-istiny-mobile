@@ -42,6 +42,12 @@ const getSourceUri = () => {
 const readTitleAreaStyle = () =>
   StyleSheet.flatten(screen.getByTestId(TITLE_ON_CARD_TEST_ID).props.style)
 
+const BOTTOM_TITLE_PLATE_BACKGROUND = 'rgba(0, 0, 0, 0.55)'
+
+// The title view inside SliderItemText is the plate; it is the text's parent.
+const readTitlePlateStyle = (title: string) =>
+  StyleSheet.flatten(screen.getByText(title).parent?.props.style)
+
 const iconStub = <Text>icon</Text>
 
 describe('<SliderItem/>', () => {
@@ -166,6 +172,9 @@ describe('<SliderItem/>', () => {
 
     expect(screen.getByText(propsStub.description)).toBeTruthy()
     expect(titleArea.parent?.children[0]).toBe(titleArea)
+    expect(readTitlePlateStyle(propsStub.title)).toEqual(
+      expect.objectContaining({ backgroundColor: BOTTOM_TITLE_PLATE_BACKGROUND }),
+    )
   })
 
   test('title overlays the icon card when whereIsSlideTitleLocated is Both', async () => {
@@ -179,6 +188,9 @@ describe('<SliderItem/>', () => {
     )
 
     expect(screen.getByTestId(TITLE_ON_CARD_TEST_ID)).toBeTruthy()
+    expect(readTitlePlateStyle(propsStub.title)).toEqual(
+      expect.objectContaining({ backgroundColor: BOTTOM_TITLE_PLATE_BACKGROUND }),
+    )
   })
 
   test('renders the description text on the card when enabled', async () => {

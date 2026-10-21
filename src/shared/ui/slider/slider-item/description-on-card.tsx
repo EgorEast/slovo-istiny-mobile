@@ -5,7 +5,8 @@ import { getDescriptionOnCardFontSize, getDescriptionOnCardNumberOfLines } from 
 import { type SliderItemSize } from './slider-item.types'
 
 // Translucent scrim keeps the white description readable over any artwork.
-const DESCRIPTION_ON_CARD_BACKGROUND = 'rgba(0, 0, 0, 0.55)'
+// Shared with the bottom-stacked title so both sit on the same plate.
+export const DESCRIPTION_ON_CARD_BACKGROUND = 'rgba(0, 0, 0, 0.55)'
 
 // Плашка описания плейлиста: прижата к низу карточки, тёмный полупрозрачный
 // фон, белый текст, масштабируемый от размера карточки.

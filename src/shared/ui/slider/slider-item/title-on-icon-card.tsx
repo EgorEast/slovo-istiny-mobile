@@ -5,6 +5,7 @@ import {
   type SliderItemTextBackgroundStyle,
 } from '../slider-item-text/slider-item-text.types'
 import { TITLE_ON_CARD_TEST_ID } from './card-overlay'
+import { DESCRIPTION_ON_CARD_BACKGROUND } from './description-on-card'
 
 // Title drawn over an icon card: centered for the `on` placement, bottom-anchored
 // for `bothOnAndUnder`.
@@ -27,6 +28,7 @@ export const TitleOnIconCard = ({
       title={title}
       titleTextAlign={titleTextAlign}
       backgroundStyle={backgroundStyle}
+      style={isBottom ? styles.titleBottomPlate : undefined}
     />
   </View>
 )
@@ -42,4 +44,5 @@ const styles = StyleSheet.create({
     top: 0,
   },
   containerBottom: { justifyContent: 'flex-end' },
+  titleBottomPlate: { backgroundColor: DESCRIPTION_ON_CARD_BACKGROUND },
 })

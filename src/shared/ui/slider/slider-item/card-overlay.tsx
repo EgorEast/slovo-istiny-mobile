@@ -4,7 +4,7 @@ import {
   type SliderItemTextAlign,
   type SliderItemTextBackgroundStyle,
 } from '../slider-item-text/slider-item-text.types'
-import { DescriptionOnCard } from './description-on-card'
+import { DESCRIPTION_ON_CARD_BACKGROUND, DescriptionOnCard } from './description-on-card'
 import { getTitleAreaStyleName } from './slider-item.lib'
 import { type SliderItemSize } from './slider-item.types'
 
@@ -36,6 +36,7 @@ export const CardOverlay = ({
           title={title}
           titleTextAlign={titleTextAlign}
           backgroundStyle={backgroundStyle}
+          style={isTitleBottom ? styles.titleBottomPlate : undefined}
         />
       </View>
     ) : null}
@@ -46,5 +47,6 @@ export const CardOverlay = ({
 const styles = StyleSheet.create({
   overlayContent: { flex: 1, justifyContent: 'flex-end', width: '100%' },
   titleBottomArea: { width: '100%' },
+  titleBottomPlate: { backgroundColor: DESCRIPTION_ON_CARD_BACKGROUND },
   titleOnCardArea: { flex: 1, justifyContent: 'center', width: '100%' },
 })
