@@ -4,7 +4,7 @@ import { TouchableButton } from '../../touchable-button/TouchableButton'
 import { SliderItemText } from '../slider-item-text/slider-item-text'
 import { SliderItemSkeleton } from './skeleton'
 import { SliderItemArtwork } from './slider-item-artwork'
-import { getSliderItemImageHeight, getSliderItemWidth } from './slider-item.lib'
+import { getSliderItemImageHeight, getSliderItemWidth, getTitleFontSize } from './slider-item.lib'
 import { type SliderItemProps, SliderItemSize, WhereIsSlideTitleLocated } from './slider-item.types'
 
 export const SliderItem = ({
@@ -47,6 +47,7 @@ export const SliderItem = ({
           title={title}
           radius={radius}
           artwork={artwork}
+          transform={transform}
           artworkIcon={artworkIcon}
           imageHeight={imageHeight}
           conditionSize={conditionSize}
@@ -58,11 +59,13 @@ export const SliderItem = ({
         />
         {isTitleUnderCard ? (
           <SliderItemText
+            maxLines={2}
             title={title ?? ''}
             borderRadius={borderRadius}
             style={styles.underCardTitle}
             titleTextAlign={titleTextAlign}
             backgroundStyle={descriptionBackgroundStyle}
+            titleFontSize={getTitleFontSize(size, WhereIsSlideTitleLocated.Under)}
           />
         ) : null}
       </View>

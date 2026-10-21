@@ -2,9 +2,10 @@ import { screen } from '@testing-library/react-native'
 import { StyleSheet, Text } from 'react-native'
 import { APP_ICON_URI as IMAGE_PLACEHOLDER } from '../../../lib/app-icon'
 import { renderWithProviders } from '../../../mocks/renderWithProviders'
+import { FONT_SIZES } from '../../../ui/theme/themed'
 import { TITLE_ON_CARD_TEST_ID } from './card-overlay'
 import { SliderItem } from './slider-item'
-import { WhereIsSlideTitleLocated } from './slider-item.types'
+import { SliderItemSize, SliderItemTransform, WhereIsSlideTitleLocated } from './slider-item.types'
 
 const propsStub = {
   artwork: 'https://traveltimes.ru/wp-content/uploads/2021/07/image-4-2048x1366.jpg',
@@ -117,6 +118,66 @@ describe('<SliderItem/>', () => {
     )
 
     expect(screen.getByTestId(TITLE_ON_CARD_TEST_ID)).toBeTruthy()
+  })
+
+  test('renders the under-card title on two lines with a constant caption font', async () => {
+    await renderWithProviders(<SliderItem title={propsStub.title} artwork={propsStub.artwork} />)
+
+    const title = screen.getByText(propsStub.title)
+
+    expect(title.props.numberOfLines).toEqual(2)
+    expect(StyleSheet.flatten(title.props.style)).toEqual(
+      expect.objectContaining({ fontSize: FONT_SIZES.md }),
+    )
+  })
+
+  test('scales the centered on-card title with the card size', async () => {
+    await renderWithProviders(
+      <SliderItem
+        title={propsStub.title}
+        artwork={propsStub.artwork}
+        size={SliderItemSize.Large}
+        whereIsSlideTitleLocated={WhereIsSlideTitleLocated.On}
+      />,
+    )
+
+    expect(StyleSheet.flatten(screen.getByText(propsStub.title).props.style)).toEqual(
+      expect.objectContaining({ fontSize: FONT_SIZES.h3 }),
+    )
+  })
+
+  test('keeps the bothOnAndUnder title compact on a middle card', async () => {
+    await renderWithProviders(
+      <SliderItem
+        title={propsStub.title}
+        artwork={propsStub.artwork}
+        size={SliderItemSize.Middle}
+        whereIsSlideTitleLocated={WhereIsSlideTitleLocated.Both}
+      />,
+    )
+
+    const title = screen.getByText(propsStub.title)
+
+    expect(title.props.numberOfLines).toEqual(1)
+    expect(StyleSheet.flatten(title.props.style)).toEqual(
+      expect.objectContaining({ fontSize: FONT_SIZES.md }),
+    )
+  })
+
+  test('caps the description lines by card size and transform', async () => {
+    await renderWithProviders(
+      <SliderItem
+        title={propsStub.title}
+        artwork={propsStub.artwork}
+        size={SliderItemSize.XLarge}
+        isDescriptionTitleOnSlideLarge
+        description={propsStub.description}
+        transform={SliderItemTransform.Short}
+        whereIsSlideTitleLocated={WhereIsSlideTitleLocated.On}
+      />,
+    )
+
+    expect(screen.getByText(propsStub.description).props.numberOfLines).toEqual(2)
   })
 
   test('title overlays the icon card when whereIsSlideTitleLocated is On', async () => {

@@ -35,6 +35,23 @@ describe('<SliderItemText/>', () => {
     expect(title).toHaveTextContent(propsStub.title, { exact: false })
   })
 
+  test('keeps the title on one line by default', async () => {
+    await renderWithProviders(<SliderItemText title={propsStub.title} />)
+
+    expect(screen.getByText(propsStub.title).props.numberOfLines).toEqual(1)
+  })
+
+  test('honours the maxLines and titleFontSize overrides', async () => {
+    await renderWithProviders(
+      <SliderItemText maxLines={2} titleFontSize={20} title={propsStub.title} />,
+    )
+
+    const title = screen.getByText(propsStub.title)
+
+    expect(title.props.numberOfLines).toEqual(2)
+    expect(title).toHaveStyle({ fontSize: 20 })
+  })
+
   test('renders the sub title when subTitle prop is defined', async () => {
     await renderWithProviders(
       <SliderItemText title={propsStub.title} subTitle={propsStub.subTitle} />,

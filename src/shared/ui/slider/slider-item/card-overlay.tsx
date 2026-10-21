@@ -6,8 +6,12 @@ import {
   SliderItemTextBackgroundStyle,
 } from '../slider-item-text/slider-item-text.types'
 import { DESCRIPTION_ON_CARD_BACKGROUND, DescriptionOnCard } from './description-on-card'
-import { getTitleAreaStyleName } from './slider-item.lib'
-import { type SliderItemSize } from './slider-item.types'
+import { getTitleAreaStyleName, getTitleFontSize } from './slider-item.lib'
+import {
+  type SliderItemSize,
+  type SliderItemTransform,
+  WhereIsSlideTitleLocated,
+} from './slider-item.types'
 
 // Контейнер оверлея не несёт собственного текста — служит якорем для тестов,
 // различающих заголовок «на карточке» и заголовок «под карточкой».
@@ -23,6 +27,7 @@ export const CardOverlay = ({
   size,
   title,
   titleTextAlign,
+  transform,
 }: {
   backgroundStyle?: SliderItemTextBackgroundStyle
   description?: string
@@ -30,8 +35,13 @@ export const CardOverlay = ({
   size: SliderItemSize
   title: string
   titleTextAlign?: SliderItemTextAlign
+  transform?: SliderItemTransform
 }) => {
   const isStackedTitle = !!title && !!isTitleBottom
+  const titleFontSize = getTitleFontSize(
+    size,
+    isTitleBottom ? WhereIsSlideTitleLocated.Both : WhereIsSlideTitleLocated.On,
+  )
 
   return (
     <View style={styles.overlayContent}>
@@ -40,23 +50,31 @@ export const CardOverlay = ({
           {isStackedTitle ? (
             <View style={styles.bottomStack}>
               <SliderItemText
+                maxLines={1}
                 title={title}
+                titleFontSize={titleFontSize}
                 style={styles.bottomStackItem}
                 titleTextAlign={titleTextAlign}
                 backgroundStyle={SliderItemTextBackgroundStyle.Dark}
               />
-              {description ? <DescriptionOnCard plain size={size} text={description} /> : null}
+              {description ? (
+                <DescriptionOnCard plain size={size} text={description} transform={transform} />
+              ) : null}
             </View>
           ) : (
             <SliderItemText
+              maxLines={1}
               title={title}
+              titleFontSize={titleFontSize}
               titleTextAlign={titleTextAlign}
               backgroundStyle={backgroundStyle}
             />
           )}
         </View>
       ) : null}
-      {!isStackedTitle && description ? <DescriptionOnCard size={size} text={description} /> : null}
+      {!isStackedTitle && description ? (
+        <DescriptionOnCard size={size} text={description} transform={transform} />
+      ) : null}
     </View>
   )
 }

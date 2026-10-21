@@ -12,25 +12,29 @@ import { FONT_SIZES, INDENTS, RADIUSES } from '../../theme/themed'
 import { SliderItemTextSkeleton } from './skeleton'
 import { type SliderItemTextAlign, SliderItemTextBackgroundStyle } from './slider-item-text.types'
 
-// Текст карточки: статичный однострочный заголовок (обрезается троеточием) и
-// необязательный подзаголовок. Пустой заголовок не рендерит ничего —
-// подзаголовок сам по себе не показывается.
+// Текст карточки: статичный заголовок (число строк ограничено `maxLines`, по
+// умолчанию одна; конец обрезается троеточием) и необязательный подзаголовок.
+// Пустой заголовок не рендерит ничего — подзаголовок сам по себе не показывается.
 export const SliderItemText = ({
   backgroundStyle = SliderItemTextBackgroundStyle.Transparent,
   borderRadius,
+  maxLines = 1,
   style,
   subTitle,
   subTitleTextAlign = 'left',
   title,
+  titleFontSize = FONT_SIZES.md,
   titleStyle,
   titleTextAlign = 'left',
 }: {
   backgroundStyle?: SliderItemTextBackgroundStyle
   borderRadius?: boolean
+  maxLines?: number
   style?: StyleProp<ViewStyle>
   subTitle?: string
   subTitleTextAlign?: SliderItemTextAlign
   title: string
+  titleFontSize?: number
   titleStyle?: StyleProp<TextStyle>
   titleTextAlign?: SliderItemTextAlign
 }) => {
@@ -55,10 +59,10 @@ export const SliderItemText = ({
       ]}
     >
       <Text
-        numberOfLines={1}
         ellipsizeMode='tail'
+        numberOfLines={maxLines}
         style={[
-          styles.title,
+          { fontSize: titleFontSize },
           { color: isDarkBackground || isDarkBlurBackground ? COLORS.white : currentTheme.text },
           { textAlign: titleTextAlign },
           titleStyle,
@@ -102,9 +106,5 @@ const styles = StyleSheet.create({
 
   subTitle: {
     fontSize: FONT_SIZES.base,
-  },
-
-  title: {
-    fontSize: FONT_SIZES.md,
   },
 })

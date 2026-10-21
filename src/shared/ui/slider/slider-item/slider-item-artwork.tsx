@@ -8,7 +8,7 @@ import {
   type SliderItemTextBackgroundStyle,
 } from '../slider-item-text/slider-item-text.types'
 import { CardOverlay } from './card-overlay'
-import { type SliderItemSize } from './slider-item.types'
+import { type SliderItemSize, type SliderItemTransform } from './slider-item.types'
 import { TitleOnIconCard } from './title-on-icon-card'
 
 // Artwork area of a slider card: an icon node, a real cover, or — when neither
@@ -28,6 +28,7 @@ export const SliderItemArtwork = ({
   size,
   title,
   titleTextAlign,
+  transform,
 }: {
   artwork: null | string | undefined
   artworkIcon?: ReactNode
@@ -41,6 +42,7 @@ export const SliderItemArtwork = ({
   size: SliderItemSize
   title?: string
   titleTextAlign?: SliderItemTextAlign
+  transform?: SliderItemTransform
 }) => {
   const { currentTheme } = useTheme()
 
@@ -49,6 +51,7 @@ export const SliderItemArtwork = ({
       <CardOverlay
         size={size}
         title={title ?? ''}
+        transform={transform}
         description={cardDescription}
         titleTextAlign={titleTextAlign}
         isTitleBottom={isTitleOnCardBottom}
@@ -67,6 +70,7 @@ export const SliderItemArtwork = ({
         {artworkIcon}
         {isTitleOnCard || isTitleOnCardBottom ? (
           <TitleOnIconCard
+            size={size}
             title={title ?? ''}
             isBottom={isTitleOnCardBottom}
             titleTextAlign={titleTextAlign}

@@ -2,7 +2,7 @@ import { StyleSheet, Text, View } from 'react-native'
 import { COLORS } from '../../theme/colors'
 import { INDENTS } from '../../theme/themed'
 import { getDescriptionOnCardFontSize, getDescriptionOnCardNumberOfLines } from './slider-item.lib'
-import { type SliderItemSize } from './slider-item.types'
+import { type SliderItemSize, type SliderItemTransform } from './slider-item.types'
 
 // Translucent scrim keeps the white description readable over any artwork.
 // Shared with the bottom-stacked title so both sit on the same plate.
@@ -15,14 +15,16 @@ export const DescriptionOnCard = ({
   plain,
   size,
   text,
+  transform,
 }: {
   plain?: boolean
   size: SliderItemSize
   text: string
+  transform?: SliderItemTransform
 }) => (
   <View style={plain ? styles.plainComponent : styles.component}>
     <Text
-      numberOfLines={getDescriptionOnCardNumberOfLines(size)}
+      numberOfLines={getDescriptionOnCardNumberOfLines(size, transform)}
       style={[styles.text, { fontSize: getDescriptionOnCardFontSize(size) }]}
     >
       {text}
