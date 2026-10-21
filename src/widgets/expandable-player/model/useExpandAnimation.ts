@@ -6,7 +6,7 @@ import {
   useAnimatedStyle,
   useSharedValue,
 } from 'react-native-reanimated'
-import { getColumnSideInset } from 'shared/ui/layout'
+import { CONTENT_COLUMN_WIDTH, getColumnSideInset } from 'shared/ui/layout'
 import { INDENTS, PLAYER_SIZES, RADIUSES } from 'shared/ui/theme'
 import { getMiniPlayerBottom } from '../lib/getMiniPlayerBottom'
 import { getRestingContainerStyle } from '../lib/getRestingContainerStyle'
@@ -76,8 +76,8 @@ export const useExpandAnimation = (
       [0, 1],
       [fullScreenHeightShared.value - miniBottomShared.value - MINI_H, 0],
     )
-    // Desktop-web: collapsed bar is centered in a capped column; expanded is full width.
-    const inset = getColumnSideInset(screenWidthShared.value, INDENTS.low)
+    // Collapsed bar is centered in the content column; expanded is full width.
+    const inset = getColumnSideInset(screenWidthShared.value, INDENTS.low, CONTENT_COLUMN_WIDTH)
     const w = interpolate(
       progress.value,
       [0, 1],

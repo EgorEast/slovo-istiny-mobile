@@ -1,3 +1,4 @@
+import { CONTENT_COLUMN_WIDTH } from 'shared/ui/layout'
 import { INDENTS, PLAYER_SIZES, RADIUSES } from 'shared/ui/theme'
 import { getRestingContainerStyle } from './getRestingContainerStyle'
 
@@ -16,6 +17,21 @@ describe('getRestingContainerStyle', () => {
       left: INDENTS.low,
       top: 800 - 52 - PLAYER_SIZES.miniPlayerHeight,
       width: 400 - INDENTS.low * 2,
+    })
+  })
+
+  test('collapsed: centers the bar in the content column on large screens', () => {
+    const style = getRestingContainerStyle({ expanded: false, ...common, screenWidth: 800 })
+
+    expect(style).toEqual({
+      borderBottomLeftRadius: RADIUSES.middle,
+      borderBottomRightRadius: RADIUSES.middle,
+      borderTopLeftRadius: RADIUSES.middle,
+      borderTopRightRadius: RADIUSES.middle,
+      bottom: 52,
+      left: (800 - CONTENT_COLUMN_WIDTH) / 2,
+      top: 800 - 52 - PLAYER_SIZES.miniPlayerHeight,
+      width: CONTENT_COLUMN_WIDTH,
     })
   })
 

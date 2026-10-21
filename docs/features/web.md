@@ -158,16 +158,18 @@ pointerUpCallback (node_modules/react-native-gesture-handler/lib/module/web/tool
 
 ## Десктопный layout
 
-`shared/ui/layout/appMaxWidth.ts` — `APP_MAX_CONTENT_WIDTH = 600` (только `Platform.OS === 'web'`, на нативе `undefined` → всё как было) + `getColumnSideInset(screenWidth, minInset)` (помечен `'worklet'` — используется и в reanimated-ворклете).
+`shared/ui/layout/appMaxWidth.ts` — две константы ширины колонки и общий расчёт инсета. `APP_MAX_CONTENT_WIDTH = 600` — только `Platform.OS === 'web'` (на нативе `undefined`), для диалогов, онбординга и полноэкранного плеера. `CONTENT_COLUMN_WIDTH = 600` — числовая, включена всегда, для плавающего хрома (таб-бар, мини-плеер): на телефонах она шире экрана и не даёт эффекта, на планшетах центрирует хром. `getColumnSideInset(screenWidth, minInset, maxContentWidth = APP_MAX_CONTENT_WIDTH)` (помечен `'worklet'` — используется и в reanimated-ворклете) считает боковой инсет; третий аргумент позволяет брать `CONTENT_COLUMN_WIDTH` вместо web-only ширины.
 
-На широких вьюпортах в центрированную колонку 600 px убираются:
+На широких экранах — десктоп-web и планшеты — в центрированную колонку 600 px убираются:
 
-- таб-бар (`widgets/tab-bar/ui/styles.ts` → `floatingIsland`);
-- свёрнутый мини-плеер (`ExpandablePlayer/miniStyles.ts`, принимает `screenWidth`);
+- таб-бар (`widgets/tab-bar/ui/styles.ts` → `floatingIsland`, `maxWidth: CONTENT_COLUMN_WIDTH`);
+- свёрнутый мини-плеер (`ExpandablePlayer/miniStyles.ts`, принимает `screenWidth`, `getColumnSideInset(..., CONTENT_COLUMN_WIDTH)`);
 - свёрнутая геометрия `ContainerView` — только эндпоинт `progress→0` в `getRestingContainerStyle.ts` и ворклете `useExpandAnimation.ts` (полноэкранный вид `progress→1` не тронут);
-- в полноэкранном плеере — ряд с тремя точками (`expandedLayoutStyles.trackInfoRow`) и блок кнопок (`expandedControlsStyles.controlsArea`). Прогресс-бар и `HeaderOverlay` остаются на всю ширину.
+- в полноэкранном плеере — ряд с тремя точками (`expandedLayoutStyles.trackInfoRow`) и блок кнопок (`expandedControlsStyles.controlsArea`) — это web-only часть (`APP_MAX_CONTENT_WIDTH`). Прогресс-бар и `HeaderOverlay` остаются на всю ширину.
 
-Модалки тоже ограничены колонкой `APP_MAX_CONTENT_WIDTH`: общий примитив `shared/ui/modal.tsx` (`contentContainer`, инлайн `maxWidth` + `alignSelf: 'center'`) покрывает все диалоги на нём, а диалоги со своим `RNModal` (`ConfirmDialog`, `ErrorDialog`, `WebUpdateModal`, `UpdateDialog`) получают `maxWidth` + `alignSelf: 'center'` в своих стилях. На нативе `APP_MAX_CONTENT_WIDTH = undefined` — ширина не меняется. Полноэкранный просмотр изображения (`MediaViewerModal`) остаётся на всю ширину осознанно.
+На телефонах (ширина < 600 px) числовая колонка шире экрана, поэтому все три инсета сводятся к `INDENTS.low` — рендер не меняется.
+
+Модалки тоже ограничены колонкой `APP_MAX_CONTENT_WIDTH`: общий примитив `shared/ui/modal.tsx` (`contentContainer`, инлайн `maxWidth` + `alignSelf: 'center'`) покрывает все диалоги на нём, а диалоги со своим `RNModal` (`ConfirmDialog`, `ErrorDialog`, `WebUpdateModal`, `UpdateDialog`) получают `maxWidth` + `alignSelf: 'center'` в своих стилях. На нативе `APP_MAX_CONTENT_WIDTH = undefined` — ширина модалок не меняется (`CONTENT_COLUMN_WIDTH` применяется только к таб-бару и мини-плееру). Полноэкранный просмотр изображения (`MediaViewerModal`) остаётся на всю ширину осознанно.
 
 ## Позиционирование меню (дропдауны) на web
 

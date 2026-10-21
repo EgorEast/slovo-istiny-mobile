@@ -2,6 +2,7 @@ import { fireEvent } from '@testing-library/react-native'
 import { renderWithProviders } from 'shared/mocks/renderWithProviders'
 import { showInfo } from 'shared/model/info-dialog'
 import { CustomTabBar } from './CustomTabBar'
+import { styles } from './styles'
 import { UNAVAILABLE_TAB_MESSAGE, UNAVAILABLE_TAB_TITLE } from './useTabPress'
 
 jest.mock('expo-blur', () => {
@@ -58,6 +59,14 @@ const renderTabBar = async (activeIndex = 0) => {
 describe('<CustomTabBar>', () => {
   beforeEach(() => {
     jest.clearAllMocks()
+  })
+
+  test('caps the floating island to the 600px content column', async () => {
+    await renderTabBar()
+
+    // Literal 600 (not the constant) guards against regressing to the web-only cap,
+    // which is `undefined` under the native jest environment.
+    expect(styles.floatingIsland.maxWidth).toBe(600)
   })
 
   test('renders all 4 tab labels', async () => {

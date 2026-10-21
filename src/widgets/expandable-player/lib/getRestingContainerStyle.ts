@@ -1,4 +1,4 @@
-import { getColumnSideInset } from 'shared/ui/layout'
+import { CONTENT_COLUMN_WIDTH, getColumnSideInset } from 'shared/ui/layout'
 import { INDENTS, PLAYER_SIZES, RADIUSES } from 'shared/ui/theme'
 
 interface RestingContainerStyleInput {
@@ -38,9 +38,9 @@ export const getRestingContainerStyle = ({
       width: screenWidth,
     }
 
-  // Desktop-web: center the collapsed bar in an APP_MAX_CONTENT_WIDTH column so
-  // it lines up with the mini player; on phones this is INDENTS.low as before.
-  const sideInset = getColumnSideInset(screenWidth, INDENTS.low)
+  // Center the collapsed bar in the content column so it lines up with the mini
+  // player; on phones the column is wider than the screen, so this is INDENTS.low.
+  const sideInset = getColumnSideInset(screenWidth, INDENTS.low, CONTENT_COLUMN_WIDTH)
 
   return {
     borderBottomLeftRadius: RADIUSES.middle,

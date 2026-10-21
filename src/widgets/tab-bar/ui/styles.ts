@@ -1,4 +1,4 @@
-import { APP_MAX_CONTENT_WIDTH } from 'shared/ui/layout'
+import { CONTENT_COLUMN_WIDTH } from 'shared/ui/layout'
 
 const BORDER_RADIUS = 20
 
@@ -15,11 +15,11 @@ export const styles = {
     zIndex: 10,
   },
   floatingIsland: {
-    // Desktop-web: keep the bar as a centered column instead of edge to edge.
+    // Floating chrome stays a centered 600px column on wide screens (tablets, desktop-web).
     alignSelf: 'center' as const,
     borderTopLeftRadius: BORDER_RADIUS,
     borderTopRightRadius: BORDER_RADIUS,
-    maxWidth: APP_MAX_CONTENT_WIDTH,
+    maxWidth: CONTENT_COLUMN_WIDTH,
     overflow: 'hidden' as const,
     width: '100%' as const,
   },

@@ -28,6 +28,7 @@ jest.mock('entities/player', () => {
 jest.mock('shared/ui/layout', () => {
   const { atom } = jest.requireActual('@reatom/framework')
   return {
+    CONTENT_COLUMN_WIDTH: 600,
     isTabBarMeasuredAtom: atom(true, 'mockIsTabBarMeasuredAtom'),
     tabBarHeightAtom: atom(0, 'mockTabBarHeightAtom'),
   }

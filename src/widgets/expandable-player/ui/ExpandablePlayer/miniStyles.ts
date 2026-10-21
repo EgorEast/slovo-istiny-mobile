@@ -1,11 +1,11 @@
 import { StyleSheet } from 'react-native'
-import { getColumnSideInset } from 'shared/ui/layout'
+import { CONTENT_COLUMN_WIDTH, getColumnSideInset } from 'shared/ui/layout'
 import { FONT_SIZES, INDENTS, PLAYER_SIZES, RADIUSES, type ThemeColors } from 'shared/ui/theme'
 import { getMiniPlayerBottom } from '../../lib/getMiniPlayerBottom'
 
 export const createMiniStyles = (theme: ThemeColors, tabBarHeight: number, screenWidth: number) => {
-  // Desktop-web: center the collapsed bar in an APP_MAX_CONTENT_WIDTH column.
-  const sideInset = getColumnSideInset(screenWidth, INDENTS.low)
+  // The collapsed bar stays inside the centered content column on every platform.
+  const sideInset = getColumnSideInset(screenWidth, INDENTS.low, CONTENT_COLUMN_WIDTH)
 
   return StyleSheet.create({
     downloadFill: {

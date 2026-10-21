@@ -136,7 +136,7 @@
 
 ## Кастомный таб-бар
 
-`CustomTabBar` (`src/widgets/tab-bar/ui/CustomTabBar.tsx`) — плавающий остров с `BlurView`. Активный таб не имеет фона/пилюли/индикатора: активное состояние выражается только цветом иконки и подписи (`currentTheme.primary`), неактивные — приглушённым `currentTheme.textMuted`. Скрывает плавающий плеер при развороте (`hideFloatingPlayer`).
+`CustomTabBar` (`src/widgets/tab-bar/ui/CustomTabBar.tsx`) — плавающий остров с `BlurView`. Активный таб не имеет фона/пилюли/индикатора: активное состояние выражается только цветом иконки и подписи (`currentTheme.primary`), неактивные — приглушённым `currentTheme.textMuted`. Скрывает плавающий плеер при развороте (`hideFloatingPlayer`). Остров ограничен `maxWidth: CONTENT_COLUMN_WIDTH` (600 px из `shared/ui/layout`): на планшетах и десктоп-web таб-бар остаётся центрированной колонкой, на телефонах колонка шире экрана и ширина не меняется.
 
 Подписи табов не переносятся и почти не масштабируются шрифтом: в `TabButton.tsx` у текста заданы `numberOfLines={1}` и `maxFontSizeMultiplier={1.2}` (фикс «сломанного» таб-бара на узких экранах / крупном системном шрифте, Issue #53).
 
