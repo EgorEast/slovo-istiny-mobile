@@ -18,6 +18,7 @@ import { type SliderItemTextAlign, SliderItemTextBackgroundStyle } from './slide
 export const SliderItemText = ({
   backgroundStyle = SliderItemTextBackgroundStyle.Transparent,
   borderRadius,
+  isBold = false,
   maxLines = 1,
   style,
   subTitle,
@@ -29,6 +30,7 @@ export const SliderItemText = ({
 }: {
   backgroundStyle?: SliderItemTextBackgroundStyle
   borderRadius?: boolean
+  isBold?: boolean
   maxLines?: number
   style?: StyleProp<ViewStyle>
   subTitle?: string
@@ -65,6 +67,7 @@ export const SliderItemText = ({
           { fontSize: titleFontSize },
           { color: isDarkBackground || isDarkBlurBackground ? COLORS.white : currentTheme.text },
           { textAlign: titleTextAlign },
+          isBold && styles.titleBold,
           titleStyle,
         ]}
       >
@@ -107,4 +110,6 @@ const styles = StyleSheet.create({
   subTitle: {
     fontSize: FONT_SIZES.base,
   },
+
+  titleBold: { fontWeight: 'bold' },
 })

@@ -118,6 +118,9 @@ describe('<SliderItem/>', () => {
     )
 
     expect(screen.getByTestId(TITLE_ON_CARD_TEST_ID)).toBeTruthy()
+    expect(StyleSheet.flatten(screen.getByText(propsStub.title).props.style)).toEqual(
+      expect.objectContaining({ fontWeight: 'bold' }),
+    )
   })
 
   test('renders the under-card title on two lines with a constant caption font', async () => {
@@ -161,6 +164,9 @@ describe('<SliderItem/>', () => {
     expect(title.props.numberOfLines).toEqual(1)
     expect(StyleSheet.flatten(title.props.style)).toEqual(
       expect.objectContaining({ fontSize: FONT_SIZES.md }),
+    )
+    expect(StyleSheet.flatten(title.props.style)).not.toEqual(
+      expect.objectContaining({ fontWeight: 'bold' }),
     )
   })
 

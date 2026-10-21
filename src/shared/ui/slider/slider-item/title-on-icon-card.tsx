@@ -50,6 +50,7 @@ export const TitleOnIconCard = ({
         <SliderItemText
           maxLines={1}
           title={title}
+          isBold={!isBottom}
           titleFontSize={titleFontSize}
           titleTextAlign={titleTextAlign}
           backgroundStyle={backgroundStyle}

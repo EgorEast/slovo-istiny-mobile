@@ -62,4 +62,16 @@ describe('<SliderItemText/>', () => {
     expect(subTitle.type).toEqual('Text')
     expect(subTitle).toHaveTextContent(propsStub.subTitle, { exact: false })
   })
+
+  test('makes the title bold when isBold is set', async () => {
+    await renderWithProviders(<SliderItemText isBold title={propsStub.title} />)
+
+    expect(screen.getByText(propsStub.title)).toHaveStyle({ fontWeight: 'bold' })
+  })
+
+  test('keeps the title regular by default', async () => {
+    await renderWithProviders(<SliderItemText title={propsStub.title} />)
+
+    expect(screen.getByText(propsStub.title)).not.toHaveStyle({ fontWeight: 'bold' })
+  })
 })
