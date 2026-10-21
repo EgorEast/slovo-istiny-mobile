@@ -3,23 +3,21 @@ import { SIZE_OF_MINIMUM_SIDE_OF_SCREEN } from '../../../config/screen-dimension
 import { FONT_SIZES, INDENTS } from '../../theme/themed'
 import { SliderItemSize, SliderItemTransform } from './slider-item.types'
 
-const MAX_SLIDER_ITEM_WIDTH: Record<SliderItemSize, number> = {
-  [SliderItemSize.Large]: 320,
-  [SliderItemSize.Middle]: 240,
-  [SliderItemSize.Small]: 180,
-  [SliderItemSize.XLarge]: 420,
-}
+// Largest common phone min side. Cards scale with the screen up to this
+// reference; on larger screens (tablets/desktop) they keep the exact
+// proportions of the biggest phone instead of growing indefinitely.
+const MAX_MOBILE_MIN_SIDE = 430
 
-export const getSliderItemWidth = (size: SliderItemSize): number =>
-  Math.min(
-    match(size)
-      .with(SliderItemSize.Large, () => SIZE_OF_MINIMUM_SIDE_OF_SCREEN * 0.62)
-      .with(SliderItemSize.Middle, () => SIZE_OF_MINIMUM_SIDE_OF_SCREEN * 0.44)
-      .with(SliderItemSize.Small, () => SIZE_OF_MINIMUM_SIDE_OF_SCREEN * 0.285)
-      .with(SliderItemSize.XLarge, () => SIZE_OF_MINIMUM_SIDE_OF_SCREEN * 0.9)
-      .exhaustive(),
-    MAX_SLIDER_ITEM_WIDTH[size],
-  )
+export const getSliderItemWidth = (size: SliderItemSize): number => {
+  const referenceSide = Math.min(SIZE_OF_MINIMUM_SIDE_OF_SCREEN, MAX_MOBILE_MIN_SIDE)
+
+  return match(size)
+    .with(SliderItemSize.Small, () => referenceSide * 0.285)
+    .with(SliderItemSize.Middle, () => referenceSide * 0.44)
+    .with(SliderItemSize.Large, () => referenceSide * 0.62)
+    .with(SliderItemSize.XLarge, () => referenceSide * 0.9)
+    .exhaustive()
+}
 
 // Height of the card's artwork area for a given item width: `high` stretches
 // the cover, `short` crops it, `undefined` keeps the square. Shared by the real
