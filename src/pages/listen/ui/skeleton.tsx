@@ -1,9 +1,4 @@
-import {
-  Slider,
-  SliderItemSize,
-  SliderItemTransform,
-  type WhereIsSlideTitleLocated,
-} from 'shared/ui'
+import { Slider, SliderItemSize, SliderItemTransform, WhereIsSlideTitleLocated } from 'shared/ui'
 
 interface SkeletonSectionProps {
   borderRadius?: boolean
@@ -15,8 +10,14 @@ interface SkeletonSectionProps {
   whereIsSlideTitleLocated?: WhereIsSlideTitleLocated
 }
 
+// Первая запись повторяет продакшн-секцию: высокое artwork, Middle, заголовок на карточке.
 const SKELETON_SECTIONS: SkeletonSectionProps[] = [
-  { itemsCount: 6, itemsSize: SliderItemSize.Middle },
+  {
+    itemsCount: 6,
+    itemsSize: SliderItemSize.Middle,
+    transform: SliderItemTransform.High,
+    whereIsSlideTitleLocated: WhereIsSlideTitleLocated.On,
+  },
   { itemsCount: 6, itemsSize: SliderItemSize.Middle },
   { itemsCount: 4, itemsSize: SliderItemSize.XLarge },
   { itemsCount: 6, itemsSize: SliderItemSize.Middle, transform: SliderItemTransform.Short },
