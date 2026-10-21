@@ -5,7 +5,7 @@
  * REST API сервиса «Слово.Проповеди».
  * Позволяет управлять проповедями, плейлистами, разделами, загружать файлы и работать с пользователями.
  *
- * OpenAPI spec version: 0.21.2
+ * OpenAPI spec version: 0.22.1
  */
 export interface HealthResponse {
   status: string
@@ -76,7 +76,7 @@ export const CreateSectionDtoTransform = {
 } as const
 
 /**
- * Расположение заголовка на карточке. Значение `bothOnAndUnder` устарело и не используется: новые секции должны использовать `on` или `under`; существующие значения `bothOnAndUnder` клиент читает как `under`.
+ * Расположение заголовка на карточке. `bothOnAndUnder` — заголовок и описание внизу карточки: заголовок над описанием. `on` — заголовок по центру карточки, `under` — заголовок под карточкой.
  */
 export type CreateSectionDtoWhereIsSlideTitleLocated =
   (typeof CreateSectionDtoWhereIsSlideTitleLocated)[keyof typeof CreateSectionDtoWhereIsSlideTitleLocated]
@@ -97,7 +97,7 @@ export interface CreateSectionDto {
   itemsSize: CreateSectionDtoItemsSize
   title: string
   transform: CreateSectionDtoTransform
-  /** Расположение заголовка на карточке. Значение `bothOnAndUnder` устарело и не используется: новые секции должны использовать `on` или `under`; существующие значения `bothOnAndUnder` клиент читает как `under`. */
+  /** Расположение заголовка на карточке. `bothOnAndUnder` — заголовок и описание внизу карточки: заголовок над описанием. `on` — заголовок по центру карточки, `under` — заголовок под карточкой. */
   whereIsSlideTitleLocated?: CreateSectionDtoWhereIsSlideTitleLocated
 }
 
@@ -121,7 +121,7 @@ export const SectionEntityTransform = {
 } as const
 
 /**
- * Расположение заголовка на карточке. Значение `bothOnAndUnder` устарело и не используется: новые секции должны использовать `on` или `under`; существующие значения `bothOnAndUnder` клиент читает как `under`.
+ * Расположение заголовка на карточке. `bothOnAndUnder` — заголовок и описание внизу карточки: заголовок над описанием. `on` — заголовок по центру карточки, `under` — заголовок под карточкой.
  */
 export type SectionEntityWhereIsSlideTitleLocated =
   (typeof SectionEntityWhereIsSlideTitleLocated)[keyof typeof SectionEntityWhereIsSlideTitleLocated]
@@ -186,7 +186,7 @@ export interface SectionEntity {
   position: number
   title: string
   transform: SectionEntityTransform
-  /** Расположение заголовка на карточке. Значение `bothOnAndUnder` устарело и не используется: новые секции должны использовать `on` или `under`; существующие значения `bothOnAndUnder` клиент читает как `under`. */
+  /** Расположение заголовка на карточке. `bothOnAndUnder` — заголовок и описание внизу карточки: заголовок над описанием. `on` — заголовок по центру карточки, `under` — заголовок под карточкой. */
   whereIsSlideTitleLocated?: SectionEntityWhereIsSlideTitleLocated
 }
 
@@ -244,7 +244,7 @@ export const UpdateSectionDtoTransform = {
 } as const
 
 /**
- * Расположение заголовка на карточке. Значение `bothOnAndUnder` устарело и не используется: новые секции должны использовать `on` или `under`; существующие значения `bothOnAndUnder` клиент читает как `under`.
+ * Расположение заголовка на карточке. `bothOnAndUnder` — заголовок и описание внизу карточки: заголовок над описанием. `on` — заголовок по центру карточки, `under` — заголовок под карточкой.
  */
 export type UpdateSectionDtoWhereIsSlideTitleLocated =
   (typeof UpdateSectionDtoWhereIsSlideTitleLocated)[keyof typeof UpdateSectionDtoWhereIsSlideTitleLocated]
@@ -266,7 +266,7 @@ export interface UpdateSectionDto {
   playlistsIds: string[]
   title: string
   transform: UpdateSectionDtoTransform
-  /** Расположение заголовка на карточке. Значение `bothOnAndUnder` устарело и не используется: новые секции должны использовать `on` или `under`; существующие значения `bothOnAndUnder` клиент читает как `under`. */
+  /** Расположение заголовка на карточке. `bothOnAndUnder` — заголовок и описание внизу карточки: заголовок над описанием. `on` — заголовок по центру карточки, `under` — заголовок под карточкой. */
   whereIsSlideTitleLocated: UpdateSectionDtoWhereIsSlideTitleLocated
 }
 

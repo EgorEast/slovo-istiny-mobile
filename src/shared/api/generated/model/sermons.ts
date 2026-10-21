@@ -5,7 +5,7 @@
  * REST API сервиса «Слово.Проповеди».
  * Позволяет управлять проповедями, плейлистами, разделами, загружать файлы и работать с пользователями.
  *
- * OpenAPI spec version: 0.21.2
+ * OpenAPI spec version: 0.22.1
  */
 import * as zod from 'zod'
 
@@ -164,7 +164,7 @@ export const SermonControllerCreate200Response = zod.object({
               sermonControllerCreate200ResponsePlaylistsItemSectionsItemWhereIsSlideTitleLocatedDefault,
             )
             .describe(
-              'Расположение заголовка на карточке. Значение `bothOnAndUnder` устарело и не используется: новые секции должны использовать `on` или `under`; существующие значения `bothOnAndUnder` клиент читает как `under`.',
+              'Расположение заголовка на карточке. `bothOnAndUnder` — заголовок и описание внизу карточки: заголовок над описанием. `on` — заголовок по центру карточки, `under` — заголовок под карточкой.',
             ),
           borderRadius: zod
             .boolean()
@@ -454,7 +454,7 @@ export const SermonControllerFindAll200Response = zod.object({
                   sermonControllerFindAll200ResponseSermonsItemPlaylistsItemSectionsItemWhereIsSlideTitleLocatedDefault,
                 )
                 .describe(
-                  'Расположение заголовка на карточке. Значение `bothOnAndUnder` устарело и не используется: новые секции должны использовать `on` или `under`; существующие значения `bothOnAndUnder` клиент читает как `under`.',
+                  'Расположение заголовка на карточке. `bothOnAndUnder` — заголовок и описание внизу карточки: заголовок над описанием. `on` — заголовок по центру карточки, `under` — заголовок под карточкой.',
                 ),
               borderRadius: zod
                 .boolean()
@@ -737,7 +737,7 @@ export const SermonControllerFindOne200Response = zod.object({
               sermonControllerFindOne200ResponsePlaylistsItemSectionsItemWhereIsSlideTitleLocatedDefault,
             )
             .describe(
-              'Расположение заголовка на карточке. Значение `bothOnAndUnder` устарело и не используется: новые секции должны использовать `on` или `under`; существующие значения `bothOnAndUnder` клиент читает как `under`.',
+              'Расположение заголовка на карточке. `bothOnAndUnder` — заголовок и описание внизу карточки: заголовок над описанием. `on` — заголовок по центру карточки, `under` — заголовок под карточкой.',
             ),
           borderRadius: zod
             .boolean()
