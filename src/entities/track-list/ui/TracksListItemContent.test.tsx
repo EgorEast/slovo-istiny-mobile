@@ -122,6 +122,6 @@ describe('<TracksListItemContent>', () => {
     await renderWithProviders(<TracksListItemContent {...baseProps} progress={0.5} />)
 
     expect(screen.getAllByText(TEST_TITLE)[0]).not.toHaveStyle({ color: mockTheme.textMuted })
-    expect(screen.getByTestId(ARTWORK_TEST_ID)).not.toHaveStyle({ opacity: 0.5 })
+    expect(screen.getByTestId(ARTWORK_TEST_ID).parent).not.toHaveStyle({ opacity: 0.5 })
   })
 })
