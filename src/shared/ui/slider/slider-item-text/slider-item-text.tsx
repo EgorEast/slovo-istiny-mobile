@@ -46,8 +46,8 @@ export const SliderItemText = ({
       style={[
         styles.component,
         {
-          borderBottomLeftRadius: isRounded ? RADIUSES.high : 0,
-          borderBottomRightRadius: isRounded ? RADIUSES.high : 0,
+          borderBottomLeftRadius: isRounded ? RADIUSES.slider : 0,
+          borderBottomRightRadius: isRounded ? RADIUSES.slider : 0,
         },
         isDarkBackground && styles.darkBackground,
         isDarkBlurBackground && styles.blurBackground,

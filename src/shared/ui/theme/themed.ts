@@ -39,6 +39,8 @@ export const RADIUSES = {
   low: 8,
   middle: 12,
   round: 999,
+  // Slider card corners.
+  slider: 9,
 } as const
 
 export const INDENTS = {
