@@ -44,9 +44,10 @@ const readTitleAreaStyle = () =>
 
 const BOTTOM_TITLE_PLATE_BACKGROUND = 'rgba(0, 0, 0, 0.55)'
 
-// The title view inside SliderItemText is the plate; it is the text's parent.
-const readTitlePlateStyle = (title: string) =>
-  StyleSheet.flatten(screen.getByText(title).parent?.props.style)
+// The text's own view inside SliderItemText is transparent; its parent is the
+// shared scrim stack that carries the plate for title and description alike.
+const readBottomStackStyle = (title: string) =>
+  StyleSheet.flatten(screen.getByText(title).parent?.parent?.props.style)
 
 const iconStub = <Text>icon</Text>
 
@@ -172,7 +173,7 @@ describe('<SliderItem/>', () => {
 
     expect(screen.getByText(propsStub.description)).toBeTruthy()
     expect(titleArea.parent?.children[0]).toBe(titleArea)
-    expect(readTitlePlateStyle(propsStub.title)).toEqual(
+    expect(readBottomStackStyle(propsStub.title)).toEqual(
       expect.objectContaining({ backgroundColor: BOTTOM_TITLE_PLATE_BACKGROUND }),
     )
   })
@@ -188,7 +189,7 @@ describe('<SliderItem/>', () => {
     )
 
     expect(screen.getByTestId(TITLE_ON_CARD_TEST_ID)).toBeTruthy()
-    expect(readTitlePlateStyle(propsStub.title)).toEqual(
+    expect(readBottomStackStyle(propsStub.title)).toEqual(
       expect.objectContaining({ backgroundColor: BOTTOM_TITLE_PLATE_BACKGROUND }),
     )
   })

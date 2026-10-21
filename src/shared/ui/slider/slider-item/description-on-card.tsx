@@ -9,9 +9,18 @@ import { type SliderItemSize } from './slider-item.types'
 export const DESCRIPTION_ON_CARD_BACKGROUND = 'rgba(0, 0, 0, 0.55)'
 
 // Плашка описания плейлиста: прижата к низу карточки, тёмный полупрозрачный
-// фон, белый текст, масштабируемый от размера карточки.
-export const DescriptionOnCard = ({ size, text }: { size: SliderItemSize; text: string }) => (
-  <View style={styles.component}>
+// фон, белый текст, масштабируемый от размера карточки. `plain` убирает
+// собственную плашку — описание ложится внутрь общей плашки с заголовком.
+export const DescriptionOnCard = ({
+  plain,
+  size,
+  text,
+}: {
+  plain?: boolean
+  size: SliderItemSize
+  text: string
+}) => (
+  <View style={plain ? styles.plainComponent : styles.component}>
     <Text
       numberOfLines={getDescriptionOnCardNumberOfLines(size)}
       style={[styles.text, { fontSize: getDescriptionOnCardFontSize(size) }]}
@@ -28,5 +37,6 @@ const styles = StyleSheet.create({
     paddingVertical: INDENTS.low,
     width: '100%',
   },
+  plainComponent: { width: '100%' },
   text: { color: COLORS.white, fontWeight: '500' },
 })
