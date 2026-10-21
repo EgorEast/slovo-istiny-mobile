@@ -3,7 +3,7 @@ import { MarqueeTextSkeleton } from '../../marquee-text/skeleton'
 import { FONT_SIZES, INDENTS } from '../../theme/themed'
 
 export const SliderItemTextSkeleton = ({
-  fontSize = FONT_SIZES.h3,
+  fontSize = FONT_SIZES.md,
   style,
   testID,
 }: {

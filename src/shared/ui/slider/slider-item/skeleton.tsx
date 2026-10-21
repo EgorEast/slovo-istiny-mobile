@@ -2,7 +2,7 @@ import { StyleSheet, TouchableOpacity, View } from 'react-native'
 import Animated from 'react-native-reanimated'
 import { useSkeletonPulse } from '../../skeleton/useSkeletonPulse'
 import { useTheme } from '../../theme/ThemeContext/useTheme'
-import { INDENTS, RADIUSES } from '../../theme/themed'
+import { FONT_SIZES, INDENTS, RADIUSES } from '../../theme/themed'
 import { SliderItemText } from '../slider-item-text/slider-item-text'
 import { getSliderItemImageHeight, getSliderItemWidth } from './slider-item.lib'
 import {
@@ -47,7 +47,9 @@ export const SliderItemSkeleton = ({
         >
           {isTitleOnCard && <SliderItemText.Skeleton style={styles.titleOnCard} />}
         </Animated.View>
-        {isTitleUnderCard && <SliderItemText.Skeleton style={styles.titleUnderCard} />}
+        {isTitleUnderCard && (
+          <SliderItemText.Skeleton fontSize={FONT_SIZES.md} style={styles.titleUnderCard} />
+        )}
       </View>
     </TouchableOpacity>
   )
@@ -68,5 +70,6 @@ const styles = StyleSheet.create({
   },
   titleUnderCard: {
     marginTop: INDENTS.low,
+    paddingHorizontal: 0,
   },
 })
