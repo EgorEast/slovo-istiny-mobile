@@ -73,6 +73,9 @@ export const useCollapsingNavbarDriver = ({
   // Last quantized step reported to React state; skips scheduleOnRN when the step is unchanged.
   const lastReportedStep = useSharedValue(-1)
 
+  // No deps array: on native they are ignored and only trigger a startup warning. Omitting them
+  // rebuilds the worklet each render, keeping closures fresh (renders are rare thanks to
+  // OPACITY_STATE_STEP); the guards inside make the worklet self-sufficient.
   const bgOpacity = useDerivedValue(() => {
     // Reset threshold tracking when title changes (guard clause)
     if (prevTitleSv.value !== title) {
@@ -99,9 +102,9 @@ export const useCollapsingNavbarDriver = ({
       if (isMountedSv.value) scheduleOnRN(setHeaderTitle, crossed ? title : '')
     }
     return opacity
-  }, [darkenStart, scrollY, threshold, setHeaderTitle, title, updateHeaderBgOpacity])
+  })
 
-  const bgStyle = useAnimatedStyle(() => ({ opacity: bgOpacity.value }), [bgOpacity])
+  const bgStyle = useAnimatedStyle(() => ({ opacity: bgOpacity.value }))
 
   const bgStyles = useMemo(
     () => StyleSheet.create({ bg: { backgroundColor: currentTheme.background, flex: 1 } }),
