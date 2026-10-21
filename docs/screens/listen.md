@@ -96,7 +96,7 @@
 
 ## Состояния
 
-- Загрузка: `SectionsSkeleton` (`src/pages/listen/ui/skeleton.tsx`) — пока идёт загрузка и секций ещё нет. Скелетон показывается **только** на честном холодном старте (кэша нет и `isLoadingSectionsAtom === true`); при непустом кэше контент появляется мгновенно, а фоновый рефетч скелетон не включает. `SectionsSkeleton` рендерит все секции из `SKELETON_SECTIONS` (первая — самая узкая, Small; дальше Middle и XLarge, включая `transform: Short`) одним непрерывным списком.
+- Загрузка: `SectionsSkeleton` (`src/pages/listen/ui/skeleton.tsx`) — пока идёт загрузка и секций ещё нет. Скелетон показывается **только** на честном холодном старте (кэша нет и `isLoadingSectionsAtom === true`); при непустом кэше контент появляется мгновенно, а фоновый рефетч скелетон не включает. `SectionsSkeleton` рендерит все секции из `SKELETON_SECTIONS` (Middle и XLarge, включая `transform: Short`) одним непрерывным списком.
 - Пусто: `EmptyState` (`shared/ui`), когда загрузка завершена, а секций нет.
 - Офлайн/тёплый старт: показывается кэш (`sectionDataSourceAtom === 'cache'`) — мгновенно из `hydrateCachedSections`/`fetchAllSections`, фоновые повторы через `useOfflineRetry` держат `dataSource !== 'network'`; при отсутствии кэша — `EmptyState`.
 - Ошибка: сетевые ошибки логируются (`console.error`), при наличии кэша он показывается; пустой сетевой ответ не затирает непустой кэш.
