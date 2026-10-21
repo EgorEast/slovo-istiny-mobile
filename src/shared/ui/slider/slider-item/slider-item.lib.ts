@@ -3,13 +3,23 @@ import { SIZE_OF_MINIMUM_SIDE_OF_SCREEN } from '../../../config/screen-dimension
 import { FONT_SIZES, INDENTS } from '../../theme/themed'
 import { SliderItemSize, SliderItemTransform } from './slider-item.types'
 
+const MAX_SLIDER_ITEM_WIDTH: Record<SliderItemSize, number> = {
+  [SliderItemSize.Large]: 320,
+  [SliderItemSize.Middle]: 240,
+  [SliderItemSize.Small]: 180,
+  [SliderItemSize.XLarge]: 420,
+}
+
 export const getSliderItemWidth = (size: SliderItemSize): number =>
-  match(size)
-    .with(SliderItemSize.Large, () => SIZE_OF_MINIMUM_SIDE_OF_SCREEN * 0.62)
-    .with(SliderItemSize.Middle, () => SIZE_OF_MINIMUM_SIDE_OF_SCREEN * 0.44)
-    .with(SliderItemSize.Small, () => SIZE_OF_MINIMUM_SIDE_OF_SCREEN * 0.285)
-    .with(SliderItemSize.XLarge, () => SIZE_OF_MINIMUM_SIDE_OF_SCREEN * 0.9)
-    .exhaustive()
+  Math.min(
+    match(size)
+      .with(SliderItemSize.Large, () => SIZE_OF_MINIMUM_SIDE_OF_SCREEN * 0.62)
+      .with(SliderItemSize.Middle, () => SIZE_OF_MINIMUM_SIDE_OF_SCREEN * 0.44)
+      .with(SliderItemSize.Small, () => SIZE_OF_MINIMUM_SIDE_OF_SCREEN * 0.285)
+      .with(SliderItemSize.XLarge, () => SIZE_OF_MINIMUM_SIDE_OF_SCREEN * 0.9)
+      .exhaustive(),
+    MAX_SLIDER_ITEM_WIDTH[size],
+  )
 
 // Height of the card's artwork area for a given item width: `high` stretches
 // the cover, `short` crops it, `undefined` keeps the square. Shared by the real
