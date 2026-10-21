@@ -1,5 +1,5 @@
 import { useAction, useAtom } from '@reatom/npm-react'
-import { type ReactElement, useEffect } from 'react'
+import { useEffect } from 'react'
 import { OnboardingTarget } from 'features/onboarding'
 import { type PlaylistData } from 'entities/playlist'
 import {
@@ -11,19 +11,11 @@ import {
 } from 'entities/section'
 import { useOfflineRetry } from 'shared/lib/network'
 import { EmptyState } from 'shared/ui'
-import { getFirstSectionLayout } from '../lib/first-section-layout'
 import { useListenNavigation } from '../lib/useListenNavigation'
-import { FirstSectionRow } from './FirstSectionRow'
 import { renderSection } from './renderSection'
 import { SectionsSkeleton } from './skeleton'
 
-export const DynamicSectionsSlider = ({
-  leadingElement,
-  onboardingTargetId,
-}: {
-  leadingElement?: ReactElement
-  onboardingTargetId?: string
-}) => {
+export const DynamicSectionsSlider = ({ onboardingTargetId }: { onboardingTargetId?: string }) => {
   const { navigateToPlaylist, navigateToPlaylistList } = useListenNavigation()
   const [sections] = useAtom(dynamicSectionsAtom)
   const [isLoading] = useAtom(isLoadingSectionsAtom)
@@ -57,42 +49,6 @@ export const DynamicSectionsSlider = ({
     sections.slice(fromIndex).map((section, offset) => renderSectionAt(section, fromIndex + offset))
 
   const renderContent = () => {
-    if (leadingElement) {
-      if (sections.length === 0) {
-        if (isLoading) {
-          const layout = getFirstSectionLayout(sections, isLoading)
-
-          return (
-            <>
-              <FirstSectionRow
-                button={leadingElement}
-                stacked={layout.stacked}
-                section={<SectionsSkeleton count={1} />}
-                sectionMinWidth={layout.sectionMinWidth}
-              />
-              <SectionsSkeleton from={1} />
-            </>
-          )
-        }
-
-        return <FirstSectionRow button={leadingElement} section={<EmptyState />} />
-      }
-
-      const layout = getFirstSectionLayout(sections, isLoading)
-
-      return (
-        <>
-          <FirstSectionRow
-            button={leadingElement}
-            stacked={layout.stacked}
-            sectionMinWidth={layout.sectionMinWidth}
-            section={renderSectionAt(sections[0], 0)}
-          />
-          {renderSectionsFrom(1)}
-        </>
-      )
-    }
-
     if (sections.length === 0) return isLoading ? <SectionsSkeleton /> : <EmptyState />
 
     return <>{renderSectionsFrom(0)}</>

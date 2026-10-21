@@ -1,5 +1,4 @@
 import { SliderItemSize } from 'shared/ui'
 
-// Первая секция скелетона стоит в первой строке экрана «Слушать» рядом с кнопкой
-// продолжения — её размер завязан на ширину колонки в first-section-layout.ts.
+// Первая секция скелетона — самая узкая (Small): она задаёт темп остальным.
 export const FIRST_SKELETON_SECTION_SIZE = SliderItemSize.Small

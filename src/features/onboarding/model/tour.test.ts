@@ -43,7 +43,7 @@ describe('onboarding tour model', () => {
     for (let press = 0; press < 8; press += 1) goToNextOnboardingStep(ctx)
 
     expect(ctx.get(onboardingTourAtom)).toEqual({
-      deckIndex: 4,
+      deckIndex: 3,
       scenarioId: 'listen',
       skippedDeckIndexes: [],
     })

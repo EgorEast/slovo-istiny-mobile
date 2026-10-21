@@ -20,11 +20,6 @@ export const listenScenario: OnboardingScenario = {
       title: 'Поиск',
     },
     {
-      targetId: 'listen.continue-listening',
-      text: 'Возвращайтесь к недослушанной проповеди — она запоминает место, где вы остановились.',
-      title: 'Продолжить прослушивание',
-    },
-    {
       targetId: 'listen.my-playlists',
       text: 'Ваши подборки проповедей. Добавляйте новые через меню любой проповеди.',
       title: 'Мои плейлисты',

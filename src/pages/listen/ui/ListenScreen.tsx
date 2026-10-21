@@ -18,9 +18,7 @@ import { tabBarHeightAtom } from 'shared/ui/layout'
 import { PLAYER_SIZES, useTheme } from 'shared/ui/theme'
 import { useListenSearchNavigation } from '../lib/useListenSearchNavigation'
 import { usePullToRefresh } from '../lib/usePullToRefresh'
-import { useScrollActivity } from '../lib/useScrollActivity'
 import { useSearchTourActions } from '../lib/useSearchTourActions'
-import { ContinueListeningButton } from './ContinueListeningButton'
 import { DynamicSectionsSlider } from './DynamicSectionsSlider'
 import { styles } from './ListenScreen.styles'
 import { ListenSearchHeader } from './ListenSearchHeader'
@@ -46,7 +44,6 @@ export const ListenScreen = () => {
   const [authStatus] = useAtom(authStatusAtom)
   const [authUser] = useAtom(authUserAtom)
   const restore = useAction(restoreSession)
-  const { onScroll } = useScrollActivity()
   const { modal, openAddToPlaylist } = useAddToPlaylistModal()
   const {
     closePicker,
@@ -93,7 +90,6 @@ export const ListenScreen = () => {
       ) : (
         <PullToRefresh onRefresh={refresh} refreshing={isRefreshing}>
           <ScrollView
-            onScroll={onScroll}
             ref={tourScrollableRef}
             scrollEventThrottle={16}
             keyboardDismissMode='on-drag'
@@ -105,14 +101,7 @@ export const ListenScreen = () => {
             ]}
           >
             {!isSearchOpen && <ListenTopRow showAdminButton={showAdminButton} />}
-            <DynamicSectionsSlider
-              onboardingTargetId='listen.sections'
-              leadingElement={
-                !isSearchActive ? (
-                  <ContinueListeningButton onboardingTargetId='listen.continue-listening' />
-                ) : undefined
-              }
-            />
+            <DynamicSectionsSlider onboardingTargetId='listen.sections' />
             <MyPlaylistsSlider
               onboardingTargetId='listen.my-playlists'
               titleOnboardingTargetId='listen.my-playlists-title'

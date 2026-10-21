@@ -16,7 +16,6 @@ export { sortAndCapEntries } from './lib/sortAndCapEntries'
 export { useHistoryProgress } from './lib/useHistoryProgress'
 export { useHistoryProgressMap } from './lib/useHistoryProgressMap'
 export { useHistorySermonIds } from './lib/useHistorySermonIds'
-export { useLastListeningEntry } from './lib/useLastListeningEntry'
 export { historyAtom, isHistoryLoadedAtom } from './model/historyAtom'
 export {
   type ListeningHistory,

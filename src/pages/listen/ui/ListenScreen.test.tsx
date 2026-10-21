@@ -1,6 +1,5 @@
 import { createCtx } from '@reatom/framework'
 import { act, fireEvent, waitFor } from '@testing-library/react-native'
-import { type ReactElement } from 'react'
 import { StyleSheet, TextInput } from 'react-native'
 import { type TestInstance } from 'test-renderer'
 import { SEARCH_HEADER_HEIGHT } from 'features/sermon-search'
@@ -106,29 +105,11 @@ jest.mock('features/sermon-search/lib/useDebouncedSearch', () => ({
   useDebouncedSearch: () => undefined,
 }))
 
-const mockDynamicSectionsSliderProps = jest.fn()
-
 jest.mock('./DynamicSectionsSlider', () => {
   const { Text } = jest.requireActual('react-native')
 
   return {
-    DynamicSectionsSlider: (props: { leadingElement?: ReactElement }) => {
-      mockDynamicSectionsSliderProps(props)
-      return (
-        <>
-          {props.leadingElement}
-          <Text>SECTIONS_MOCK</Text>
-        </>
-      )
-    },
-  }
-})
-
-jest.mock('./ContinueListeningButton', () => {
-  const { Text } = jest.requireActual('react-native')
-
-  return {
-    ContinueListeningButton: () => <Text>CONTINUE_BUTTON_MOCK</Text>,
+    DynamicSectionsSlider: () => <Text>SECTIONS_MOCK</Text>,
   }
 })
 
@@ -137,7 +118,6 @@ const SEARCH_PLACEHOLDER = 'Поиск проповедей'
 const CLEAR_LABEL = 'Очистить поиск'
 const SERMON_TITLE = 'Проповедь о вере'
 const SECTIONS_MOCK = 'SECTIONS_MOCK'
-const CONTINUE_BUTTON_MOCK = 'CONTINUE_BUTTON_MOCK'
 const MY_PLAYLISTS_TITLE = 'Мои плейлисты'
 const ADMIN_BUTTON_LABEL = 'Админка'
 const SCROLL_HOST_TYPES = new Set(['RCTScrollView', 'ScrollView'])
@@ -226,15 +206,6 @@ describe('<ListenScreen>', () => {
     expect(queryByPlaceholderText(SEARCH_PLACEHOLDER)).toBeNull()
   })
 
-  test('passes the continue button as leadingElement inside the scroll content when the search is closed', async () => {
-    const { getByText } = await renderWithProviders(<ListenScreen />, {})
-
-    expect(hasScrollAncestor(getByText(CONTINUE_BUTTON_MOCK))).toBe(true)
-    expect(mockDynamicSectionsSliderProps).toHaveBeenLastCalledWith(
-      expect.objectContaining({ leadingElement: expect.anything() }),
-    )
-  })
-
   test('renders the my-playlists section title', async () => {
     const { getByLabelText } = await renderWithProviders(<ListenScreen />, {})
 
@@ -272,27 +243,6 @@ describe('<ListenScreen>', () => {
     })
 
     expect(mockFetchAllSections).toHaveBeenCalledTimes(1)
-  })
-
-  test('keeps the continue button visible when the search is open but not active', async () => {
-    const { getByText } = await renderWithOpenSearch()
-
-    expect(getByText(CONTINUE_BUTTON_MOCK)).toBeTruthy()
-    expect(mockDynamicSectionsSliderProps).toHaveBeenLastCalledWith(
-      expect.objectContaining({ leadingElement: expect.anything() }),
-    )
-  })
-
-  test('hides the continue button while search results are active', async () => {
-    const ctx = createCtx()
-    isSearchOpenAtom(ctx, true)
-    searchQueryAtom(ctx, 'вера')
-    searchResultsAtom(ctx, sermons)
-    isSearchingAtom(ctx, false)
-
-    const { queryByText } = await renderWithProviders(<ListenScreen />, { ctx })
-
-    expect(queryByText(CONTINUE_BUTTON_MOCK)).toBeNull()
   })
 
   test('opens search via the magnifier, pinning the bar above the scroll content', async () => {
@@ -390,7 +340,6 @@ describe('<ListenScreen>', () => {
 
     expect(hasScrollAncestor(getByPlaceholderText(SEARCH_PLACEHOLDER))).toBe(false)
     expect(getByText(SECTIONS_MOCK)).toBeTruthy()
-    expect(getByText(CONTINUE_BUTTON_MOCK)).toBeTruthy()
     expect(queryByText(SERMON_TITLE)).toBeNull()
   })
 
@@ -409,7 +358,6 @@ describe('<ListenScreen>', () => {
     expect(hasScrollAncestor(getByPlaceholderText(SEARCH_PLACEHOLDER))).toBe(false)
     expect(getAllByText(SERMON_TITLE)[0]).toBeTruthy()
     expect(queryByText(SECTIONS_MOCK)).toBeNull()
-    expect(queryByText(CONTINUE_BUTTON_MOCK)).toBeNull()
   })
 
   test('treats a whitespace-only query as inactive', async () => {
@@ -426,7 +374,6 @@ describe('<ListenScreen>', () => {
 
     expect(hasScrollAncestor(getByPlaceholderText(SEARCH_PLACEHOLDER))).toBe(false)
     expect(getByText(SECTIONS_MOCK)).toBeTruthy()
-    expect(getByText(CONTINUE_BUTTON_MOCK)).toBeTruthy()
     expect(queryByText(SERMON_TITLE)).toBeNull()
   })
 
@@ -445,7 +392,6 @@ describe('<ListenScreen>', () => {
     await fireEvent.changeText(getByPlaceholderText(SEARCH_PLACEHOLDER), 'в')
 
     expect(getByText(SECTIONS_MOCK)).toBeTruthy()
-    expect(getByText(CONTINUE_BUTTON_MOCK)).toBeTruthy()
     expect(queryByText(SERMON_TITLE)).toBeNull()
     expect(hasScrollAncestor(getByPlaceholderText(SEARCH_PLACEHOLDER))).toBe(false)
   })

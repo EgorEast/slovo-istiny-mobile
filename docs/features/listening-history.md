@@ -44,8 +44,7 @@ src/entities/listening-history/
     ├── removeSermonsFromHistory.ts # removeSermonsFromHistoryAction — массовое удаление проповедей из истории (один read-transform-write)
     ├── useHistoryProgressMap.ts  # Map<sermonId, 0..1> — stored-прогресс из historyAtom для списков
     ├── useHistorySermonIds.ts    # Set<sermonId> — надёжная проверка «проповедь есть в истории» для меню
-    ├── buildHistoryMenuActions.ts # Фабрика пунктов меню строк списков («Пометить прослушанной» / «Удалить из истории»)
-    └── useLastListeningEntry.ts  # Хук последней записи с проповедью: { isLoaded, entry, sermon } для кнопки «Продолжить»
+    └── buildHistoryMenuActions.ts # Фабрика пунктов меню строк списков («Пометить прослушанной» / «Удалить из истории»)
 ```
 
 > **Удалено** (в рамках перф-работы): live-чтение прогресса — хуки `useLiveSermonProgress`, `useSermonProgress` и `getLiveProgressAtom`. Прогресс в UI теперь только stored (обновляется по событиям, см. «Прогресс в UI»).
@@ -65,7 +64,6 @@ export { recordSermonSwitchAction }
 export { removeSermonsFromHistoryAction }
 export { useHistoryProgressMap }
 export { useHistorySermonIds }
-export { useLastListeningEntry }
 export {
   clearHistoryAction,
   historyAtom,
@@ -78,29 +76,11 @@ export {
 export type { ListeningHistory, ListeningHistoryEntry }
 ```
 
-> `isHistoryLoadedAtom` — флаг того, что `loadHistoryAction` завершил чтение AsyncStorage (ставится `true` в `finally`, даже при ошибке чтения). Экспортируется из барреля (`entities/listening-history`): используется внутри `useLastListeningEntry`, чтобы кнопка «Продолжить» не мигала disabled-состоянием на холодном старте, и экраном «История» для скелетона загрузки (`HistoryScreen`).
-
-### `useLastListeningEntry`
-
-Хук для кнопки «Продолжить» на экране «Слушать» (`src/pages/listen/ui/ContinueListeningButton.tsx`). Читает `historyAtom` + `isHistoryLoadedAtom` и возвращает:
-
-```typescript
-{
-  isLoaded: boolean,                    // false, пока история не загружена
-  entry: ListeningHistoryEntry | null,  // первая НЕзавершённая запись с getEntrySermon(entry) !== null
-  sermon: AudioPlayerData | null,       // getEntrySermon(entry) той же записи
-}
-```
-
-- `isLoaded === false` → `entry`/`sermon` = `null` (кнопка не рендерится).
-- Иначе — перебирает `historyAtom` (отсортирован по `lastPlayedAt` DESC) и возвращает первую запись, у которой `getEntrySermon(entry)` не `null` **и** `isEntryCompleted(entry)` ложно (записи без проповеди и завершённые записи пропускаются). `getEntrySermon` и `isEntryCompleted` вызываются **по одному разу** на запись.
-- Нет подходящей записи → `{ isLoaded: true, entry: null, sermon: null }` (кнопка «Начать слушать», disabled).
-
-Завершённые записи пропускаются намеренно: ручная отметка «Пометить прослушанной» устанавливает `lastPlayedAt = now` (запись всплывает в начало истории), но `isEntryCompleted` исключает её из «Продолжить» — resume с позиции 0 бессмыслен для завершённой проповеди. Натурально завершённые треки тоже пропускаются (нечего продолжать; повторное воспроизведение сбросит запись через `recordPlaybackStartAction`).
+> `isHistoryLoadedAtom` — флаг того, что `loadHistoryAction` завершил чтение AsyncStorage (ставится `true` в `finally`, даже при ошибке чтения). Экспортируется из барреля (`entities/listening-history`) и используется экраном «История» для скелетона загрузки (`HistoryScreen`).
 
 ### Общий press-хук `useEntryPlayback`
 
-Общий press-флоу «резолв плейлиста → воспроизведение» для записей истории вынесен в хук `useEntryPlayback` (`src/features/entry-playback/`, features-слой — чтобы не создать entities-цикл player ↔ listening-history). Используется `ContinueListeningButton` (экран «Слушать») и `HistoryRow` (экран истории). Флоу: guard `getEntrySermon(entry)` → `resolveEntryPlaylist` → `playNewSermon`, всё в try/catch → `reportError(error, errorMessage)`.
+Общий press-флоу «резолв плейлиста → воспроизведение» для записей истории вынесен в хук `useEntryPlayback` (`src/features/entry-playback/`, features-слой — чтобы не создать entities-цикл player ↔ listening-history). Используется `HistoryRow` (экран истории). Флоу: guard `getEntrySermon(entry)` → `resolveEntryPlaylist` → `playNewSermon`, всё в try/catch → `reportError(error, errorMessage)`.
 
 ### @x cross-import (entities/player)
 
@@ -269,7 +249,7 @@ Per-sermon семантика вынесена в чистый хелпер `com
 
 **Смена контекста прослушивания:** flush с переданным `playlist` перезаписывает снапшот плейлиста записи (в форме контекстного плейлиста с единственной проповедью, `buildContextPlaylist`) — даже когда позиция/длительность не изменились, но id плейлиста другой (например, после выбора другого плейлиста в `features/continue-playback`); при том же id и неизменном прогрессе — no-op. Flush без `playlist` снапшот сохраняет. Create-path по-прежнему строит снапшот из `playlist ?? buildManualPlaylist(sermon)`.
 
-**Поведение при удалении:** `removeHistoryEntryAction` ставит «тамбстоун» на id удалённой проповеди (`model/forgottenSermons.ts` — session-scoped `Set`, до коммита атома), поэтому удаление **больше не отменяется** следующим flush'ом: ни немедленный flush (тик `usePlaybackProgressSaver` каждые 10с при `isPlaying`, flush паузы/стопа), ни deferred-флаш seek'а не воссоздают запись — тамбстоун закрывает и создание, и обновление (`upsertHistoryProgress` возвращает каталог без изменений). Тем же тамбстоуном гейтятся встраивающие писатели `recordPlaybackStartAction` и `recordSermonSwitchAction` (создание/обновление удалённой проповеди пропускается); `markHistoryCompletedAction` гейт не нужен — без существующей записи он и так no-op. Удаление сохраняется до перезапуска приложения (в памяти сессии; после рестарта записи и так нет). **`resetPlaybackAction`** (`entities/player`): при закрытии плеера запись текущей проповеди удаляется (`removeHistoryEntryAction`) и **не** воссоздаётся — плеер выгружен, `currentAudioAtom` сброшен, 10с-флаш остановлен, а тамбстоун закрывает возможный in-flight flush; дополнительно сброс сворачивает полноэкранный плеер (`isPlayerExpandedAtom`), чтобы развёрнутое состояние не пережило закрытие. Карточка «Продолжить» исчезает.
+**Поведение при удалении:** `removeHistoryEntryAction` ставит «тамбстоун» на id удалённой проповеди (`model/forgottenSermons.ts` — session-scoped `Set`, до коммита атома), поэтому удаление **больше не отменяется** следующим flush'ом: ни немедленный flush (тик `usePlaybackProgressSaver` каждые 10с при `isPlaying`, flush паузы/стопа), ни deferred-флаш seek'а не воссоздают запись — тамбстоун закрывает и создание, и обновление (`upsertHistoryProgress` возвращает каталог без изменений). Тем же тамбстоуном гейтятся встраивающие писатели `recordPlaybackStartAction` и `recordSermonSwitchAction` (создание/обновление удалённой проповеди пропускается); `markHistoryCompletedAction` гейт не нужен — без существующей записи он и так no-op. Удаление сохраняется до перезапуска приложения (в памяти сессии; после рестарта записи и так нет). **`resetPlaybackAction`** (`entities/player`): при закрытии плеера запись текущей проповеди удаляется (`removeHistoryEntryAction`) и **не** воссоздаётся — плеер выгружен, `currentAudioAtom` сброшен, 10с-флаш остановлен, а тамбстоун закрывает возможный in-flight flush; дополнительно сброс сворачивает полноэкранный плеер (`isPlayerExpandedAtom`), чтобы развёрнутое состояние не пережило закрытие.
 
 ### Атомарность записи (commitHistory)
 

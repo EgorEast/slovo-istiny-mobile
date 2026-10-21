@@ -357,7 +357,7 @@ describe('<OnboardingTourOverlay>', () => {
   })
 
   test('renders a centered card when the registered rect is below the viewport', async () => {
-    const { getByText } = await renderAtDeck('listen', 3, {
+    const { getByText } = await renderAtDeck('listen', 2, {
       'listen.my-playlists': instances(OFFSCREEN_RECT),
     })
 
