@@ -36,7 +36,6 @@ export const PLAYER_SIZES = {
 
 export const RADIUSES = {
   high: 16,
-  large: 20,
   low: 8,
   middle: 12,
   round: 999,

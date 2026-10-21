@@ -47,7 +47,7 @@ jest.mock('shared/ui/theme', () => ({
   COLORS: { onPrimary: '#ffffff' },
   FONT_SIZES: { base: 14, lg: 18, md: 16, sm: 12 },
   INDENTS: { high: 24, highest: 32, low: 8, lowest: 4, medium: 16, middle: 12 },
-  RADIUSES: { high: 16, large: 20, low: 8, middle: 12, round: 999 },
+  RADIUSES: { high: 16, low: 8, middle: 12, round: 999 },
   useTheme: () => ({
     currentTheme: {
       background: '#ffffff',

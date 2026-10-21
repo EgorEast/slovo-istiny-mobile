@@ -28,7 +28,7 @@ export const SliderItemSkeleton = ({
   const { pulseStyle } = useSkeletonPulse()
 
   const itemWidth = getSliderItemWidth(size)
-  const radius = (borderRadius ?? true) ? RADIUSES.large : 0
+  const radius = (borderRadius ?? true) ? RADIUSES.high : 0
   const imageHeight = getSliderItemImageHeight(itemWidth, transform)
 
   const isTitleOnCard = whereIsSlideTitleLocated === WhereIsSlideTitleLocated.On

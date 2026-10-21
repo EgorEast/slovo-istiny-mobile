@@ -25,7 +25,7 @@ export const SliderItem = ({
   whereIsSlideTitleLocated = WhereIsSlideTitleLocated.Under,
 }: SliderItemProps) => {
   const conditionSize = getSliderItemWidth(size)
-  const radius = (borderRadius ?? true) ? RADIUSES.large : 0
+  const radius = (borderRadius ?? true) ? RADIUSES.high : 0
 
   const isTitleOnCard = whereIsSlideTitleLocated === WhereIsSlideTitleLocated.On && !!title
   const isTitleUnderCard = whereIsSlideTitleLocated === WhereIsSlideTitleLocated.Under && !!title
