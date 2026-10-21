@@ -1,10 +1,15 @@
-import { Image, type ImageProps } from 'expo-image'
+import { Image } from 'expo-image'
 import { type ReactNode } from 'react'
-import { type ImageStyle, Platform, type StyleProp, type ViewStyle } from 'react-native'
+import {
+  type ImageStyle,
+  Platform,
+  type StyleProp,
+  StyleSheet,
+  View,
+  type ViewStyle,
+} from 'react-native'
 import { APP_ICON_URI as IMAGE_PLACEHOLDER } from '../../lib/app-icon'
 import { useTheme } from '../theme/ThemeContext/useTheme'
-
-const ImageWithChildren = Image as React.ComponentType<{ children?: ReactNode } & ImageProps>
 
 // On web the startup splash hides #root while cached sections mount, so a lazy <img>
 // defers indefinitely until an unrelated re-render — covers must load eagerly there.
@@ -12,6 +17,9 @@ const ImageWithChildren = Image as React.ComponentType<{ children?: ReactNode } 
 const getLoadingMode = (eager: boolean): 'eager' | 'lazy' =>
   Platform.OS === 'web' || eager ? 'eager' : 'lazy'
 
+// expo-image `Image` does not support children: it warns, drops them on web and
+// forwards them to the native image view on Android. Overlays are therefore rendered
+// as siblings above an absolutely-positioned image inside a clipping container.
 export const CoverImage = ({
   children,
   eager = false,
@@ -30,20 +38,25 @@ export const CoverImage = ({
   const { currentTheme } = useTheme()
 
   return (
-    <ImageWithChildren
-      testID={testID}
-      transition={200}
-      contentFit='cover'
-      cachePolicy='memory-disk'
-      recyclingKey={uri || undefined}
-      loading={getLoadingMode(eager)}
-      priority={eager ? 'high' : 'normal'}
-      source={{ uri: uri || IMAGE_PLACEHOLDER }}
-      style={
-        [{ backgroundColor: currentTheme.skeleton }, imageStyle, style] as StyleProp<ImageStyle>
-      }
-    >
+    <View style={[styles.container, { backgroundColor: currentTheme.skeleton }, style]}>
+      <Image
+        testID={testID}
+        transition={200}
+        contentFit='cover'
+        cachePolicy='memory-disk'
+        recyclingKey={uri || undefined}
+        loading={getLoadingMode(eager)}
+        priority={eager ? 'high' : 'normal'}
+        source={{ uri: uri || IMAGE_PLACEHOLDER }}
+        style={[StyleSheet.absoluteFill, imageStyle]}
+      />
       {children}
-    </ImageWithChildren>
+    </View>
   )
 }
+
+const styles = StyleSheet.create({
+  container: {
+    overflow: 'hidden',
+  },
+})

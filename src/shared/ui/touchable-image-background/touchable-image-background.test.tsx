@@ -47,7 +47,7 @@ describe('<TouchableImageBackground/>', () => {
 
     const imageBackground = screen.getByTestId('image-background')
     expect(imageBackground).toHaveStyle({ opacity: 0.5 })
-    expect(imageBackground).toHaveStyle({ backgroundColor: 'red' })
+    expect(imageBackground.parent).toHaveStyle({ backgroundColor: 'red' })
   })
 
   test('displays child elements', async () => {

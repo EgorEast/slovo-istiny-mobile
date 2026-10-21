@@ -54,7 +54,7 @@ describe('<CoverImage>', () => {
     }
   })
 
-  test('renders children over the image', async () => {
+  test('renders children over the image on native', async () => {
     await renderWithProviders(
       <CoverImage uri={URI_STUB} testID='cover'>
         <View testID='child' />
@@ -62,6 +62,23 @@ describe('<CoverImage>', () => {
     )
 
     expect(screen.getByTestId('child')).toBeTruthy()
+  })
+
+  test('renders children over the image on web', async () => {
+    const originalPlatform = Platform.OS
+    Platform.OS = 'web'
+
+    try {
+      await renderWithProviders(
+        <CoverImage uri={URI_STUB} testID='cover'>
+          <View testID='child' />
+        </CoverImage>,
+      )
+
+      expect(screen.getByTestId('child')).toBeTruthy()
+    } finally {
+      Platform.OS = originalPlatform
+    }
   })
 
   test('passes testID through', async () => {

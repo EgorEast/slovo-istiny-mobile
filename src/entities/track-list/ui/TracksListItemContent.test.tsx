@@ -105,7 +105,7 @@ describe('<TracksListItemContent>', () => {
     await renderWithProviders(<TracksListItemContent {...baseProps} progress={1} />)
 
     expect(screen.getAllByText(TEST_TITLE)[0]).toHaveStyle({ color: mockTheme.textMuted })
-    expect(screen.getByTestId(ARTWORK_TEST_ID)).toHaveStyle({ opacity: 0.5 })
+    expect(screen.getByTestId(ARTWORK_TEST_ID).parent).toHaveStyle({ opacity: 0.5 })
   })
 
   test('playing wins over completed dimming', async () => {
@@ -115,7 +115,7 @@ describe('<TracksListItemContent>', () => {
 
     expect(screen.getAllByText(TEST_TITLE)[0]).toHaveStyle({ color: mockTheme.primary })
     expect(screen.getAllByText(TEST_TITLE)[0]).not.toHaveStyle({ color: mockTheme.textMuted })
-    expect(screen.getByTestId(ARTWORK_TEST_ID)).toHaveStyle({ opacity: 0.6 })
+    expect(screen.getByTestId(ARTWORK_TEST_ID).parent).toHaveStyle({ opacity: 0.6 })
   })
 
   test('does not dim when progress is below 1', async () => {
