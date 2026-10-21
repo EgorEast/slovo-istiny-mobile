@@ -57,3 +57,10 @@ export const getDescriptionOnCardNumberOfLines = (size: SliderItemSize): number 
     .with(SliderItemSize.Large, () => 3)
     .with(SliderItemSize.XLarge, () => 3)
     .exhaustive()
+
+// `On` and `Both` render the same overlay DOM and differ only in the title area
+// style (centered over the artwork vs pinned to the card bottom). Keeping the
+// choice here makes the difference assertable without reaching into styles.
+export const getTitleAreaStyleName = (
+  isTitleBottom: boolean,
+): 'titleBottomArea' | 'titleOnCardArea' => (isTitleBottom ? 'titleBottomArea' : 'titleOnCardArea')

@@ -1,5 +1,5 @@
 import { screen } from '@testing-library/react-native'
-import { Text } from 'react-native'
+import { StyleSheet, Text } from 'react-native'
 import { APP_ICON_URI as IMAGE_PLACEHOLDER } from '../../../lib/app-icon'
 import { renderWithProviders } from '../../../mocks/renderWithProviders'
 import { TITLE_ON_CARD_TEST_ID } from './card-overlay'
@@ -36,6 +36,11 @@ const getSourceUri = () => {
   if (!tree || Array.isArray(tree)) return undefined
   return findImageSource(tree as unknown as Record<string, unknown>)
 }
+
+// `On` and `Both` render the same overlay DOM; only the title area style tells
+// them apart, so layout assertions resolve the rendered style instead of props.
+const readTitleAreaStyle = () =>
+  StyleSheet.flatten(screen.getByTestId(TITLE_ON_CARD_TEST_ID).props.style)
 
 const iconStub = <Text>icon</Text>
 
@@ -121,7 +126,7 @@ describe('<SliderItem/>', () => {
   })
 
   test('renders the bottom-stacked title without the letter when whereIsSlideTitleLocated is Both', async () => {
-    await renderWithProviders(
+    const { rerender } = await renderWithProviders(
       <SliderItem
         title='Hello'
         artwork={null}
@@ -132,6 +137,18 @@ describe('<SliderItem/>', () => {
     expect(screen.getByTestId(TITLE_ON_CARD_TEST_ID)).toBeTruthy()
     expect(screen.queryByText('H')).toBeNull()
     expect(screen.getAllByText('Hello')).toHaveLength(1)
+
+    const bottomStyle = readTitleAreaStyle()
+
+    await rerender(
+      <SliderItem
+        title='Hello'
+        artwork={null}
+        whereIsSlideTitleLocated={WhereIsSlideTitleLocated.On}
+      />,
+    )
+
+    expect(bottomStyle).not.toEqual(readTitleAreaStyle())
   })
 
   test('stacks the title above the description at the card bottom for Both', async () => {

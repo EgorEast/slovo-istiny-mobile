@@ -6,6 +6,7 @@ interface SliderItemLib {
   getDescriptionOnCardNumberOfLines: (size: SliderItemSize) => number
   getSliderItemStride: (size: SliderItemSize) => number
   getSliderItemWidth: (size: SliderItemSize) => number
+  getTitleAreaStyleName: (isTitleBottom: boolean) => string
 }
 
 const SMALL_PHONE_MIN_SIDE = 390
@@ -80,5 +81,19 @@ describe('getDescriptionOnCardNumberOfLines', () => {
 
     expect(getDescriptionOnCardNumberOfLines(SliderItemSize.Small)).toBe(2)
     expect(getDescriptionOnCardNumberOfLines(SliderItemSize.XLarge)).toBe(3)
+  })
+})
+
+describe('getTitleAreaStyleName', () => {
+  test('pins the title to the card bottom when requested', () => {
+    const { getTitleAreaStyleName } = loadSliderItemLib(SMALL_PHONE_MIN_SIDE)
+
+    expect(getTitleAreaStyleName(true)).toBe('titleBottomArea')
+  })
+
+  test('centers the title over the artwork otherwise', () => {
+    const { getTitleAreaStyleName } = loadSliderItemLib(SMALL_PHONE_MIN_SIDE)
+
+    expect(getTitleAreaStyleName(false)).toBe('titleOnCardArea')
   })
 })

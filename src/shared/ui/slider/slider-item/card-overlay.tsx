@@ -5,6 +5,7 @@ import {
   type SliderItemTextBackgroundStyle,
 } from '../slider-item-text/slider-item-text.types'
 import { DescriptionOnCard } from './description-on-card'
+import { getTitleAreaStyleName } from './slider-item.lib'
 import { type SliderItemSize } from './slider-item.types'
 
 // Контейнер оверлея не несёт собственного текста — служит якорем для тестов,
@@ -30,10 +31,7 @@ export const CardOverlay = ({
 }) => (
   <View style={styles.overlayContent}>
     {title ? (
-      <View
-        testID={TITLE_ON_CARD_TEST_ID}
-        style={isTitleBottom ? styles.titleBottomArea : styles.titleOnCardArea}
-      >
+      <View testID={TITLE_ON_CARD_TEST_ID} style={styles[getTitleAreaStyleName(!!isTitleBottom)]}>
         <SliderItemText
           title={title}
           titleTextAlign={titleTextAlign}
