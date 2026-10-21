@@ -20,9 +20,7 @@ export const SLIDE_TITLE_LOCATION_LABELS: Record<
   NonNullable<APITypes.SectionEntity['whereIsSlideTitleLocated']>,
   string
 > = {
-  // Legacy value is no longer selectable and renders as `under` (see
-  // `mapWhereIsTitleLocated`), so it shares the `under` wording.
-  bothOnAndUnder: 'Под карточкой',
+  bothOnAndUnder: 'Внизу карточки с описанием',
   on: 'На карточке',
   under: 'Под карточкой',
 }

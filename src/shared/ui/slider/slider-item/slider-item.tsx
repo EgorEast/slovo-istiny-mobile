@@ -28,6 +28,7 @@ export const SliderItem = ({
   const radius = (borderRadius ?? true) ? RADIUSES.slider : 0
 
   const isTitleOnCard = whereIsSlideTitleLocated === WhereIsSlideTitleLocated.On && !!title
+  const isTitleOnCardBottom = whereIsSlideTitleLocated === WhereIsSlideTitleLocated.Both && !!title
   const isTitleUnderCard = whereIsSlideTitleLocated === WhereIsSlideTitleLocated.Under && !!title
   const cardDescription =
     isDescriptionTitleOnSlideLarge && !artworkIcon ? description?.trim() : undefined
@@ -52,6 +53,7 @@ export const SliderItem = ({
           isTitleOnCard={isTitleOnCard}
           titleTextAlign={titleTextAlign}
           cardDescription={cardDescription}
+          isTitleOnCardBottom={isTitleOnCardBottom}
           descriptionBackgroundStyle={descriptionBackgroundStyle}
         />
         {isTitleUnderCard ? (

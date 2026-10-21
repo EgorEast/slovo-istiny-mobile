@@ -120,6 +120,50 @@ describe('<SliderItem/>', () => {
     expect(screen.getByTestId(TITLE_ON_CARD_TEST_ID)).toBeTruthy()
   })
 
+  test('renders the bottom-stacked title without the letter when whereIsSlideTitleLocated is Both', async () => {
+    await renderWithProviders(
+      <SliderItem
+        title='Hello'
+        artwork={null}
+        whereIsSlideTitleLocated={WhereIsSlideTitleLocated.Both}
+      />,
+    )
+
+    expect(screen.getByTestId(TITLE_ON_CARD_TEST_ID)).toBeTruthy()
+    expect(screen.queryByText('H')).toBeNull()
+    expect(screen.getAllByText('Hello')).toHaveLength(1)
+  })
+
+  test('stacks the title above the description at the card bottom for Both', async () => {
+    await renderWithProviders(
+      <SliderItem
+        title={propsStub.title}
+        artwork={propsStub.artwork}
+        isDescriptionTitleOnSlideLarge
+        description={propsStub.description}
+        whereIsSlideTitleLocated={WhereIsSlideTitleLocated.Both}
+      />,
+    )
+
+    const titleArea = screen.getByTestId(TITLE_ON_CARD_TEST_ID)
+
+    expect(screen.getByText(propsStub.description)).toBeTruthy()
+    expect(titleArea.parent?.children[0]).toBe(titleArea)
+  })
+
+  test('title overlays the icon card when whereIsSlideTitleLocated is Both', async () => {
+    await renderWithProviders(
+      <SliderItem
+        artwork={null}
+        artworkIcon={iconStub}
+        title={propsStub.title}
+        whereIsSlideTitleLocated={WhereIsSlideTitleLocated.Both}
+      />,
+    )
+
+    expect(screen.getByTestId(TITLE_ON_CARD_TEST_ID)).toBeTruthy()
+  })
+
   test('renders the description text on the card when enabled', async () => {
     await renderWithProviders(
       <SliderItem

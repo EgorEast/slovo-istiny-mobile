@@ -3,13 +3,13 @@ import { StyleSheet, View } from 'react-native'
 import { CoverImage } from '../../cover-image/cover-image'
 import { PlaylistLetterAvatar } from '../../PlaylistLetterAvatar'
 import { useTheme } from '../../theme/ThemeContext/useTheme'
-import { SliderItemText } from '../slider-item-text/slider-item-text'
 import {
   type SliderItemTextAlign,
   type SliderItemTextBackgroundStyle,
 } from '../slider-item-text/slider-item-text.types'
-import { CardOverlay, TITLE_ON_CARD_TEST_ID } from './card-overlay'
+import { CardOverlay } from './card-overlay'
 import { type SliderItemSize } from './slider-item.types'
+import { TitleOnIconCard } from './title-on-icon-card'
 
 // Artwork area of a slider card: an icon node, a real cover, or — when neither
 // is present — the shared blurred letter tile. The on-card title/description
@@ -23,6 +23,7 @@ export const SliderItemArtwork = ({
   descriptionBackgroundStyle,
   imageHeight,
   isTitleOnCard,
+  isTitleOnCardBottom,
   radius,
   size,
   title,
@@ -35,6 +36,7 @@ export const SliderItemArtwork = ({
   descriptionBackgroundStyle?: SliderItemTextBackgroundStyle
   imageHeight: number
   isTitleOnCard: boolean
+  isTitleOnCardBottom: boolean
   radius: number
   size: SliderItemSize
   title?: string
@@ -43,12 +45,13 @@ export const SliderItemArtwork = ({
   const { currentTheme } = useTheme()
 
   const overlay =
-    isTitleOnCard || cardDescription ? (
+    isTitleOnCard || isTitleOnCardBottom || cardDescription ? (
       <CardOverlay
         size={size}
         title={title ?? ''}
         description={cardDescription}
         titleTextAlign={titleTextAlign}
+        isTitleBottom={isTitleOnCardBottom}
         backgroundStyle={descriptionBackgroundStyle}
       />
     ) : null
@@ -62,14 +65,13 @@ export const SliderItemArtwork = ({
         ]}
       >
         {artworkIcon}
-        {isTitleOnCard ? (
-          <View style={styles.titleOnIconCard} testID={TITLE_ON_CARD_TEST_ID}>
-            <SliderItemText
-              title={title ?? ''}
-              titleTextAlign={titleTextAlign}
-              backgroundStyle={descriptionBackgroundStyle}
-            />
-          </View>
+        {isTitleOnCard || isTitleOnCardBottom ? (
+          <TitleOnIconCard
+            title={title ?? ''}
+            isBottom={isTitleOnCardBottom}
+            titleTextAlign={titleTextAlign}
+            backgroundStyle={descriptionBackgroundStyle}
+          />
         ) : null}
       </View>
     )
@@ -97,7 +99,7 @@ export const SliderItemArtwork = ({
         title={title ?? ''}
         size={conditionSize}
         borderRadius={radius}
-        showLetter={!isTitleOnCard}
+        showLetter={!isTitleOnCard && !isTitleOnCardBottom}
       />
       {overlay}
     </View>
@@ -114,13 +116,4 @@ const styles = StyleSheet.create({
   },
   imageBackground: { justifyContent: 'flex-end', width: '100%' },
   letterBackground: { overflow: 'hidden' },
-  titleOnIconCard: {
-    alignItems: 'center',
-    bottom: 0,
-    justifyContent: 'center',
-    left: 0,
-    position: 'absolute',
-    right: 0,
-    top: 0,
-  },
 })

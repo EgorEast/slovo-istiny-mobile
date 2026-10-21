@@ -148,5 +148,6 @@
 ## Tooling
 
 - [ ] **`yarn check:unused` без загруженного `.env` падает при загрузке `app.config.ts`.** knip не читает `.env`, а `app.config.ts` требует `EXPO_PUBLIC_*` → процесс завершается с кодом 2 ещё до анализа. Обход: `set -a; . ./.env; set +a; yarn check:unused` (находок 0 в обоих случаях). — `scripts/`, `knip.config.ts` — пред-существующее; вернуться при настройке env-загрузки в скриптах.
+- [ ] Регенерировать API-клиенты после деплоя спеки (описания bothOnAndUnder) — src/shared/api/generated (yarn api:generate), backend src/generated (npm run gen:schemas) — комментарии .describe() всё ещё содержат текст об устаревании; enum-ы уже содержат значение.
 
 

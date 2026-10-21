@@ -45,7 +45,7 @@ describe('renderSection', () => {
     ])
   })
 
-  test('maps the legacy bothOnAndUnder title location to under', () => {
-    expect(buildSliderElement().props.whereIsSlideTitleLocated).toBe(WhereIsSlideTitleLocated.Under)
+  test('maps bothOnAndUnder to the bottom-stacked title placement', () => {
+    expect(buildSliderElement().props.whereIsSlideTitleLocated).toBe(WhereIsSlideTitleLocated.Both)
   })
 })

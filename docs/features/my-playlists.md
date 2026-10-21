@@ -171,8 +171,8 @@ read-modify-write по id с тем же путём персиста. **«Изб
 
 `LocalSectionSettings` (`src/entities/playlist/localSectionSettings.ts`) — локальные настройки внешнего
 вида секции «Мои плейлисты»; имена полей зеркалят DTO секции: `itemsSize` (`small`/`middle`/`large`/`xLarge`),
-`transform` (`high`/`middle`/`short`), `whereIsSlideTitleLocated` (`on`/`under`; legacy `bothOnAndUnder`
-читается как `under`), `itemsRows` (`null | number`), `isDescriptionTitleOnSlideLarge` (показывать
+`transform` (`high`/`middle`/`short`), `whereIsSlideTitleLocated` (`on`/`under`/`bothOnAndUnder`; `bothOnAndUnder` —
+заголовок и описание внизу карточки, заголовок над описанием), `itemsRows` (`null | number`), `isDescriptionTitleOnSlideLarge` (показывать
 описание плейлиста на карточке), `borderRadius` (скруглённые углы карточек). Дефолт
 (`DEFAULT_SECTION_SETTINGS`): `small` / `middle` / `under` / `null` / `false` / `true` — скруглённые
 углы включены, описание на карточке скрыто.
@@ -230,7 +230,8 @@ read-modify-write по id с тем же путём персиста. **«Изб
 строка (`Text` с `numberOfLines={1}` и `ellipsizeMode='tail'`, шрифт 16 вместо прежней бегущей
 строки): конец обрезается троеточием. Он следует настройке `whereIsSlideTitleLocated`: при `on`
 рендерится оверлеем по центру подложки, при `under` — подписью под карточкой во всю ширину
-карточки, без боковых отступов. Описание плейлиста (`isDescriptionTitleOnSlideLarge`) на icon-карточках
+карточки, без боковых отступов, при `bothOnAndUnder` — внизу подложки, а описание (если включено)
+идёт под ним. Описание плейлиста (`isDescriptionTitleOnSlideLarge`) на icon-карточках
 не показывается — у них нет обложки, к низу которой оно прижимается. Карточки локальных
 плейлистов (`artworkIcon` не задан) следуют обеим настройкам, а при `whereIsSlideTitleLocated === on`
 буква плитки скрывается (`showLetter={false}`) — иначе она перекрывала бы заголовок. Впрочем
@@ -283,7 +284,7 @@ drag-to-reorder, кнопки удаления и живые настройки 
   `number-pad` и разбором через `parseItemsRows`, `CheckboxField` ×2 → «Описание на карточке» и
   «Скруглённые углы карточек»), **без поля названия**. Подписи — из `entities/section`
   (`ITEMS_SIZE_LABELS`/`TRANSFORM_LABELS`/`SLIDE_TITLE_LOCATION_LABELS`; в select расположения
-  заголовка только `on`/`under`). Каждое изменение поля
+  заголовка `on`/`under`/`bothOnAndUnder`). Каждое изменение поля
   применяется **мгновенно** через `updateSectionSettings` (instant-apply, отдельной кнопки нет).
 - `FormGroupTitle` «Плейлисты раздела» + закреплённая строка «Избранные» (`MyPlaylistsFavoritesRow`),
   ниже — drag-список остальных плейлистов.
@@ -315,10 +316,10 @@ drag-to-reorder, кнопки удаления и живые настройки 
 `artworkIcon` — опциональный слот `SliderItemsElement` (`src/shared/ui/slider/slider-item/`):
 при наличии обложка не рендерится, вместо неё — нода поверх тематической подложки
 (`currentTheme.surface`). Заголовок и `whereIsSlideTitleLocated` работают и на icon-карточках
-(при `on` — оверлеем). Когда у карточки нет ни `artwork`, ни `artworkIcon`, `SliderItem` сам
+(при `on` — оверлеем по центру, при `bothOnAndUnder` — внизу). Когда у карточки нет ни `artwork`, ни `artworkIcon`, `SliderItem` сам
 рисует плитку-букву `PlaylistLetterAvatar` (дефолтная обложка под блюром + тематическая вуаль),
 поэтому серверные секции и «Мои плейлисты» выглядят одинаково; при `whereIsSlideTitleLocated === on`
-буква скрывается (`showLetter={false}`), чтобы не перекрывать заголовок. API обратной
+или `bothOnAndUnder` буква скрывается (`showLetter={false}`), чтобы не перекрывать заголовок. API обратной
 совместимости: слайдеры с заданным `artwork`/`artworkIcon` не затрагиваются.
 
 ## Формы создания и экран редактирования

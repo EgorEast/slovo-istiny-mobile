@@ -31,7 +31,9 @@ export const SliderItemSkeleton = ({
   const radius = (borderRadius ?? true) ? RADIUSES.slider : 0
   const imageHeight = getSliderItemImageHeight(itemWidth, transform)
 
-  const isTitleOnCard = whereIsSlideTitleLocated === WhereIsSlideTitleLocated.On
+  const isTitleOnCard =
+    whereIsSlideTitleLocated === WhereIsSlideTitleLocated.On ||
+    whereIsSlideTitleLocated === WhereIsSlideTitleLocated.Both
 
   const isTitleUnderCard = whereIsSlideTitleLocated === WhereIsSlideTitleLocated.Under
 

@@ -16,19 +16,24 @@ export const TITLE_ON_CARD_TEST_ID = 'slider-item-title-on-card'
 export const CardOverlay = ({
   backgroundStyle,
   description,
+  isTitleBottom,
   size,
   title,
   titleTextAlign,
 }: {
   backgroundStyle?: SliderItemTextBackgroundStyle
   description?: string
+  isTitleBottom?: boolean
   size: SliderItemSize
   title: string
   titleTextAlign?: SliderItemTextAlign
 }) => (
   <View style={styles.overlayContent}>
     {title ? (
-      <View style={styles.titleOnCardArea} testID={TITLE_ON_CARD_TEST_ID}>
+      <View
+        testID={TITLE_ON_CARD_TEST_ID}
+        style={isTitleBottom ? styles.titleBottomArea : styles.titleOnCardArea}
+      >
         <SliderItemText
           title={title}
           titleTextAlign={titleTextAlign}
@@ -42,5 +47,6 @@ export const CardOverlay = ({
 
 const styles = StyleSheet.create({
   overlayContent: { flex: 1, justifyContent: 'flex-end', width: '100%' },
+  titleBottomArea: { width: '100%' },
   titleOnCardArea: { flex: 1, justifyContent: 'center', width: '100%' },
 })

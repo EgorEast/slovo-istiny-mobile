@@ -184,6 +184,25 @@ describe('<MyPlaylistsSlider>', () => {
     expect(getAllByTestId(TITLE_ON_CARD_TEST_ID).length).toBeGreaterThan(0)
   })
 
+  test('maps the configured bothOnAndUnder title location to the bottom-stacked title', async () => {
+    const ctx = createCtx()
+    seedPlaylists(ctx)
+    sectionSettingsAtom(ctx, {
+      borderRadius: false,
+      isDescriptionTitleOnSlideLarge: false,
+      itemsRows: null,
+      itemsSize: 'small',
+      transform: 'middle',
+      whereIsSlideTitleLocated: 'bothOnAndUnder',
+    })
+
+    const { getAllByTestId } = await renderWithProviders(<MyPlaylistsSlider />, {
+      ctx,
+    })
+
+    expect(getAllByTestId(TITLE_ON_CARD_TEST_ID).length).toBeGreaterThan(0)
+  })
+
   test('reflects a title-location change made after mount', async () => {
     const ctx = createCtx()
     seedPlaylists(ctx)

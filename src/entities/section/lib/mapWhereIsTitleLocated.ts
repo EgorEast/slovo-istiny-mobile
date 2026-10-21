@@ -1,10 +1,8 @@
 import { WhereIsSlideTitleLocated } from 'shared/ui'
 
 export const mapWhereIsTitleLocated = (where?: string): WhereIsSlideTitleLocated => {
-  // `bothOnAndUnder` is legacy: the option was removed from both forms, so it is
-  // read as `under` (title under the card, description on the card).
   const map: Record<string, WhereIsSlideTitleLocated> = {
-    bothOnAndUnder: WhereIsSlideTitleLocated.Under,
+    bothOnAndUnder: WhereIsSlideTitleLocated.Both,
     on: WhereIsSlideTitleLocated.On,
     under: WhereIsSlideTitleLocated.Under,
   }

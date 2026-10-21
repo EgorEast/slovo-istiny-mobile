@@ -18,6 +18,7 @@ export enum SliderItemTransform {
 }
 
 export enum WhereIsSlideTitleLocated {
+  Both = 'bothOnAndUnder',
   On = 'on',
   Under = 'under',
 }

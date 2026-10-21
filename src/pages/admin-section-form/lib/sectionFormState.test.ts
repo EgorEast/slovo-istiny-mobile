@@ -59,12 +59,12 @@ describe('sectionFormState', () => {
       expect(values.itemsSize).toEqual('large')
     })
 
-    test('normalizes the legacy bothOnAndUnder title location to under', () => {
+    test('keeps the bothOnAndUnder title location selected in the form', () => {
       const section = sectionsMocks.getSectionControllerFindOneResponseMock({
         whereIsSlideTitleLocated: 'bothOnAndUnder',
       })
 
-      expect(initialFormValues(section).whereIsSlideTitleLocated).toEqual('under')
+      expect(initialFormValues(section).whereIsSlideTitleLocated).toEqual('bothOnAndUnder')
     })
 
     test('falls back to defaults when there is no entity', () => {

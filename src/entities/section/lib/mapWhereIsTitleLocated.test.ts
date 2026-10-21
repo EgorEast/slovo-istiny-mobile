@@ -10,8 +10,8 @@ describe('mapWhereIsTitleLocated', () => {
     expect(mapWhereIsTitleLocated('under')).toBe(WhereIsSlideTitleLocated.Under)
   })
 
-  test('maps the legacy bothOnAndUnder value to under', () => {
-    expect(mapWhereIsTitleLocated('bothOnAndUnder')).toBe(WhereIsSlideTitleLocated.Under)
+  test('maps bothOnAndUnder to the bottom-stacked title placement', () => {
+    expect(mapWhereIsTitleLocated('bothOnAndUnder')).toBe(WhereIsSlideTitleLocated.Both)
   })
 
   test('falls back to under for an absent or unknown value', () => {

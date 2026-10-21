@@ -55,7 +55,8 @@
 
 - `FormGroupTitle` «Оформление» + `MyPlaylistsAppearanceForm`
   (`src/pages/my-playlists/ui/MyPlaylistsAppearanceForm.tsx`) — те же поля, что у формы раздела в
-  админке: `SelectField` ×3 («Размер карточек», «Высота карточек», «Расположение заголовка»),
+  админке: `SelectField` ×3 («Размер карточек», «Высота карточек», «Расположение заголовка» —
+  `on`/`under`/`bothOnAndUnder`),
   `FormField` «Строк» (`number-pad`, разбор через `parseItemsRows`), `CheckboxField` ×2 («Описание
   на карточке», «Скруглённые углы карточек»). Поля названия нет. «Описание на карточке» по
   умолчанию выключено.
