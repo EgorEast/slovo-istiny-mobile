@@ -1,3 +1,5 @@
+import { existsSync, readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import {
   defineConfig,
   NamingConvention,
@@ -6,14 +8,37 @@ import {
   PropertySortOrder,
 } from 'orval'
 
-// Required build-time config: the OpenAPI spec host. No fallback — a missing
-// var must fail fast with a clear message instead of silently generating the
-// client against the production docs host. See .env.example.
+// Required build-time config: the OpenAPI spec host. Orval runs the config
+// through jiti, which does not load .env on its own — so missing vars are
+// filled from .env first (yarn scripts run from the repo root). No fallback:
+// a missing var must fail fast with a clear message instead of silently
+// generating the client against the production docs host. See .env.example.
+const loadDotEnv = () => {
+  const envPath = resolve(process.cwd(), '.env')
+  if (!existsSync(envPath)) return
+
+  for (const rawLine of readFileSync(envPath, 'utf8').split(/\r?\n/)) {
+    const line = rawLine.trim()
+    if (!line || line.startsWith('#')) continue
+
+    const separator = line.indexOf('=')
+    if (separator === -1) continue
+
+    const key = line.slice(0, separator).trim()
+    if (!key || process.env[key] !== undefined) continue
+
+    const value = line.slice(separator + 1).trim().replace(/^(['"])(.*)\1$/, '$2')
+    process.env[key] = value
+  }
+}
+
+if (!process.env.DOCS_HOSTNAME) loadDotEnv()
+
 const docsHostname = process.env.DOCS_HOSTNAME
 
 if (!docsHostname) {
   throw new Error(
-    'DOCS_HOSTNAME is not set. Copy .env.example to .env (or export DOCS_HOSTNAME=<bare hostname>) and re-run.',
+    'DOCS_HOSTNAME is not set. Add it to .env (see .env.example) or export DOCS_HOSTNAME=<bare hostname> and re-run.',
   )
 }
 
