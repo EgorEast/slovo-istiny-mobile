@@ -6,15 +6,15 @@ import {
   View,
   type ViewStyle,
 } from 'react-native'
-import { MarqueeText } from '../../marquee-text/marquee-text'
 import { COLORS } from '../../theme/colors'
 import { useTheme } from '../../theme/ThemeContext/useTheme'
 import { FONT_SIZES, INDENTS, RADIUSES } from '../../theme/themed'
 import { SliderItemTextSkeleton } from './skeleton'
 import { type SliderItemTextAlign, SliderItemTextBackgroundStyle } from './slider-item-text.types'
 
-// Текст карточки: заголовок (MarqueeText) и необязательный подзаголовок. Пустой
-// заголовок не рендерит ничего — подзаголовок сам по себе не показывается.
+// Текст карточки: статичный однострочный заголовок (обрезается троеточием) и
+// необязательный подзаголовок. Пустой заголовок не рендерит ничего —
+// подзаголовок сам по себе не показывается.
 export const SliderItemText = ({
   backgroundStyle = SliderItemTextBackgroundStyle.Transparent,
   borderRadius,
@@ -54,15 +54,18 @@ export const SliderItemText = ({
         style,
       ]}
     >
-      <MarqueeText
-        text={title}
-        textStyle={[
+      <Text
+        numberOfLines={1}
+        ellipsizeMode='tail'
+        style={[
           styles.title,
           { color: isDarkBackground || isDarkBlurBackground ? COLORS.white : currentTheme.text },
           { textAlign: titleTextAlign },
           titleStyle,
         ]}
-      />
+      >
+        {title}
+      </Text>
       {subTitle ? (
         <Text
           numberOfLines={2}
@@ -98,10 +101,10 @@ const styles = StyleSheet.create({
   darkBackground: { backgroundColor: COLORS.black },
 
   subTitle: {
-    fontSize: FONT_SIZES.h3,
+    fontSize: FONT_SIZES.base,
   },
 
   title: {
-    fontSize: FONT_SIZES.h3,
+    fontSize: FONT_SIZES.md,
   },
 })

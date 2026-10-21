@@ -58,6 +58,7 @@ export const SliderItem = ({
           <SliderItemText
             title={title ?? ''}
             borderRadius={borderRadius}
+            style={styles.underCardTitle}
             titleTextAlign={titleTextAlign}
             backgroundStyle={descriptionBackgroundStyle}
           />
@@ -73,4 +74,6 @@ SliderItem.Skeleton = SliderItemSkeleton
 
 const styles = StyleSheet.create({
   component: { minHeight: 50, minWidth: 50 },
+  // Подпись под карточкой тянется во всю её ширину — без боковых отступов.
+  underCardTitle: { paddingHorizontal: 0 },
 })
