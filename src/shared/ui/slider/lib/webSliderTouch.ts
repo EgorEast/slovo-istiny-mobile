@@ -11,6 +11,7 @@ type DragLock = 'horizontal' | 'none' | 'vertical'
 
 interface SliderTouchContext {
   cancelGlide: () => void
+  cancelPendingSnap: () => void
   getMaxTravelPx: () => number
   getOffsets: () => number[]
   glideTo: (from: number, to: number) => void
@@ -27,6 +28,7 @@ interface SliderTouchContext {
  * @returns Cleanup that removes every listener and stops a glide.
  */
 export const attachSliderTouch = (node: HTMLElement, context: SliderTouchContext) => {
+  let active = false
   let lock: DragLock = 'none'
   let samples: ScrollSample[] = []
   let startClientX = 0
@@ -37,10 +39,13 @@ export const attachSliderTouch = (node: HTMLElement, context: SliderTouchContext
 
   const handleStart = (event: TouchEvent) => {
     context.cancelGlide()
+    // Незавершённый снап прошлого жеста не должен сработать под новым пальцем.
+    context.cancelPendingSnap()
     // Свежий тач снимает протухший guard: click прошлого свайпа мог уйти мимо узла.
     clickGuard.remove()
     const touch = event.touches[0]
     if (!touch) return
+    active = true
     startClientX = touch.clientX
     startClientY = touch.clientY
     startScrollLeft = node.scrollLeft
@@ -50,6 +55,7 @@ export const attachSliderTouch = (node: HTMLElement, context: SliderTouchContext
   }
 
   const handleMove = (event: TouchEvent) => {
+    if (!active) return
     const touch = event.touches[0]
     if (!touch) return
     const deltaX = touch.clientX - startClientX
@@ -72,7 +78,10 @@ export const attachSliderTouch = (node: HTMLElement, context: SliderTouchContext
     samples = samples.filter(sample => event.timeStamp - sample.time <= VELOCITY_WINDOW_MS)
   }
 
-  const release = () => {
+  const release = (event: TouchEvent) => {
+    // Второй палец ещё на строке — жест не закончен, флинг не запускаем.
+    if (event.touches.length > 0) return
+    active = false
     const isHorizontal = lock === 'horizontal'
     lock = 'none'
     if (!isHorizontal) {
@@ -93,6 +102,7 @@ export const attachSliderTouch = (node: HTMLElement, context: SliderTouchContext
   }
 
   const handleCancel = () => {
+    active = false
     lock = 'none'
     movedDistance = 0
     samples = []
@@ -101,11 +111,12 @@ export const attachSliderTouch = (node: HTMLElement, context: SliderTouchContext
 
   const handleWheel = () => context.cancelGlide()
 
-  node.addEventListener('touchstart', handleStart)
+  // Ни один слушатель не отменяет событие — passive, чтобы браузер не ждал JS.
+  node.addEventListener('touchstart', handleStart, { passive: true })
   node.addEventListener('touchmove', handleMove, { passive: true })
-  node.addEventListener('touchend', release)
-  node.addEventListener('touchcancel', handleCancel)
-  node.addEventListener('wheel', handleWheel)
+  node.addEventListener('touchend', release, { passive: true })
+  node.addEventListener('touchcancel', handleCancel, { passive: true })
+  node.addEventListener('wheel', handleWheel, { passive: true })
   return () => {
     node.removeEventListener('touchstart', handleStart)
     node.removeEventListener('touchmove', handleMove)

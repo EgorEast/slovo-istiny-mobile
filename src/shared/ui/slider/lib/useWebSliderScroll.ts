@@ -84,11 +84,12 @@ export const useWebSliderScroll = (
     if (Platform.OS !== 'web' || !node) return
     return attachSliderTouch(node, {
       cancelGlide,
+      cancelPendingSnap: snapQuietly.clear,
       getMaxTravelPx: () => maxTravelRef.current,
       getOffsets: () => offsetsRef.current,
       glideTo,
     })
-  }, [cancelGlide, glideTo, node])
+  }, [cancelGlide, glideTo, node, snapQuietly])
 
   const scrollRef = useCallback((instance: unknown) => {
     const resolved = resolveNode(isScrollableSlider(instance) ? instance : null)

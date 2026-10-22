@@ -333,4 +333,143 @@ describe('useWebSliderScroll', () => {
 
     expect(node.scrollLeft).toBe(frozen)
   })
+
+  test('a new touchstart cancels a pending quiet snap', async () => {
+    const getScroll = await renderSliderScroll([0, 100, 200], 120)
+    const node = createFakeNode()
+    await attachNode(getScroll, node)
+    node.scrollLeft = 60
+
+    await act(async () => {
+      getScroll().onScroll?.({ nativeEvent: { contentOffset: { x: 60 } } })
+    })
+    await act(async () => {
+      jest.advanceTimersByTime(150)
+    })
+    await act(async () => {
+      node.dispatch('touchstart', touch(300, 0, 32))
+    })
+    await act(async () => {
+      jest.advanceTimersByTime(160)
+    })
+
+    expect(frames).toHaveLength(0)
+    expect(node.scrollLeft).toBe(60)
+  })
+
+  test('touchcancel resets the lock and the armed click guard', async () => {
+    const getScroll = await renderSliderScroll([0, 100, 200], 120)
+    const node = createFakeNode()
+    await attachNode(getScroll, node)
+    const cancelledClick = click()
+
+    await act(async () => {
+      node.dispatch('touchstart', touch(200, 0, 0))
+    })
+    await act(async () => {
+      node.dispatch('touchmove', touch(150, 0, 16))
+    })
+    expect(node.scrollLeft).toBe(50)
+
+    await act(async () => {
+      node.dispatch('touchcancel', touchEnd(16))
+    })
+    // Отменённый жест не продолжает тянуть слайдер до нового touchstart.
+    await act(async () => {
+      node.dispatch('touchmove', touch(100, 0, 32))
+    })
+    expect(node.scrollLeft).toBe(50)
+
+    // Guard прошлого свайпа снят — click после отмены не глотается.
+    await act(async () => {
+      node.dispatch('click', cancelledClick)
+    })
+    expect(cancelledClick.preventDefault).not.toHaveBeenCalled()
+
+    // Новый жест стартует с чистого листа — отсчёт от текущего scrollLeft.
+    await act(async () => {
+      node.dispatch('touchstart', touch(300, 0, 48))
+    })
+    await act(async () => {
+      node.dispatch('touchmove', touch(250, 0, 64))
+    })
+    expect(node.scrollLeft).toBe(100)
+  })
+
+  test('a wheel event cancels an in-flight fling glide', async () => {
+    const getScroll = await renderSliderScroll([0, 100, 200], 120)
+    const node = createFakeNode()
+    await attachNode(getScroll, node)
+
+    await act(async () => {
+      node.dispatch('touchstart', touch(200, 0, 0))
+    })
+    await act(async () => {
+      node.dispatch('touchmove', touch(191, 0, 1))
+    })
+    await act(async () => {
+      node.dispatch('touchmove', touch(190, 0, 2))
+    })
+    await act(async () => {
+      node.dispatch('touchend', touchEnd(2))
+    })
+    runFrame(16)
+    runFrame(100)
+    const frozen = node.scrollLeft
+
+    await act(async () => {
+      node.dispatch('wheel', touchEnd(100))
+    })
+    runAllFrames()
+
+    expect(node.scrollLeft).toBe(frozen)
+  })
+
+  test('quiet snap does not glide when already within the snap epsilon', async () => {
+    const getScroll = await renderSliderScroll([0, 100, 200], 120)
+    const node = createFakeNode()
+    await attachNode(getScroll, node)
+    node.scrollLeft = 100.5
+
+    await act(async () => {
+      getScroll().onScroll?.({ nativeEvent: { contentOffset: { x: 100.5 } } })
+    })
+    await act(async () => {
+      jest.advanceTimersByTime(160)
+    })
+
+    expect(frames).toHaveLength(0)
+    expect(node.scrollLeft).toBe(100.5)
+  })
+
+  test('a stale armed click guard is cleared by the next touchstart', async () => {
+    const getScroll = await renderSliderScroll([0, 100, 200], 120)
+    const node = createFakeNode()
+    await attachNode(getScroll, node)
+    const tapClick = click()
+
+    await act(async () => {
+      node.dispatch('touchstart', touch(200, 0, 0))
+    })
+    await act(async () => {
+      node.dispatch('touchmove', touch(160, 0, 16))
+    })
+    await act(async () => {
+      node.dispatch('touchend', touchEnd(16))
+    })
+    runAllFrames()
+
+    // Следующий тап: guard прошлого свайпа не должен съесть press.
+    await act(async () => {
+      node.dispatch('touchstart', touch(300, 0, 32))
+    })
+    await act(async () => {
+      node.dispatch('touchend', touchEnd(48))
+    })
+    await act(async () => {
+      node.dispatch('click', tapClick)
+    })
+
+    expect(tapClick.preventDefault).not.toHaveBeenCalled()
+  })
 })
