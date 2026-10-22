@@ -4,7 +4,6 @@ import { Pressable, View } from 'react-native'
 import Animated from 'react-native-reanimated'
 import { type TrackCacheVisualState } from 'entities/offline-cache'
 import { type PlaybackRate, usePlaybackRate } from 'entities/player'
-import { type AudioPlayerData } from 'entities/sermon'
 import { hapticLight } from 'shared/lib/haptics'
 import { reportError } from 'shared/model/error-dialog'
 import { useTheme } from 'shared/ui/theme'
@@ -15,10 +14,8 @@ import { PlayerSpeedMenu } from './PlayerSpeedMenu'
 import { useMenuRevealAnimation } from './useMenuRevealAnimation'
 
 export const PlayerMenu = ({
-  audio,
   canRemoveFromPlaylist,
   isCached,
-  onAddToPlaylist,
   onClose,
   onOpenSoundSettings,
   onRequestRemoveFromPlaylist,
@@ -26,10 +23,8 @@ export const PlayerMenu = ({
   onToggleCache,
   visualState,
 }: {
-  audio: AudioPlayerData
   canRemoveFromPlaylist: boolean
   isCached?: boolean
-  onAddToPlaylist?: (sermon: AudioPlayerData) => void
   onClose: () => void
   onOpenSoundSettings: () => void
   onRequestRemoveFromPlaylist?: () => void
@@ -63,11 +58,6 @@ export const PlayerMenu = ({
 
   const handleToggleCache = () => {
     onToggleCache()
-    onClose()
-  }
-
-  const handleAddToPlaylistPress = () => {
-    onAddToPlaylist?.(audio)
     onClose()
   }
 
@@ -105,7 +95,6 @@ export const PlayerMenu = ({
               onToggleCache={handleToggleCache}
               onShowSpeed={() => setView('speed')}
               onOpenSoundSettings={handleSoundSettingsPress}
-              onAddToPlaylist={onAddToPlaylist ? handleAddToPlaylistPress : undefined}
               onRemoveFromPlaylist={
                 canRemoveFromPlaylist ? handleRemoveFromPlaylistPress : undefined
               }

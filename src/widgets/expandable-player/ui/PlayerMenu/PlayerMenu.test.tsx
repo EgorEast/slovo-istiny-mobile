@@ -8,7 +8,6 @@ import {
 } from 'features/onboarding'
 import { type TrackCacheVisualState } from 'entities/offline-cache'
 import { type PlaybackRate } from 'entities/player'
-import { type AudioPlayerData } from 'entities/sermon'
 import { mockMeasureInWindow } from 'shared/mocks/measure'
 import { renderWithProviders } from 'shared/mocks/renderWithProviders'
 import { isOnlineAtom } from 'shared/model'
@@ -28,18 +27,9 @@ const mockOnShowSpeed = jest.fn()
 const mockOnOpenSoundSettings = jest.fn()
 const mockOnSelect = jest.fn()
 const mockOnBack = jest.fn()
-const mockOnAddToPlaylist = jest.fn()
 const mockOnRequestRemoveFromPlaylist = jest.fn()
 
 const CLOUD_STATE: TrackCacheVisualState = 'cloud'
-
-const MOCK_AUDIO: AudioPlayerData = {
-  artist: 'Author',
-  artwork: null,
-  audioUrl: 'https://example.com/audio.mp3',
-  id: 'sermon-1',
-  title: 'Sermon',
-}
 
 jest.mock('entities/player', () => ({
   PLAYBACK_RATES: [0.75, 1, 1.25, 1.5, 2],
@@ -48,7 +38,6 @@ jest.mock('entities/player', () => ({
 
 const SPEED_LABEL = 'Скорость воспроизведения'
 const SOUND_SETTINGS_LABEL = 'Настройки звука'
-const ADD_TO_PLAYLIST_LABEL = 'Добавить в плейлист'
 const REMOVE_FROM_PLAYLIST_LABEL = 'Удалить из текущего плейлиста и открыть в другом'
 const DETAILS_TARGET_ID = 'player-fullscreen.menu-details'
 const RECT = { height: 4, width: 3, x: 1, y: 2 }
@@ -60,7 +49,6 @@ const renderMenu = async ({
 } = {}) =>
   renderWithProviders(
     <PlayerMenu
-      audio={MOCK_AUDIO}
       onClose={mockOnClose}
       visualState={CLOUD_STATE}
       onShowDetails={mockOnShowDetails}
@@ -91,7 +79,6 @@ describe('<PlayerMenu>', () => {
   test('renders without crashing', async () => {
     const { toJSON } = await renderWithProviders(
       <PlayerMenu
-        audio={MOCK_AUDIO}
         onClose={mockOnClose}
         visualState={CLOUD_STATE}
         canRemoveFromPlaylist={false}
@@ -101,28 +88,6 @@ describe('<PlayerMenu>', () => {
       />,
     )
     expect(toJSON()).toBeTruthy()
-  })
-
-  test('add-to-playlist row opens the modal with the current sermon and closes the menu', async () => {
-    const { container, getByText } = await renderWithProviders(
-      <PlayerMenu
-        audio={MOCK_AUDIO}
-        onClose={mockOnClose}
-        visualState={CLOUD_STATE}
-        canRemoveFromPlaylist={false}
-        onShowDetails={mockOnShowDetails}
-        onToggleCache={mockOnToggleCache}
-        onAddToPlaylist={mockOnAddToPlaylist}
-        onOpenSoundSettings={mockOnOpenSoundSettings}
-      />,
-    )
-
-    await triggerOnLayout(container)
-
-    fireEvent.press(getByText(ADD_TO_PLAYLIST_LABEL))
-
-    expect(mockOnAddToPlaylist).toHaveBeenCalledWith(MOCK_AUDIO)
-    expect(mockOnClose).toHaveBeenCalledTimes(1)
   })
 
   test('requesting removal calls the callback and closes the menu', async () => {
@@ -145,7 +110,6 @@ describe('<PlayerMenu>', () => {
   test('selecting a rate calls setPlaybackRate before onClose', async () => {
     const { container, getByText } = await renderWithProviders(
       <PlayerMenu
-        audio={MOCK_AUDIO}
         onClose={mockOnClose}
         visualState={CLOUD_STATE}
         canRemoveFromPlaylist={false}
@@ -179,7 +143,6 @@ describe('<PlayerMenu>', () => {
   test('pressing sound settings opens the sheet, then closes the menu', async () => {
     const { container, getByText } = await renderWithProviders(
       <PlayerMenu
-        audio={MOCK_AUDIO}
         onClose={mockOnClose}
         visualState={CLOUD_STATE}
         canRemoveFromPlaylist={false}
@@ -284,37 +247,6 @@ describe('<PlayerMenuItems>', () => {
     )
     fireEvent.press(getByText('Подробнее'))
     expect(mockOnShowDetails).toHaveBeenCalledTimes(1)
-  })
-
-  test('add-to-playlist row is active and calls onAddToPlaylist when provided', async () => {
-    const { getByText } = await renderWithProviders(
-      <PlayerMenuItems
-        rate={1}
-        visualState={CLOUD_STATE}
-        onDetails={mockOnShowDetails}
-        onShowSpeed={mockOnShowSpeed}
-        onToggleCache={mockOnToggleCache}
-        onAddToPlaylist={mockOnAddToPlaylist}
-        onOpenSoundSettings={mockOnOpenSoundSettings}
-      />,
-    )
-    fireEvent.press(getByText(ADD_TO_PLAYLIST_LABEL))
-    expect(mockOnAddToPlaylist).toHaveBeenCalledTimes(1)
-  })
-
-  test('add-to-playlist row is disabled when no handler is provided', async () => {
-    const { getByText } = await renderWithProviders(
-      <PlayerMenuItems
-        rate={1}
-        visualState={CLOUD_STATE}
-        onDetails={mockOnShowDetails}
-        onShowSpeed={mockOnShowSpeed}
-        onToggleCache={mockOnToggleCache}
-        onOpenSoundSettings={mockOnOpenSoundSettings}
-      />,
-    )
-    fireEvent.press(getByText(ADD_TO_PLAYLIST_LABEL))
-    expect(mockOnAddToPlaylist).not.toHaveBeenCalled()
   })
 
   test('does not call onToggleCache when offline and not cached', async () => {

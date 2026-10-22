@@ -11,11 +11,9 @@ import { getCacheActionLabel } from '../../lib/getCacheActionLabel'
 import { styles } from './PlayerMenu.styles'
 
 const SOUND_SETTINGS_TEXT = 'Настройки звука'
-const ADD_TO_PLAYLIST_TEXT = 'Добавить в плейлист'
 
 export const PlayerMenuItems = ({
   isCached,
-  onAddToPlaylist,
   onDetails,
   onOpenSoundSettings,
   onRemoveFromPlaylist,
@@ -25,7 +23,6 @@ export const PlayerMenuItems = ({
   visualState,
 }: {
   isCached?: boolean
-  onAddToPlaylist?: () => void
   onDetails: () => void
   onOpenSoundSettings: () => void
   onRemoveFromPlaylist?: () => void
@@ -80,19 +77,6 @@ export const PlayerMenuItems = ({
           </Text>
         </PressableButton>
       </OnboardingTarget>
-      {onAddToPlaylist ? (
-        <PressableButton style={styles.menuItem} onPress={onAddToPlaylist}>
-          <Text style={[styles.menuItemText, { color: currentTheme.text }]}>
-            {ADD_TO_PLAYLIST_TEXT}
-          </Text>
-        </PressableButton>
-      ) : (
-        <Pressable style={[styles.menuItem, styles.menuItemDisabled]}>
-          <Text style={[styles.menuItemTextDisabled, { color: currentTheme.textMuted }]}>
-            {ADD_TO_PLAYLIST_TEXT}
-          </Text>
-        </Pressable>
-      )}
       {onRemoveFromPlaylist && (
         <PressableButton style={styles.menuItem} onPress={onRemoveFromPlaylist}>
           <Text style={[styles.menuItemText, { color: currentTheme.text }]}>
