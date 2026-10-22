@@ -1,0 +1,41 @@
+import { useAtom, useCtx } from '@reatom/npm-react'
+import { useCallback, useMemo } from 'react'
+import { type SermonShape } from 'shared/model'
+import { togglePlaylistSermon } from '../localPlaylistMembership'
+import { FAVORITES_PLAYLIST } from '../localPlaylists'
+import { myPlaylistsAtom } from '../model'
+
+/**
+ * Признак «в избранном» и переключатель избранного для проповеди.
+ *
+ * «Избранные» — локальный плейлист (`FAVORITES_PLAYLIST`) в `myPlaylistsAtom`,
+ * поэтому состояние читается из атома, а переключение идёт через
+ * `togglePlaylistSermon` — тот же путь, что и у остальных поверхностей
+ * (снапшот проповеди сохраняется, изменения персистятся).
+ * @param sermon - Проповедь, для которой читаем/переключаем избранное; `null` — нет цели.
+ * @returns `isFavorite` — проповедь уже в «Избранном»; `toggleFavorite` — переключатель
+ * (no-op при `sermon === null`).
+ */
+export const useFavoriteSermon = (
+  sermon: null | SermonShape,
+): { isFavorite: boolean; toggleFavorite: () => void } => {
+  const ctx = useCtx()
+  const [playlists] = useAtom(myPlaylistsAtom)
+
+  const isFavorite = useMemo(
+    () =>
+      sermon !== null &&
+      (playlists
+        .find(playlist => playlist.id === FAVORITES_PLAYLIST.id)
+        ?.sermonIds.includes(sermon.id) ??
+        false),
+    [playlists, sermon],
+  )
+
+  const toggleFavorite = useCallback(() => {
+    if (sermon === null) return
+    void togglePlaylistSermon(ctx, FAVORITES_PLAYLIST.id, sermon, !isFavorite)
+  }, [ctx, isFavorite, sermon])
+
+  return { isFavorite, toggleFavorite }
+}
