@@ -2,15 +2,17 @@ import { StyleSheet, View } from 'react-native'
 import { RADIUSES } from '../../theme/themed'
 import { TouchableButton } from '../../touchable-button/TouchableButton'
 import { SliderItemText } from '../slider-item-text/slider-item-text'
+import { getSliderCardLayout, getSliderLayoutViewport } from '../slider-layout.lib'
 import { SliderItemSkeleton } from './skeleton'
 import { SliderItemArtwork } from './slider-item-artwork'
-import { getSliderItemImageHeight, getSliderItemWidth, getTitleFontSize } from './slider-item.lib'
+import { getSliderItemImageHeight, getTitleFontSize } from './slider-item.lib'
 import { type SliderItemProps, SliderItemSize, WhereIsSlideTitleLocated } from './slider-item.types'
 
 export const SliderItem = ({
   artwork,
   artworkIcon,
   borderRadius,
+  cardWidth,
   description,
   descriptionBackgroundStyle,
   isDescriptionTitleOnSlideLarge,
@@ -24,7 +26,7 @@ export const SliderItem = ({
   transform,
   whereIsSlideTitleLocated = WhereIsSlideTitleLocated.Under,
 }: SliderItemProps) => {
-  const conditionSize = getSliderItemWidth(size)
+  const conditionSize = cardWidth ?? getSliderCardLayout(size, getSliderLayoutViewport()).cardWidth
   const radius = (borderRadius ?? true) ? RADIUSES.slider : 0
 
   const isTitleOnCard = whereIsSlideTitleLocated === WhereIsSlideTitleLocated.On && !!title

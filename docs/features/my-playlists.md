@@ -210,7 +210,7 @@ read-modify-write по id с тем же путём персиста. **«Изб
 (тап → отдельный экран `/listen/my-playlists`, `navigateToMyPlaylists`). Секция рендерится через
 общий `Slider` (`shared/ui`): карточки — `SliderItemsElement`, «Избранные» — первая карточка с
 `artworkIcon` (сердце `Ionicons 'heart'` цвета `currentTheme.primary`, размер из
-`getSliderItemWidth(itemsSize) * 0.4`; иконка следует за шириной карточки, опорная сторона экрана ограничена 430px, поэтому на больших экранах не раздувается), остальные локальные плейлисты — обычные карточки с
+`getSliderCardLayout(itemsSize, getSliderLayoutViewport()).cardWidth * AVATAR_CONTENT_SIZE_RATIO` (`shared/ui`); иконка следует за шириной карточки, а геометрия карточек ограничена телефонным вьюпортом (cap), поэтому на больших экранах не раздувается), остальные локальные плейлисты — обычные карточки с
 `title = playlist.title` **без `artworkIcon`**: без обложки общий `SliderItem` сам рисует
 плитку-букву (`PlaylistLetterAvatar`) поверх блюра. Тап по карточке навигирует на
 `/listen/playlist?playlist=<id>`.

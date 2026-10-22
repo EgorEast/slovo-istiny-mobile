@@ -68,7 +68,7 @@ jest.mock('shared/ui', () => {
 
   return {
     EmptyState: () => <RNText>EMPTY_STATE</RNText>,
-    getSliderItemWidth: () => 100,
+    getSliderCardLayout: () => ({ cardWidth: 100, stride: 112, visiblePeek: 20 }),
     SliderItemSize: { Large: 'large', Middle: 'middle', Small: 'small', XLarge: 'xLarge' },
   }
 })

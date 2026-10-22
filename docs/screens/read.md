@@ -10,7 +10,7 @@
 
 ## Что показывается
 
-`ReadScreen` (`src/pages/read/ui/ReadScreen.tsx`) — вертикальный `ScrollView` с тремя слайдерами:
+`ReadScreen` (`src/pages/read/ui/ReadScreen.tsx`) — вертикальный `ScrollView` с тремя слайдерами (все три — общий `Slider` из `shared/ui` с `itemsSize={SliderItemSize.Large}`: геометрия карточек и снап к «подглядыванию» соседних карточек — как на «Слушать», см. [screens/listen.md](./listen.md) → «Что показывается»):
 
 - «Конспекты для проповедников» — `NotesForPreachersBooksSlider` (`src/pages/read/ui/NotesForPreachersBooksSlider.tsx`);
 - «По библии. Стих за стихом» — `VerseByVerseBooksSlider` (`src/pages/read/ui/VerseByVerseBooksSlider.tsx`);

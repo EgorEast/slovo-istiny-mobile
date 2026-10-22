@@ -4,7 +4,8 @@ import { useSkeletonPulse } from '../../skeleton/useSkeletonPulse'
 import { useTheme } from '../../theme/ThemeContext/useTheme'
 import { FONT_SIZES, INDENTS, RADIUSES } from '../../theme/themed'
 import { SliderItemText } from '../slider-item-text/slider-item-text'
-import { getSliderItemImageHeight, getSliderItemWidth } from './slider-item.lib'
+import { getSliderCardLayout, getSliderLayoutViewport } from '../slider-layout.lib'
+import { getSliderItemImageHeight } from './slider-item.lib'
 import {
   SliderItemSize,
   type SliderItemTransform,
@@ -27,7 +28,7 @@ export const SliderItemSkeleton = ({
   const { currentTheme } = useTheme()
   const { pulseStyle } = useSkeletonPulse()
 
-  const itemWidth = getSliderItemWidth(size)
+  const itemWidth = getSliderCardLayout(size, getSliderLayoutViewport()).cardWidth
   const radius = (borderRadius ?? true) ? RADIUSES.slider : 0
   const imageHeight = getSliderItemImageHeight(itemWidth, transform)
 

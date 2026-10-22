@@ -13,7 +13,12 @@ import {
   sectionSettingsLoadedAtom,
 } from 'entities/playlist'
 import { mapItemsSize, mapTransform, mapWhereIsTitleLocated } from 'entities/section'
-import { AVATAR_CONTENT_SIZE_RATIO, getSliderItemWidth, Slider } from 'shared/ui'
+import {
+  AVATAR_CONTENT_SIZE_RATIO,
+  getSliderCardLayout,
+  getSliderLayoutViewport,
+  Slider,
+} from 'shared/ui'
 import { INDENTS, useTheme } from 'shared/ui/theme'
 import { useListenNavigation } from '../lib/useListenNavigation'
 import { buildMyPlaylistsItems, type MyPlaylistsItem } from './myPlaylistsSliderItems'
@@ -51,7 +56,10 @@ export const MyPlaylistsSlider = ({
     if (!settingsLoaded) void loadSettings()
   }, [loadPlaylists, loadSettings, playlistsLoaded, settingsLoaded])
 
-  const cardWidth = getSliderItemWidth(mapItemsSize(settings.itemsSize))
+  const cardWidth = getSliderCardLayout(
+    mapItemsSize(settings.itemsSize),
+    getSliderLayoutViewport(),
+  ).cardWidth
   const iconSize = cardWidth * AVATAR_CONTENT_SIZE_RATIO
   const heartIcon = <Ionicons name='heart' size={iconSize} color={currentTheme.primary} />
   const addIcon = <Ionicons size={iconSize} name={CREATE_ICON} color={currentTheme.primary} />

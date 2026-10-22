@@ -29,6 +29,8 @@ export interface SliderItemProps {
   artworkIcon?: ReactNode
   /** Радиус карточки; `undefined` трактуется как `true`. */
   borderRadius?: boolean
+  /** Точная ширина от слайдера после замера; без неё — оценка по дефолтному вьюпорту. */
+  cardWidth?: number
   /** Описание плейлиста на карточке; пустая строка не рендерится. */
   description?: string
   descriptionBackgroundStyle?: SliderItemTextBackgroundStyle

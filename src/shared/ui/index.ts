@@ -19,13 +19,13 @@ export { PullToRefresh } from './refresh-control/PullToRefresh'
 export { createRefreshControl } from './refresh-control/refresh-control'
 export { Slider } from './slider/slider'
 export { SliderItemTextBackgroundStyle } from './slider/slider-item-text/slider-item-text.types'
-export { getSliderItemWidth } from './slider/slider-item/slider-item.lib'
 export {
   type SliderItemsElement,
   SliderItemSize,
   SliderItemTransform,
   WhereIsSlideTitleLocated,
 } from './slider/slider-item/slider-item.types'
+export { getSliderCardLayout, getSliderLayoutViewport } from './slider/slider-layout.lib'
 export { Toast } from './toast/Toast'
 export {
   OnPressTouchableListItem,

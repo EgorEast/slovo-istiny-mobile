@@ -3,16 +3,15 @@ import { type ReactElement } from 'react'
 import { View } from 'react-native'
 import { renderWithProviders } from '../../mocks/renderWithProviders'
 import { Slider } from './slider'
-import { getSliderItemStride } from './slider-item/slider-item.lib'
 import { SliderItemSize } from './slider-item/slider-item.types'
+import { getSliderCardLayout, getSliderLayoutViewport } from './slider-layout.lib'
 
 const SLIDER_ITEM_ID = 'slider-item'
-const MOCK_SCREEN_WIDTH = 400
 
 // SCREEN_WIDTH is narrowed so the virtualized slider mounts a preview of the
-// columns, not every item. Item geometry (SIZE_OF_MINIMUM_SIDE_OF_SCREEN)
-// stays real because getSliderItemWidth depends on it. The width is inlined:
-// hoisted jest.mock factories cannot reference module-level constants.
+// columns, not every item. Item geometry stays real because the layout viewport
+// is derived from it. The width is inlined: hoisted jest.mock factories cannot
+// reference module-level constants.
 jest.mock('../../config/screen-dimensions', () => {
   const actual = jest.requireActual('../../config/screen-dimensions')
   return { ...actual, SCREEN_WIDTH: 400 }
@@ -28,8 +27,10 @@ const createItems = (count: number) =>
     data: { id: index },
   }))
 
-const getInitialNumToRender = (size: SliderItemSize) =>
-  Math.ceil(MOCK_SCREEN_WIDTH / getSliderItemStride(size)) + 1
+const getInitialNumToRender = (size: SliderItemSize) => {
+  const layoutViewport = getSliderLayoutViewport()
+  return Math.ceil(layoutViewport / getSliderCardLayout(size, layoutViewport).stride) + 1
+}
 
 describe('<Slider/>', () => {
   beforeEach(() => {
