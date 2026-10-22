@@ -1,11 +1,5 @@
 import { reportError } from '../../model/error-dialog'
-import {
-  dragTo,
-  isElementLike,
-  isElementWithClosest,
-  settle,
-  setTransition,
-} from './pull-to-refresh.dom'
+import { dragTo, isElementLike, settle, setTransition } from './pull-to-refresh.dom'
 import {
   computeDisplayedPull,
   findVerticalScrollableAncestor,
@@ -25,7 +19,6 @@ interface PullGestureRefs {
   spinner: { current: HTMLElement | null }
 }
 
-const SLIDER_DRAG_SELECTOR = '[data-slider-drag]'
 const touchY = (event: TouchEvent) => event.touches[0]?.pageY ?? 0
 
 /**
@@ -47,8 +40,6 @@ export const attachPullGesture = (node: HTMLElement, refs: PullGestureRefs) => {
   }
 
   const handleStart = (event: TouchEvent) => {
-    // Жест, начатый на горизонтальном слайдере, принадлежит слайдеру — не рефрешим.
-    if (isElementWithClosest(event.target) && event.target.closest(SLIDER_DRAG_SELECTOR)) return
     scrollable = findVerticalScrollableAncestor(
       isElementLike(event.target) ? event.target : null,
       element => window.getComputedStyle(element).overflowY,

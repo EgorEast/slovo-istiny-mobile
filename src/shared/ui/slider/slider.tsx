@@ -3,7 +3,6 @@ import { type GestureResponderEvent, type StyleProp, View, type ViewStyle } from
 import { useTheme } from '../theme/ThemeContext/useTheme'
 import { FONT_SIZES } from '../theme/themed'
 import { useMouseDragScroll } from './lib/useMouseDragScroll'
-import { useSliderDragMarker } from './lib/useSliderDragMarker'
 import { SliderFlatList } from './slider-flat-list'
 import {
   type SliderItemsElement,
@@ -61,7 +60,6 @@ export const Slider = <D extends object>({
   const { currentTheme } = useTheme()
   const sliderStyles = styles(currentTheme)
   const wrapperRef = useMouseDragScroll()
-  const sliderMarkerRef = useSliderDragMarker()
 
   if (!items?.length) return null
 
@@ -71,13 +69,7 @@ export const Slider = <D extends object>({
   return (
     <View style={[sliderStyles.slider, { marginTop: titleFontSize / 2 }, { marginBottom }, style]}>
       {renderTitleWrapper === undefined ? titleElement : renderTitleWrapper(titleElement)}
-      <View
-        style={sliderStyles.flexFill}
-        ref={instance => {
-          wrapperRef(instance)
-          sliderMarkerRef(instance)
-        }}
-      >
+      <View ref={wrapperRef} style={sliderStyles.flexFill}>
         <SliderFlatList
           items={items}
           itemsRows={itemsRows}

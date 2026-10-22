@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
-import { FlatList, type GestureResponderEvent } from 'react-native'
+import { FlatList, type GestureResponderEvent, Platform, StyleSheet } from 'react-native'
 import { INDENTS } from '../theme/themed'
-import { useWebSnapScroll } from './lib/useWebSnapScroll'
+import { useWebSliderScroll } from './lib/useWebSliderScroll'
 import { SliderColumn } from './slider-column'
 import {
   type SliderItemsElement,
@@ -18,6 +18,8 @@ import {
   getSliderCardLayout,
   getSliderLayoutViewport,
 } from './slider-layout.lib'
+
+const MAX_FLING_TRAVEL_VIEWPORT_RATIO = 1.2 // потолок инерции — как decelerationRate='fast' на нативе
 
 interface SliderFlatListProps<D extends object> {
   borderRadius?: boolean
@@ -68,8 +70,8 @@ export const SliderFlatList = <D extends object>({
       }),
     [columnCount, layout, layoutViewport, measuredWidth],
   )
-  const { onScroll, scrollRef } = useWebSnapScroll(snapOffsets)
-  const initialNumToRender = Math.ceil(layoutViewport / layout.stride) + 1
+  const maxTravelPx = MAX_FLING_TRAVEL_VIEWPORT_RATIO * (measuredWidth ?? layoutViewport)
+  const { onScroll, scrollRef } = useWebSliderScroll(snapOffsets, maxTravelPx)
 
   // Contiguous slices keep the round-robin row order: column c holds items
   // c*rows..c*rows+rows-1, stacked bottom-up (column-reverse) like today.
@@ -88,14 +90,15 @@ export const SliderFlatList = <D extends object>({
   return (
     <FlatList
       horizontal
+      {...(Platform.OS === 'web' ? { style: styles.touchArbitration } : {})}
       data={columns}
       windowSize={5}
       ref={scrollRef}
       decelerationRate='fast'
       snapToOffsets={snapOffsets}
       showsHorizontalScrollIndicator={false}
-      initialNumToRender={initialNumToRender}
       keyExtractor={(_, index) => String(index)}
+      initialNumToRender={Math.ceil(layoutViewport / layout.stride) + 1}
       onLayout={event => setMeasuredWidth(event.nativeEvent.layout.width)}
       {...(onScroll === undefined ? {} : { onScroll, scrollEventThrottle: 16 })}
       getItemLayout={(_, index) => ({
@@ -121,3 +124,6 @@ export const SliderFlatList = <D extends object>({
     />
   )
 }
+
+// pan-y: горизонталь — JS-скролл слайдера, вертикаль — нативный скролл/PTR.
+const styles = StyleSheet.create({ touchArbitration: { touchAction: 'pan-y' } })
