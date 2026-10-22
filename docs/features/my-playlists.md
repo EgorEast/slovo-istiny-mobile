@@ -16,9 +16,10 @@
 - `src/entities/playlist/lib/readStoredMyPlaylists.ts` — чтение/гидратация плейлистов из AsyncStorage
 - `src/entities/playlist/lib/readStoredSectionSettings.ts` — чтение/гидратация настроек оформления
 - `src/entities/playlist/lib/sanitizeLocalPlaylistSermon.ts` — санитизация снапшота проповеди
+- `src/entities/playlist/lib/useFavoriteSermon.ts` — хук `useFavoriteSermon` (состояние «в избранном» + переключатель для строк и полноэкранного плеера; наружу — через `entities/playlist` и `@x`-точку `entities/playlist/@x/track-list`)
 - `src/entities/playlist/lib/customPlaylistShare.ts` — `buildCustomPlaylistSearchParams`/`parseCustomPlaylistParams` (обе формы `sermons`: packed и csv) + `deriveCustomPlaylistId` (детерминированный `custom-<16 hex>` id из title и упорядоченных `sermonIds`)
 - `src/entities/playlist/lib/sermonIdPacking.ts` — `packSermonIds`/`unpackSermonIds` (base64url-упаковка UUID, 16 байт на id)
-- `src/entities/playlist/index.ts` — публичный API (`FAVORITES_PLAYLIST`, `myPlaylistsAtom`, `loadMyPlaylists`, `createLocalPlaylist`, `renameLocalPlaylist`, `deleteLocalPlaylist`, `reorderMyPlaylists`, `reorderLocalPlaylistSermons`, `togglePlaylistSermon`, `sectionSettingsAtom`, `loadSectionSettings`, `updateSectionSettings`, `persistSectionSettings`, `LocalSectionSettings`)
+- `src/entities/playlist/index.ts` — публичный API (`FAVORITES_PLAYLIST`, `myPlaylistsAtom`, `loadMyPlaylists`, `createLocalPlaylist`, `renameLocalPlaylist`, `deleteLocalPlaylist`, `reorderMyPlaylists`, `reorderLocalPlaylistSermons`, `togglePlaylistSermon`, `useFavoriteSermon`, `sectionSettingsAtom`, `loadSectionSettings`, `updateSectionSettings`, `persistSectionSettings`, `LocalSectionSettings`)
 - `src/entities/playlist/reorderLocalPlaylistSermons.ts` — перестановка проповедей внутри локального плейлиста (снапшоты `sermons` + авторитетные `sermonIds`)
 - `src/features/local-playlist-form/` — модалка создания (`CreateLocalPlaylistModal`), диалог удаления (`LocalPlaylistDeleteDialog`) и хук `useLocalPlaylistDelete`
 - `src/pages/playlist-edit/` — экран редактирования локального плейлиста (переименование + порядок проповедей + удаление)
@@ -120,13 +121,43 @@
 добавление останавливается и показывается тост «В плейлисте максимум 200
 проповедей» (см. [add-to-playlist.md](./add-to-playlist.md)). Удаление при
 заполненном плейлисте не блокируется. Если удаляется проповедь, которая сейчас
-играет из этого плейлиста, удаление не закрывает плеер само (поверхности зовут
-`togglePlaylistSermon(..., { suppressPlayerReset: true })`): сначала предлагается
-продолжить в другом плейлисте (см. [player.md](./player.md) → «Удаление
-играющей проповеди — выбор плейлиста для продолжения»), и только отказ закрывает
-плеер (`resetPlaybackAction`).
+играет из этого плейлиста, меню строки и меню плеера не закрывают плеер само (эти
+поверхности зовут `togglePlaylistSermon(..., { suppressPlayerReset: true })`):
+сначала предлагается продолжить в другом плейлисте (см. [player.md](./player.md) →
+«Удаление играющей проповеди — выбор плейлиста для продолжения»), и только отказ
+закрывает плеер (`resetPlaybackAction`). Сердечко избранного тоже подавляет сброс
+(`suppressPlayerReset: true` — закладочная семантика), поэтому снятие из
+«Избранных» никогда не закрывает плеер. Модалка добавления идёт без опции.
 Прочие записи — сид «Избранного» при первом чтении, сохранение нового порядка при
 reorder, персист принадлежности при toggle и CRUD-мутации.
+
+### Точки переключения избранного
+
+Избранное переключается из трёх мест. Сердечки идут общим хуком
+`useFavoriteSermon` (`src/entities/playlist/lib/useFavoriteSermon.ts`), который читает
+`isFavorite` из `myPlaylistsAtom` по `sermon.id` и зовёт
+`togglePlaylistSermon(ctx, FAVORITES_PLAYLIST.id, sermon, !isFavorite, { suppressPlayerReset: true })`:
+
+- **Сердечко строки** (`FavoriteSermonButton`, `entities/track-list`): слева от «⋯» во всех
+  списках проповедей — компактная выдача поиска и экран результатов, история, офлайн, экран
+  плейлиста и шторка очереди плеера. Строка получает снапшот пропсом `sermon`, поэтому списки
+  без снапшота (id-only участники) сердечка не показывают (см. [track-list.md](./track-list.md)).
+- **Сердечко полноэкранного плеера** (`PlayerMenuButtons`, цель онбординга
+  `player-fullscreen.favorite`): то же `useFavoriteSermon` для текущей проповеди, рядом с
+  кнопками «＋ Добавить в плейлист» и «⋮ Меню» (см. [player.md](./player.md)).
+- **Модалка «Добавить в плейлист» и контекст-меню строк**: чекбокс «Избранные» (см.
+  [add-to-playlist.md](./add-to-playlist.md)).
+
+Клик по сердечку не открывает модалку и не просит подтверждения: проповедь сразу попадает в
+«Избранные» или убирается оттуда. Снятие избранного **никогда не закрывает плеер**: хук
+передаёт `suppressPlayerReset: true` (сердечко — закладка, а не удаление из очереди), поэтому
+проповедь, играющая из самих «Избранных», продолжает играть, а очередь переживает удаление.
+
+**Принятый разрыв — лимит.** Исход `limit-reached` (в «Избранных» уже
+`MAX_CUSTOM_PLAYLIST_SERMONS` = 200 проповедей) сердечко молча игнорирует: проповедь не
+добавляется, но ни тост, ни диалог не показываются. Модалка добавления тот же лимит
+показывает (отключённая строка и тост батч-режима). Записано в [debt.md](../debt.md) →
+«Локальные плейлисты».
 
 ### Создание, переименование, удаление
 

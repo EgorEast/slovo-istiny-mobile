@@ -42,9 +42,11 @@
 3. Строит новый список: `contained` — дописывает санитизированный снапшот
    (`toPersistedLocalSermon`: `artwork ?? null`, `playlists` — лёгкие рефы
    `{ artwork, id, title, sermons: [] }`) в конец `sermons`,
-   иначе — фильтрует по `sermon.id`. `sermonIds` пересчитываются как производное
-   от `sermons`. «Избранные» обрабатываются тем же кодом, что и любой
-   другой плейлист.
+   иначе — фильтрует по `sermon.id`. `sermonIds` обновляется напрямую
+   (авторитетный список: id дописывается с дедупликацией при добавлении и
+   фильтруется при удалении), а `sermons` получает снапшот — ids не выводятся
+   из `sermons`, иначе id-only участники импортированного плейлиста терялись бы.
+   «Избранные» обрабатываются тем же кодом, что и любой другой плейлист.
 4. **Мгновенный коммит, затем запись:** чтение атома → вычисление
    `nextPlaylists` → `ctx.schedule`, коммитящий `myPlaylistsAtom`, идут без
    `await` между ними, поэтому два быстрых переключения не теряют изменение друг
@@ -173,12 +175,14 @@
   `SearchGroupedResults` → `SearchSermonGroup` → `SearchResultsRow` → `SermonSearchRow` →
   `buildHistoryMenuActions`. Кросс-фичевого импорта нет.
 - **Полноэкранный плеер и шторка очереди** (`widgets/expandable-player`):
-  `ExpandablePlayer` владеет хуком (одна модалка). Колбэк идёт в меню трека
-  (`ContainerView` → `FullscreenContent` → `PlayerControlsSection` →
-  `PlayerMenuAnchor` → `PlayerMenu` → `PlayerMenuItems`) и в шторку очереди
-  (`FullscreenSheets` → `PlaylistBottomSheet` → … → `useSheetMenuActions` →
-  `buildHistoryMenuActions`). В меню плеера `audio` передаётся явно
-  (`PlayerMenu` получает `audio`), т.к. это не строка списка.
+  `ExpandablePlayer` владеет хуком (одна модалка). В полноэкранном плеере модалку
+  открывает кнопка **＋** в кластере `PlayerMenuAnchor` → `PlayerMenuButtons`
+  (колбэк идёт `ContainerView` → `FullscreenContent` → `PlayerControlsSection` →
+  `PlayerMenuAnchor`); пункта «Добавить в плейлист» в поповер-меню `PlayerMenu`
+  больше нет, а текущая проповедь передаётся кнопке явно (`audio` из
+  `PlayerMenuAnchor`), т.к. это не строка списка. В шторке очереди колбэк
+  по-прежнему идёт через меню строк (`FullscreenSheets` → `PlaylistBottomSheet` →
+  … → `useSheetMenuActions` → `buildHistoryMenuActions`).
 - **Офлайн** (`pages/offline`): `OfflineScreen` владеет хуком, `OfflineRow`
   строит `MenuItem`-массив c «Добавить в плейлист» и передаёт в `TracksListItem`.
 - **История** (`pages/history`): `HistoryScreen` владеет хуком, `HistoryRow`
@@ -187,6 +191,9 @@
 Пункт меню — иконка `Ionicons 'add-circle'`, текст «Добавить в плейлист»;
 добавляется **первым** в `buildHistoryMenuActions`, только когда колбэк задан
 (иначе пункт отсутствует — обратная совместимость с существующими меню).
+В полноэкранном плеере ту же роль играет кнопка **＋** (`Ionicons
+'add-circle-outline'`, `accessibilityLabel` «Добавить в плейлист»): она
+рендерится всегда, а без колбэка тап — no-op.
 
 ## Удаление из плейлиста (обратное действие)
 
