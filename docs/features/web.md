@@ -137,7 +137,7 @@ Plain ES2018, без бандлера. `// @ts-check` + `/// <reference lib="web
 
 Экранные кнопки Next/Prev не затронуты: тап по-прежнему переключает трек, long-press — перемотка.
 
-**Фокусируемость средней области:** кликабельная средняя область полноэкранного плеера (`PlayerMiddleArea` → `Pressable styles.spacer`, а также backdrop оверлея «Подробнее» в `DetailsOverlay`) получает `tabIndex={-1}` — не попадает в Tab-навигацию, но остаётся кликабельной мышью/тачем. RNW-деталь: `focusable={false}` на `Pressable` **не работает** — `Pressable` всегда прокидывает явный `tabIndex` (0 по умолчанию), который в `createDOMProps` выигрывает у `focusable`; поэтому используется именно `tabIndex={-1}`.
+**Фокусируемость средней области:** кликабельная средняя область полноэкранного плеера (`PlayerMiddleArea` → `Pressable styles.spacer`, а также backdrop оверлея «Подробнее» в `DetailsOverlay`) получает `tabIndex={-1}` — не попадает в Tab-навигацию, но остаётся кликабельной мышью/тачем. RNW-деталь: `focusable={false}` на `Pressable` **не работает** — `Pressable` всегда прокидывает явный `tabIndex` (0 по умолчанию), который в `createDOMProps` выигрывает у `focusable`; поэтому используется именно `tabIndex={-1}`. Свайп-вниз по полноэкранному плееру сворачивает его и **не** переключает play/pause: press с дрейфом указателя больше 10px подавляется, потому что на web RNGH не отменяет RNW-press после жеста.
 
 **Backdrop'ы модалок/дропдаунов не фокусируются:** backdrop'ы `shared/ui/modal.tsx`, `AnchoredDropdown` (`shared/ui/menu`) и `PlayerMenu` получают `tabIndex={-1}` — не попадают в Tab-навигацию, но остаются кликабельными мышью/тачем; закрытие — Esc или тап.
 
