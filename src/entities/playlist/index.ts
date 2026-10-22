@@ -13,6 +13,7 @@ export { mapPlaylistEntityToPlaylistData } from './lib/mappers/mapPlaylistEntity
 export { readStoredMyPlaylists } from './lib/readStoredMyPlaylists'
 export { readStoredSectionSettings } from './lib/readStoredSectionSettings'
 export { packSermonIds } from './lib/sermonIdPacking'
+export { useCreateLocalPlaylist } from './lib/useCreateLocalPlaylist'
 export { useFavoriteSermon } from './lib/useFavoriteSermon'
 export { useIsLocalPlaylist } from './lib/useIsLocalPlaylist'
 export { togglePlaylistSermon } from './localPlaylistMembership'
