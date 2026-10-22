@@ -46,10 +46,12 @@ export const PressableButton = forwardRef<ViewInstance, PressableButtonProps>(
           onTouchMove?.(event)
         }}
         onPress={event => {
-          // Early haptic already pulsed during the press — do not repeat it. A
-          // fast tap shorter than the delay is cancelled at pressOut, so the
-          // pulse lands here instead.
-          if (!disabled && !pressHaptic.shouldSkipHaptic()) hapticLight()
+          // On Android onPress can arrive BEFORE onPressOut, so a deadline still
+          // pending from pressIn would pulse after this release haptic and double
+          // the vibration. Settling kills that deadline first and reports whether
+          // the early pulse already happened — then we must not repeat it.
+          const pulseAlreadyFired = pressHaptic.settlePress()
+          if (!disabled && !pulseAlreadyFired) hapticLight()
           onPress?.(event)
         }}
         {...(onLongPress && {

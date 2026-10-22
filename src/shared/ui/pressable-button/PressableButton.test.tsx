@@ -1,5 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react-native'
 import { impactAsync } from 'expo-haptics'
+import * as hapticsModule from '../../lib/haptics'
 import { PRESS_HAPTIC_CANCEL_DRIFT_PX, PRESS_HAPTIC_DELAY_MS } from '../../lib/usePressHaptic'
 import { PressableButton } from './PressableButton'
 
@@ -111,6 +112,29 @@ describe('<PressableButton>', () => {
 
     expect(mockedImpactAsync).toHaveBeenCalledTimes(1)
     expect(onPress).toHaveBeenCalledTimes(1)
+  })
+
+  test('a press landing before the early deadline still vibrates exactly once', async () => {
+    await waitOutHapticThrottle()
+    await render(<PressableButton onPress={jest.fn()} accessibilityLabel={BUTTON_LABEL} />)
+    const button = screen.getByRole('button', { name: BUTTON_LABEL })
+    // Counted at the haptic layer: the 200ms throttle would otherwise mask the
+    // second pulse of the race this test reproduces.
+    const hapticSpy = jest.spyOn(hapticsModule, 'hapticLight')
+
+    try {
+      // Device-proven Android release order: onPress is delivered BEFORE
+      // onPressOut, so the early deadline (pressIn+120ms) can land after the
+      // press haptic (pressIn+71ms) and pulse a second time 49ms later.
+      await fireEvent(button, 'pressIn')
+      await new Promise(resolve => setTimeout(resolve, 70))
+      await fireEvent(button, 'press')
+      await new Promise(resolve => setTimeout(resolve, 150))
+
+      expect(hapticSpy).toHaveBeenCalledTimes(1)
+    } finally {
+      hapticSpy.mockRestore()
+    }
   })
 
   describe('early press haptic', () => {
