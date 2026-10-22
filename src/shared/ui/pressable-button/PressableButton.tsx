@@ -11,15 +11,18 @@ export interface PressableButtonProps extends Omit<PressableProps, 'accessibilit
 }
 
 export const PressableButton = forwardRef<ViewInstance, PressableButtonProps>(
-  ({ accessibilityRole, disabled, onPressIn, ...props }, ref) => (
+  ({ accessibilityRole, disabled, onPress, ...props }, ref) => (
     <Pressable
       {...props}
       ref={ref}
       disabled={disabled}
       accessibilityRole={accessibilityRole ?? 'button'}
-      onPressIn={event => {
+      onPress={event => {
+        // Haptic on the completed tap only: onPressIn already fired before a
+        // scroll/swipe claims the gesture, so press-down feedback vibrated on
+        // every drag started from an interactive element.
         if (!disabled) hapticLight()
-        onPressIn?.(event)
+        onPress?.(event)
       }}
     />
   ),

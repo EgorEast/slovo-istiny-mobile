@@ -39,18 +39,18 @@ describe('<TabButton>', () => {
     expect(screen.getByRole('button', { name: /Слушать/ })).toBeTruthy()
   })
 
-  test('inactive tab triggers haptic on press-in', async () => {
+  test('inactive tab triggers haptic on press', async () => {
     await renderTabButton('listen')
 
-    fireEvent(screen.getByRole('button', { name: /Слушать/ }), 'pressIn')
+    await fireEvent(screen.getByRole('button', { name: /Слушать/ }), 'press')
 
     expect(mockedHapticLight).toHaveBeenCalledTimes(1)
   })
 
-  test('active tab does not trigger haptic on press-in', async () => {
+  test('active tab does not trigger haptic on press', async () => {
     await renderTabButton('listen', true)
 
-    fireEvent(screen.getByRole('button', { name: /Слушать/ }), 'pressIn')
+    await fireEvent(screen.getByRole('button', { name: /Слушать/ }), 'press')
 
     expect(mockedHapticLight).not.toHaveBeenCalled()
   })

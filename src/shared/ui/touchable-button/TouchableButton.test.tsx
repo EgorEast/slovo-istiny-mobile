@@ -30,26 +30,50 @@ describe('<TouchableButton>', () => {
     expect(screen.getByRole('link', { name: 'tap' })).toBeTruthy()
   })
 
-  test('disabled button does not trigger haptics on press-in', async () => {
+  test('disabled button does not trigger haptics on press', async () => {
     await render(
       <TouchableButton disabled onPress={jest.fn()}>
         <Text>tap</Text>
       </TouchableButton>,
     )
 
-    fireEvent(screen.getByRole('button', { name: 'tap' }), 'pressIn')
+    await fireEvent(screen.getByRole('button', { name: 'tap' }), 'press')
 
     expect(mockedImpactAsync).not.toHaveBeenCalled()
   })
 
-  test('hapticDisabled button does not trigger haptics on press-in', async () => {
+  test('hapticDisabled button does not trigger haptics on press', async () => {
     await render(
       <TouchableButton hapticDisabled onPress={jest.fn()}>
         <Text>tap</Text>
       </TouchableButton>,
     )
 
-    fireEvent(screen.getByRole('button', { name: 'tap' }), 'pressIn')
+    await fireEvent(screen.getByRole('button', { name: 'tap' }), 'press')
+
+    expect(mockedImpactAsync).not.toHaveBeenCalled()
+  })
+
+  test('completed press triggers tap haptics', async () => {
+    await render(
+      <TouchableButton onPress={jest.fn()}>
+        <Text>tap</Text>
+      </TouchableButton>,
+    )
+
+    await fireEvent(screen.getByRole('button', { name: 'tap' }), 'press')
+
+    expect(mockedImpactAsync).toHaveBeenCalledTimes(1)
+  })
+
+  test('press-in does not trigger haptics', async () => {
+    await render(
+      <TouchableButton onPress={jest.fn()}>
+        <Text>tap</Text>
+      </TouchableButton>,
+    )
+
+    await fireEvent(screen.getByRole('button', { name: 'tap' }), 'pressIn')
 
     expect(mockedImpactAsync).not.toHaveBeenCalled()
   })
@@ -62,7 +86,7 @@ describe('<TouchableButton>', () => {
       </TouchableButton>,
     )
 
-    fireEvent(screen.getByRole('button', { name: 'tap' }), 'pressIn')
+    await fireEvent(screen.getByRole('button', { name: 'tap' }), 'pressIn')
 
     expect(onPressIn).toHaveBeenCalledTimes(1)
   })

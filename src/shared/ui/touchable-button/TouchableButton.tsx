@@ -8,22 +8,25 @@ import { hapticLight } from '../../lib/haptics'
 // hintable without spelling the role at every call site.
 interface TouchableButtonProps extends Omit<TouchableOpacityProps, 'accessibilityRole'> {
   accessibilityRole?: TouchableOpacityProps['accessibilityRole']
-  /** Skips the built-in press-in haptic (for already-selected tabs). */
+  /** Skips the built-in tap haptic (for already-selected tabs). */
   hapticDisabled?: boolean
 }
 
 export const TouchableButton = forwardRef<
   ComponentRef<typeof TouchableOpacity>,
   TouchableButtonProps
->(({ accessibilityRole, disabled, hapticDisabled, onPressIn, ...props }, ref) => (
+>(({ accessibilityRole, disabled, hapticDisabled, onPress, ...props }, ref) => (
   <TouchableOpacity
     {...props}
     ref={ref}
     disabled={disabled}
     accessibilityRole={accessibilityRole ?? 'button'}
-    onPressIn={event => {
+    onPress={event => {
+      // Haptic on the completed tap only: onPressIn already fired before a
+      // scroll/swipe claims the gesture, so press-down feedback vibrated on
+      // every drag started from an interactive element.
       if (!disabled && !hapticDisabled) hapticLight()
-      onPressIn?.(event)
+      onPress?.(event)
     }}
   />
 ))

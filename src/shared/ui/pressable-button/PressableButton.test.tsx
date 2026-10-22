@@ -25,10 +25,26 @@ describe('<PressableButton>', () => {
     expect(screen.queryByRole('button', { name: LINK_LABEL })).toBeNull()
   })
 
-  test('disabled button does not trigger haptics on press-in', async () => {
+  test('disabled button does not trigger haptics on press', async () => {
     await render(<PressableButton disabled accessibilityLabel={BUTTON_LABEL} />)
 
-    fireEvent(screen.getByRole('button', { name: BUTTON_LABEL }), 'pressIn')
+    await fireEvent(screen.getByRole('button', { name: BUTTON_LABEL }), 'press')
+
+    expect(mockedImpactAsync).not.toHaveBeenCalled()
+  })
+
+  test('completed press triggers tap haptics', async () => {
+    await render(<PressableButton onPress={jest.fn()} accessibilityLabel={BUTTON_LABEL} />)
+
+    await fireEvent(screen.getByRole('button', { name: BUTTON_LABEL }), 'press')
+
+    expect(mockedImpactAsync).toHaveBeenCalledTimes(1)
+  })
+
+  test('press-in does not trigger haptics', async () => {
+    await render(<PressableButton accessibilityLabel={BUTTON_LABEL} />)
+
+    await fireEvent(screen.getByRole('button', { name: BUTTON_LABEL }), 'pressIn')
 
     expect(mockedImpactAsync).not.toHaveBeenCalled()
   })
