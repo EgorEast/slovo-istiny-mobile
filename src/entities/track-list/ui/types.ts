@@ -1,5 +1,6 @@
 import { type ReactElement } from 'react'
 import { type StyleProp, type ViewStyle } from 'react-native'
+import { type SermonShape } from 'shared/model'
 import { type MenuItem } from 'shared/ui/menu'
 import { type TrackCacheState } from './trackCacheState'
 
@@ -35,12 +36,22 @@ export interface TracksListItemProps {
   /** Listening progress 0..1, renders a thin bar along the row bottom edge. A value of 1 dims the row (listened). */
   progress?: number
   /**
+   * Wraps the ♥ favorites trigger (e.g. In an onboarding target); falls back to the
+   * bare trigger. Only used when `sermon` is provided.
+   */
+  renderFavoriteButton?: (button: ReactElement) => ReactElement
+  /**
    * Wraps the row's ⋯ menu trigger (e.g. In an onboarding target); falls back to the
    * bare trigger. Generic, so the entity never imports features/onboarding.
    */
   renderMenuButton?: (button: ReactElement) => ReactElement
   /** Wraps each rendered dropdown row (e.g. In an onboarding target); falls back to the bare row. */
   renderMenuItem?: (row: ReactElement, item: MenuActionItem) => ReactElement
+  /**
+   * Sermon snapshot enabling the favorites heart; toggling saves it into the
+   * favorites playlist.
+   */
+  sermon?: SermonShape
   style?: StyleProp<ViewStyle>
   subtitle?: string
   title: string

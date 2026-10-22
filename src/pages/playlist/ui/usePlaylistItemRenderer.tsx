@@ -15,6 +15,13 @@ const FIRST_ROW_CACHE_ACTION_TARGET_IDS = {
   add: ROW_MENU_OFFLINE_ADD_TARGET_ID,
   remove: ROW_MENU_OFFLINE_REMOVE_TARGET_ID,
 }
+const ROW_FAVORITE_TARGET_ID = 'playlist.row-favorite'
+
+// Only the first row's heart is highlighted: the trigger is identical for every
+// row, so one anchoring target covers the tour's card position.
+const renderFavoriteRow = (button: ReactElement) => (
+  <OnboardingTarget id={ROW_FAVORITE_TARGET_ID}>{button}</OnboardingTarget>
+)
 
 // Only menu actions carrying an onboarding target id are wrapped; the rest render
 // bare, so the tour spotlights just the first row's dropdown items.
@@ -61,6 +68,7 @@ export const usePlaylistItemRenderer = ({
           id={item.id}
           index={index}
           title={item.title}
+          sermon={item.sermon}
           isPlaying={isPlaying}
           artwork={item.artwork}
           audioUrl={item.audioUrl}
@@ -72,6 +80,7 @@ export const usePlaylistItemRenderer = ({
           storedProgress={progressMap.get(item.id ?? '')}
           bindMenuOpener={index === 0 ? bindRowMenu : undefined}
           renderMenuItem={index === 0 ? renderMenuRow : undefined}
+          renderFavoriteButton={index === 0 ? renderFavoriteRow : undefined}
           cacheActionOnboardingTargetIds={
             index === 0 ? FIRST_ROW_CACHE_ACTION_TARGET_IDS : undefined
           }

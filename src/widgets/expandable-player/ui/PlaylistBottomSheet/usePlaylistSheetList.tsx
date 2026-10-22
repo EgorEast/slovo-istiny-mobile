@@ -2,6 +2,7 @@ import { useCallback, useMemo } from 'react'
 import { View } from 'react-native'
 import { type PlaylistData } from 'entities/playlist'
 import { type AudioPlayerData, formatSermonReference } from 'entities/sermon'
+import { type SermonShape } from 'shared/model'
 import { type createStyles, PLAYLIST_SHEET_ROW_STRIDE } from './PlaylistBottomSheet.styles'
 import { PlaylistSheetRow } from './PlaylistSheetRow'
 import { useScrollGuarantee } from './useScrollGuarantee'
@@ -10,6 +11,7 @@ import { useSheetMenuActions } from './useSheetMenuActions'
 export interface TrackListItemData {
   artwork?: null | string
   id: string
+  sermon: SermonShape
   subtitle?: string
   title: string
   url?: string
@@ -49,6 +51,7 @@ export const usePlaylistSheetList = ({
       playlist.sermons.map(sermon => ({
         artwork: playlist.artwork,
         id: sermon.id,
+        sermon,
         subtitle: formatSermonReference({
           book: sermon.book,
           chapter: sermon.chapter,
@@ -90,6 +93,7 @@ export const usePlaylistSheetList = ({
         onPress={onPress}
         title={item.title}
         audioUrl={item.url}
+        sermon={item.sermon}
         artwork={item.artwork}
         subtitle={item.subtitle}
         cacheTrigger={cacheTrigger}

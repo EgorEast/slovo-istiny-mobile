@@ -18,6 +18,7 @@ export const SermonResultRow = memo(
 
     return (
       <TracksListItem
+        sermon={sermon}
         isPlaying={false}
         progress={progress}
         title={sermon.title}

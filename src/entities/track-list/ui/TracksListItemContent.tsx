@@ -14,6 +14,7 @@ export const TracksListItemContent = forwardRef<
   {
     artwork?: null | string
     dotsOnPress: () => void
+    favoriteButton?: ReactElement
     isAudioPlaying: boolean
     isCached: boolean
     isDownloading: boolean
@@ -33,6 +34,7 @@ export const TracksListItemContent = forwardRef<
     {
       artwork,
       dotsOnPress,
+      favoriteButton,
       isAudioPlaying,
       isCached,
       isDownloading,
@@ -100,6 +102,7 @@ export const TracksListItemContent = forwardRef<
           />
           {subtitle ? <Text style={tracksListStyles.subtitle}>{subtitle}</Text> : null}
         </View>
+        {favoriteButton}
         {renderMenuButton === undefined ? menuButton : renderMenuButton(menuButton)}
         {progress != null && progress > 0 && <ProgressBar progress={progress} />}
       </>

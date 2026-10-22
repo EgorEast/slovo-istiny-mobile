@@ -1,10 +1,17 @@
 import { act, fireEvent, screen, waitFor } from '@testing-library/react-native'
 import { Text as MockText } from 'react-native'
+import { type SermonData } from 'entities/sermon'
 import { mockMeasureInWindow } from 'shared/mocks/measure'
 import { renderWithProviders } from 'shared/mocks/renderWithProviders'
 import { type TrackCacheState } from './trackCacheState'
 import { TracksListItem } from './TracksListItem'
 import { type TrackListMenuControls } from './types'
+
+const mockToggleFavorite = jest.fn()
+
+jest.mock('entities/playlist/@x/track-list', () => ({
+  useFavoriteSermon: () => ({ isFavorite: false, toggleFavorite: mockToggleFavorite }),
+}))
 
 const createCacheState = (overrides: Partial<TrackCacheState> = {}): TrackCacheState => ({
   isCached: false,
@@ -60,10 +67,19 @@ jest.mock('shared/ui/progress-bar/ProgressBar', () => {
 
 const CONTEXT_MENU_TEST_ID = 'context-menu-visible'
 const DOTS_BUTTON_LABEL = 'Меню трека'
+const FAVORITE_BUTTON_LABEL = 'Добавить в избранное'
 const PROGRESS_BAR_TEST_ID = 'progress-bar'
 const AUDIO_URL = 'https://example.com/audio.mp3'
 const TEST_SUBTITLE = 'Test Subtitle'
 const TEST_TITLE = 'Test Title'
+
+const SERMON: SermonData = {
+  artist: 'Author',
+  artwork: null,
+  audioUrl: AUDIO_URL,
+  id: 'sermon-1',
+  title: TEST_TITLE,
+}
 
 // Fixed geometry returned by the mocked View.prototype.measureInWindow
 const MOCK_MEASURE_WINDOW_X = 200
@@ -248,5 +264,25 @@ describe('<TracksListItem>', () => {
 
     const downloadBars = container.queryAll(node => node.props.style?.height === 3)
     expect(downloadBars.length).toBeGreaterThan(0)
+  })
+
+  test('renders the favorites heart when a sermon is provided', async () => {
+    await renderItem({ sermon: SERMON })
+
+    expect(screen.getByLabelText(FAVORITE_BUTTON_LABEL)).toBeTruthy()
+  })
+
+  test('does not render the favorites heart without a sermon', async () => {
+    await renderItem()
+
+    expect(screen.queryByLabelText(FAVORITE_BUTTON_LABEL)).toBeNull()
+  })
+
+  test('pressing the favorites heart toggles favorites', async () => {
+    await renderItem({ sermon: SERMON })
+
+    fireEvent.press(screen.getByLabelText(FAVORITE_BUTTON_LABEL))
+
+    expect(mockToggleFavorite).toHaveBeenCalledTimes(1)
   })
 })

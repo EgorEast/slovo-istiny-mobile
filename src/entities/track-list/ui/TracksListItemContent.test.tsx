@@ -1,9 +1,11 @@
-import { screen } from '@testing-library/react-native'
+import { fireEvent, screen } from '@testing-library/react-native'
 import { Text as MockText } from 'react-native'
 import { renderWithProviders } from 'shared/mocks/renderWithProviders'
+import { IconButton } from 'shared/ui/icon-button'
 import { TracksListItemContent } from './TracksListItemContent'
 
 const mockIconSpy = jest.fn()
+const mockFavoritePress = jest.fn()
 
 jest.mock('@expo/vector-icons', () => ({
   MaterialCommunityIcons: (props: { name: string }) => {
@@ -43,9 +45,20 @@ const baseProps = {
   title: TEST_TITLE,
 }
 
+const FAVORITE_LABEL = 'Добавить в избранное'
+
+const renderFavoriteTrigger = () => (
+  <IconButton
+    onPress={mockFavoritePress}
+    Icon={<MockText>heart</MockText>}
+    accessibilityLabel={FAVORITE_LABEL}
+  />
+)
+
 describe('<TracksListItemContent>', () => {
   beforeEach(() => {
     mockIconSpy.mockClear()
+    mockFavoritePress.mockClear()
   })
 
   test('renders cloud icon when not cached, not downloading, not queued', async () => {
@@ -123,5 +136,29 @@ describe('<TracksListItemContent>', () => {
 
     expect(screen.getAllByText(TEST_TITLE)[0]).not.toHaveStyle({ color: mockTheme.textMuted })
     expect(screen.getByTestId(ARTWORK_TEST_ID).parent).not.toHaveStyle({ opacity: 0.5 })
+  })
+
+  test('renders the favorites trigger when provided', async () => {
+    await renderWithProviders(
+      <TracksListItemContent {...baseProps} favoriteButton={renderFavoriteTrigger()} />,
+    )
+
+    expect(screen.getByLabelText(FAVORITE_LABEL)).toBeTruthy()
+  })
+
+  test('does not render a favorites trigger without one', async () => {
+    await renderWithProviders(<TracksListItemContent {...baseProps} />)
+
+    expect(screen.queryByLabelText(FAVORITE_LABEL)).toBeNull()
+  })
+
+  test('pressing the favorites trigger calls its handler', async () => {
+    await renderWithProviders(
+      <TracksListItemContent {...baseProps} favoriteButton={renderFavoriteTrigger()} />,
+    )
+
+    fireEvent.press(screen.getByLabelText(FAVORITE_LABEL))
+
+    expect(mockFavoritePress).toHaveBeenCalledTimes(1)
   })
 })

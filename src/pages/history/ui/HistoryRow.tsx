@@ -63,6 +63,7 @@ export const HistoryRow = memo(
 
     return (
       <TracksListItem
+        sermon={sermon}
         style={styles.row}
         title={sermon.title}
         isPlaying={isPlaying}

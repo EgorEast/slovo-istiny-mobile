@@ -1,6 +1,7 @@
 import { Platform } from 'react-native'
 import { PressableButton } from 'shared/ui/pressable-button'
 import { useTheme } from 'shared/ui/theme/ThemeContext/useTheme'
+import { FavoriteSermonButton } from './FavoriteSermonButton'
 import { createTracksListStyles } from './styles'
 import { TracksListItemContent } from './TracksListItemContent'
 import { TracksListItemContextMenu } from './TracksListItemContextMenu'
@@ -22,8 +23,10 @@ export const TracksListItemBase = ({
   menuActions,
   onPress,
   progress,
+  renderFavoriteButton,
   renderMenuButton,
   renderMenuItem,
+  sermon,
   style,
   subtitle,
   title,
@@ -48,6 +51,15 @@ export const TracksListItemBase = ({
     isMenuOpen,
     menuAnchor,
   } = useTrackListItemMenu({ audioUrl, bindMenuOpener, onPress, toggleCache })
+
+  const bareFavoriteButton =
+    sermon === undefined ? undefined : (
+      <FavoriteSermonButton sermon={sermon} style={tracksListStyles.dotsButton} />
+    )
+  const favoriteButton =
+    bareFavoriteButton === undefined || renderFavoriteButton === undefined
+      ? bareFavoriteButton
+      : renderFavoriteButton(bareFavoriteButton)
 
   return (
     <>
@@ -75,6 +87,7 @@ export const TracksListItemBase = ({
           progressValue={progressValue}
           dotsOnPress={handleToggleMenu}
           isAudioPlaying={isAudioPlaying}
+          favoriteButton={favoriteButton}
           renderMenuButton={renderMenuButton}
           isSermonCachingEnabled={isSermonCachingEnabled}
         />

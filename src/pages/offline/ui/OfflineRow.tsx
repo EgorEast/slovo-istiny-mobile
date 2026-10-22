@@ -56,6 +56,7 @@ export const OfflineRow = memo(
     return (
       <TracksListItem
         style={styles.row}
+        sermon={item.sermon}
         onPress={handlePress}
         cacheState={cacheState}
         title={item.sermon.title}

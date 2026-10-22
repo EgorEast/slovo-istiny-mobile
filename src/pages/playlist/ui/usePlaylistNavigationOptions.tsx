@@ -13,6 +13,7 @@ export const buildTracksListData = (list: SermonData[], artwork: null | string) 
     artwork,
     audioUrl: sermon.audioUrl,
     id: sermon.id,
+    sermon,
     subtitle: formatSermonReference({
       book: sermon.book,
       chapter: sermon.chapter,

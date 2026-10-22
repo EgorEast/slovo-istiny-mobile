@@ -6,6 +6,7 @@ import {
   type TrackListMenuControls,
   TracksListItem,
 } from 'entities/track-list'
+import { type SermonShape } from 'shared/model'
 import { INDENTS } from 'shared/ui/theme'
 
 export const PlaylistTrackItem = memo(
@@ -21,7 +22,9 @@ export const PlaylistTrackItem = memo(
     isPlaying,
     menuActions,
     onPress,
+    renderFavoriteButton,
     renderMenuItem,
+    sermon,
     storedProgress,
     subtitle,
     title,
@@ -37,7 +40,9 @@ export const PlaylistTrackItem = memo(
     isPlaying: boolean
     menuActions?: MenuActionItem[]
     onPress: (index: number) => void
+    renderFavoriteButton?: (button: ReactElement) => ReactElement
     renderMenuItem?: (row: ReactElement, item: MenuActionItem) => ReactElement
+    sermon?: SermonShape
     storedProgress?: number
     subtitle?: string
     title: string
@@ -48,6 +53,7 @@ export const PlaylistTrackItem = memo(
     return (
       <TracksListItem
         title={title}
+        sermon={sermon}
         artwork={artwork}
         style={styles.row}
         subtitle={subtitle}
@@ -59,6 +65,7 @@ export const PlaylistTrackItem = memo(
         renderMenuItem={renderMenuItem}
         audioUrl={audioUrl ?? undefined}
         isPlaying={currentAudioId === id}
+        renderFavoriteButton={renderFavoriteButton}
         isAudioPlaying={currentAudioId === id && isPlaying}
         cacheActionOnboardingTargetIds={cacheActionOnboardingTargetIds}
       />
