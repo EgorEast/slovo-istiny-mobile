@@ -1,6 +1,8 @@
 import { screen } from '@testing-library/react-native'
+import { Appearance, StyleSheet } from 'react-native'
 import { renderWithProviders } from '../../../mocks/renderWithProviders'
 import { SliderItemText } from './slider-item-text'
+import { SliderItemTextBackgroundStyle } from './slider-item-text.types'
 
 const propsStub = {
   subTitle: 'Sub',
@@ -8,6 +10,10 @@ const propsStub = {
 }
 
 describe('<SliderItemText/>', () => {
+  afterEach(() => {
+    jest.restoreAllMocks()
+  })
+
   test('return null if title prop is undefined', async () => {
     await renderWithProviders(
       <SliderItemText
@@ -73,5 +79,41 @@ describe('<SliderItemText/>', () => {
     await renderWithProviders(<SliderItemText title={propsStub.title} />)
 
     expect(screen.getByText(propsStub.title)).not.toHaveStyle({ fontWeight: 'bold' })
+  })
+
+  test('adds a white halo to the title drawn on artwork with dark text', async () => {
+    jest.spyOn(Appearance, 'getColorScheme').mockReturnValue('light')
+
+    await renderWithProviders(<SliderItemText isOnArtwork title={propsStub.title} />)
+
+    expect(screen.getByText(propsStub.title)).toHaveStyle({
+      textShadowColor: 'rgba(255, 255, 255, 0.7)',
+      textShadowOffset: { height: 0, width: 0 },
+      textShadowRadius: 10,
+    })
+  })
+
+  test('does not add a halo when the title sits on a plate', async () => {
+    await renderWithProviders(
+      <SliderItemText
+        isOnArtwork
+        title={propsStub.title}
+        backgroundStyle={SliderItemTextBackgroundStyle.Dark}
+      />,
+    )
+
+    const titleStyle = StyleSheet.flatten(screen.getByText(propsStub.title).props.style)
+
+    expect(titleStyle).not.toHaveProperty('textShadowColor')
+    expect(titleStyle).not.toHaveProperty('textShadowRadius')
+  })
+
+  test('does not add a halo when the title is not drawn on artwork', async () => {
+    await renderWithProviders(<SliderItemText title={propsStub.title} />)
+
+    const titleStyle = StyleSheet.flatten(screen.getByText(propsStub.title).props.style)
+
+    expect(titleStyle).not.toHaveProperty('textShadowColor')
+    expect(titleStyle).not.toHaveProperty('textShadowRadius')
   })
 })

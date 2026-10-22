@@ -48,6 +48,7 @@ export const TitleOnIconCard = ({
         </View>
       ) : (
         <SliderItemText
+          isOnArtwork
           maxLines={1}
           title={title}
           isBold={!isBottom}

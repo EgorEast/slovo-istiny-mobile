@@ -11,6 +11,7 @@ import { useTheme } from '../../theme/ThemeContext/useTheme'
 import { FONT_SIZES, INDENTS, RADIUSES } from '../../theme/themed'
 import { SliderItemTextSkeleton } from './skeleton'
 import { type SliderItemTextAlign, SliderItemTextBackgroundStyle } from './slider-item-text.types'
+import { getTitleTextShadow } from './titleTextShadow'
 
 // Текст карточки: статичный заголовок (число строк ограничено `maxLines`, по
 // умолчанию одна; конец обрезается троеточием) и необязательный подзаголовок.
@@ -19,6 +20,7 @@ export const SliderItemText = ({
   backgroundStyle = SliderItemTextBackgroundStyle.Transparent,
   borderRadius,
   isBold = false,
+  isOnArtwork = false,
   maxLines = 1,
   style,
   subTitle,
@@ -31,6 +33,7 @@ export const SliderItemText = ({
   backgroundStyle?: SliderItemTextBackgroundStyle
   borderRadius?: boolean
   isBold?: boolean
+  isOnArtwork?: boolean
   maxLines?: number
   style?: StyleProp<ViewStyle>
   subTitle?: string
@@ -45,6 +48,8 @@ export const SliderItemText = ({
 
   const isDarkBackground = backgroundStyle === SliderItemTextBackgroundStyle.Dark
   const isDarkBlurBackground = backgroundStyle === SliderItemTextBackgroundStyle.DarkBlur
+  const isOnPlate = isDarkBackground || isDarkBlurBackground
+  const textColor = isOnPlate ? COLORS.white : currentTheme.text
   const isRounded = borderRadius ?? true
 
   return (
@@ -65,8 +70,9 @@ export const SliderItemText = ({
         numberOfLines={maxLines}
         style={[
           { fontSize: titleFontSize },
-          { color: isDarkBackground || isDarkBlurBackground ? COLORS.white : currentTheme.text },
+          { color: textColor },
           { textAlign: titleTextAlign },
+          isOnArtwork && !isOnPlate && getTitleTextShadow(textColor),
           isBold && styles.titleBold,
           titleStyle,
         ]}
