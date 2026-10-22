@@ -25,8 +25,9 @@ const isScrollableSlider = (instance: unknown): instance is ScrollableSlider =>
 const resolveNode = (instance: null | ScrollableSlider): HTMLElement | null =>
   instance?.getScrollableNode?.() ?? null
 
-// Web-only: браузер владеет направлением жеста (touch-action: pan-y), JS
-// владеет горизонталью — драг 1:1 и флинг с ограниченным пробегом до снапа.
+// Web-only: `touch-action: pan-y` убирает лишь нативный горизонтальный пан —
+// владельца жеста решает JS-лок по наклону в webSliderTouch (слоп 8px):
+// горизонталь ведёт драг 1:1 и флинг до снапа, вертикаль — страница.
 export const useWebSliderScroll = (
   snapOffsets: number[],
   maxTravelPx: number,
