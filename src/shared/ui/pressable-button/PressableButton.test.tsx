@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react-native'
 import { impactAsync } from 'expo-haptics'
-import { PRESS_HAPTIC_DELAY_MS } from '../../lib/usePressHaptic'
+import { PRESS_HAPTIC_CANCEL_DRIFT_PX, PRESS_HAPTIC_DELAY_MS } from '../../lib/usePressHaptic'
 import { PressableButton } from './PressableButton'
 
 const BUTTON_LABEL = 'test-button'
@@ -131,6 +131,64 @@ describe('<PressableButton>', () => {
       await fireEvent(button, 'pressIn')
       jest.advanceTimersByTime(PRESS_HAPTIC_DELAY_MS - 60)
       await fireEvent(button, 'pressOut')
+      jest.advanceTimersByTime(PRESS_HAPTIC_DELAY_MS)
+
+      expect(mockedImpactAsync).not.toHaveBeenCalled()
+    })
+
+    test('touch drift cancels the early timer and release pulses once', async () => {
+      await render(<PressableButton onPress={jest.fn()} accessibilityLabel={BUTTON_LABEL} />)
+      const button = screen.getByRole('button', { name: BUTTON_LABEL })
+
+      await fireEvent(button, 'pressIn', { nativeEvent: { pageX: 100, pageY: 100 } })
+      await fireEvent(button, 'touchMove', {
+        nativeEvent: { pageX: 100 + PRESS_HAPTIC_CANCEL_DRIFT_PX + 4, pageY: 100 },
+      })
+      jest.advanceTimersByTime(PRESS_HAPTIC_DELAY_MS)
+
+      expect(mockedImpactAsync).not.toHaveBeenCalled()
+
+      await fireEvent(button, 'press')
+
+      expect(mockedImpactAsync).toHaveBeenCalledTimes(1)
+    })
+
+    test('small wiggle under the drift threshold keeps the early pulse', async () => {
+      await render(<PressableButton accessibilityLabel={BUTTON_LABEL} />)
+      const button = screen.getByRole('button', { name: BUTTON_LABEL })
+
+      await fireEvent(button, 'pressIn', { nativeEvent: { pageX: 100, pageY: 100 } })
+      await fireEvent(button, 'touchMove', {
+        nativeEvent: { pageX: 100 + PRESS_HAPTIC_CANCEL_DRIFT_PX - 3, pageY: 100 },
+      })
+      jest.advanceTimersByTime(PRESS_HAPTIC_DELAY_MS)
+
+      expect(mockedImpactAsync).toHaveBeenCalledTimes(1)
+    })
+
+    test('movement after the early pulse does not add a second haptic', async () => {
+      await render(<PressableButton onPress={jest.fn()} accessibilityLabel={BUTTON_LABEL} />)
+      const button = screen.getByRole('button', { name: BUTTON_LABEL })
+
+      await fireEvent(button, 'pressIn', { nativeEvent: { pageX: 100, pageY: 100 } })
+      jest.advanceTimersByTime(PRESS_HAPTIC_DELAY_MS)
+      await fireEvent(button, 'touchMove', { nativeEvent: { pageX: 120, pageY: 100 } })
+      jest.advanceTimersByTime(PRESS_HAPTIC_DELAY_MS)
+      await fireEvent(button, 'press')
+
+      expect(mockedImpactAsync).toHaveBeenCalledTimes(1)
+    })
+
+    test('web-wrapped touch points cancel the early timer too', async () => {
+      await render(<PressableButton accessibilityLabel={BUTTON_LABEL} />)
+      const button = screen.getByRole('button', { name: BUTTON_LABEL })
+
+      await fireEvent(button, 'pressIn', {
+        nativeEvent: { touches: [{ pageX: 100, pageY: 100 }] },
+      })
+      await fireEvent(button, 'touchMove', {
+        nativeEvent: { touches: [{ pageX: 120, pageY: 100 }] },
+      })
       jest.advanceTimersByTime(PRESS_HAPTIC_DELAY_MS)
 
       expect(mockedImpactAsync).not.toHaveBeenCalled()

@@ -12,7 +12,19 @@ export interface PressableButtonProps extends Omit<PressableProps, 'accessibilit
 }
 
 export const PressableButton = forwardRef<ViewInstance, PressableButtonProps>(
-  ({ accessibilityRole, disabled, onLongPress, onPress, onPressIn, onPressOut, ...props }, ref) => {
+  (
+    {
+      accessibilityRole,
+      disabled,
+      onLongPress,
+      onPress,
+      onPressIn,
+      onPressOut,
+      onTouchMove,
+      ...props
+    },
+    ref,
+  ) => {
     const pressHaptic = usePressHaptic({ enabled: !disabled, hasLongPress: !!onLongPress })
 
     return (
@@ -21,13 +33,17 @@ export const PressableButton = forwardRef<ViewInstance, PressableButtonProps>(
         ref={ref}
         disabled={disabled}
         accessibilityRole={accessibilityRole ?? 'button'}
-        onPressIn={event => {
-          pressHaptic.onPressIn()
-          onPressIn?.(event)
-        }}
         onPressOut={event => {
           pressHaptic.onPressOut()
           onPressOut?.(event)
+        }}
+        onPressIn={event => {
+          pressHaptic.onPressIn(event)
+          onPressIn?.(event)
+        }}
+        onTouchMove={event => {
+          pressHaptic.onTouchMove(event)
+          onTouchMove?.(event)
         }}
         onPress={event => {
           // Early haptic already pulsed during the press — do not repeat it. A
