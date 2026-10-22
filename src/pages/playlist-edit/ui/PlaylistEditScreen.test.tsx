@@ -199,10 +199,10 @@ describe('<PlaylistEditScreen>', () => {
   test('starts the drag from the handle and ignores a long-press on the row body', async () => {
     const { getAllByLabelText, getByText } = await renderScreen()
 
-    fireEvent(getAllByLabelText(DRAG_LABEL)[0], 'pressIn')
+    await fireEvent(getAllByLabelText(DRAG_LABEL)[0], 'pressIn')
     expect(mockDrag).toHaveBeenCalledTimes(1)
 
-    fireEvent(getByText(SERMON_A.title), 'longPress')
+    await fireEvent(getByText(SERMON_A.title), 'longPress')
     expect(mockDrag).toHaveBeenCalledTimes(1)
   })
 

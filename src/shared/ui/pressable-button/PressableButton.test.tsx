@@ -7,6 +7,10 @@ const LINK_LABEL = 'test-link'
 
 const mockedImpactAsync = impactAsync as jest.MockedFunction<typeof impactAsync>
 
+// hapticLight throttles calls within a 45ms window and the suite runs faster
+// than that — wait it out so each long-press starts from a clean slate.
+const waitOutHapticThrottle = (): Promise<void> => new Promise(resolve => setTimeout(resolve, 50))
+
 describe('<PressableButton>', () => {
   beforeEach(() => {
     jest.clearAllMocks()
@@ -45,6 +49,24 @@ describe('<PressableButton>', () => {
     await render(<PressableButton accessibilityLabel={BUTTON_LABEL} />)
 
     await fireEvent(screen.getByRole('button', { name: BUTTON_LABEL }), 'pressIn')
+
+    expect(mockedImpactAsync).not.toHaveBeenCalled()
+  })
+
+  test('completed long-press triggers haptics', async () => {
+    await render(<PressableButton onLongPress={jest.fn()} accessibilityLabel={BUTTON_LABEL} />)
+
+    await waitOutHapticThrottle()
+    await fireEvent(screen.getByRole('button', { name: BUTTON_LABEL }), 'longPress')
+
+    expect(mockedImpactAsync).toHaveBeenCalledTimes(1)
+  })
+
+  test('disabled button does not trigger haptics on long-press', async () => {
+    await render(<PressableButton disabled accessibilityLabel={BUTTON_LABEL} />)
+
+    await waitOutHapticThrottle()
+    await fireEvent(screen.getByRole('button', { name: BUTTON_LABEL }), 'longPress')
 
     expect(mockedImpactAsync).not.toHaveBeenCalled()
   })

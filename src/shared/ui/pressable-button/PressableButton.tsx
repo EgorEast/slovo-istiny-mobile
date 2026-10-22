@@ -11,12 +11,19 @@ export interface PressableButtonProps extends Omit<PressableProps, 'accessibilit
 }
 
 export const PressableButton = forwardRef<ViewInstance, PressableButtonProps>(
-  ({ accessibilityRole, disabled, onPress, ...props }, ref) => (
+  ({ accessibilityRole, disabled, onLongPress, onPress, ...props }, ref) => (
     <Pressable
       {...props}
       ref={ref}
       disabled={disabled}
       accessibilityRole={accessibilityRole ?? 'button'}
+      onLongPress={event => {
+        // Long-press is a completed gesture too: feedback fires together with
+        // the action it confirms (context menu, drag start), same rule as the
+        // tap haptic above.
+        if (!disabled) hapticLight()
+        onLongPress?.(event)
+      }}
       onPress={event => {
         // Haptic on the completed tap only: onPressIn already fired before a
         // scroll/swipe claims the gesture, so press-down feedback vibrated on

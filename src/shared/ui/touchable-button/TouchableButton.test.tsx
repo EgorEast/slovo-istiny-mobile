@@ -5,6 +5,10 @@ import { TouchableButton } from './TouchableButton'
 
 const mockedImpactAsync = impactAsync as jest.MockedFunction<typeof impactAsync>
 
+// hapticLight throttles calls within a 45ms window and the suite runs faster
+// than that — wait it out so each long-press starts from a clean slate.
+const waitOutHapticThrottle = (): Promise<void> => new Promise(resolve => setTimeout(resolve, 50))
+
 describe('<TouchableButton>', () => {
   beforeEach(() => {
     jest.clearAllMocks()
@@ -89,5 +93,44 @@ describe('<TouchableButton>', () => {
     await fireEvent(screen.getByRole('button', { name: 'tap' }), 'pressIn')
 
     expect(onPressIn).toHaveBeenCalledTimes(1)
+  })
+
+  test('completed long-press triggers haptics', async () => {
+    await render(
+      <TouchableButton onLongPress={jest.fn()}>
+        <Text>tap</Text>
+      </TouchableButton>,
+    )
+
+    await waitOutHapticThrottle()
+    await fireEvent(screen.getByRole('button', { name: 'tap' }), 'longPress')
+
+    expect(mockedImpactAsync).toHaveBeenCalledTimes(1)
+  })
+
+  test('disabled button does not trigger haptics on long-press', async () => {
+    await render(
+      <TouchableButton disabled onLongPress={jest.fn()}>
+        <Text>tap</Text>
+      </TouchableButton>,
+    )
+
+    await waitOutHapticThrottle()
+    await fireEvent(screen.getByRole('button', { name: 'tap' }), 'longPress')
+
+    expect(mockedImpactAsync).not.toHaveBeenCalled()
+  })
+
+  test('hapticDisabled button does not trigger haptics on long-press', async () => {
+    await render(
+      <TouchableButton hapticDisabled onLongPress={jest.fn()}>
+        <Text>tap</Text>
+      </TouchableButton>,
+    )
+
+    await waitOutHapticThrottle()
+    await fireEvent(screen.getByRole('button', { name: 'tap' }), 'longPress')
+
+    expect(mockedImpactAsync).not.toHaveBeenCalled()
   })
 })
