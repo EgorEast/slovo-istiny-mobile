@@ -6,6 +6,10 @@ import { PressableButton } from './PressableButton'
 const BUTTON_LABEL = 'test-button'
 const LINK_LABEL = 'test-link'
 
+// Long enough for RN Pressability to arm and fire its default ~500ms long-press
+// timer inside the simulated gesture.
+const LONG_PRESS_GESTURE_MS = 520
+
 const mockedImpactAsync = impactAsync as jest.MockedFunction<typeof impactAsync>
 
 // hapticLight merges pulses within a 200ms window and the suite runs faster
@@ -83,6 +87,30 @@ describe('<PressableButton>', () => {
     await fireEvent(screen.getByRole('button', { name: BUTTON_LABEL }), 'longPress')
 
     expect(mockedImpactAsync).not.toHaveBeenCalled()
+  })
+
+  test('slow press without a long-press action vibrates exactly once', async () => {
+    const onPress = jest.fn()
+    await waitOutHapticThrottle()
+    await render(<PressableButton onPress={onPress} accessibilityLabel={BUTTON_LABEL} />)
+    const button = screen.getByRole('button', { name: BUTTON_LABEL })
+
+    // fireEvent('pressIn') calls the prop directly and skips Pressability, while
+    // the phantom second vibration comes from Pressability's long-press timer.
+    // Entering through the responder path replays the gesture the device runs.
+    await fireEvent(button, 'responderGrant', {
+      currentTarget: { measure: jest.fn() },
+      nativeEvent: { changedTouches: [], pageX: 0, pageY: 0, timestamp: Date.now(), touches: [] },
+      persist: jest.fn(),
+    })
+
+    await new Promise(resolve => setTimeout(resolve, LONG_PRESS_GESTURE_MS))
+
+    await fireEvent(button, 'pressOut')
+    await fireEvent(button, 'press')
+
+    expect(mockedImpactAsync).toHaveBeenCalledTimes(1)
+    expect(onPress).toHaveBeenCalledTimes(1)
   })
 
   describe('early press haptic', () => {

@@ -56,13 +56,15 @@ export const TouchableButton = forwardRef<
           if (!disabled && !hapticDisabled && !pressHaptic.shouldSkipHaptic()) hapticLight()
           onPress?.(event)
         }}
-        onLongPress={event => {
-          // Long-press is a completed gesture: feedback fires together with the
-          // action it confirms (context menu, drag start). Such elements skip the
-          // early press haptic, so the tap stays a single end-of-gesture pulse.
-          if (!disabled && !hapticDisabled) hapticLight()
-          onLongPress?.(event)
-        }}
+        {...(onLongPress && {
+          onLongPress: event => {
+            // Long-press is a completed gesture: feedback fires together with the
+            // action it confirms (context menu, drag start). Such elements skip the
+            // early press haptic, so the tap stays a single end-of-gesture pulse.
+            if (!disabled && !hapticDisabled) hapticLight()
+            onLongPress?.(event)
+          },
+        })}
       />
     )
   },

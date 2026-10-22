@@ -6,6 +6,10 @@ import { TouchableButton } from './TouchableButton'
 
 const mockedImpactAsync = impactAsync as jest.MockedFunction<typeof impactAsync>
 
+// Long enough for RN Pressability to arm and fire its default ~500ms long-press
+// timer inside the simulated gesture.
+const LONG_PRESS_GESTURE_MS = 520
+
 // hapticLight merges pulses within a 200ms window and the suite runs faster
 // than that — wait it out so each long-press starts from a clean slate.
 const waitOutHapticThrottle = (): Promise<void> => new Promise(resolve => setTimeout(resolve, 210))
@@ -146,6 +150,45 @@ describe('<TouchableButton>', () => {
     await fireEvent(screen.getByRole('button', { name: 'tap' }), 'longPress')
 
     expect(mockedImpactAsync).not.toHaveBeenCalled()
+  })
+
+  test('slow press without a long-press action vibrates exactly once', async () => {
+    const onPress = jest.fn()
+    await waitOutHapticThrottle()
+    await render(
+      <TouchableButton onPress={onPress}>
+        <Text>tap</Text>
+      </TouchableButton>,
+    )
+    const button = screen.getByRole('button', { name: 'tap' })
+
+    // fireEvent('pressIn') calls the prop directly and skips Pressability, while
+    // the phantom second vibration comes from Pressability's long-press timer.
+    // Entering through the responder path replays the gesture the device runs.
+    const nativeEvent = {
+      changedTouches: [],
+      pageX: 0,
+      pageY: 0,
+      timestamp: Date.now(),
+      touches: [],
+    }
+    await fireEvent(button, 'responderGrant', {
+      currentTarget: { measure: jest.fn() },
+      dispatchConfig: { registrationName: 'onResponderGrant' },
+      nativeEvent,
+      persist: jest.fn(),
+    })
+
+    await new Promise(resolve => setTimeout(resolve, LONG_PRESS_GESTURE_MS))
+
+    await fireEvent(button, 'responderRelease', {
+      currentTarget: { measure: jest.fn() },
+      nativeEvent,
+      persist: jest.fn(),
+    })
+
+    expect(mockedImpactAsync).toHaveBeenCalledTimes(1)
+    expect(onPress).toHaveBeenCalledTimes(1)
   })
 
   describe('early press haptic', () => {
