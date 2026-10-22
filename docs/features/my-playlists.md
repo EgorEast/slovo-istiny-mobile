@@ -16,12 +16,13 @@
 - `src/entities/playlist/lib/readStoredMyPlaylists.ts` — чтение/гидратация плейлистов из AsyncStorage
 - `src/entities/playlist/lib/readStoredSectionSettings.ts` — чтение/гидратация настроек оформления
 - `src/entities/playlist/lib/sanitizeLocalPlaylistSermon.ts` — санитизация снапшота проповеди
+- `src/entities/playlist/lib/useCreateLocalPlaylist.ts` — общий хук формы создания (название, `canSubmit`, гидратация, защита от двойной отправки)
 - `src/entities/playlist/lib/useFavoriteSermon.ts` — хук `useFavoriteSermon` (состояние «в избранном» + переключатель для строк и полноэкранного плеера; наружу — через `entities/playlist` и `@x`-точку `entities/playlist/@x/track-list`)
 - `src/entities/playlist/lib/customPlaylistShare.ts` — `buildCustomPlaylistSearchParams`/`parseCustomPlaylistParams` (обе формы `sermons`: packed и csv) + `deriveCustomPlaylistId` (детерминированный `custom-<16 hex>` id из title и упорядоченных `sermonIds`)
 - `src/entities/playlist/lib/sermonIdPacking.ts` — `packSermonIds`/`unpackSermonIds` (base64url-упаковка UUID, 16 байт на id)
-- `src/entities/playlist/index.ts` — публичный API (`FAVORITES_PLAYLIST`, `myPlaylistsAtom`, `loadMyPlaylists`, `createLocalPlaylist`, `renameLocalPlaylist`, `deleteLocalPlaylist`, `reorderMyPlaylists`, `reorderLocalPlaylistSermons`, `togglePlaylistSermon`, `useFavoriteSermon`, `sectionSettingsAtom`, `loadSectionSettings`, `updateSectionSettings`, `persistSectionSettings`, `LocalSectionSettings`)
+- `src/entities/playlist/index.ts` — публичный API (`FAVORITES_PLAYLIST`, `myPlaylistsAtom`, `loadMyPlaylists`, `createLocalPlaylist`, `useCreateLocalPlaylist`, `renameLocalPlaylist`, `deleteLocalPlaylist`, `reorderMyPlaylists`, `reorderLocalPlaylistSermons`, `togglePlaylistSermon`, `useFavoriteSermon`, `sectionSettingsAtom`, `loadSectionSettings`, `updateSectionSettings`, `persistSectionSettings`, `LocalSectionSettings`)
 - `src/entities/playlist/reorderLocalPlaylistSermons.ts` — перестановка проповедей внутри локального плейлиста (снапшоты `sermons` + авторитетные `sermonIds`)
-- `src/features/local-playlist-form/` — модалка создания (`CreateLocalPlaylistModal`), диалог удаления (`LocalPlaylistDeleteDialog`) и хук `useLocalPlaylistDelete`
+- `src/features/local-playlist-form/` — модалка создания (`CreateLocalPlaylistModal`), её экранная обёртка `useCreateLocalPlaylistForm` (закрытие + переход на созданный плейлист), диалог удаления (`LocalPlaylistDeleteDialog`) и хук `useLocalPlaylistDelete`
 - `src/pages/playlist-edit/` — экран редактирования локального плейлиста (переименование + порядок проповедей + удаление)
 - `src/entities/section/lib/mapItemsSize.ts`, `mapTransform.ts`, `mapWhereIsTitleLocated.ts` — мапперы полей оформления секции в `SliderItemSize`/`SliderItemTransform`/`WhereIsSlideTitleLocated` (перенесены из `pages/listen/lib`, чтобы их переиспользовали и слайдер, и экран «Мои плейлисты»); реэкспорт через `entities/section`
 - `src/pages/listen/ui/MyPlaylistsSlider.tsx` — секция «Мои плейлисты» на «Слушать»: рендерится через общий `Slider` с параметрами из `sectionSettingsAtom`, завершающая карточка «Создать»
@@ -176,6 +177,18 @@ reorder, персист принадлежности при toggle и CRUD-му�
 `togglePlaylistSermon`). Порядок операций тот же, что у `reorderMyPlaylists`:
 чтение атома → `withFavoritesFirst` → коммит `myPlaylistsAtom` → `persistMyPlaylists`;
 отказ записи логируется, атом остаётся закоммиченным.
+
+**Форма создания — общий хук.** Состояние формы (название, `canSubmit`,
+`submitting`, `submit`) живёт в `useCreateLocalPlaylist`
+(`src/entities/playlist/lib/useCreateLocalPlaylist.ts`), а не в фиче. Перед
+созданием хук гидратирует `myPlaylistsAtom`, если он ещё не загружен
+(`loadMyPlaylists` по `myPlaylistsLoadedAtom`), создаёт плейлист без проповедей
+(`createLocalPlaylist({ title: trimmed, sermonIds: [] })`), блокирует повторную
+отправку до завершения текущей и отдаёт результат в `onCreated`. Закрытие формы и
+навигация — забота вызывающего кода: модалка создания уводит на созданный
+плейлист, а встроенная форма в модалке «Добавить в плейлист» просто возвращается
+к списку (см. [add-to-playlist.md](./add-to-playlist.md) → «Создание плейлиста из
+модалки»).
 
 `renameLocalPlaylist(ctx, playlistId, title)` и `deleteLocalPlaylist(ctx, playlistId)` —
 read-modify-write по id с тем же путём персиста. **«Избранные» защищены**: попытка
@@ -370,7 +383,13 @@ drag-to-reorder, кнопки удаления и живые настройки 
 `shared/ui/modal`, как у «Добавить в плейлист»):
 
 - `CreateLocalPlaylistModal` — поле «Название» (`FormField`) + кнопка «Создать»,
-  недоступная, пока название пустое/пробельное. По отправке (кнопка или Enter в поле):
+  недоступная, пока название пустое/пробельное. Состояние формы живёт в общем хуке
+  `useCreateLocalPlaylist` (`entities/playlist`), а `useCreateLocalPlaylistForm`
+  (`src/features/local-playlist-form/lib/useCreateLocalPlaylistForm.ts`) добавляет к
+  нему закрытие модалки и переход на созданный плейлист. Поведение модалки не
+  изменилось; тот же хук переиспользует встроенная форма в модалке «Добавить в
+  плейлист» (см. [add-to-playlist.md](./add-to-playlist.md) → «Создание плейлиста
+  из модалки»). По отправке (кнопка или Enter в поле):
   гидратация `myPlaylistsAtom` (`loadMyPlaylists`, если он ещё не загружен по
   `myPlaylistsLoadedAtom`), затем `createLocalPlaylist({ title: trimmed, sermonIds: [] })`,
   закрытие и переход на созданный плейлист (`/listen/playlist?playlist=<id>`). Гидратация

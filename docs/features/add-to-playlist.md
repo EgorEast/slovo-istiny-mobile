@@ -6,10 +6,16 @@
 работает в **батч-режиме** — «Добавить все проповеди в плейлист» из меню шапки
 плейлиста добавляет/убирает сразу весь исходный список проповедей.
 
+Над списком есть строка **«Создать плейлист»**: она разворачивает встроенную форму
+создания, и новый пустой плейлист сразу появляется в списке — отметить его и
+сохранить можно, не выходя из модалки.
+
 **Файлы:**
 
 - `src/entities/playlist/localPlaylistMembership.ts` — экшен `togglePlaylistSermon`
 - `src/entities/playlist/localPlaylistStorage.ts` — приватный `persistMyPlaylists`
+- `src/entities/playlist/lib/useCreateLocalPlaylist.ts` — общий хук создания плейлиста
+  (см. [my-playlists.md](./my-playlists.md) → «Создание, переименование, удаление»)
 - `src/features/add-to-playlist/index.ts` — публичный API (`useAddToPlaylistModal`, тип `AddToPlaylistControls`)
 - `src/features/add-to-playlist/lib/addToPlaylistState.ts` — тип состояния (`sermon` | `all`)
 - `src/features/add-to-playlist/lib/addToPlaylistControls.ts` — DI-типы (`AddToPlaylistControls` / `AddToPlaylistBindings`)
@@ -23,6 +29,8 @@
 - `src/features/add-to-playlist/ui/AddToPlaylistModal.tsx` — модалка (диспетчер режимов)
 - `src/features/add-to-playlist/ui/AddSermonToPlaylistContent.tsx` — содержимое режима одной проповеди
 - `src/features/add-to-playlist/ui/AddAllToPlaylistContent.tsx` — содержимое батч-режима
+- `src/features/add-to-playlist/ui/AddToPlaylistBody.tsx` — тело: строка «Создать плейлист» ↔ встроенная форма
+- `src/features/add-to-playlist/ui/CreatePlaylistInlineForm.tsx` — форма создания внутри модалки
 - `src/features/add-to-playlist/ui/AddToPlaylistFooter.tsx` — футер «Отмена»/«Сохранить»
 - `src/features/add-to-playlist/ui/PlaylistMembershipList.tsx` — ограниченный по высоте список
 - `src/features/add-to-playlist/ui/PlaylistMembershipRow.tsx` — строка: название + чекбокс
@@ -82,8 +90,9 @@
   порядок атома, поэтому «Избранные» (запиннены первыми в `myPlaylistsAtom`,
   см. [my-playlists.md](./my-playlists.md)) остаются первыми **и в своей группе**
   независимо от принадлежности. Список — **все** плейлисты атома, включая
-  пользовательские: созданные формой (`createLocalPlaylist`) плейлисты появляются в
-  модалке автоматически (живая подписка), отдельного фильтра «только избранное» нет.
+  пользовательские: созданные формой (`createLocalPlaylist`) плейлисты — и на экране
+  «Мои плейлисты», и встроенной формой в самой модалке — появляются в модалке
+  автоматически (живая подписка), отдельного фильтра «только избранное» нет.
   Возвращаемый `isContained` — **снимок** атома: он задаёт начальное значение
   черновика и блокировку заполненных плейлистов, а не отражает ещё не сохранённые
   правки.
@@ -123,19 +132,47 @@
 не меняется. Тот же дефер применён и к `openAddAllToPlaylist` (меню шапки — тоже
 нативная `Modal`).
 
+### Создание плейлиста из модалки
+
+В **обоих режимах** над списком рендерится строка **«Создать плейлист»**
+(`AddToPlaylistBody`): иконка `Ionicons 'add'`, текст цвета `primary`,
+`accessibilityLabel` «Создать плейлист». Тап подменяет **список и футер**
+(«Отмена»/«Сохранить») встроенной формой `CreatePlaylistInlineForm`: `FormField`
+«Название» (плейсхолдер «Например: Проповеди недели») и две кнопки — «Отмена» и
+«Создать». Enter в поле отправляет форму через `FormSubmitContext`.
+
+- «Создать» недоступна, пока обрезанное название пустое или отправка в полёте.
+  Создание идёт через `useCreateLocalPlaylist` (`entities/playlist`): при
+  необходимости хук гидратирует `myPlaylistsAtom` (`loadMyPlaylists` по
+  `myPlaylistsLoadedAtom`), затем вызывает
+  `createLocalPlaylist({ title: trimmed, sermonIds: [] })` — плейлист создаётся
+  **без проповедей**, повторная отправка заблокирована до завершения текущей.
+- Навигации нет: по `onCreated` форма просто возвращается к списку. «Отмена»
+  делает то же самое и ничего не создаёт.
+- Новый плейлист появляется в списке **сразу** — `useSortedPlaylists` живая
+  подписка на `myPlaylistsAtom`, перезапроса нет. `createLocalPlaylist` пинит его
+  сразу после «Избранных», поэтому в группе плейлистов, не содержащих набор, он
+  оказывается первым.
+- Черновик галочек живёт выше формы (в контентных компонентах режима), поэтому и
+  создание, и отмена сохраняют уже отмеченные плейлисты. Дальше пользователь сам
+  отмечает новый плейлист и жмёт «Сохранить» — принадлежность применяется обычным
+  путём (см. выше).
+
 ### DI-пропсы (dependency inversion)
 
 Модалка принимает опциональные `AddToPlaylistBindings` (паттерн bind из
 `entities/track-list`): `renderRowWrapper(row, playlistId)` оборачивает строку
-плейлиста, `renderSaveWrapper(save)` — кнопку «Сохранить», а
+плейлиста, `renderCreateWrapper(create)` — строку «Создать плейлист»,
+`renderSaveWrapper(save)` — кнопку «Сохранить», а
 `bindControls({ setPlaylistChecked })` отдаёт владельцу управление выбором
 (`null` на анмаунте снимает привязку). `useAddToPlaylistModal` прокидывает их в
 модалку как есть. Фича об онбординге не знает — мост живёт на слое страницы:
-`useAddToPlaylistTour` (`pages/playlist`) оборачивает строку «Избранных» и кнопку
-«Сохранить» в `OnboardingTarget` (`playlist.add-modal-favorites` /
+`useAddToPlaylistTour` (`pages/playlist`) отдаёт обёртки строки «Избранных»,
+строки «Создать плейлист» и кнопки «Сохранить» в `OnboardingTarget`
+(`playlist.add-modal-favorites` / `playlist.add-modal-create` /
 `playlist.add-modal-save`) и регистрирует действие тура
-`check-add-modal-favorites`, а `usePlaylistAddToPlaylist` связывает его с
-модалкой. См. [features/onboarding.md](./onboarding.md).
+`check-add-modal-favorites`; с самой модалкой эту обвязку связывает
+`usePlaylistAddToPlaylist`. См. [features/onboarding.md](./onboarding.md).
 
 ## Батч-режим «Добавить все проповеди в плейлист»
 
