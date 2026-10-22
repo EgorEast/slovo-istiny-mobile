@@ -7,6 +7,10 @@ export const playerActionsScenario: OnboardingScenario = {
   scope: 'player',
   steps: [
     {
+      text: 'Покажем две кнопки рядом с меню плеера: сердечко добавляет проповедь в «Избранные», а плюсик открывает выбор плейлистов. Нажмите «Далее».',
+      title: 'Избранное и плейлисты',
+    },
+    {
       targetId: 'player-fullscreen.favorite',
       text: 'Сердечко добавляет текущую проповедь в «Избранные» (или убирает из них).',
       title: 'В избранное',

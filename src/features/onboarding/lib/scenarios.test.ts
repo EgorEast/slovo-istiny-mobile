@@ -448,11 +448,15 @@ describe('onboarding scenario data', () => {
 
     expect(actions.scope).toBe('player')
     expect(actions.screens).toBeUndefined()
-    expect(actions.steps).toHaveLength(2)
-    expect(actions.steps[0].targetId).toBe('player-fullscreen.favorite')
+    expect(actions.steps).toHaveLength(3)
+    // The opening card describes the tour, so it carries no target.
+    expect(actions.steps[0].title).toBe('Избранное и плейлисты')
+    expect(actions.steps[0].targetId).toBeUndefined()
     expect(actions.steps[0].tapActionId).toBeUndefined()
-    expect(actions.steps[1].targetId).toBe('player-fullscreen.add-to-playlist')
+    expect(actions.steps[1].targetId).toBe('player-fullscreen.favorite')
     expect(actions.steps[1].tapActionId).toBeUndefined()
+    expect(actions.steps[2].targetId).toBe('player-fullscreen.add-to-playlist')
+    expect(actions.steps[2].tapActionId).toBeUndefined()
   })
 
   test('playlist-add walks the row menu and ends on the playlist picker', () => {
