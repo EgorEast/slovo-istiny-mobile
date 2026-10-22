@@ -1,10 +1,12 @@
 import { type Ionicons } from '@expo/vector-icons'
 import { type Href } from 'expo-router'
 import { backupScenario } from './scenarioData/backup'
+import { favoritesScenario } from './scenarioData/favorites'
 import { historyScenario } from './scenarioData/history'
 import { listenScenario } from './scenarioData/listen'
 import { offlineScenario } from './scenarioData/offline'
 import { playerScenario } from './scenarioData/player'
+import { playerActionsScenario } from './scenarioData/player-actions'
 import { playerDescriptionScenario } from './scenarioData/player-description'
 import { playerIntroScenario } from './scenarioData/player-intro'
 import { playerSoundScenario } from './scenarioData/player-sound'
@@ -79,10 +81,12 @@ export const scenarios: OnboardingScenario[] = [
   playerDescriptionScenario,
   playerSpeedScenario,
   playerSoundScenario,
+  playerActionsScenario,
   playlistsScenario,
   searchScenario,
   playlistMenuScenario,
   playlistAddScenario,
+  favoritesScenario,
   playlistOfflineScenario,
   playlistShareScenario,
   historyScenario,
@@ -98,10 +102,12 @@ export const scenarios: OnboardingScenario[] = [
 
 export const scenariosById: Record<OnboardingScenarioId, OnboardingScenario> = {
   backup: backupScenario,
+  favorites: favoritesScenario,
   history: historyScenario,
   listen: listenScenario,
   offline: offlineScenario,
   player: playerScenario,
+  'player-actions': playerActionsScenario,
   'player-description': playerDescriptionScenario,
   'player-intro': playerIntroScenario,
   'player-sound': playerSoundScenario,

@@ -56,7 +56,7 @@ describe('<ScenarioPickerModal>', () => {
     ])
   })
 
-  test('keeps the four playlist tours local on the playlist screen', async () => {
+  test('keeps the five playlist tours local on the playlist screen', async () => {
     mockPathname.mockReturnValue('/listen/playlist')
 
     await renderPicker()
@@ -64,6 +64,7 @@ describe('<ScenarioPickerModal>', () => {
     expectRowTitles([
       'Экран плейлиста',
       'Добавление в плейлист',
+      'Избранное',
       'Прослушивание без интернета',
       'Поделиться плейлистом',
       'Результаты поиска',
@@ -165,6 +166,7 @@ describe('<ScenarioPickerModal>', () => {
       'Подробнее и таймкоды',
       'Скорость прослушивания',
       'Настройка звука',
+      'Избранное и плейлисты',
       'Результаты поиска',
       'Резервное копирование',
       'Поделиться приложением',

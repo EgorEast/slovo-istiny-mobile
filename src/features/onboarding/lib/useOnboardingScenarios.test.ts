@@ -77,6 +77,7 @@ describe('useOnboardingScenarios', () => {
       'player-description',
       'player-speed',
       'player-sound',
+      'player-actions',
     ])
   })
 })

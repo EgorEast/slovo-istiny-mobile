@@ -256,6 +256,7 @@ describe('onboarding scenario data', () => {
       'player-description',
       'player-speed',
       'player-sound',
+      'player-actions',
     ] as const
 
     playerScenarioIds.forEach(id => {
@@ -427,6 +428,33 @@ describe('onboarding scenario data', () => {
     expect(playlistMenu.steps[10].actionOnEnterId).toBe('close-playlist-menu')
   })
 
+  test('favorites tour explains the row heart and where the playlist lives', () => {
+    const favorites = scenariosById.favorites
+
+    expect(favorites.title).toBe('Избранное')
+    expect(favorites.screens).toEqual(['/listen/playlist'])
+    expect(favorites.steps).toHaveLength(3)
+    // The opening card describes the tour, so it carries no target.
+    expect(favorites.steps[0].targetId).toBeUndefined()
+    expect(favorites.steps[0].tapActionId).toBeUndefined()
+    expect(favorites.steps[1].targetId).toBe('playlist.row-favorite')
+    expect(favorites.steps[1].skipIfMissing).toBe(true)
+    expect(favorites.steps[1].tapActionId).toBeUndefined()
+    expect(favorites.steps[2].targetId).toBeUndefined()
+  })
+
+  test('player-actions spotlights the favorite and playlist buttons in the fullscreen player', () => {
+    const actions = scenariosById['player-actions']
+
+    expect(actions.scope).toBe('player')
+    expect(actions.screens).toBeUndefined()
+    expect(actions.steps).toHaveLength(2)
+    expect(actions.steps[0].targetId).toBe('player-fullscreen.favorite')
+    expect(actions.steps[0].tapActionId).toBeUndefined()
+    expect(actions.steps[1].targetId).toBe('player-fullscreen.add-to-playlist')
+    expect(actions.steps[1].tapActionId).toBeUndefined()
+  })
+
   test('playlist-add walks the row menu and ends on the playlist picker', () => {
     const playlistAdd = scenariosById['playlist-add']
 
@@ -542,7 +570,7 @@ describe('onboarding scenario data', () => {
     expect(deck[1].exitStepIndexes).toEqual([3])
   })
 
-  test('the playlist screen offers four local tours', () => {
+  test('the playlist screen offers five local tours', () => {
     const localIds = scenarios
       .filter(scenario => scenario.screens?.includes('/listen/playlist') ?? false)
       .map(scenario => scenario.id)
@@ -550,6 +578,7 @@ describe('onboarding scenario data', () => {
     expect(localIds).toEqual([
       'playlist-menu',
       'playlist-add',
+      'favorites',
       'playlist-offline',
       'playlist-share',
     ])

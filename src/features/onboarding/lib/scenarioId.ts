@@ -1,8 +1,10 @@
 export type OnboardingScenarioId =
   | 'backup'
+  | 'favorites'
   | 'history'
   | 'listen'
   | 'offline'
+  | 'player-actions'
   | 'player-description'
   | 'player-intro'
   | 'player-sound'
