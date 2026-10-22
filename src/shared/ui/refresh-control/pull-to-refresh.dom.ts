@@ -6,6 +6,9 @@ export const isDomNode = (node: unknown): node is HTMLElement =>
 export const isElementLike = (node: unknown): node is HTMLElement =>
   typeof node === 'object' && node !== null && 'scrollTop' in node
 
+export const isElementWithClosest = (target: unknown): target is Element =>
+  typeof target === 'object' && target !== null && 'closest' in target
+
 const setDistance = (
   content: HTMLElement | null,
   spinner: HTMLElement | null,

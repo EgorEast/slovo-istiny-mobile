@@ -1,5 +1,11 @@
 import { reportError } from '../../model/error-dialog'
-import { dragTo, isElementLike, settle, setTransition } from './pull-to-refresh.dom'
+import {
+  dragTo,
+  isElementLike,
+  isElementWithClosest,
+  settle,
+  setTransition,
+} from './pull-to-refresh.dom'
 import {
   computeDisplayedPull,
   findVerticalScrollableAncestor,
@@ -19,11 +25,12 @@ interface PullGestureRefs {
   spinner: { current: HTMLElement | null }
 }
 
+const SLIDER_DRAG_SELECTOR = '[data-slider-drag]'
+const touchY = (event: TouchEvent) => event.touches[0]?.pageY ?? 0
+
 /**
  * Wires the touch gesture onto a web wrapper node and returns its cleanup.
- *
- * Pulling only starts when the nearest vertical scroll container sits at the
- * top; scrolling up (or a container already scrolled) leaves touches untouched.
+ * Pulling starts only when the nearest vertical scroll container sits at the top.
  * @param node - Web wrapper element that receives the touch listeners.
  * @param refs - Mutable refs and state setters the gesture reads and updates.
  * @returns Cleanup that removes every listener.
@@ -33,8 +40,6 @@ export const attachPullGesture = (node: HTMLElement, refs: PullGestureRefs) => {
   let startY = 0
   let tracking = false
 
-  const touchY = (event: TouchEvent) => event.touches[0]?.pageY ?? 0
-
   const stopTracking = () => {
     tracking = false
     refs.dragging.current = false
@@ -42,9 +47,10 @@ export const attachPullGesture = (node: HTMLElement, refs: PullGestureRefs) => {
   }
 
   const handleStart = (event: TouchEvent) => {
-    const target = event.target
+    // Жест, начатый на горизонтальном слайдере, принадлежит слайдеру — не рефрешим.
+    if (isElementWithClosest(event.target) && event.target.closest(SLIDER_DRAG_SELECTOR)) return
     scrollable = findVerticalScrollableAncestor(
-      isElementLike(target) ? target : null,
+      isElementLike(event.target) ? event.target : null,
       element => window.getComputedStyle(element).overflowY,
     )
     tracking = scrollable !== null && scrollable.scrollTop <= 0
@@ -73,13 +79,9 @@ export const attachPullGesture = (node: HTMLElement, refs: PullGestureRefs) => {
 
     refs.dragging.current = true
     const displayed = computeDisplayedPull(deltaY)
+    const spinnerOpacity = Math.min(displayed / TRIGGER_DISTANCE, 1)
     refs.displayedPull.current = displayed
-    dragTo(
-      refs.content.current,
-      refs.spinner.current,
-      displayed,
-      Math.min(displayed / TRIGGER_DISTANCE, 1),
-    )
+    dragTo(refs.content.current, refs.spinner.current, displayed, spinnerOpacity)
     refs.onArm(displayed >= TRIGGER_DISTANCE)
   }
 

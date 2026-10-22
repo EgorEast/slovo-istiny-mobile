@@ -27,6 +27,11 @@ const createTouchTarget = (scrollable: FakeScrollable) => ({
   scrollTop: 0,
 })
 
+const createSliderDragTarget = (scrollable: FakeScrollable) => ({
+  ...createTouchTarget(scrollable),
+  closest: (selector: string) => (selector === '[data-slider-drag]' ? { tagName: 'DIV' } : null),
+})
+
 const createStyleNode = () => ({ addEventListener: jest.fn(), style: {} as Record<string, string> })
 
 const createFakeWrapper = () => {
@@ -179,6 +184,31 @@ describe('usePullToRefreshGesture', () => {
 
     expect(onRefresh).not.toHaveBeenCalled()
     expect(content.style.transform).toBe(ZERO_TRANSFORM)
+  })
+
+  test('ignores a pull that starts inside a horizontal slider', async () => {
+    const onRefresh = jest.fn()
+    const getGesture = await renderGesture(onRefresh)
+    const wrapper = createFakeWrapper()
+    const content = createStyleNode()
+    await attachNodes(getGesture(), wrapper, content, createStyleNode())
+
+    const initialTransform = content.style.transform
+    const target = createSliderDragTarget(createScrollable())
+    await act(async () => {
+      wrapper.dispatch('touchstart', touch(target, 100))
+    })
+    await act(async () => {
+      wrapper.dispatch('touchmove', touch(target, 220))
+    })
+    expect(content.style.transform).toBe(initialTransform)
+
+    await act(async () => {
+      wrapper.dispatch('touchend', touch(target, 220))
+    })
+
+    expect(onRefresh).not.toHaveBeenCalled()
+    expect(content.style.transform).toBe(initialTransform)
   })
 
   test('debounces repeated pulls within the minimum interval', async () => {

@@ -84,7 +84,7 @@
 
 - Потягивание вниз на основном скролле (`ScrollView`) перезагружает всё содержимое экрана разом: `fetchAllSections` (секции, cache-first + фоновый revalidate), `loadMyPlaylists` и `loadSectionSettings` (локальные плейлисты и настройки оформления) через `Promise.all` (`usePullToRefresh`, `src/pages/listen/lib/usePullToRefresh.ts`). Спиннер — нативный `RefreshControl` (`tintColor`/`colors` = `currentTheme.primary`). Жест вызывает экшены **напрямую**, минуя mount-гварды слайдеров, поэтому форсирует перезагрузку и секций, и локальных данных.
 - **Антидребезг:** пока запрос в полёте, повторное потягивание игнорируется; второй жест в пределах `REFRESH_MIN_INTERVAL_MS = 2000` мс не запускает даже спиннер — защита сервера от серии случайных жестов. Метка времени последнего обновления хранится в ref компонента. Константа `REFRESH_MIN_INTERVAL_MS` — общая (`shared/ui/refresh-control/pull-to-refresh.lib.ts`), её же использует web-жест `PullToRefresh`.
-- **Web:** `RefreshControl` — no-op, жест реализует собственный `PullToRefresh` (тач-события, порог, тот же дебаунс 2 с) — см. [features/web.md](../features/web.md).
+- **Web:** `RefreshControl` — no-op, жест реализует собственный `PullToRefresh` (тач-события, порог, тот же дебаунс 2 с) — см. [features/web.md](../features/web.md). Тачи, начатые внутри горизонтального слайдера (контейнер помечен `data-slider-drag` через `src/shared/ui/slider/lib/useSliderDragMarker.ts`), pull-to-refresh не захватывает — иначе диагональный драг слайдера запускал бы и прокрутку, и рефреш.
 
 ## Куда можно перейти
 
