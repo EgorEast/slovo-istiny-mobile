@@ -6,13 +6,13 @@ import { TouchableButton } from './TouchableButton'
 
 const mockedImpactAsync = impactAsync as jest.MockedFunction<typeof impactAsync>
 
-// hapticLight throttles calls within a 45ms window and the suite runs faster
+// hapticLight merges pulses within a 200ms window and the suite runs faster
 // than that — wait it out so each long-press starts from a clean slate.
-const waitOutHapticThrottle = (): Promise<void> => new Promise(resolve => setTimeout(resolve, 50))
+const waitOutHapticThrottle = (): Promise<void> => new Promise(resolve => setTimeout(resolve, 210))
 
 // Early-haptic tests advance the press delay instead of sleeping it out. The
 // clock starts far ahead of wall time (the real-timer tests above leave a recent
-// throttle stamp) and steps forward per test, so the module-level 45ms throttle
+// throttle stamp) and steps forward per test, so the module-level 200ms throttle
 // never interferes.
 const FIRST_FAKE_NOW_MS = 4_000_000_000_000
 let fakeNowMs = FIRST_FAKE_NOW_MS

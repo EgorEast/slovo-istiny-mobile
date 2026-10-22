@@ -9,7 +9,12 @@ import { Platform } from 'react-native'
 import { hapticsEnabledAtom } from '../model/settings'
 import { ctx } from './reatom-ctx/ctx'
 
-const HAPTIC_THROTTLE_MS = 45
+// One vibration per gesture. The window is wide enough to merge any
+// same-gesture double pulse — the early-haptic timer pulse plus the release pulse
+// coming from a re-granted responder or a mid-gesture remount (both start with a
+// clean per-instance dedup flag) — into ONE perceptible vibration. Distinct
+// intentional taps are >=200ms apart, so nothing humanly noticeable is lost.
+const HAPTIC_THROTTLE_MS = 200
 const LIGHT_VIBRATION_MS = 12
 const TICK_VIBRATION_MS = 10
 

@@ -8,13 +8,13 @@ const LINK_LABEL = 'test-link'
 
 const mockedImpactAsync = impactAsync as jest.MockedFunction<typeof impactAsync>
 
-// hapticLight throttles calls within a 45ms window and the suite runs faster
+// hapticLight merges pulses within a 200ms window and the suite runs faster
 // than that — wait it out so each long-press starts from a clean slate.
-const waitOutHapticThrottle = (): Promise<void> => new Promise(resolve => setTimeout(resolve, 50))
+const waitOutHapticThrottle = (): Promise<void> => new Promise(resolve => setTimeout(resolve, 210))
 
 // Early-haptic tests advance the press delay instead of sleeping it out. The
 // clock starts far ahead of wall time (the real-timer tests above leave a recent
-// throttle stamp) and steps forward per test, so the module-level 45ms throttle
+// throttle stamp) and steps forward per test, so the module-level 200ms throttle
 // never interferes.
 const FIRST_FAKE_NOW_MS = 4_000_000_000_000
 let fakeNowMs = FIRST_FAKE_NOW_MS
@@ -104,6 +104,31 @@ describe('<PressableButton>', () => {
       expect(mockedImpactAsync).toHaveBeenCalledTimes(1)
 
       await fireEvent(button, 'press')
+
+      expect(mockedImpactAsync).toHaveBeenCalledTimes(1)
+    })
+
+    test('a re-granted responder mid-gesture still vibrates only once', async () => {
+      const { rerender } = await render(
+        <PressableButton key='first' onPress={jest.fn()} accessibilityLabel={BUTTON_LABEL} />,
+      )
+
+      await fireEvent(screen.getByRole('button', { name: BUTTON_LABEL }), 'pressIn')
+      jest.advanceTimersByTime(PRESS_HAPTIC_DELAY_MS)
+
+      expect(mockedImpactAsync).toHaveBeenCalledTimes(1)
+
+      await fireEvent(screen.getByRole('button', { name: BUTTON_LABEL }), 'pressOut')
+      // The finger stays down a moment longer before the release lands.
+      jest.advanceTimersByTime(150)
+
+      // A mid-gesture remount (or a re-granted responder) starts with a clean
+      // per-instance dedup flag, so only the vibration-layer window can merge the
+      // release pulse into the tap that already pulsed.
+      await rerender(
+        <PressableButton key='second' onPress={jest.fn()} accessibilityLabel={BUTTON_LABEL} />,
+      )
+      await fireEvent(screen.getByRole('button', { name: BUTTON_LABEL }), 'press')
 
       expect(mockedImpactAsync).toHaveBeenCalledTimes(1)
     })

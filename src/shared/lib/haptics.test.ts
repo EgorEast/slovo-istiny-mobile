@@ -78,7 +78,7 @@ describe('hapticLight', () => {
 
       expect(mockedPerformAndroidHapticsAsync).toHaveBeenCalledTimes(1)
 
-      jest.setSystemTime(3050)
+      jest.setSystemTime(3200)
       hapticLight()
 
       expect(mockedPerformAndroidHapticsAsync).toHaveBeenCalledTimes(2)
@@ -87,10 +87,28 @@ describe('hapticLight', () => {
     }
   })
 
+  test('merges a same-gesture double pulse (150ms apart) into one vibration', () => {
+    const restorePlatform = jest.replaceProperty(Platform, 'OS', 'android')
+    try {
+      // Early-timer pulse, then a release pulse from a re-granted responder:
+      // the second one lands well inside the window and stays silent.
+      jest.setSystemTime(5000)
+      hapticLight()
+
+      jest.setSystemTime(5150)
+      hapticLight()
+
+      expect(mockedPerformAndroidHapticsAsync).toHaveBeenCalledTimes(1)
+      expect(mockedPerformAndroidHapticsAsync).toHaveBeenCalledWith(AndroidHaptics.Virtual_Key)
+    } finally {
+      restorePlatform.restore()
+    }
+  })
+
   test('swallows Android haptic rejection (no unhandled rejection)', async () => {
     const restorePlatform = jest.replaceProperty(Platform, 'OS', 'android')
     try {
-      jest.setSystemTime(4000)
+      jest.setSystemTime(6000)
       mockedPerformAndroidHapticsAsync.mockRejectedValueOnce(new Error('haptic failed'))
 
       hapticLight()
@@ -274,6 +292,17 @@ describe('web vibration', () => {
       hapticLight()
 
       expect(vibrate).toHaveBeenCalledTimes(1)
+
+      // A same-gesture follow-up still lands inside the one-vibration window.
+      jest.setSystemTime(clock + 150)
+      hapticLight()
+
+      expect(vibrate).toHaveBeenCalledTimes(1)
+
+      jest.setSystemTime(clock + 250)
+      hapticLight()
+
+      expect(vibrate).toHaveBeenCalledTimes(2)
     } finally {
       restorePlatform.restore()
     }
