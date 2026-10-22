@@ -1,10 +1,21 @@
 import { createCtx } from '@reatom/framework'
 import { act } from '@testing-library/react-native'
-import { type SermonData } from 'entities/sermon'
+import { currentAudioAtom, currentPlaylistAtom } from 'entities/player/@x/playlist'
+import { type SermonData, toAudioPlayerData } from 'entities/sermon'
 import { renderHookWithProviders } from 'shared/mocks/renderWithProviders'
 import { FAVORITES_PLAYLIST, type LocalPlaylistData } from '../localPlaylists'
 import { myPlaylistsAtom } from '../model'
 import { useFavoriteSermon } from './useFavoriteSermon'
+
+const mockResetPlaybackAction = jest.fn().mockResolvedValue(undefined)
+
+jest.mock('entities/player/@x/playlist', () => {
+  const actual = jest.requireActual('entities/player/@x/playlist')
+  return {
+    ...actual,
+    resetPlaybackAction: (...args: unknown[]) => mockResetPlaybackAction(...args),
+  }
+})
 
 const SERMON: SermonData = {
   artist: 'Pastor',
@@ -20,14 +31,23 @@ const favoritesWith = (sermons: SermonData[]): LocalPlaylistData => ({
   sermons,
 })
 
-const renderFavoriteHook = async (sermon: null | SermonData, playlists?: LocalPlaylistData[]) => {
+const renderFavoriteHook = async (
+  sermon: null | SermonData,
+  playlists?: LocalPlaylistData[],
+  setupPlayer?: (ctx: ReturnType<typeof createCtx>) => void,
+) => {
   const ctx = createCtx()
   myPlaylistsAtom(ctx, playlists ?? [FAVORITES_PLAYLIST])
+  setupPlayer?.(ctx)
   const utils = await renderHookWithProviders(() => useFavoriteSermon(sermon), { ctx })
   return { ...utils, ctx }
 }
 
 describe('useFavoriteSermon', () => {
+  beforeEach(() => {
+    jest.clearAllMocks()
+  })
+
   test('reports a sermon that is already in favorites', async () => {
     const { result } = await renderFavoriteHook(SERMON, [favoritesWith([SERMON])])
 
@@ -58,6 +78,30 @@ describe('useFavoriteSermon', () => {
       result.current.toggleFavorite()
     })
 
+    const favorites = ctx.get(myPlaylistsAtom).find(playlist => playlist.id === 'favorites')
+    expect(favorites?.sermonIds).not.toContain(SERMON.id)
+  })
+
+  test('keeps the player alive when un-favoriting the sermon playing from favorites', async () => {
+    const { ctx, result } = await renderFavoriteHook(
+      SERMON,
+      [favoritesWith([SERMON])],
+      setupCtx => {
+        currentPlaylistAtom(setupCtx, {
+          artwork: null,
+          id: FAVORITES_PLAYLIST.id,
+          sermons: [SERMON],
+          title: FAVORITES_PLAYLIST.title,
+        })
+        currentAudioAtom(setupCtx, toAudioPlayerData(SERMON))
+      },
+    )
+
+    await act(async () => {
+      result.current.toggleFavorite()
+    })
+
+    expect(mockResetPlaybackAction).not.toHaveBeenCalled()
     const favorites = ctx.get(myPlaylistsAtom).find(playlist => playlist.id === 'favorites')
     expect(favorites?.sermonIds).not.toContain(SERMON.id)
   })

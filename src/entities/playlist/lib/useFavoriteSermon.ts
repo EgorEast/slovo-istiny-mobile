@@ -12,6 +12,10 @@ import { myPlaylistsAtom } from '../model'
  * поэтому состояние читается из атома, а переключение идёт через
  * `togglePlaylistSermon` — тот же путь, что и у остальных поверхностей
  * (снапшот проповеди сохраняется, изменения персистятся).
+ * Сердечко — это закладка, а не транспорт: снятие избранного никогда не
+ * закрывает плеер. Полноэкранное сердечко живёт ВНУТРИ плеера, поэтому
+ * удаление проповеди, которая сейчас играет из «Избранных», не должно
+ * обрывать воспроизведение — переключение идёт с `suppressPlayerReset`.
  * @param sermon - Проповедь, для которой читаем/переключаем избранное; `null` — нет цели.
  * @returns `isFavorite` — проповедь уже в «Избранном»; `toggleFavorite` — переключатель
  * (no-op при `sermon === null`).
@@ -34,7 +38,9 @@ export const useFavoriteSermon = (
 
   const toggleFavorite = useCallback(() => {
     if (sermon === null) return
-    void togglePlaylistSermon(ctx, FAVORITES_PLAYLIST.id, sermon, !isFavorite)
+    void togglePlaylistSermon(ctx, FAVORITES_PLAYLIST.id, sermon, !isFavorite, {
+      suppressPlayerReset: true,
+    })
   }, [ctx, isFavorite, sermon])
 
   return { isFavorite, toggleFavorite }
