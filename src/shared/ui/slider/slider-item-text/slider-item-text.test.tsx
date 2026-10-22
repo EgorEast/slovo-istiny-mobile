@@ -93,6 +93,18 @@ describe('<SliderItemText/>', () => {
     })
   })
 
+  test('adds a black halo to the title drawn on artwork with light text', async () => {
+    jest.spyOn(Appearance, 'getColorScheme').mockReturnValue('dark')
+
+    await renderWithProviders(<SliderItemText isOnArtwork title={propsStub.title} />)
+
+    expect(screen.getByText(propsStub.title)).toHaveStyle({
+      textShadowColor: 'rgba(0, 0, 0, 0.7)',
+      textShadowOffset: { height: 0, width: 0 },
+      textShadowRadius: 10,
+    })
+  })
+
   test('does not add a halo when the title sits on a plate', async () => {
     await renderWithProviders(
       <SliderItemText

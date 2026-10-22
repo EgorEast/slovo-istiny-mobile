@@ -85,8 +85,7 @@ export const SliderItemText = ({
           style={[
             styles.subTitle,
             {
-              color:
-                isDarkBackground || isDarkBlurBackground ? COLORS.white : currentTheme.textMuted,
+              color: isOnPlate ? COLORS.white : currentTheme.textMuted,
             },
             { textAlign: subTitleTextAlign },
             titleStyle,
