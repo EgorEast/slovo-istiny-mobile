@@ -11,6 +11,7 @@ jest.mock('features/onboarding', () => ({
 
 const CHECK_ACTION_ID = 'check-add-modal-favorites'
 const FAVORITES_TARGET_ID = 'playlist.add-modal-favorites'
+const CREATE_TARGET_ID = 'playlist.add-modal-create'
 const SAVE_TARGET_ID = 'playlist.add-modal-save'
 
 const registeredAction = () =>
@@ -53,7 +54,7 @@ describe('useAddToPlaylistTour', () => {
     expect(setPlaylistChecked).not.toHaveBeenCalled()
   })
 
-  test('wraps only the favorites row and always the save button in onboarding targets', async () => {
+  test('wraps the favorites row, the create button and the save button in onboarding targets', async () => {
     const { result } = await renderHook(() => useAddToPlaylistTour())
     const row = <></>
 
@@ -61,6 +62,7 @@ describe('useAddToPlaylistTour', () => {
       FAVORITES_TARGET_ID,
     )
     expect(result.current.renderRowWrapper(row, 'other-playlist')).toBe(row)
+    expect(targetIdOf(result.current.renderCreateWrapper(row))).toBe(CREATE_TARGET_ID)
     expect(targetIdOf(result.current.renderSaveWrapper(row))).toBe(SAVE_TARGET_ID)
   })
 })
