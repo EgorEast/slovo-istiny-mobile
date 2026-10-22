@@ -11,7 +11,6 @@ const ADD_TO_PLAYLIST_LABEL = 'Добавить в плейлист'
 const MENU_LABEL = 'Меню плеера'
 const FAVORITE_TARGET_ID = 'player-fullscreen.favorite'
 const ADD_TO_PLAYLIST_TARGET_ID = 'player-fullscreen.add-to-playlist'
-const MENU_ICON_SIZE = 22
 
 /**
  * Кнопки полноэкранного плеера: [♥][＋][⋮].
@@ -56,7 +55,6 @@ export const PlayerMenuButtons = ({
           accessibilityLabel={isFavorite ? REMOVE_FROM_FAVORITES_LABEL : ADD_TO_FAVORITES_LABEL}
           Icon={
             <Ionicons
-              size={MENU_ICON_SIZE}
               name={isFavorite ? 'heart' : 'heart-outline'}
               style={[styles.menuIcon, isFavorite && { color: currentTheme.primary }]}
             />
@@ -68,9 +66,7 @@ export const PlayerMenuButtons = ({
           style={styles.menuButton}
           onPress={() => onAddToPlaylist?.(audio)}
           accessibilityLabel={ADD_TO_PLAYLIST_LABEL}
-          Icon={
-            <Ionicons size={MENU_ICON_SIZE} style={styles.menuIcon} name='add-circle-outline' />
-          }
+          Icon={<Ionicons style={styles.menuIcon} name='add-circle-outline' />}
         />
       </OnboardingTarget>
       <OnboardingTarget id={onboardingTargetId}>

@@ -52,6 +52,10 @@ export const expandedControlsStyles = StyleSheet.create({
   },
 
   menuContainer: {
+    alignItems: 'center',
+    // [♥][＋][⋮] — один ряд (RN по умолчанию сложил бы кнопки в колонку).
+    // right-край кластера совпадает с ⋮, поэтому якорь поповера не смещается.
+    flexDirection: 'row',
     position: 'relative',
   },
 
