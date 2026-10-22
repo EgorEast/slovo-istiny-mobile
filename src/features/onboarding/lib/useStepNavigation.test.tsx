@@ -128,7 +128,7 @@ describe('useStepNavigation card navigation', () => {
   })
 
   test('goNext ends the tour on the last card without visualizations', async () => {
-    const { ctx, result } = await renderNavigation(scenariosById['playlist-add'], 3)
+    const { ctx, result } = await renderNavigation(scenariosById['playlist-add'], 4)
 
     await act(async () => {
       result.current.goNext()

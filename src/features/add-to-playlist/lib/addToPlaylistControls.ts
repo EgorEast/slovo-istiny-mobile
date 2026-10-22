@@ -8,6 +8,8 @@ import { type ReactElement } from 'react'
 export interface AddToPlaylistBindings {
   /** Отдаёт владельцу управление выбором; `null` — снятие привязки. */
   bindControls?: (controls: AddToPlaylistControls | null) => void
+  /** Оборачивает кнопку «Создать плейлист» (например, в онбординг-цель). */
+  renderCreateWrapper?: (create: ReactElement) => ReactElement
   /** Оборачивает строку плейлиста (например, в онбординг-цель). */
   renderRowWrapper?: (row: ReactElement, playlistId: string) => ReactElement
   /** Оборачивает кнопку «Сохранить» (например, в онбординг-цель). */

@@ -7,13 +7,21 @@ const mockCreateLocalPlaylist = jest.fn()
 
 jest.mock('expo-router', () => ({ useRouter: () => ({ push: mockPush }) }))
 
-jest.mock('entities/playlist', () => {
-  const { action, atom } = jest.requireActual('@reatom/framework')
+jest.mock('entities/playlist/createLocalPlaylist', () => {
+  const { action } = jest.requireActual('@reatom/framework')
   return {
     createLocalPlaylist: action((_ctx: unknown, input: unknown) => {
       mockCreateLocalPlaylist(input)
       return Promise.resolve({ id: 'new-id' })
     }, 'createLocalPlaylistMock'),
+  }
+})
+
+jest.mock('entities/playlist/model', () => {
+  const { action, atom } = jest.requireActual('@reatom/framework')
+  const actual = jest.requireActual('entities/playlist/model')
+  return {
+    ...actual,
     loadMyPlaylists: action(() => Promise.resolve([]), 'loadMyPlaylistsMock'),
     myPlaylistsLoadedAtom: atom(true, 'myPlaylistsLoadedAtomMock'),
   }

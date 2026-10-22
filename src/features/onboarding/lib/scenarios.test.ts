@@ -464,7 +464,7 @@ describe('onboarding scenario data', () => {
 
     expect(playlistAdd.title).toBe('Добавление в плейлист')
     expect(playlistAdd.screens).toEqual(['/listen/playlist'])
-    expect(playlistAdd.steps).toHaveLength(6)
+    expect(playlistAdd.steps).toHaveLength(7)
     expect(playlistAdd.steps[0].targetId).toBeUndefined()
     expect(playlistAdd.steps[0].tapActionId).toBeUndefined()
     expect(playlistAdd.steps[0].tapTargetId).toBeUndefined()
@@ -480,11 +480,15 @@ describe('onboarding scenario data', () => {
     expect(playlistAdd.steps[4].actionOnEnterId).toBe('check-add-modal-favorites')
     expect(playlistAdd.steps[4].interactive).toBeUndefined()
     expect(playlistAdd.steps[4].presentOnTop).toBe(true)
-    // The save step lives inside the AddToPlaylist modal: it is a spotlight step
-    // (not pass-through) that re-presents the tour window above the app modal.
-    expect(playlistAdd.steps[5].targetId).toBe('playlist.add-modal-save')
+    // The create step and the save step both live inside the AddToPlaylist modal:
+    // they are spotlight steps (not pass-through) that re-present the tour window
+    // above the app modal.
+    expect(playlistAdd.steps[5].targetId).toBe('playlist.add-modal-create')
     expect(playlistAdd.steps[5].interactive).toBeUndefined()
     expect(playlistAdd.steps[5].presentOnTop).toBe(true)
+    expect(playlistAdd.steps[6].targetId).toBe('playlist.add-modal-save')
+    expect(playlistAdd.steps[6].interactive).toBeUndefined()
+    expect(playlistAdd.steps[6].presentOnTop).toBe(true)
   })
 
   test('playlist-offline walks the playlist cache menus and ends on the offline section', () => {

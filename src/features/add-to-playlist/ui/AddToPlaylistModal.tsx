@@ -21,6 +21,7 @@ const TITLE = 'Добавить в плейлист'
  * @param root0 - Пропсы модалки.
  * @param root0.bindControls - Отдаёт владельцу управление выбором.
  * @param root0.onClose - Закрыть модалку.
+ * @param root0.renderCreateWrapper - Оборачивает кнопку «Создать плейлист».
  * @param root0.renderRowWrapper - Оборачивает строку плейлиста.
  * @param root0.renderSaveWrapper - Оборачивает кнопку «Сохранить».
  * @param root0.state - Режим и данные (проповедь или исходный плейлист).
@@ -29,6 +30,7 @@ const TITLE = 'Добавить в плейлист'
 export const AddToPlaylistModal = ({
   bindControls,
   onClose,
+  renderCreateWrapper,
   renderRowWrapper,
   renderSaveWrapper,
   state,
@@ -51,6 +53,7 @@ export const AddToPlaylistModal = ({
             bindControls={bindControls}
             renderRowWrapper={renderRowWrapper}
             renderSaveWrapper={renderSaveWrapper}
+            renderCreateWrapper={renderCreateWrapper}
           />
         ) : (
           <AddAllToPlaylistContent
@@ -59,6 +62,7 @@ export const AddToPlaylistModal = ({
             bindControls={bindControls}
             renderRowWrapper={renderRowWrapper}
             renderSaveWrapper={renderSaveWrapper}
+            renderCreateWrapper={renderCreateWrapper}
           />
         )}
       </View>

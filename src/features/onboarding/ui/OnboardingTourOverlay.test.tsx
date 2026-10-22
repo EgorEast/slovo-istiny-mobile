@@ -209,12 +209,12 @@ describe('<OnboardingTourOverlay>', () => {
   })
 
   test('counts only cards in the step counter', async () => {
-    // playlist-add has six steps but only four cards (two are exit visualizations).
+    // playlist-add has seven steps but only five cards (two are exit visualizations).
     const { getByText } = await renderAtDeck('playlist-add', 0, {
       [PLAYLIST_FIRST_ROW]: instances(PLAYLIST_ROW_RECT),
     })
 
-    expect(getByText('Шаг 1 из 4')).toBeTruthy()
+    expect(getByText('Шаг 1 из 5')).toBeTruthy()
   })
 
   test('navigates to the card route when the pathname differs', async () => {

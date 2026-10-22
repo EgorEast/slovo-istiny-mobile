@@ -18,7 +18,7 @@ import { type AddToPlaylistState } from './addToPlaylistState'
  */
 export const useAddToPlaylistModal = (bindings: AddToPlaylistBindings = {}) => {
   const [state, setState] = useState<AddToPlaylistState | null>(null)
-  const { bindControls, renderRowWrapper, renderSaveWrapper } = bindings
+  const { bindControls, renderCreateWrapper, renderRowWrapper, renderSaveWrapper } = bindings
 
   const openAddToPlaylist = useCallback((sermon: SermonData) => {
     // На Android контекст-меню — тоже нативная Modal, и она закрывает свой Modal
@@ -44,6 +44,7 @@ export const useAddToPlaylistModal = (bindings: AddToPlaylistBindings = {}) => {
         onClose={closeAddToPlaylist}
         renderRowWrapper={renderRowWrapper}
         renderSaveWrapper={renderSaveWrapper}
+        renderCreateWrapper={renderCreateWrapper}
       />
     ),
     openAddAllToPlaylist,

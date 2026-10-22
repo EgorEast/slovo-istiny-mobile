@@ -1,6 +1,7 @@
 import { type OnboardingScenario } from '../scenarios'
 
 const ADD_MENU_TARGET_ID = 'playlist.row-menu-add'
+const ADD_MODAL_CREATE_TARGET_ID = 'playlist.add-modal-create'
 const ADD_MODAL_FAVORITES_TARGET_ID = 'playlist.add-modal-favorites'
 const ADD_MODAL_SAVE_TARGET_ID = 'playlist.add-modal-save'
 
@@ -39,6 +40,12 @@ export const playlistAddScenario: OnboardingScenario = {
       targetId: ADD_MODAL_FAVORITES_TARGET_ID,
       text: 'Галочка добавляет проповедь в плейлист, снятие — удаляет из него. Отмечаем «Избранные»…',
       title: 'Отметьте «Избранные»',
+    },
+    {
+      presentOnTop: true,
+      targetId: ADD_MODAL_CREATE_TARGET_ID,
+      text: 'Если подходящего плейлиста нет, создайте новый прямо здесь — он сразу появится в списке.',
+      title: 'Создать плейлист',
     },
     {
       presentOnTop: true,

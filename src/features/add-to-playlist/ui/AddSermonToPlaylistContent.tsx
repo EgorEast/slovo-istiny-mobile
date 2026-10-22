@@ -4,6 +4,7 @@ import { type AddToPlaylistBindings } from '../lib/addToPlaylistControls'
 import { useAddToPlaylistControls } from '../lib/useAddToPlaylistControls'
 import { useMembershipDraft } from '../lib/useMembershipDraft'
 import { useSortedPlaylists } from '../lib/useSortedPlaylists'
+import { AddToPlaylistBody } from './AddToPlaylistBody'
 import { AddToPlaylistFooter } from './AddToPlaylistFooter'
 import { PlaylistMembershipList } from './PlaylistMembershipList'
 
@@ -12,6 +13,7 @@ import { PlaylistMembershipList } from './PlaylistMembershipList'
  * @param root0 - Пропсы содержимого.
  * @param root0.bindControls - Отдаёт владельцу управление выбором.
  * @param root0.onClose - Закрыть модалку (после сохранения или отмены).
+ * @param root0.renderCreateWrapper - Оборачивает кнопку «Создать плейлист».
  * @param root0.renderRowWrapper - Оборачивает строку плейлиста.
  * @param root0.renderSaveWrapper - Оборачивает кнопку «Сохранить».
  * @param root0.sermon - Проповедь (id для принадлежности, снапшот для добавления).
@@ -19,6 +21,7 @@ import { PlaylistMembershipList } from './PlaylistMembershipList'
 export const AddSermonToPlaylistContent = ({
   bindControls,
   onClose,
+  renderCreateWrapper,
   renderRowWrapper,
   renderSaveWrapper,
   sermon,
@@ -38,7 +41,7 @@ export const AddSermonToPlaylistContent = ({
   }
 
   return (
-    <>
+    <AddToPlaylistBody renderCreateWrapper={renderCreateWrapper}>
       <PlaylistMembershipList
         items={items}
         values={values}
@@ -51,6 +54,6 @@ export const AddSermonToPlaylistContent = ({
         onSave={handleSave}
         renderSaveWrapper={renderSaveWrapper}
       />
-    </>
+    </AddToPlaylistBody>
   )
 }
