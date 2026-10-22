@@ -17,29 +17,39 @@ jest.mock('entities/offline-cache', () => ({
   })),
 }))
 
+// Mirrors the real row: the favorites heart exists only when a sermon snapshot is
+// forwarded, so the assertion below fails if the prop stops being passed.
+let mockForwardedSermon: { id: string } | undefined
+
 jest.mock('entities/track-list', () => {
   const { Text, View } = jest.requireActual('react-native')
   return {
     TracksListItem: (props: {
       menuActions?: Array<{ text: string }>
       progress?: number
+      sermon?: { id: string }
       subtitle?: string
       title: string
-    }) => (
-      <View testID='tracks-list-item'>
-        <Text>{props.title}</Text>
-        {props.subtitle && <Text>{props.subtitle}</Text>}
-        {props.menuActions?.map(action => (
-          <Text key={action.text}>{action.text}</Text>
-        ))}
-        {props.progress != null && props.progress > 0 && (
-          <View
-            testID='progress-bar'
-            accessibilityLabel={`${Math.round(props.progress * 100)}% progress`}
-          />
-        )}
-      </View>
-    ),
+    }) => {
+      mockForwardedSermon = props.sermon
+
+      return (
+        <View testID='tracks-list-item'>
+          <Text>{props.title}</Text>
+          {props.subtitle && <Text>{props.subtitle}</Text>}
+          {props.menuActions?.map(action => (
+            <Text key={action.text}>{action.text}</Text>
+          ))}
+          {props.progress != null && props.progress > 0 && (
+            <View
+              testID='progress-bar'
+              accessibilityLabel={`${Math.round(props.progress * 100)}% progress`}
+            />
+          )}
+          {props.sermon && <Text accessibilityLabel='Добавить в избранное' />}
+        </View>
+      )
+    },
   }
 })
 
@@ -52,6 +62,7 @@ jest.mock('entities/listening-history', () => ({
 const PROGRESS_BAR_TEST_ID = 'progress-bar'
 const SERMON_ID = 'search-sermon-1'
 const MARK_ACTION_TEXT = 'Пометить прослушанной'
+const FAVORITE_BUTTON_LABEL = 'Добавить в избранное'
 
 const sermon: SermonData = {
   artist: 'Пастор',
@@ -125,5 +136,12 @@ describe('<SermonSearchRow>', () => {
 
     expect(screen.getByTestId(PROGRESS_BAR_TEST_ID)).toBeTruthy()
     expect(screen.getByLabelText('50% progress')).toBeTruthy()
+  })
+
+  test('forwards the sermon so the favorites heart renders on the row', async () => {
+    await renderItem()
+
+    expect(screen.getByLabelText(FAVORITE_BUTTON_LABEL)).toBeTruthy()
+    expect(mockForwardedSermon).toEqual(sermon)
   })
 })

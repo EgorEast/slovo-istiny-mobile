@@ -37,6 +37,7 @@ export const SermonSearchRow = memo(
 
     return (
       <TracksListItem
+        sermon={sermon}
         onPress={onPress}
         isPlaying={false}
         subtitle={subtitle}
