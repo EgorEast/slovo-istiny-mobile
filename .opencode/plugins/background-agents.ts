@@ -223,6 +223,7 @@ interface DelegationRecord {
 	status: DelegationStatus
 	createdAt: Date
 	startedAt?: Date
+	promptAdmittedAt?: Date
 	completedAt?: Date
 	updatedAt: Date
 	timeoutAt: Date
@@ -317,7 +318,7 @@ async function parseAgentMode(
 	try {
 		const result = await client.agent.list()
 		const agents = (result.data ?? []) as { name: string; mode?: string }[]
-		const agent = agents.find((a) => a.name === agentName)
+		const agent = findAgentByName(agents, agentName)
 		return { isSubAgent: agent?.mode === "subagent" }
 	} catch (error) {
 		// Fail-safe: Agent list errors shouldn't block task calls
@@ -351,6 +352,19 @@ function isActionGloballyDenied(rules: V2PermissionRule[], action: string): bool
 }
 
 /**
+ * Case-insensitive agent lookup by registered name.
+ * Built-in agents may register display-cased names (e.g. "Explore") while
+ * callers reference them lower-cased ("explore"); match both.
+ */
+function findAgentByName<T extends { name: string }>(
+	agents: readonly T[],
+	agentName: string,
+): T | undefined {
+	const needle = agentName.trim().toLowerCase()
+	return agents.find((agent) => agent.name.toLowerCase() === needle)
+}
+
+/**
  * Parse agent write capability at boundary.
  * Returns trusted type indicating if agent is read-only.
  *
@@ -365,12 +379,19 @@ async function parseAgentWriteCapability(
 	try {
 		const result = await client.agent.list()
 		const agents = (result.data ?? []) as Array<{ name: string; permissions?: V2PermissionRule[] }>
-		const agent = agents.find((a) => a.name === agentName)
+		const agent = findAgentByName(agents, agentName)
 		const permission = agent?.permissions ?? []
 
 		const editDenied = isActionGloballyDenied(permission, "edit")
-		const writeDenied = isActionGloballyDenied(permission, "write")
-		const bashDenied = isActionGloballyDenied(permission, "bash")
+		// V2 has no dedicated "write" permission action (file writes gate under
+		// "edit"), so a ruleset that never mentions "write" is treated as
+		// not-write-capable rather than blocking read-only classification.
+		const writeMentioned = permission.some((rule) => rule.action === "write")
+		const writeDenied = writeMentioned ? isActionGloballyDenied(permission, "write") : true
+		// Canonical action for shell commands is "bash"; some configs author the
+		// same ruleset under the legacy "shell" action name — accept both.
+		const bashDenied =
+			isActionGloballyDenied(permission, "bash") || isActionGloballyDenied(permission, "shell")
 
 		return { isReadOnly: editDenied && writeDenied && bashDenied }
 	} catch (error) {
@@ -1094,8 +1115,9 @@ class DelegationManager {
 			name: string
 			description?: string
 			mode?: string
+			model?: { id: string; providerID: string; variant?: string }
 		}[]
-		const validAgent = agents.find((a) => a.name === input.agent)
+		const validAgent = findAgentByName(agents, input.agent)
 
 		if (!validAgent) {
 			const available = agents
@@ -1135,6 +1157,11 @@ class DelegationManager {
 		// DelegationRecord instead).
 		const sessionResult = await this.client.session.create({
 			title: `Delegation: ${stableId}`,
+			// Bind the CALLER's spelling, not validAgent.name: agent.list() returns
+			// display-cased names ("Explore") while the server's execution path
+			// resolves agents case-sensitively and rejects them
+			// (Session.AgentNotFoundError) — the caller's spelling is the one that
+			// historically resolved and ran.
 			agent: input.agent,
 		})
 
@@ -1142,6 +1169,34 @@ class DelegationManager {
 
 		if (!sessionResult?.id) {
 			throw new Error("Failed to create delegation session")
+		}
+
+		// session.create({agent}) does not pin the agent's configured model on
+		// this path: delegation sessions fall back to the server default (the
+		// OpenCode free tier), which fails final generations with 429/503. Pin
+		// the agent's declared model explicitly (AgentInfo.model — fed by agent
+		// frontmatter and config agents.*.model).
+		const agentModel = validAgent.model
+		if (agentModel) {
+			try {
+				await this.client.session.switchModel({
+					sessionID: sessionResult.id,
+					model: agentModel,
+				})
+				await this.debugLog(
+					`delegate: pinned model ${agentModel.providerID}/${agentModel.id} for delegation ${stableId}`,
+				)
+			} catch (error) {
+				await this.debugLog(
+					`delegate: switchModel(${agentModel.providerID}/${agentModel.id}) failed for ${stableId}: ${
+						error instanceof Error ? error.message : String(error)
+					}`,
+				)
+			}
+		} else {
+			await this.debugLog(
+				`delegate: agent "${input.agent}" declares no model; using server default for ${stableId}`,
+			)
 		}
 
 		const delegation = this.registerDelegation({
@@ -1162,17 +1217,19 @@ class DelegationManager {
 
 		// Fire the prompt. V1 awaited client.session.prompt(...) resolution to
 		// detect agent-loop completion; V2 session.prompt returns after durable
-		// admission, so completion is awaited with session.wait(...) and is also
-		// observed via the session.idle event (whichever fires first wins, since
-		// finalizeDelegation is idempotent).
+		// admission; completion is observed via the session.idle event (guarded
+		// by promptAdmittedAt against the creation-idle race — session.wait
+		// resolves instantly on an already-idle session), with scheduleTimeout
+		// as the backstop.
 		// TODO(port): V1 disabled task/delegate/todowrite/plan_save on this prompt
 		// via body.tools; V2 prompts expose no per-request tool overrides, so only
 		// the delegate guard above is enforced.
 		this.client.session
 			.prompt({ sessionID: delegation.sessionID, text: input.prompt })
-			.then(() => this.client.session.wait({ sessionID: delegation.sessionID }))
 			.then(() => {
-				void this.finalizeDelegation(delegation.id, "complete")
+				this.updateDelegation(delegation.id, (record) => {
+					record.promptAdmittedAt = new Date()
+				})
 			})
 			.catch((error: Error) => {
 				void this.finalizeDelegation(delegation.id, "error", error.message)
@@ -1214,6 +1271,17 @@ class DelegationManager {
 		const delegation = this.findBySession(sessionID)
 		if (!delegation || isTerminalStatus(delegation.status)) return
 
+		// A freshly created session is idle by definition and emits an idle
+		// event before the delegation prompt is admitted; finalizing on it
+		// would mark the delegation complete with zero assistant messages.
+		// Only idle events observed after prompt admission may complete it.
+		if (!delegation.promptAdmittedAt) {
+			await this.debugLog(
+				`handleSessionIdle ignored for ${delegation.id}: prompt not admitted yet`,
+			)
+			return
+		}
+
 		await this.debugLog(`handleSessionIdle for delegation ${delegation.id}`)
 		await this.finalizeDelegation(delegation.id, "complete")
 	}
@@ -1232,14 +1300,14 @@ class DelegationManager {
 
 			if (!messageData || messageData.length === 0) {
 				await this.debugLog(`getResult: No messages found for session ${delegation.sessionID}`)
-				return `Delegation "${delegation.description}" completed but produced no output.`
+				return `Delegation "${delegation.id}" completed but produced no output.`
 			}
 
 			await this.debugLog(
 				`getResult: Found ${messageData.length} messages. Types: ${messageData.map((m) => m.type).join(", ")}`,
 			)
 
-			// Find the last message from the assistant/model
+			// Find the assistant messages
 			const isAssistantMessage = (m: V2SessionMessage): m is V2AssistantMessage =>
 				m.type === "assistant"
 
@@ -1249,31 +1317,54 @@ class DelegationManager {
 				await this.debugLog(
 					`getResult: No assistant messages found in ${JSON.stringify(messageData.map((m) => ({ type: m.type })))}`,
 				)
-				return `Delegation "${delegation.description}" completed but produced no assistant response.`
+				return `Delegation "${delegation.id}" completed but produced no assistant response.`
 			}
 
-			const lastMessage = assistantMessages[assistantMessages.length - 1]
+			// Scan from the END: trailing assistant messages may carry no text when
+			// the final generation failed with a provider error (finish: "error",
+			// content: []). Prefer the last text-bearing message so partial work
+			// survives, and surface any provider errors loudly instead of masking
+			// them as an empty result.
+			const providerErrors: string[] = []
+			for (let i = assistantMessages.length - 1; i >= 0; i--) {
+				const message = assistantMessages[i] as V2AssistantMessage & {
+					finish?: string
+					error?: { message?: string; status?: number }
+				}
 
-			// Extract text parts from the message
-			const textParts = lastMessage.content.filter(
-				(part) => part.type === "text" && typeof part.text === "string",
-			)
-
-			if (textParts.length === 0) {
-				await this.debugLog(
-					`getResult: No text parts found in message: ${JSON.stringify(lastMessage)}`,
+				const textParts = message.content.filter(
+					(part) => part.type === "text" && typeof part.text === "string",
 				)
-				return `Delegation "${delegation.description}" completed but produced no text content.`
+
+				if (textParts.length > 0) {
+					const text = textParts.map((part) => part.text as string).join("\n")
+					if (providerErrors.length > 0) {
+						return `${text}\n\n[WARNING: a later response attempt failed: ${providerErrors.join("; ")}]`
+					}
+					return text
+				}
+
+				if (message.error?.message) {
+					providerErrors.unshift(`(${message.error.status ?? "error"}) ${message.error.message}`)
+				} else if (message.finish === "error") {
+					providerErrors.unshift("(error) response attempt finished with an error")
+				}
 			}
 
-			return textParts
-				.map((part) => part.text as string)
-				.join("\n")
+			if (providerErrors.length > 0) {
+				await this.debugLog(`getResult: provider errors only: ${providerErrors.join("; ")}`)
+				return `Error: the delegation's model failed to produce the final response: ${providerErrors.join("; ")}`
+			}
+
+			await this.debugLog(
+				`getResult: No text parts found in any of ${assistantMessages.length} assistant messages: ${JSON.stringify(assistantMessages.map((m) => ({ type: m.type })))}`,
+			)
+			return `Delegation "${delegation.id}" completed but produced no text content.`
 		} catch (error) {
 			await this.debugLog(
 				`getResult error: ${error instanceof Error ? error.message : "Unknown error"}`,
 			)
-			return `Delegation "${delegation.description}" completed but result could not be retrieved: ${
+			return `Delegation "${delegation.id}" completed but result could not be retrieved: ${
 				error instanceof Error ? error.message : "Unknown error"
 			}`
 		}
