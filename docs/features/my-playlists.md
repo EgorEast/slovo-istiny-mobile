@@ -260,7 +260,7 @@ read-modify-write по id с тем же путём персиста. **«Изб
 (тап → отдельный экран `/listen/my-playlists`, `navigateToMyPlaylists`). Секция рендерится через
 общий `Slider` (`shared/ui`): карточки — `SliderItemsElement`, «Избранные» — первая карточка с
 `artworkIcon` (сердце `Ionicons 'heart'` цвета `currentTheme.primary`, размер из
-`getSliderCardLayout(itemsSize, getSliderLayoutViewport()).cardWidth * AVATAR_CONTENT_SIZE_RATIO` (`shared/ui`); иконка следует за шириной карточки, а геометрия ограничена cap `430`, поэтому на больших экранах не раздувается). Собственных боковых отступов секция не добавляет — все инсеты живут внутри `Slider` (см. [screens/listen.md](../screens/listen.md) → «Что показывается»): `itemsSize` задаёт ширину карточки по общей модели (XLarge — 77% базы, Large — 30%, Middle/Small — прежний контракт), карточки и заголовок стоят на линии покоя 24. Остальные локальные плейлисты — обычные карточки с
+`getSliderCardLayout(itemsSize, getSliderLayoutViewport()).cardWidth * AVATAR_CONTENT_SIZE_RATIO` (`shared/ui`); иконка следует за шириной карточки, а геометрия ограничена cap `430`, поэтому на больших экранах не раздувается). Собственных боковых отступов секция не добавляет — все инсеты живут внутри `Slider` (см. [screens/listen.md](../screens/listen.md) → «Что показывается»): `itemsSize` задаёт ширину карточки по общей модели (XLarge — 77% базы, Large — 50%, Middle/Small — прежний контракт), карточки и заголовок стоят на линии покоя 24. Остальные локальные плейлисты — обычные карточки с
 `title = playlist.title` **без `artworkIcon`**: без обложки общий `SliderItem` сам рисует
 плитку-букву (`PlaylistLetterAvatar`) поверх блюра. Тап по карточке навигирует на
 `/listen/playlist?playlist=<id>`.

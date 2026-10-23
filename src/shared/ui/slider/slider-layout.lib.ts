@@ -40,7 +40,7 @@ const MIN_CARD_WIDTH = 48
 const SNAP_EPSILON = 0.5
 
 const SLIDER_SIZE_CONTRACT: Record<SliderItemSize, SliderSizeContract> = {
-  [SliderItemSize.Large]: { screenRatio: 0.3 },
+  [SliderItemSize.Large]: { screenRatio: 0.5 },
   [SliderItemSize.Middle]: { fullStrides: 2, peekRatio: 0.2 },
   [SliderItemSize.Small]: { fullStrides: 3, peekRatio: 0.2 },
   [SliderItemSize.XLarge]: { screenRatio: 0.77 },

@@ -29,7 +29,7 @@ describe('getSliderCardLayout', () => {
   test.each([
     [SliderItemSize.Small, 93.52941176470588, 105.52941176470588],
     [SliderItemSize.Middle, 137.5, 149.5],
-    [SliderItemSize.Large, 117, 129],
+    [SliderItemSize.Large, 195, 207],
     [SliderItemSize.XLarge, 300.3, 312.3],
   ])('%s card keeps the geometry at the default basis', (size, width, stride) => {
     const layout = getSliderCardLayout(size, DEFAULT_VIEWPORT)
