@@ -1217,10 +1217,10 @@ class DelegationManager {
 
 		// Fire the prompt. V1 awaited client.session.prompt(...) resolution to
 		// detect agent-loop completion; V2 session.prompt returns after durable
-		// admission; completion is observed via the session.idle event (guarded
-		// by promptAdmittedAt against the creation-idle race — session.wait
-		// resolves instantly on an already-idle session), with scheduleTimeout
-		// as the backstop.
+		// admission, so completion is awaited with session.wait(...) (the only
+		// mechanism observed to fire in this OpenCode build), with the
+		// session.idle subscription (guarded by promptAdmittedAt against the
+		// creation-idle race) and scheduleTimeout as secondaries.
 		// TODO(port): V1 disabled task/delegate/todowrite/plan_save on this prompt
 		// via body.tools; V2 prompts expose no per-request tool overrides, so only
 		// the delegate guard above is enforced.
@@ -1230,6 +1230,16 @@ class DelegationManager {
 				this.updateDelegation(delegation.id, (record) => {
 					record.promptAdmittedAt = new Date()
 				})
+				// Completion mechanism: session.wait resolves when the session's
+				// turn finishes (it resolved instantly only for sessions whose
+				// agent failed to resolve — Session.AgentNotFoundError — which
+				// never start working; binding input.agent fixed that root
+				// cause). The session.idle subscription stays as a secondary,
+				// guarded by promptAdmittedAt.
+				return this.client.session.wait({ sessionID: delegation.sessionID })
+			})
+			.then(() => {
+				void this.finalizeDelegation(delegation.id, "complete")
 			})
 			.catch((error: Error) => {
 				void this.finalizeDelegation(delegation.id, "error", error.message)
