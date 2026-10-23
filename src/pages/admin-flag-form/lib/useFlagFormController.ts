@@ -12,6 +12,7 @@ import {
   createValidationError,
   type FlagFormValues,
   initialFlagFormValues,
+  updateValidationError,
 } from './flagFormState'
 
 export interface FlagFormController {
@@ -74,6 +75,12 @@ export const useFlagFormController = ({
       const payload = buildUpdateFlagRequest(values, initial)
       if (Object.keys(payload).length === 0) {
         router.back()
+        return
+      }
+      const lengthError = updateValidationError(payload)
+      if (lengthError !== '') {
+        setError(lengthError)
+        showToastAction(lengthError)
         return
       }
       setError(null)

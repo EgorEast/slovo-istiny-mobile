@@ -43,7 +43,7 @@
 - **Общая форма** `UserForm` в двух режимах; поля: имя, email (`keyboardType='email-address'`), логин, роль (`SelectField` — `admin`/`moderator`/`user`, по умолчанию `user`), пароль (`secureTextEntry`, **только в режиме create**).
 - **Кнопка «Сохранить» — в шапке экрана** (`headerRight`, иконка-галочка `SaveButton`); шапка собирается хуком `useAdminFormHeader` (`widgets/admin-form-header`), опции мемоизированы, обработчик держится в ref. Кнопка **disabled, пока форма не изменена** (`isDirty` от `useUserFormController`: edit — сравнение с исходным снапшотом через `omitEqualFields`; create — pristine-форма disabled).
 - **Мутации:** `usersControllerCreate` (`POST /users`) — тело `{ name, email, username, password, role }` (`role` шлётся всегда); `usersControllerUpdate` (`PATCH /users/{id}`) — **только изменённые** поля из `name/email/username/role`, без пароля (пропущенные ключи = «не менять»). Если изменений нет — `router.back()` без запроса.
-- **Валидация (create):** имя/email/логин/пароль непустые, иначе inline-ошибка + тост «Заполните все поля.», отправки нет.
+- **Валидация (create):** имя/email/логин/пароль непустые, иначе inline-ошибка + тост «Заполните все поля.», отправки нет; длины зеркалят спецификацию — имя ≤ 100, email ≤ 254, логин ≤ 50, пароль 8–200 (смена пароля в детали проверяется теми же границами).
 - **После успеха:** тост («Пользователь создан»/«Пользователь сохранён») и `router.back()`; ошибка — баннер в форме.
 - **Режим edit:** сущность грузится до монтирования формы (`useAdminUserEntity`), пропсы формы стабильны.
 

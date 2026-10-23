@@ -1,6 +1,26 @@
 import { type AxiosError, isAxiosError } from 'axios'
 
+// Сообщение из тела ответа сервера (Nest + zod DTO): поле `message` бывает и
+// строкой, и массивом строк — именно там приходит описание нарушения лимита.
+const getResponseMessage = (error: AxiosError): string | undefined => {
+  const data = error.response?.data
+  if (typeof data !== 'object' || data === null || !('message' in data)) return undefined
+
+  const { message } = data
+  if (typeof message === 'string' && message.trim() !== '') return message
+  if (!Array.isArray(message)) return undefined
+
+  const parts = message.filter(
+    (item): item is string => typeof item === 'string' && item.trim() !== '',
+  )
+  return parts.length > 0 ? parts.join('; ') : undefined
+}
+
 export const getErrorMessage = (error: unknown): string => {
+  if (isAxiosError(error)) {
+    const responseMessage = getResponseMessage(error)
+    if (responseMessage !== undefined) return responseMessage
+  }
   if (error instanceof Error) return error.message
   if (typeof error === 'string') return error
   return 'Неизвестная ошибка'

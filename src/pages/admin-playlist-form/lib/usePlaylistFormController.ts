@@ -13,6 +13,7 @@ import {
   initialFormValues,
   type PlaylistFormValues,
 } from './playlistFormState'
+import { playlistValidationError } from './playlistFormValidation'
 
 export interface PlaylistFormController {
   error: null | string
@@ -73,6 +74,13 @@ export const usePlaylistFormController = ({
     if (values.title.trim().length === 0) {
       setError(TITLE_REQUIRED_MESSAGE)
       showToastAction(TITLE_REQUIRED_MESSAGE)
+      return
+    }
+
+    const validationError = playlistValidationError(values)
+    if (validationError !== '') {
+      setError(validationError)
+      showToastAction(validationError)
       return
     }
 

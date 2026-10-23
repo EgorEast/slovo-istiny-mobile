@@ -1,6 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons'
 import { Text, TextInput, View } from 'react-native'
 import { type APITypes } from 'shared/api'
+import { INPUT_LIMITS } from 'shared/lib/validation/inputLimits'
 import { AdminSelect, type AdminSelectOption } from 'shared/ui'
 import { IconButton } from 'shared/ui/icon-button'
 import { useTheme } from 'shared/ui/theme'
@@ -56,6 +57,7 @@ export const AdminSermonsHeader = ({
       <TextInput
         value={search}
         onChangeText={onSearchChange}
+        maxLength={INPUT_LIMITS.search}
         accessibilityLabel='Поиск проповедей'
         placeholder='Название, проповедник, книга…'
         placeholderTextColor={currentTheme.placeholder}

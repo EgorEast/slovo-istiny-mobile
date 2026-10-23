@@ -2,6 +2,7 @@ import { useAction, useAtom, useCtx } from '@reatom/npm-react'
 import { useEffect, useRef, useState } from 'react'
 import { Keyboard, Platform, Text, TextInput, View } from 'react-native'
 import { useEscapeKey } from 'shared/lib/escape-key'
+import { INPUT_LIMITS } from 'shared/lib/validation/inputLimits'
 import { IconButton } from 'shared/ui/icon-button'
 import { INDENTS, useTheme } from 'shared/ui/theme'
 import { useSearchAutofocus } from '../lib/useSearchAutofocus'
@@ -93,6 +94,7 @@ export const SearchBar = () => {
         autoCorrect={false}
         autoCapitalize='none'
         returnKeyType='search'
+        maxLength={INPUT_LIMITS.search}
         onChangeText={handleChangeText}
         placeholder={SEARCH_PLACEHOLDER}
         onBlur={() => setIsFocused(false)}

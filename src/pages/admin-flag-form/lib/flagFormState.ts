@@ -1,4 +1,6 @@
 import { type APITypes } from 'shared/api'
+import { maxLengthError } from 'shared/lib/validation/formValidation'
+import { INPUT_LIMITS } from 'shared/lib/validation/inputLimits'
 
 export interface FlagFormValues {
   enabled: boolean
@@ -29,11 +31,25 @@ const isFilled = (value: string) => value.trim() !== ''
 export const createValidationError = (values: FlagFormValues): string => {
   if (!isFilled(values.key) || !isFilled(values.title)) return 'Заполните ключ и название.'
 
+  const lengthError =
+    maxLengthError(values.key, INPUT_LIMITS.featureFlag.key, 'Ключ') ||
+    maxLengthError(values.title, INPUT_LIMITS.featureFlag.title, 'Название')
+  if (lengthError !== '') return lengthError
+
   if (!FLAG_KEY_PATTERN.test(values.key.trim()))
     return 'Ключ: строчные латинские буквы, цифры и дефис, начинается с буквы.'
 
   return ''
 }
+
+/**
+ * Валидация изменённых полей обновления флага: длина названия.
+ * @param payload - Тело обновления, собранное из изменённых полей.
+ */
+export const updateValidationError = (payload: APITypes.UpdateFeatureFlagRequest): string =>
+  payload.title === undefined
+    ? ''
+    : maxLengthError(payload.title, INPUT_LIMITS.featureFlag.title, 'Название')
 
 /**
  * Тело обновления флага: **только изменённые** поля title/enabled. Ключ

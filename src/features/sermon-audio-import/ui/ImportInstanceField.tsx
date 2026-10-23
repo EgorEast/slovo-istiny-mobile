@@ -6,6 +6,7 @@ import { COLORS, FONT_SIZES, INDENTS, RADIUSES, useTheme } from 'shared/ui/theme
 import { normalizeInvidiousBaseUrl } from '../lib/importSettings'
 
 const INSTANCE_LABEL = 'Инстанс Invidious'
+const INSTANCE_URL_MAX_LENGTH = 2048
 const INSTANCE_HINT = 'Публичный инстанс Invidious или свой в локальной сети.'
 const ANTIBOT_HINT =
   'Публичные инстансы часто закрыты антиботом — надёжнее использовать свой инстанс.'
@@ -88,6 +89,7 @@ export const ImportInstanceField = ({
         autoCapitalize='none'
         onChangeText={setDraft}
         placeholder={presets[0]}
+        maxLength={INSTANCE_URL_MAX_LENGTH}
         accessibilityLabel={INSTANCE_LABEL}
         placeholderTextColor={currentTheme.placeholder}
         style={[formStyles.input, { color: currentTheme.text }]}

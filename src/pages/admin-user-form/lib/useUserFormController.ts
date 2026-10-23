@@ -13,6 +13,7 @@ import {
   createValidationError,
   hasBlankUpdateRequired,
   initialUserFormValues,
+  updateValidationError,
   type UserFormValues,
 } from './userFormState'
 
@@ -81,6 +82,12 @@ export const useUserFormController = ({
       if (hasBlankUpdateRequired(payload)) {
         setError(EDIT_REQUIRED_MESSAGE)
         showToastAction(EDIT_REQUIRED_MESSAGE)
+        return
+      }
+      const lengthError = updateValidationError(payload)
+      if (lengthError !== '') {
+        setError(lengthError)
+        showToastAction(lengthError)
         return
       }
       setError(null)

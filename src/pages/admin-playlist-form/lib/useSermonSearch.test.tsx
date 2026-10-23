@@ -63,4 +63,14 @@ describe('useSermonSearch', () => {
     expect(result.current.sermons.map(sermon => sermon.id)).not.toContain('stale')
     expect(result.current.sermons.map(sermon => sermon.id)).toContain('fresh')
   })
+
+  test('does not send a blank search: the server requires at least one character', async () => {
+    mockFindAll.mockResolvedValue({ count: 0, nextCursor: null, sermons: [] })
+
+    const { result } = await renderHookWithProviders(() => useSermonSearch('   '))
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    expect(mockFindAll).toHaveBeenCalledWith(expect.objectContaining({ search: undefined }))
+  })
 })

@@ -1,5 +1,6 @@
 import { View } from 'react-native'
 import { type TouchedMap } from 'shared/lib/hooks/useFormTouched'
+import { INPUT_LIMITS } from 'shared/lib/validation/inputLimits'
 import { FormField, FormGroupTitle } from 'shared/ui/form'
 import { useTheme } from 'shared/ui/theme'
 import { type SermonFormValues } from '../lib/sermonFormInitialValues'
@@ -43,6 +44,7 @@ export const SermonFormMainFields = ({
         value={values.title}
         placeholder='Например: Сила веры'
         onBlur={() => markTouched('title')}
+        maxLength={INPUT_LIMITS.sermon.title}
         onChangeText={text => onChange('title', text)}
         invalid={Boolean(touched.title) && isBlank(values.title)}
       />
@@ -53,6 +55,7 @@ export const SermonFormMainFields = ({
         value={values.artist}
         placeholder='Кто проповедует'
         onBlur={() => markTouched('artist')}
+        maxLength={INPUT_LIMITS.sermon.artist}
         onChangeText={text => onChange('artist', text)}
         invalid={Boolean(touched.artist) && isBlank(values.artist)}
       />
@@ -61,6 +64,7 @@ export const SermonFormMainFields = ({
         options={books}
         value={values.book}
         placeholder='Книга Писания'
+        maxLength={INPUT_LIMITS.sermon.book}
         hint='Необязательно. Например: Иоанна'
         onChangeText={text => onChange('book', text)}
       />
@@ -70,6 +74,7 @@ export const SermonFormMainFields = ({
         hint='Необязательно.'
         value={values.description}
         placeholder='Короткое описание проповеди'
+        maxLength={INPUT_LIMITS.sermon.description}
         onChangeText={text => onChange('description', text)}
       />
     </View>

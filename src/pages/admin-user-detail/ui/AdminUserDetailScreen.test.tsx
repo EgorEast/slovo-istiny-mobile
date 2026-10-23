@@ -61,6 +61,11 @@ jest.mock('entities/auth', () => {
   }
 })
 
+const CHANGE_PASSWORD_LABEL = 'Сменить пароль'
+const PASSWORD_DIALOG_TITLE = 'Смена пароля'
+const NEW_PASSWORD_LABEL = 'Новый пароль'
+const SAVE_LABEL = 'Сохранить'
+
 const createUser = (role: 'admin' | 'moderator' | 'user' = 'admin') =>
   usersMocks.getUsersControllerFindOneResponseMock({
     email: 'target@test.ru',
@@ -121,14 +126,14 @@ describe('<AdminUserDetailScreen>', () => {
     mockFindOne.mockResolvedValue(createUser())
 
     const { findByText, getByLabelText } = await renderWithProviders(<AdminUserDetailScreen />)
-    fireEvent.press(await findByText('Сменить пароль'))
+    fireEvent.press(await findByText(CHANGE_PASSWORD_LABEL))
 
-    expect(await findByText('Смена пароля')).toBeTruthy()
+    expect(await findByText(PASSWORD_DIALOG_TITLE)).toBeTruthy()
     fireEvent.changeText(
-      await getByLabelText('Новый пароль', { includeHiddenElements: true }),
+      await getByLabelText(NEW_PASSWORD_LABEL, { includeHiddenElements: true }),
       'secret123',
     )
-    fireEvent.press(await findByText('Сохранить'))
+    fireEvent.press(await findByText(SAVE_LABEL))
 
     await waitFor(() =>
       expect(mockChangePassword).toHaveBeenCalledWith('u1', { password: 'secret123' }),
@@ -139,10 +144,42 @@ describe('<AdminUserDetailScreen>', () => {
     mockFindOne.mockResolvedValue(createUser())
 
     const { findByText } = await renderWithProviders(<AdminUserDetailScreen />)
-    fireEvent.press(await findByText('Сменить пароль'))
-    fireEvent.press(await findByText('Сохранить'))
+    fireEvent.press(await findByText(CHANGE_PASSWORD_LABEL))
+    fireEvent.press(await findByText(SAVE_LABEL))
 
     expect(await findByText('Введите новый пароль.')).toBeTruthy()
+    expect(mockChangePassword).not.toHaveBeenCalled()
+  })
+
+  test('blocks a password shorter than 8 characters on the client', async () => {
+    mockFindOne.mockResolvedValue(createUser())
+
+    const { findByText, getByLabelText } = await renderWithProviders(<AdminUserDetailScreen />)
+    fireEvent.press(await findByText(CHANGE_PASSWORD_LABEL))
+    expect(await findByText(PASSWORD_DIALOG_TITLE)).toBeTruthy()
+    fireEvent.changeText(
+      await getByLabelText(NEW_PASSWORD_LABEL, { includeHiddenElements: true }),
+      'short',
+    )
+    fireEvent.press(await findByText(SAVE_LABEL))
+
+    expect(await findByText('Пароль должен содержать минимум 8 символов.')).toBeTruthy()
+    expect(mockChangePassword).not.toHaveBeenCalled()
+  })
+
+  test('blocks a password longer than 200 characters on the client', async () => {
+    mockFindOne.mockResolvedValue(createUser())
+
+    const { findByText, getByLabelText } = await renderWithProviders(<AdminUserDetailScreen />)
+    fireEvent.press(await findByText(CHANGE_PASSWORD_LABEL))
+    expect(await findByText(PASSWORD_DIALOG_TITLE)).toBeTruthy()
+    fireEvent.changeText(
+      await getByLabelText(NEW_PASSWORD_LABEL, { includeHiddenElements: true }),
+      'a'.repeat(201),
+    )
+    fireEvent.press(await findByText(SAVE_LABEL))
+
+    expect(await findByText('Пароль должен содержать не более 200 символов.')).toBeTruthy()
     expect(mockChangePassword).not.toHaveBeenCalled()
   })
 

@@ -15,6 +15,7 @@ import {
   resolveVerse,
   verseError,
 } from './sermonFormState'
+import { sermonValidationError } from './sermonFormValidation'
 
 export interface SermonFormController {
   error: null | string
@@ -86,6 +87,13 @@ export const useSermonFormController = ({
       return
     }
     if (verseError(values) !== '' || resolveVerse(values) === undefined) return
+
+    const validationError = sermonValidationError(values)
+    if (validationError !== '') {
+      setError(validationError)
+      showToastAction(validationError)
+      return
+    }
 
     setError(null)
     setIsSubmitting(true)

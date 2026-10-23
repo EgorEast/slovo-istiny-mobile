@@ -1,4 +1,6 @@
 import { type APITypes } from 'shared/api'
+import { maxLengthError, passwordError } from 'shared/lib/validation/formValidation'
+import { INPUT_LIMITS } from 'shared/lib/validation/inputLimits'
 
 export interface UserFormValues {
   email: string
@@ -55,16 +57,36 @@ export const buildUpdateUserRequest = (
 }
 
 /**
- * Валидация формы создания: обязательны имя, email, логин и пароль.
+ * Валидация формы создания: обязательны имя, email, логин и пароль, длины
+ * полей и пароль — в границах спецификации.
  * @param values - Текущие значения формы.
  */
-export const createValidationError = (values: UserFormValues): string =>
-  isFilled(values.name) &&
-  isFilled(values.email) &&
-  isFilled(values.username) &&
-  isFilled(values.password)
-    ? ''
-    : 'Заполните все поля.'
+export const createValidationError = (values: UserFormValues): string => {
+  if (
+    !isFilled(values.name) ||
+    !isFilled(values.email) ||
+    !isFilled(values.username) ||
+    !isFilled(values.password)
+  )
+    return 'Заполните все поля.'
+
+  return (
+    passwordError(values.password) ||
+    maxLengthError(values.name, INPUT_LIMITS.user.name, 'Имя') ||
+    maxLengthError(values.email, INPUT_LIMITS.user.email, 'Email') ||
+    maxLengthError(values.username, INPUT_LIMITS.user.username, 'Логин')
+  )
+}
+
+/**
+ * Валидация изменённых полей обновления: длины name/email/username в границах
+ * спецификации (undefined — поле не меняется).
+ * @param payload - Тело обновления, собранное из изменённых полей.
+ */
+export const updateValidationError = (payload: APITypes.UpdateUserRequest): string =>
+  maxLengthError(payload.name ?? '', INPUT_LIMITS.user.name, 'Имя') ||
+  maxLengthError(payload.email ?? '', INPUT_LIMITS.user.email, 'Email') ||
+  maxLengthError(payload.username ?? '', INPUT_LIMITS.user.username, 'Логин')
 
 /**
  * Есть ли среди изменённых обязательных полей (name/email/username) пустое.

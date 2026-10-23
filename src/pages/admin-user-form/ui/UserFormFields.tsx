@@ -1,6 +1,7 @@
 import { Text, View } from 'react-native'
 import { ROLE_LABELS } from 'entities/auth'
 import { type TouchedMap } from 'shared/lib/hooks/useFormTouched'
+import { INPUT_LIMITS } from 'shared/lib/validation/inputLimits'
 import { FormField, SelectField, type SelectOption } from 'shared/ui/form'
 import { useTheme } from 'shared/ui/theme'
 import { type UserFormValues } from '../lib/userFormState'
@@ -58,6 +59,7 @@ export const UserFormFields = ({
           required
           label='Имя'
           value={values.name}
+          maxLength={INPUT_LIMITS.user.name}
           onBlur={() => markTouched('name')}
           placeholder='Например: Иван Петров'
           onChangeText={text => onChange('name', text)}
@@ -71,6 +73,7 @@ export const UserFormFields = ({
           keyboardType='email-address'
           textContentType='emailAddress'
           placeholder='admin@example.com'
+          maxLength={INPUT_LIMITS.user.email}
           onBlur={() => markTouched('email')}
           onChangeText={text => onChange('email', text)}
           invalid={Boolean(touched.email) && isBlank(values.email)}
@@ -82,6 +85,7 @@ export const UserFormFields = ({
           value={values.username}
           autoComplete='username'
           textContentType='username'
+          maxLength={INPUT_LIMITS.user.username}
           onBlur={() => markTouched('username')}
           placeholder='Логин для входа в систему'
           onChangeText={text => onChange('username', text)}
@@ -102,6 +106,7 @@ export const UserFormFields = ({
             placeholder='Пароль'
             value={values.password}
             onBlur={() => markTouched('password')}
+            maxLength={INPUT_LIMITS.user.passwordMax}
             onChangeText={text => onChange('password', text)}
             invalid={Boolean(touched.password) && isBlank(values.password)}
           />

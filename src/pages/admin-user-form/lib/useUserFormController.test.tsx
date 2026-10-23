@@ -20,6 +20,9 @@ jest.mock('expo-router', () => ({
   useRouter: () => ({ back: mockBack }),
 }))
 
+const EMAIL = 'new@test.ru'
+const NAME = 'Новый'
+
 const createInitial = () =>
   usersMocks.getUsersControllerFindOneResponseMock({
     email: 'old@test.ru',
@@ -42,10 +45,10 @@ describe('useUserFormController', () => {
     )
 
     await act(async () => {
-      result.current.onChange('name', 'Новый')
-      result.current.onChange('email', 'new@test.ru')
+      result.current.onChange('name', NAME)
+      result.current.onChange('email', EMAIL)
       result.current.onChange('username', 'newlogin')
-      result.current.onChange('password', 'secret')
+      result.current.onChange('password', 'secret123')
       result.current.onChange('role', 'admin')
     })
     await act(async () => {
@@ -53,13 +56,51 @@ describe('useUserFormController', () => {
     })
 
     expect(mockCreate).toHaveBeenCalledWith({
-      email: 'new@test.ru',
-      name: 'Новый',
-      password: 'secret',
+      email: EMAIL,
+      name: NAME,
+      password: 'secret123',
       role: 'admin',
       username: 'newlogin',
     })
     expect(mockBack).toHaveBeenCalled()
+  })
+
+  test('create blocks a password shorter than 8 characters', async () => {
+    const { result } = await renderHookWithProviders(() =>
+      useUserFormController({ mode: 'create' }),
+    )
+
+    await act(async () => {
+      result.current.onChange('name', NAME)
+      result.current.onChange('email', EMAIL)
+      result.current.onChange('username', 'newlogin')
+      result.current.onChange('password', 'short')
+    })
+    await act(async () => {
+      await result.current.save()
+    })
+
+    expect(mockCreate).not.toHaveBeenCalled()
+    expect(result.current.error).toBe('Пароль должен содержать минимум 8 символов.')
+  })
+
+  test('create blocks a password longer than 200 characters', async () => {
+    const { result } = await renderHookWithProviders(() =>
+      useUserFormController({ mode: 'create' }),
+    )
+
+    await act(async () => {
+      result.current.onChange('name', NAME)
+      result.current.onChange('email', EMAIL)
+      result.current.onChange('username', 'newlogin')
+      result.current.onChange('password', 'a'.repeat(201))
+    })
+    await act(async () => {
+      await result.current.save()
+    })
+
+    expect(mockCreate).not.toHaveBeenCalled()
+    expect(result.current.error).toBe('Пароль должен содержать не более 200 символов.')
   })
 
   test('create blocks submission while required fields are empty', async () => {
@@ -121,6 +162,23 @@ describe('useUserFormController', () => {
     expect(mockUpdate).toHaveBeenCalledWith('u1', { name: 'Новое имя', role: 'admin' })
     expect(mockUpdate.mock.calls[0][1]).not.toHaveProperty('email')
     expect(mockUpdate.mock.calls[0][1]).not.toHaveProperty('username')
+  })
+
+  test('edit blocks a changed field longer than its limit', async () => {
+    const initial = createInitial()
+    const { result } = await renderHookWithProviders(() =>
+      useUserFormController({ id: 'u1', initial, mode: 'edit' }),
+    )
+
+    await act(async () => {
+      result.current.onChange('name', 'a'.repeat(101))
+    })
+    await act(async () => {
+      await result.current.save()
+    })
+
+    expect(mockUpdate).not.toHaveBeenCalled()
+    expect(result.current.error).toBe('Имя: не более 100 символов.')
   })
 
   test('edit navigates back without a request when nothing changed', async () => {

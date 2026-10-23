@@ -22,6 +22,7 @@ export const SuggestionField = ({
   hint,
   invalid = false,
   label,
+  maxLength,
   onBlur,
   onChangeText,
   options,
@@ -32,6 +33,7 @@ export const SuggestionField = ({
   hint?: string
   invalid?: boolean
   label: string
+  maxLength?: number
   onBlur?: () => void
   onChangeText: (text: string) => void
   options: string[]
@@ -73,6 +75,7 @@ export const SuggestionField = ({
         invalid={invalid}
         onBlur={handleBlur}
         required={required}
+        maxLength={maxLength}
         onFocus={handleFocus}
         placeholder={placeholder}
         onChangeText={onChangeText}

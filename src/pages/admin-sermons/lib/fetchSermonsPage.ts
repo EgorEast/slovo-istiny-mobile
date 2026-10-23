@@ -4,6 +4,8 @@ export const SERMONS_PAGE_SIZE = 20
 
 /**
  * Одна страница проповедей; `hasMore` вызывающий считает по размеру страницы.
+ * Пустой (в т. Ч. Пробельный) поиск не отправляется: сервер требует минимум 1
+ * символ и отверг бы пустую строку.
  * @param query - Поисковый запрос (название, проповедник, книга, описание).
  * @param sort - Вариант сортировки.
  * @param order - Направление сортировки.
@@ -19,6 +21,6 @@ export const fetchSermonsPage = async (
     limit: SERMONS_PAGE_SIZE,
     order,
     page,
-    search: query || undefined,
+    search: query.trim() || undefined,
     sort,
   })

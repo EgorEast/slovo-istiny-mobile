@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { ActivityIndicator, Text, View } from 'react-native'
+import { passwordError } from 'shared/lib/validation/formValidation'
+import { INPUT_LIMITS } from 'shared/lib/validation/inputLimits'
 import { FormField } from 'shared/ui/form'
 import { Modal } from 'shared/ui/modal'
 import { COLORS, useTheme } from 'shared/ui/theme'
@@ -12,8 +14,9 @@ const SUBMIT_LABEL = 'Сохранить'
 const CANCEL_LABEL = 'Отмена'
 const EMPTY_ERROR = 'Введите новый пароль.'
 
-// Модалка смены пароля: поле нового пароля и подтверждение. Пустой пароль
-// блокируется на клиенте (сервер не должен получать заведомо неверный запрос).
+// Модалка смены пароля: поле нового пароля и подтверждение. Пустой пароль и
+// пароль вне границ спецификации блокируются на клиенте (сервер не должен
+// получать заведомо неверный запрос).
 export const PasswordDialog = ({
   isSubmitting,
   onClose,
@@ -42,6 +45,12 @@ export const PasswordDialog = ({
       return
     }
 
+    const lengthError = passwordError(value)
+    if (lengthError !== '') {
+      setError(lengthError)
+      return
+    }
+
     if (await onSubmit(value)) close()
   }
 
@@ -53,6 +62,7 @@ export const PasswordDialog = ({
           label={LABEL}
           secureTextEntry
           value={password}
+          maxLength={INPUT_LIMITS.user.passwordMax}
           onChangeText={text => {
             setPassword(text)
             setError('')

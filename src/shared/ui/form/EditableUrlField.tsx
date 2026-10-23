@@ -17,12 +17,14 @@ const EMPTY_PLACEHOLDER = 'Не задано'
 export const EditableUrlField = ({
   hint,
   label,
+  maxLength = 2048,
   onChangeText,
   placeholder,
   value,
 }: {
   hint?: string
   label: string
+  maxLength?: number
   onChangeText: (text: string) => void
   placeholder?: string
   value: string
@@ -46,6 +48,7 @@ export const EditableUrlField = ({
             value={value}
             ref={inputRef}
             returnKeyType='done'
+            maxLength={maxLength}
             placeholder={placeholder}
             accessibilityLabel={label}
             onChangeText={onChangeText}

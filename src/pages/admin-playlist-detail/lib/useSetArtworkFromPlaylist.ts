@@ -9,22 +9,24 @@ const UPDATE_SUCCESS_MESSAGE = 'Обложки обновлены'
 
 // Тело PATCH /sermons/{id} собирается из строки плейлиста; единственное
 // переопределение — обложка плейлиста. `playlistsIds` — полный список связей
-// (пустой массив допустим), поэтому маппим `playlists` элемента.
+// (пустой массив допустим), поэтому маппим `playlists` элемента. Nullable-ссылки
+// нормализуются `|| null`: legacy-строки с '' сервер отверг бы (400) — для
+// `audioUrl`/`textFileUrl`/`youtubeUrl` пустая строка не проходит формат.
 const toArtworkUpdateDto = (
   sermon: APITypes.PlaylistSermon,
   artwork: string,
 ): APITypes.UpdateSermonDto => ({
   artist: sermon.artist,
   artwork,
-  audioUrl: sermon.audioUrl,
+  audioUrl: sermon.audioUrl || null,
   book: sermon.book,
   chapter: sermon.chapter,
   description: sermon.description,
   playlistsIds: sermon.playlists.map(playlist => playlist.id),
-  textFileUrl: sermon.textFileUrl,
+  textFileUrl: sermon.textFileUrl || null,
   title: sermon.title,
   verse: sermon.verse,
-  youtubeUrl: sermon.youtubeUrl,
+  youtubeUrl: sermon.youtubeUrl || null,
 })
 
 const tryUpdateSermonArtwork = async (

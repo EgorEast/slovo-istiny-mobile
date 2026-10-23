@@ -39,7 +39,7 @@
 - **Общая форма** `FlagForm` в двух режимах; поля: **ключ** (`FormField` только в create — паттерн `^[a-z][a-z0-9-]*$`; в edit ключ read-only), **название** (`FormField`), **«Включён»** (`CheckboxField` — глобальный дефолт).
 - **Кнопка «Сохранить» — в шапке экрана** (`headerRight`, `SaveButton`); шапка собирается `useAdminFormHeader`. Кнопка **disabled, пока форма не изменена** (`isDirty`: edit — сравнение с исходным снапшотом через `omitEqualFields`; create — pristine-форма disabled).
 - **Мутации:** `featureFlagsControllerCreate` (`POST /feature-flags`, тело `{ key, title }` — сервер создаёт флаг **выключенным**); если тумблер включён, после создания досылается `featureFlagsControllerUpdate` (`PATCH /feature-flags/{id}`, `{ enabled: true }`). `featureFlagsControllerUpdate` в edit шлёт **только изменённые** title/enabled (ключ неизменяем, в тело не попадает).
-- **Валидация (create):** ключ и название непустые, ключ — по паттерну, иначе inline-ошибка + тост, отправки нет.
+- **Валидация (create):** ключ и название непустые, ключ — по паттерну, длины зеркалят спецификацию (ключ ≤ 100, название ≤ 200; в edit — название ≤ 200), иначе inline-ошибка + тост, отправки нет.
 - **После успеха:** тост («Флаг создан»/«Флаг сохранён») и `router.back()`; ошибка — баннер в форме.
 - **Режим edit:** сущность грузится до монтирования формы (`useAdminFlagEntity`), пропсы формы стабильны.
 

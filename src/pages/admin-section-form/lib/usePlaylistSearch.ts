@@ -40,9 +40,11 @@ export const usePlaylistSearch = (search: string): PlaylistSearchState => {
 
     const load = async () => {
       try {
-        const response = await playlistsApi
-          .getPlaylists()
-          .playlistControllerFindAll({ order: 'asc', search: term || undefined, sort: 'title' })
+        const response = await playlistsApi.getPlaylists().playlistControllerFindAll({
+          order: 'asc',
+          search: term.trim() || undefined,
+          sort: 'title',
+        })
         if (isActive) setResult({ isError: false, playlists: response.playlists, term })
       } catch {
         if (isActive) setResult({ isError: true, playlists: [], term })
@@ -59,7 +61,7 @@ export const usePlaylistSearch = (search: string): PlaylistSearchState => {
   return {
     isError: result.isError,
     isLoading: result.term !== term,
-    isSearchActive: term !== '',
+    isSearchActive: term.trim() !== '',
     playlists: result.playlists,
   }
 }

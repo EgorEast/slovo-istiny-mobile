@@ -1,5 +1,6 @@
 import { ActivityIndicator, FlatList, Text, TextInput, View } from 'react-native'
 import { orderSelectedFirst } from 'shared/lib/utils/orderSelectedFirst'
+import { INPUT_LIMITS } from 'shared/lib/validation/inputLimits'
 import { COLORS, useTheme } from 'shared/ui/theme'
 import { mergeById } from '../lib/mergeById'
 import { type SermonOption } from '../lib/sermonOption'
@@ -48,6 +49,7 @@ export const SermonPicker = ({
       <TextInput
         value={search}
         onChangeText={onSearchChange}
+        maxLength={INPUT_LIMITS.search}
         placeholder='Поиск по названию'
         accessibilityLabel='Поиск проповедей'
         placeholderTextColor={currentTheme.placeholder}

@@ -65,7 +65,7 @@ export const useSermonSearch = (search: string): SermonSearchState => {
       try {
         const response = await sermonsApi
           .getSermons()
-          .sermonControllerFindAll({ search: term || undefined, take: SERMONS_TAKE })
+          .sermonControllerFindAll({ search: term.trim() || undefined, take: SERMONS_TAKE })
         if (!isActive || generationRef.current !== generation) return
         setSermons(response.sermons)
         setCursor(response.nextCursor)
@@ -96,9 +96,11 @@ export const useSermonSearch = (search: string): SermonSearchState => {
     setLoadMoreFailed(false)
 
     try {
-      const response = await sermonsApi
-        .getSermons()
-        .sermonControllerFindAll({ cursor, search: requestTerm || undefined, take: SERMONS_TAKE })
+      const response = await sermonsApi.getSermons().sermonControllerFindAll({
+        cursor,
+        search: requestTerm.trim() || undefined,
+        take: SERMONS_TAKE,
+      })
       if (generationRef.current !== generation) return
       setSermons(current => [...current, ...response.sermons])
       setCursor(response.nextCursor)

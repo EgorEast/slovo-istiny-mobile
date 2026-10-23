@@ -1,5 +1,6 @@
 import { View } from 'react-native'
 import { type TouchedMap } from 'shared/lib/hooks/useFormTouched'
+import { INPUT_LIMITS } from 'shared/lib/validation/inputLimits'
 import { FormField, FormGroupTitle } from 'shared/ui/form'
 import { useTheme } from 'shared/ui/theme'
 import { type PlaylistFormValues } from '../lib/playlistFormState'
@@ -36,6 +37,7 @@ export const PlaylistFormMainFields = ({
         label='Название'
         value={values.title}
         onBlur={() => markTouched('title')}
+        maxLength={INPUT_LIMITS.playlist.title}
         placeholder='Например: Воскресные проповеди'
         onChangeText={text => onChange('title', text)}
         invalid={Boolean(touched.title) && isBlank(values.title)}
@@ -46,6 +48,7 @@ export const PlaylistFormMainFields = ({
         hint='Необязательно.'
         value={values.description}
         placeholder='Короткое описание плейлиста'
+        maxLength={INPUT_LIMITS.playlist.description}
         onChangeText={text => onChange('description', text)}
       />
     </View>

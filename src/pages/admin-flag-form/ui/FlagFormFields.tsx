@@ -1,5 +1,6 @@
 import { Text, View } from 'react-native'
 import { type TouchedMap } from 'shared/lib/hooks/useFormTouched'
+import { INPUT_LIMITS } from 'shared/lib/validation/inputLimits'
 import { CheckboxField, FormField } from 'shared/ui/form'
 import { useTheme } from 'shared/ui/theme'
 import { type FlagFormValues } from '../lib/flagFormState'
@@ -66,6 +67,7 @@ export const FlagFormFields = ({
             value={values.key}
             placeholder='Например: read'
             onBlur={() => markTouched('key')}
+            maxLength={INPUT_LIMITS.featureFlag.key}
             onChangeText={text => onChange('key', text)}
             invalid={Boolean(touched.key) && isBlank(values.key)}
           />
@@ -76,6 +78,7 @@ export const FlagFormFields = ({
           value={values.title}
           placeholder='Например: Читать'
           onBlur={() => markTouched('title')}
+          maxLength={INPUT_LIMITS.featureFlag.title}
           onChangeText={text => onChange('title', text)}
           invalid={Boolean(touched.title) && isBlank(values.title)}
         />

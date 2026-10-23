@@ -15,6 +15,7 @@ export const FormField = ({
   invalid = false,
   keyboardType,
   label,
+  maxLength,
   multiline = false,
   onBlur,
   onChangeText,
@@ -30,6 +31,7 @@ export const FormField = ({
   invalid?: boolean
   keyboardType?: 'default' | 'email-address' | 'number-pad'
   label: string
+  maxLength?: number
   multiline?: boolean
   onBlur?: () => void
   onChangeText: (text: string) => void
@@ -62,6 +64,7 @@ export const FormField = ({
       <TextInput
         value={value}
         multiline={multiline}
+        maxLength={maxLength}
         placeholder={placeholder}
         accessibilityLabel={label}
         autoComplete={autoComplete}

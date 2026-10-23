@@ -17,6 +17,7 @@ import {
   initialFormValues,
   type SectionFormValues,
 } from '../lib/sectionFormState'
+import { sectionValidationError } from '../lib/sectionFormValidation'
 import { SectionFormAppearanceFields } from './SectionFormAppearanceFields'
 import { SectionFormMainFields } from './SectionFormMainFields'
 import { SectionFormPlaylistsFields } from './SectionFormPlaylistsFields'
@@ -25,6 +26,7 @@ import { styles } from './styles'
 const CREATE_SUCCESS_MESSAGE = 'Раздел создан'
 const UPDATE_SUCCESS_MESSAGE = 'Раздел сохранён'
 const SECTIONS_FALLBACK_ROUTE: Href = '/admin/sections'
+const TITLE_REQUIRED_MESSAGE = 'Укажите название раздела'
 const REQUIRED_FIELDS = ['title'] as const
 
 export const SectionForm = ({
@@ -51,14 +53,17 @@ export const SectionForm = ({
   const updateField = <K extends keyof SectionFormValues>(key: K, value: SectionFormValues[K]) =>
     setValues(prev => ({ ...prev, [key]: value }))
 
+  const rejectSubmit = (message: string) => {
+    setError(message)
+    showToastAction(message)
+  }
+
   const handleSubmit = async () => {
     markAllTouched(REQUIRED_FIELDS)
-    if (title.length === 0) {
-      const message = 'Укажите название раздела'
-      setError(message)
-      showToastAction(message)
-      return
-    }
+    if (title.length === 0) return rejectSubmit(TITLE_REQUIRED_MESSAGE)
+
+    const validationError = sectionValidationError(values)
+    if (validationError !== '') return rejectSubmit(validationError)
     if (isSubmitting) return
 
     setError(null)

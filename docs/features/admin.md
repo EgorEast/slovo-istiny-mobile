@@ -15,13 +15,16 @@
 
 ## Ограничения ввода (0.22.2)
 
-Спецификация 0.22.2 добавила серверные границы полей: источник истины — zod-схемы `src/shared/api/generated/model/` (константы `*Min`/`*Max`), TS-типы дублируют их в JSDoc (`@maxLength`, `@maxItems`, `@minimum`, `@maximum`, `@pattern`). Значения за границами сервер отвергает `400`, поэтому формы должны зеркалить лимиты (сейчас не зеркалят — см. [debt.md](../debt.md) → «Админка»):
+Спецификация 0.22.2 добавила серверные границы полей: источник истины — zod-схемы `src/shared/api/generated/model/` (константы `*Min`/`*Max`), TS-типы дублируют их в JSDoc (`@maxLength`, `@maxItems`, `@minimum`, `@maximum`, `@pattern`). Значения за границами сервер отвергает `400`, поэтому админ-формы **зеркалят лимиты клиентски**: границы собраны в `shared/lib/validation/inputLimits.ts` (те же сгенерированные константы), общие проверки — в `shared/lib/validation/formValidation.ts` (`maxLengthError`, `maxItemsError`, `passwordError`, `urlError`, `fileUrlError`).
 
-- **Пользователь:** `password` 8–200 (создание и смена), при входе — только `maxLength 200`; `username` 50 (вход — 100), `email` 254, `name` 100.
-- **Контент:** `title` 300, `description` 10000, `artist` 200, `book` 100.
-- **URL:** `artwork`/`audioUrl`/`textFileUrl`/`youtubeUrl`/адрес Invidious-инстанса — до 2048; `audioUrl` и `textFileUrl` дополнительно обязаны матчить `^https?://[^/]+/files/.+$` (ссылка на произвольный хост или локальный файл не пройдёт).
-- **Раздел:** `itemsRows` — целое `0..100` (раньше принималось любое число).
-- **Массивы и пагинация:** массивы связей (`playlistsIds`/`sermonsIds`/`sectionsIds`) и reorder-массивы — до 1000 элементов; `search` — до 200 символов; `page` — до 100000, `limit` — до 100.
+- **Поля форм:** `FormField` принимает `maxLength`, `EditableUrlField` ограничивает ввод 2048 символами по умолчанию (URL-поля — обложка, аудио, текст, YouTube), поэтому длиннее лимита ввести нельзя. Сабмит дополнительно проверяет длины и показывает русское сообщение тостом/inline (без похода на сервер): формы пользователя (`userFormState.createValidationError`/`updateValidationError`), проповеди (`sermonFormValidation.sermonValidationError`), плейлиста (`playlistFormValidation.playlistValidationError`), раздела (`sectionFormValidation.sectionValidationError`).
+- **Пользователь:** `password` 8–200 (создание — `createValidationError`, смена — `PasswordDialog` → `passwordError`), `username` 50, `email` 254, `name` 100.
+- **Контент:** `title` 300, `description` 10000, `artist` 200, `book` 100, `artwork` 2048.
+- **Фича-флаги:** `title` 200, `key` 100 (create — `createValidationError`, edit — `updateValidationError`).
+- **URL:** `artwork`/`audioUrl`/`textFileUrl`/`youtubeUrl`/адрес Invidious-инстанса — до 2048; `audioUrl` и `textFileUrl` дополнительно проверяются паттерном `^https?://[^/]+/files/.+$` (`FILE_URL_PATTERN`), `youtubeUrl` — абсолютный URL. Очищенные nullable-ссылки (`audioUrl`/`textFileUrl`/`youtubeUrl`) уходят на сервер как `null`, никогда `''`; `artwork` в спецификации non-nullable, поэтому пустая обложка остаётся `''` (схема её принимает). Массовое обновление обложек из плейлиста (`useSetArtworkFromPlaylist`) нормализует пустые nullable-ссылки legacy-строк в `null`, чтобы `PATCH` не падал.
+- **Раздел:** `itemsRows` — целое `0..100` (`parseItemsRows` + проверка верхней границы).
+- **Массивы и пагинация:** массивы связей (`playlistsIds`/`sermonsIds`/`sectionsIds`) — до 1000 элементов (проверяется перед сабмитом); `search` — до 200 символов (`maxLength` на всех поисковых полях), пустой/пробельный запрос не отправляется (уходит `undefined`, сервер требует минимум 1 символ); `page` — до 100000, `limit` — до 100.
+- **Ошибки сервера:** `getErrorMessage` (`shared/lib/error-utils`) достаёт `response.data.message` (строка или массив строк zod-DTO), поэтому вместо `Request failed with status code 400` админ видит конкретное нарушение.
 - **Rate limiting входа:** `POST /auth/login` — 10 запросов/мин с IP, `POST /auth/refresh` — 30/мин; превышение возвращает `429` (форма входа должна показывать временный отказ, а не «неверные данные»). См. [contracts/rest-api.md](../contracts/rest-api.md) → «Аутентификация».
 
 ## Разделы (sections)

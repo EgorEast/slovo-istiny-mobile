@@ -21,6 +21,7 @@ const DELETE_LABEL = 'Удалить'
 const DELETE_TITLE = 'Удалить инстанс?'
 const EMPTY_MESSAGE = 'Источников пока нет'
 const LOAD_ERROR_MESSAGE = 'Не удалось загрузить источники импорта'
+const INSTANCE_URL_MAX_LENGTH = 2048
 
 // Управление админ-списком Invidious-инстансов: список приходит с бэкенда,
 // добавление сразу сохраняется (после проверки API), удаление — локально до
@@ -54,6 +55,7 @@ export const AdminInvidiousScreen = () => {
             onChangeText={setDraft}
             accessibilityLabel={INPUT_LABEL}
             placeholder={INSTANCE_URL_PREFIX}
+            maxLength={INSTANCE_URL_MAX_LENGTH}
             onSubmitEditing={() => void handleAdd()}
             placeholderTextColor={currentTheme.placeholder}
             style={[

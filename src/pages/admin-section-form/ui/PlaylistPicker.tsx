@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { ActivityIndicator, Text, TextInput, View } from 'react-native'
 import { orderSelectedFirst } from 'shared/lib/utils/orderSelectedFirst'
+import { INPUT_LIMITS } from 'shared/lib/validation/inputLimits'
 import { COLORS, useTheme } from 'shared/ui/theme'
 import { usePlaylistSearch } from '../lib/usePlaylistSearch'
 import { pickerStyles } from './pickerStyles'
@@ -30,6 +31,7 @@ export const PlaylistPicker = ({
       <TextInput
         value={search}
         onChangeText={setSearch}
+        maxLength={INPUT_LIMITS.search}
         placeholder='Поиск по названию'
         accessibilityLabel='Поиск плейлистов'
         placeholderTextColor={currentTheme.placeholder}

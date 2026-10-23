@@ -71,6 +71,23 @@ describe('useFlagFormController', () => {
     expect(mockUpdate).toHaveBeenCalledWith('flag-1', { enabled: true })
   })
 
+  test('create blocks a title longer than 200 characters', async () => {
+    const { result } = await renderHookWithProviders(() =>
+      useFlagFormController({ mode: 'create' }),
+    )
+
+    await act(async () => {
+      result.current.onChange('key', 'study')
+      result.current.onChange('title', 'a'.repeat(201))
+    })
+    await act(async () => {
+      await result.current.save()
+    })
+
+    expect(mockCreate).not.toHaveBeenCalled()
+    expect(result.current.error).toBe('Название: не более 200 символов.')
+  })
+
   test('create blocks an invalid key before any request', async () => {
     const { result } = await renderHookWithProviders(() =>
       useFlagFormController({ mode: 'create' }),
