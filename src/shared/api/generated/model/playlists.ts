@@ -5,7 +5,7 @@
  * REST API сервиса «Слово.Проповеди».
  * Позволяет управлять проповедями, плейлистами, разделами, загружать файлы и работать с пользователями.
  *
- * OpenAPI spec version: 0.22.2
+ * OpenAPI spec version: 0.23.0
  */
 import * as zod from 'zod'
 
@@ -210,6 +210,7 @@ export const PlaylistControllerCreate200Response = zod.object({
       ),
     }),
   ),
+  createdAt: zod.iso.datetime({ offset: true }).describe('Дата добавления плейлиста'),
 })
 
 /**
@@ -247,7 +248,7 @@ export const PlaylistControllerFindAllQueryParams = zod.object({
     .enum(['date', 'title', 'section'])
     .default(playlistControllerFindAllQuerySortDefault)
     .describe(
-      'Вариант сортировки. `date` — по убыванию id (порядок загрузки), `title` — по названию, `section` — по названию раздела (плейлисты без раздела — в конце). Игнорируется при поиске (сортировка по релевантности). Применяется только к страничной выдаче (page/limit) и полной выдаче; несовместимо с take/cursor.',
+      'Вариант сортировки. `date` — по дате добавления (created_at), при равенстве — по id, `title` — по названию, `section` — по названию раздела (плейлисты без раздела — в конце). Игнорируется при поиске (сортировка по релевантности). Применяется только к страничной выдаче (page/limit) и полной выдаче.',
     ),
   order: zod
     .enum(['asc', 'desc'])
@@ -447,6 +448,7 @@ export const PlaylistControllerFindAll200Response = zod.object({
           ),
         }),
       ),
+      createdAt: zod.iso.datetime({ offset: true }).describe('Дата добавления плейлиста'),
     }),
   ),
   count: zod.number(),
@@ -639,6 +641,7 @@ export const PlaylistControllerFindOne200Response = zod.object({
       ),
     }),
   ),
+  createdAt: zod.iso.datetime({ offset: true }).describe('Дата добавления плейлиста'),
 })
 
 /**
@@ -846,6 +849,7 @@ export const PlaylistControllerUpdate200Response = zod.object({
       ),
     }),
   ),
+  createdAt: zod.iso.datetime({ offset: true }).describe('Дата добавления плейлиста'),
 })
 
 /**

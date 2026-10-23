@@ -28,7 +28,15 @@ jest.mock('expo-router', () => ({
 const buildResponse = (artwork: string) =>
   playlistsMocks.getPlaylistControllerFindAllResponseMock({
     playlists: [
-      { artwork, description: 'Описание', id: 'p1', sections: [], sermons: [], title: 'Первый' },
+      {
+        artwork,
+        createdAt: '2024-01-01T00:00:00Z',
+        description: 'Описание',
+        id: 'p1',
+        sections: [],
+        sermons: [],
+        title: 'Первый',
+      },
     ],
   })
 
@@ -36,6 +44,7 @@ const buildFullPage = () =>
   playlistsMocks.getPlaylistControllerFindAllResponseMock({
     playlists: Array.from({ length: PLAYLISTS_PAGE_SIZE }, (_, index) => ({
       artwork: '',
+      createdAt: '2024-01-01T00:00:00Z',
       description: 'Описание',
       id: `p${index}`,
       sections: [],

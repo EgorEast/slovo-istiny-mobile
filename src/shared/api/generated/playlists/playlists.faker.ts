@@ -5,7 +5,7 @@
  * REST API сервиса «Слово.Проповеди».
  * Позволяет управлять проповедями, плейлистами, разделами, загружать файлы и работать с пользователями.
  *
- * OpenAPI spec version: 0.22.2
+ * OpenAPI spec version: 0.23.0
  */
 import { faker } from '@faker-js/faker'
 
@@ -15,6 +15,7 @@ export const getPlaylistControllerCreateResponseMock = (
   overrideResponse: Partial<Extract<PlaylistEntity, object>> = {},
 ): PlaylistEntity => ({
   artwork: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  createdAt: faker.date.past().toISOString().slice(0, 19) + 'Z',
   description: faker.string.alpha({ length: { min: 10, max: 20 } }),
   id: faker.string.alpha({ length: { min: 10, max: 20 } }),
   sections: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(
@@ -174,6 +175,7 @@ export const getPlaylistControllerCreateResponseMock200 = (
   overrideResponse: Partial<Extract<PlaylistEntity, object>> = {},
 ): PlaylistEntity => ({
   artwork: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  createdAt: faker.date.past().toISOString().slice(0, 19) + 'Z',
   description: faker.string.alpha({ length: { min: 10, max: 20 } }),
   id: faker.string.alpha({ length: { min: 10, max: 20 } }),
   sections: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(
@@ -336,6 +338,7 @@ export const getPlaylistControllerFindAllResponseMock = (
   playlists: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(
     () => ({
       artwork: faker.string.alpha({ length: { min: 10, max: 20 } }),
+      createdAt: faker.date.past().toISOString().slice(0, 19) + 'Z',
       description: faker.string.alpha({ length: { min: 10, max: 20 } }),
       id: faker.string.alpha({ length: { min: 10, max: 20 } }),
       sections: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(
@@ -502,6 +505,7 @@ export const getPlaylistControllerFindAllResponseMock200 = (
   playlists: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(
     () => ({
       artwork: faker.string.alpha({ length: { min: 10, max: 20 } }),
+      createdAt: faker.date.past().toISOString().slice(0, 19) + 'Z',
       description: faker.string.alpha({ length: { min: 10, max: 20 } }),
       id: faker.string.alpha({ length: { min: 10, max: 20 } }),
       sections: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(
@@ -665,6 +669,7 @@ export const getPlaylistControllerFindOneResponseMock = (
   overrideResponse: Partial<Extract<PlaylistEntity, object>> = {},
 ): PlaylistEntity => ({
   artwork: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  createdAt: faker.date.past().toISOString().slice(0, 19) + 'Z',
   description: faker.string.alpha({ length: { min: 10, max: 20 } }),
   id: faker.string.alpha({ length: { min: 10, max: 20 } }),
   sections: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(
@@ -824,6 +829,7 @@ export const getPlaylistControllerFindOneResponseMock200 = (
   overrideResponse: Partial<Extract<PlaylistEntity, object>> = {},
 ): PlaylistEntity => ({
   artwork: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  createdAt: faker.date.past().toISOString().slice(0, 19) + 'Z',
   description: faker.string.alpha({ length: { min: 10, max: 20 } }),
   id: faker.string.alpha({ length: { min: 10, max: 20 } }),
   sections: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(
@@ -983,6 +989,7 @@ export const getPlaylistControllerUpdateResponseMock = (
   overrideResponse: Partial<Extract<PlaylistEntity, object>> = {},
 ): PlaylistEntity => ({
   artwork: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  createdAt: faker.date.past().toISOString().slice(0, 19) + 'Z',
   description: faker.string.alpha({ length: { min: 10, max: 20 } }),
   id: faker.string.alpha({ length: { min: 10, max: 20 } }),
   sections: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(
@@ -1142,6 +1149,7 @@ export const getPlaylistControllerUpdateResponseMock200 = (
   overrideResponse: Partial<Extract<PlaylistEntity, object>> = {},
 ): PlaylistEntity => ({
   artwork: faker.string.alpha({ length: { min: 10, max: 20 } }),
+  createdAt: faker.date.past().toISOString().slice(0, 19) + 'Z',
   description: faker.string.alpha({ length: { min: 10, max: 20 } }),
   id: faker.string.alpha({ length: { min: 10, max: 20 } }),
   sections: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(

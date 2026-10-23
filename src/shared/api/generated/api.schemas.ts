@@ -5,7 +5,7 @@
  * REST API сервиса «Слово.Проповеди».
  * Позволяет управлять проповедями, плейлистами, разделами, загружать файлы и работать с пользователями.
  *
- * OpenAPI spec version: 0.22.2
+ * OpenAPI spec version: 0.23.0
  */
 export interface HealthResponse {
   status: string
@@ -196,6 +196,8 @@ export interface SectionEntity {
 
 export interface PlaylistEntity {
   artwork: string
+  /** Дата добавления плейлиста */
+  createdAt: string
   description: string
   id: string
   sections: SectionEntity[]
@@ -211,6 +213,8 @@ export interface SermonEntity {
   /** @nullable */
   book: string | null
   chapter: number | number[] | null
+  /** Дата добавления проповеди */
+  createdAt: string
   description: string
   id: string
   playlists: PlaylistEntity[]
@@ -675,7 +679,7 @@ export type PlaylistControllerFindAllParams = {
    */
   limit?: number
   /**
-   * Вариант сортировки. `date` — по убыванию id (порядок загрузки), `title` — по названию, `section` — по названию раздела (плейлисты без раздела — в конце). Игнорируется при поиске (сортировка по релевантности). Применяется только к страничной выдаче (page/limit) и полной выдаче; несовместимо с take/cursor.
+   * Вариант сортировки. `date` — по дате добавления (created_at), при равенстве — по id, `title` — по названию, `section` — по названию раздела (плейлисты без раздела — в конце). Игнорируется при поиске (сортировка по релевантности). Применяется только к страничной выдаче (page/limit) и полной выдаче.
    */
   sort?: PlaylistControllerFindAllSort
   /**
@@ -707,6 +711,9 @@ export type SermonControllerFindAllParams = {
    * @maximum 100
    */
   take?: number
+  /**
+   * Непрозрачный курсор keyset-пагинации: используйте значение nextCursor из предыдущей страницы (составной курсор: дата добавления + id). Курсоры старого формата (uuid) считаются недействительными и возвращают 400.
+   */
   cursor?: string
   /**
    * Поисковый запрос по названию, проповеднику, книге и описанию
@@ -727,7 +734,7 @@ export type SermonControllerFindAllParams = {
    */
   limit?: number
   /**
-   * Вариант сортировки. `date` — по убыванию id (порядок загрузки), `title` — по названию, `artist` — по автору, `playlist` — по названию плейлиста (проповеди без плейлиста — в конце). Игнорируется при поиске (сортировка по релевантности). Применяется только к страничной выдаче (page/limit) и полной выдаче; несовместимо с take/cursor.
+   * Вариант сортировки. `date` — по дате добавления (created_at), при равенстве — по id, `title` — по названию, `artist` — по автору, `playlist` — по названию плейлиста (проповеди без плейлиста — в конце). Игнорируется при поиске (сортировка по релевантности). Применяется только к страничной выдаче (page/limit) и полной выдаче; несовместимо с take/cursor.
    */
   sort?: SermonControllerFindAllSort
   /**

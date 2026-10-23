@@ -20,6 +20,7 @@ const entity = (overrides: Partial<APITypes.SermonEntity> = {}): APITypes.Sermon
   audioUrl: null,
   book: 'Иоанна',
   chapter: 3,
+  createdAt: '2024-01-01T00:00:00Z',
   description: 'Описание',
   id: 's1',
   playlists: [],
