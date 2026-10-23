@@ -5,7 +5,7 @@
  * REST API сервиса «Слово.Проповеди».
  * Позволяет управлять проповедями, плейлистами, разделами, загружать файлы и работать с пользователями.
  *
- * OpenAPI spec version: 0.22.1
+ * OpenAPI spec version: 0.22.2
  */
 import * as zod from 'zod'
 
@@ -90,17 +90,6 @@ export const AppControllerCleanupOrphanedFiles200Response = zod.object({
       reason: zod.string(),
     }),
   ),
-})
-
-/**
- * @summary Получить URL потока для файла
- */
-export const AppControllerGetStreamUrlParams = zod.object({
-  fileName: zod.string(),
-})
-
-export const AppControllerGetStreamUrl200Response = zod.object({
-  url: zod.string(),
 })
 
 /**

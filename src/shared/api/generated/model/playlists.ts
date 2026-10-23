@@ -5,19 +5,29 @@
  * REST API сервиса «Слово.Проповеди».
  * Позволяет управлять проповедями, плейлистами, разделами, загружать файлы и работать с пользователями.
  *
- * OpenAPI spec version: 0.22.1
+ * OpenAPI spec version: 0.22.2
  */
 import * as zod from 'zod'
 
 /**
  * @summary Создать плейлист
  */
+export const playlistControllerCreateBodyTitleMax = 300
+
+export const playlistControllerCreateBodyDescriptionMax = 10000
+
+export const playlistControllerCreateBodyArtworkMax = 2048
+
+export const playlistControllerCreateBodySermonsIdsMax = 1000
+
+export const playlistControllerCreateBodySectionsIdsMax = 1000
+
 export const PlaylistControllerCreateBody = zod.object({
-  title: zod.string(),
-  description: zod.string().nullable(),
-  artwork: zod.string(),
-  sermonsIds: zod.array(zod.string()).optional(),
-  sectionsIds: zod.array(zod.string()).optional(),
+  title: zod.string().max(playlistControllerCreateBodyTitleMax),
+  description: zod.string().max(playlistControllerCreateBodyDescriptionMax).nullable(),
+  artwork: zod.string().max(playlistControllerCreateBodyArtworkMax),
+  sermonsIds: zod.array(zod.string()).max(playlistControllerCreateBodySermonsIdsMax).optional(),
+  sectionsIds: zod.array(zod.string()).max(playlistControllerCreateBodySectionsIdsMax).optional(),
 })
 
 export const playlistControllerCreate200ResponseSectionsItemIsDescriptionTitleOnSlideLargeDefault = false
@@ -205,6 +215,9 @@ export const PlaylistControllerCreate200Response = zod.object({
 /**
  * @summary Получить все плейлисты
  */
+export const playlistControllerFindAllQuerySearchMax = 200
+
+export const playlistControllerFindAllQueryPageMax = 100000
 
 export const playlistControllerFindAllQueryLimitMax = 100
 
@@ -212,8 +225,18 @@ export const playlistControllerFindAllQuerySortDefault = `date`
 export const playlistControllerFindAllQueryOrderDefault = `desc`
 
 export const PlaylistControllerFindAllQueryParams = zod.object({
-  search: zod.string().min(1).optional().describe('Поисковый запрос по названию и описанию'),
-  page: zod.int().min(1).optional().describe('Номер страницы для оффсетной пагинации'),
+  search: zod
+    .string()
+    .min(1)
+    .max(playlistControllerFindAllQuerySearchMax)
+    .optional()
+    .describe('Поисковый запрос по названию и описанию'),
+  page: zod
+    .int()
+    .min(1)
+    .max(playlistControllerFindAllQueryPageMax)
+    .optional()
+    .describe('Номер страницы для оффсетной пагинации'),
   limit: zod
     .int()
     .min(1)
@@ -625,12 +648,22 @@ export const PlaylistControllerUpdateParams = zod.object({
   id: zod.uuid(),
 })
 
+export const playlistControllerUpdateBodyTitleMax = 300
+
+export const playlistControllerUpdateBodyDescriptionMax = 10000
+
+export const playlistControllerUpdateBodyArtworkMax = 2048
+
+export const playlistControllerUpdateBodySermonsIdsMax = 1000
+
+export const playlistControllerUpdateBodySectionsIdsMax = 1000
+
 export const PlaylistControllerUpdateBody = zod.object({
-  title: zod.string(),
-  description: zod.string().nullable(),
-  artwork: zod.string(),
-  sermonsIds: zod.array(zod.string()),
-  sectionsIds: zod.array(zod.string()).optional(),
+  title: zod.string().max(playlistControllerUpdateBodyTitleMax),
+  description: zod.string().max(playlistControllerUpdateBodyDescriptionMax).nullable(),
+  artwork: zod.string().max(playlistControllerUpdateBodyArtworkMax),
+  sermonsIds: zod.array(zod.string()).max(playlistControllerUpdateBodySermonsIdsMax),
+  sectionsIds: zod.array(zod.string()).max(playlistControllerUpdateBodySectionsIdsMax).optional(),
 })
 
 export const playlistControllerUpdate200ResponseSectionsItemIsDescriptionTitleOnSlideLargeDefault = false
@@ -834,8 +867,10 @@ export const ReorderSermonsInPlaylistParams = zod.object({
   id: zod.uuid(),
 })
 
+export const reorderSermonsInPlaylistBodySermonIdsMax = 1000
+
 export const ReorderSermonsInPlaylistBody = zod.object({
-  sermonIds: zod.array(zod.uuid()),
+  sermonIds: zod.array(zod.uuid()).max(reorderSermonsInPlaylistBodySermonIdsMax),
 })
 
 export const ReorderSermonsInPlaylist200Response = zod.object({

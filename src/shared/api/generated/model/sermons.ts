@@ -5,13 +5,31 @@
  * REST API сервиса «Слово.Проповеди».
  * Позволяет управлять проповедями, плейлистами, разделами, загружать файлы и работать с пользователями.
  *
- * OpenAPI spec version: 0.22.1
+ * OpenAPI spec version: 0.22.2
  */
 import * as zod from 'zod'
 
 /**
  * @summary Создать новую проповедь
  */
+export const sermonControllerCreateBodyTitleMax = 300
+
+export const sermonControllerCreateBodyDescriptionMax = 10000
+
+export const sermonControllerCreateBodyTextFileUrlMax = 2048
+
+export const sermonControllerCreateBodyTextFileUrlRegExp = new RegExp('^https?://[^/]+/files/.+$')
+export const sermonControllerCreateBodyAudioUrlMax = 2048
+
+export const sermonControllerCreateBodyAudioUrlRegExp = new RegExp('^https?://[^/]+/files/.+$')
+export const sermonControllerCreateBodyYoutubeUrlMax = 2048
+
+export const sermonControllerCreateBodyArtistMax = 200
+
+export const sermonControllerCreateBodyArtworkMax = 2048
+
+export const sermonControllerCreateBodyBookMax = 100
+
 export const sermonControllerCreateBodyChapterTwoMin = 2
 export const sermonControllerCreateBodyChapterTwoMax = 2
 
@@ -21,15 +39,25 @@ export const sermonControllerCreateBodyVerseTwoMax = 2
 export const sermonControllerCreateBodyVerseThreeItemTwoMin = 2
 export const sermonControllerCreateBodyVerseThreeItemTwoMax = 2
 
+export const sermonControllerCreateBodyPlaylistsIdsMax = 1000
+
 export const SermonControllerCreateBody = zod.object({
-  title: zod.string(),
-  description: zod.string().nullable(),
-  textFileUrl: zod.string().nullable(),
-  audioUrl: zod.string().nullable(),
-  youtubeUrl: zod.string().nullable(),
-  artist: zod.string(),
-  artwork: zod.string(),
-  book: zod.string().nullable(),
+  title: zod.string().max(sermonControllerCreateBodyTitleMax),
+  description: zod.string().max(sermonControllerCreateBodyDescriptionMax).nullable(),
+  textFileUrl: zod
+    .url()
+    .max(sermonControllerCreateBodyTextFileUrlMax)
+    .regex(sermonControllerCreateBodyTextFileUrlRegExp)
+    .nullable(),
+  audioUrl: zod
+    .url()
+    .max(sermonControllerCreateBodyAudioUrlMax)
+    .regex(sermonControllerCreateBodyAudioUrlRegExp)
+    .nullable(),
+  youtubeUrl: zod.url().max(sermonControllerCreateBodyYoutubeUrlMax).nullable(),
+  artist: zod.string().max(sermonControllerCreateBodyArtistMax),
+  artwork: zod.string().max(sermonControllerCreateBodyArtworkMax),
+  book: zod.string().max(sermonControllerCreateBodyBookMax).nullable(),
   chapter: zod
     .union([
       zod.int(),
@@ -64,7 +92,7 @@ export const SermonControllerCreateBody = zod.object({
     .describe(
       'Стих или стихи проповеди. Массив из двух целых чисел трактуется как диапазон от–до; массив, содержащий кортежи или смесь целых и кортежей, трактуется как список разрозненных отрезков (например [9,18] — диапазон, [[9,18],20] — отрезок 9–18 и стих 20).',
     ),
-  playlistsIds: zod.array(zod.string()).optional(),
+  playlistsIds: zod.array(zod.string()).max(sermonControllerCreateBodyPlaylistsIdsMax).optional(),
 })
 
 export const sermonControllerCreate200ResponseChapterTwoMin = 2
@@ -313,6 +341,10 @@ export const SermonControllerCreate200Response = zod.object({
  */
 export const sermonControllerFindAllQueryTakeMax = 100
 
+export const sermonControllerFindAllQuerySearchMax = 200
+
+export const sermonControllerFindAllQueryPageMax = 100000
+
 export const sermonControllerFindAllQueryLimitMax = 100
 
 export const sermonControllerFindAllQuerySortDefault = `date`
@@ -324,11 +356,13 @@ export const SermonControllerFindAllQueryParams = zod.object({
   search: zod
     .string()
     .min(1)
+    .max(sermonControllerFindAllQuerySearchMax)
     .optional()
     .describe('Поисковый запрос по названию, проповеднику, книге и описанию'),
   page: zod
     .int()
     .min(1)
+    .max(sermonControllerFindAllQueryPageMax)
     .optional()
     .describe(
       'Номер страницы для оффсетной пагинации; взаимоисключителен с take и cursor (одновременное использование → 400)',
@@ -623,17 +657,6 @@ export const SermonControllerGetDistinctValues200Response = zod
   .describe('Списки уникальных значений проповедников и книг')
 
 /**
- * @summary Получить URL потока для аудио проповеди
- */
-export const SermonControllerGetStreamUrlParams = zod.object({
-  id: zod.uuid(),
-})
-
-export const SermonControllerGetStreamUrl200Response = zod.object({
-  url: zod.string(),
-})
-
-/**
  * @summary Получить одну проповедь по ID
  */
 export const SermonControllerFindOneParams = zod.object({
@@ -890,6 +913,24 @@ export const SermonControllerUpdateParams = zod.object({
   id: zod.uuid(),
 })
 
+export const sermonControllerUpdateBodyTitleMax = 300
+
+export const sermonControllerUpdateBodyDescriptionMax = 10000
+
+export const sermonControllerUpdateBodyTextFileUrlMax = 2048
+
+export const sermonControllerUpdateBodyTextFileUrlRegExp = new RegExp('^https?://[^/]+/files/.+$')
+export const sermonControllerUpdateBodyAudioUrlMax = 2048
+
+export const sermonControllerUpdateBodyAudioUrlRegExp = new RegExp('^https?://[^/]+/files/.+$')
+export const sermonControllerUpdateBodyYoutubeUrlMax = 2048
+
+export const sermonControllerUpdateBodyArtistMax = 200
+
+export const sermonControllerUpdateBodyArtworkMax = 2048
+
+export const sermonControllerUpdateBodyBookMax = 100
+
 export const sermonControllerUpdateBodyChapterTwoMin = 2
 export const sermonControllerUpdateBodyChapterTwoMax = 2
 
@@ -899,15 +940,25 @@ export const sermonControllerUpdateBodyVerseTwoMax = 2
 export const sermonControllerUpdateBodyVerseThreeItemTwoMin = 2
 export const sermonControllerUpdateBodyVerseThreeItemTwoMax = 2
 
+export const sermonControllerUpdateBodyPlaylistsIdsMax = 1000
+
 export const SermonControllerUpdateBody = zod.object({
-  title: zod.string(),
-  description: zod.string().nullable(),
-  textFileUrl: zod.string().nullable(),
-  audioUrl: zod.string().nullable(),
-  youtubeUrl: zod.string().nullable(),
-  artist: zod.string(),
-  artwork: zod.string(),
-  book: zod.string().nullable(),
+  title: zod.string().max(sermonControllerUpdateBodyTitleMax),
+  description: zod.string().max(sermonControllerUpdateBodyDescriptionMax).nullable(),
+  textFileUrl: zod
+    .url()
+    .max(sermonControllerUpdateBodyTextFileUrlMax)
+    .regex(sermonControllerUpdateBodyTextFileUrlRegExp)
+    .nullable(),
+  audioUrl: zod
+    .url()
+    .max(sermonControllerUpdateBodyAudioUrlMax)
+    .regex(sermonControllerUpdateBodyAudioUrlRegExp)
+    .nullable(),
+  youtubeUrl: zod.url().max(sermonControllerUpdateBodyYoutubeUrlMax).nullable(),
+  artist: zod.string().max(sermonControllerUpdateBodyArtistMax),
+  artwork: zod.string().max(sermonControllerUpdateBodyArtworkMax),
+  book: zod.string().max(sermonControllerUpdateBodyBookMax).nullable(),
   chapter: zod
     .union([
       zod.int(),
@@ -942,7 +993,7 @@ export const SermonControllerUpdateBody = zod.object({
     .describe(
       'Стих или стихи проповеди. Массив из двух целых чисел трактуется как диапазон от–до; массив, содержащий кортежи или смесь целых и кортежей, трактуется как список разрозненных отрезков (например [9,18] — диапазон, [[9,18],20] — отрезок 9–18 и стих 20).',
     ),
-  playlistsIds: zod.array(zod.string()),
+  playlistsIds: zod.array(zod.string()).max(sermonControllerUpdateBodyPlaylistsIdsMax),
 })
 
 export const SermonControllerUpdate200Response = zod.object({

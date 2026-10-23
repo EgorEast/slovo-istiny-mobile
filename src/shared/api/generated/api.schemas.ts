@@ -5,14 +5,10 @@
  * REST API сервиса «Слово.Проповеди».
  * Позволяет управлять проповедями, плейлистами, разделами, загружать файлы и работать с пользователями.
  *
- * OpenAPI spec version: 0.22.1
+ * OpenAPI spec version: 0.22.2
  */
 export interface HealthResponse {
   status: string
-}
-
-export interface StreamUrlResponse {
-  url: string
 }
 
 export interface IFileResponseDto {
@@ -89,12 +85,20 @@ export const CreateSectionDtoWhereIsSlideTitleLocated = {
 
 export interface CreateSectionDto {
   borderRadius?: boolean
-  /** @nullable */
+  /**
+   * @maxLength 10000
+   * @nullable
+   */
   description: string | null
   isDescriptionTitleOnSlideLarge?: boolean
-  /** @nullable */
+  /**
+   * @minimum 0
+   * @maximum 100
+   * @nullable
+   */
   itemsRows: number | null
   itemsSize: CreateSectionDtoItemsSize
+  /** @maxLength 300 */
   title: string
   transform: CreateSectionDtoTransform
   /** Расположение заголовка на карточке. `bothOnAndUnder` — заголовок и описание внизу карточки: заголовок над описанием. `on` — заголовок по центру карточки, `under` — заголовок под карточкой. */
@@ -257,13 +261,22 @@ export const UpdateSectionDtoWhereIsSlideTitleLocated = {
 
 export interface UpdateSectionDto {
   borderRadius: boolean
-  /** @nullable */
+  /**
+   * @maxLength 10000
+   * @nullable
+   */
   description: string | null
   isDescriptionTitleOnSlideLarge: boolean
-  /** @nullable */
+  /**
+   * @minimum 0
+   * @maximum 100
+   * @nullable
+   */
   itemsRows: number | null
   itemsSize: UpdateSectionDtoItemsSize
+  /** @maxItems 1000 */
   playlistsIds: string[]
+  /** @maxLength 300 */
   title: string
   transform: UpdateSectionDtoTransform
   /** Расположение заголовка на карточке. `bothOnAndUnder` — заголовок и описание внизу карточки: заголовок над описанием. `on` — заголовок по центру карточки, `under` — заголовок под карточкой. */
@@ -275,11 +288,18 @@ export interface StatusSectionsResponse {
 }
 
 export interface CreatePlaylistDto {
+  /** @maxLength 2048 */
   artwork: string
-  /** @nullable */
+  /**
+   * @maxLength 10000
+   * @nullable
+   */
   description: string | null
+  /** @maxItems 1000 */
   sectionsIds?: string[]
+  /** @maxItems 1000 */
   sermonsIds?: string[]
+  /** @maxLength 300 */
   title: string
 }
 
@@ -289,11 +309,18 @@ export interface AllPlaylistsResponse {
 }
 
 export interface UpdatePlaylistDto {
+  /** @maxLength 2048 */
   artwork: string
-  /** @nullable */
+  /**
+   * @maxLength 10000
+   * @nullable
+   */
   description: string | null
+  /** @maxItems 1000 */
   sectionsIds?: string[]
+  /** @maxItems 1000 */
   sermonsIds: string[]
+  /** @maxLength 300 */
   title: string
 }
 
@@ -302,34 +329,58 @@ export interface StatusPlaylistResponse {
 }
 
 export interface ReorderSectionsDto {
+  /** @maxItems 1000 */
   ids: string[]
 }
 
 export interface ReorderSermonsDto {
+  /** @maxItems 1000 */
   sermonIds: string[]
 }
 
 export interface ReorderPlaylistsDto {
+  /** @maxItems 1000 */
   playlistIds: string[]
 }
 
 export interface CreateSermonDto {
+  /** @maxLength 200 */
   artist: string
+  /** @maxLength 2048 */
   artwork: string
-  /** @nullable */
+  /**
+   * @maxLength 2048
+   * @nullable
+   * @pattern ^https?://[^/]+/files/.+$
+   */
   audioUrl: string | null
-  /** @nullable */
+  /**
+   * @maxLength 100
+   * @nullable
+   */
   book: string | null
   chapter?: number | number[] | null
-  /** @nullable */
+  /**
+   * @maxLength 10000
+   * @nullable
+   */
   description: string | null
+  /** @maxItems 1000 */
   playlistsIds?: string[]
-  /** @nullable */
+  /**
+   * @maxLength 2048
+   * @nullable
+   * @pattern ^https?://[^/]+/files/.+$
+   */
   textFileUrl: string | null
+  /** @maxLength 300 */
   title: string
   /** Стих или стихи проповеди. Массив из двух целых чисел трактуется как диапазон от–до; массив, содержащий кортежи или смесь целых и кортежей, трактуется как список разрозненных отрезков (например [9,18] — диапазон, [[9,18],20] — отрезок 9–18 и стих 20). */
   verse?: number | number[] | (number | number[])[] | null
-  /** @nullable */
+  /**
+   * @maxLength 2048
+   * @nullable
+   */
   youtubeUrl: string | null
 }
 
@@ -350,22 +401,43 @@ export interface SermonDistinctValuesResponse {
 }
 
 export interface UpdateSermonDto {
+  /** @maxLength 200 */
   artist: string
+  /** @maxLength 2048 */
   artwork: string
-  /** @nullable */
+  /**
+   * @maxLength 2048
+   * @nullable
+   * @pattern ^https?://[^/]+/files/.+$
+   */
   audioUrl: string | null
-  /** @nullable */
+  /**
+   * @maxLength 100
+   * @nullable
+   */
   book: string | null
   chapter?: number | number[] | null
-  /** @nullable */
+  /**
+   * @maxLength 10000
+   * @nullable
+   */
   description: string | null
+  /** @maxItems 1000 */
   playlistsIds: string[]
-  /** @nullable */
+  /**
+   * @maxLength 2048
+   * @nullable
+   * @pattern ^https?://[^/]+/files/.+$
+   */
   textFileUrl: string | null
+  /** @maxLength 300 */
   title: string
   /** Стих или стихи проповеди. Массив из двух целых чисел трактуется как диапазон от–до; массив, содержащий кортежи или смесь целых и кортежей, трактуется как список разрозненных отрезков (например [9,18] — диапазон, [[9,18],20] — отрезок 9–18 и стих 20). */
   verse?: number | number[] | (number | number[])[] | null
-  /** @nullable */
+  /**
+   * @maxLength 2048
+   * @nullable
+   */
   youtubeUrl: string | null
 }
 
@@ -374,8 +446,12 @@ export interface StatusSermonResponse {
 }
 
 export interface SignInRequestDto {
+  /** @maxLength 200 */
   password: string
-  /** Имя пользователя для входа */
+  /**
+   * Имя пользователя для входа
+   * @maxLength 100
+   */
   username: string
 }
 
@@ -405,21 +481,35 @@ export interface AllUsersResponse {
 }
 
 export interface CreateUserRequest {
+  /** @maxLength 254 */
   email: string
+  /** @maxLength 100 */
   name: string
+  /**
+   * @minLength 8
+   * @maxLength 200
+   */
   password: string
   role?: UserRole
+  /** @maxLength 50 */
   username: string
 }
 
 export interface UpdateUserRequest {
+  /** @maxLength 254 */
   email?: string
+  /** @maxLength 100 */
   name?: string
   role?: UserRole
+  /** @maxLength 50 */
   username?: string
 }
 
 export interface ChangePasswordRequest {
+  /**
+   * @minLength 8
+   * @maxLength 200
+   */
   password: string
 }
 
@@ -451,7 +541,11 @@ export interface InvidiousInstance {
 }
 
 export interface ReplaceInvidiousInstancesRequest {
-  /** Полные https-адреса инстансов; порядок соответствует порядку в UI, дубликаты запрещены */
+  /**
+   * Полные https-адреса инстансов; порядок соответствует порядку в UI, дубликаты запрещены
+   * @maxItems 100
+   * @items.maxLength 2048
+   */
   urls: string[]
 }
 
@@ -497,18 +591,28 @@ export interface FeatureFlagOverrideListResponse {
 export interface CreateFeatureFlagRequest {
   /**
    * Уникальный ключ флага (lowercase kebab-case)
+   * @maxLength 100
    * @pattern ^[a-z][a-z0-9-]*$
    */
   key: string
-  /** @minLength 1 */
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
   title: string
 }
 
 export interface UpdateFeatureFlagRequest {
   enabled?: boolean
-  /** @pattern ^[a-z][a-z0-9-]*$ */
+  /**
+   * @maxLength 100
+   * @pattern ^[a-z][a-z0-9-]*$
+   */
   key?: string
-  /** @minLength 1 */
+  /**
+   * @minLength 1
+   * @maxLength 200
+   */
   title?: string
 }
 
@@ -555,11 +659,13 @@ export type PlaylistControllerFindAllParams = {
   /**
    * Поисковый запрос по названию и описанию
    * @minLength 1
+   * @maxLength 200
    */
   search?: string
   /**
    * Номер страницы для оффсетной пагинации
    * @minimum 1
+   * @maximum 100000
    */
   page?: number
   /**
@@ -605,11 +711,13 @@ export type SermonControllerFindAllParams = {
   /**
    * Поисковый запрос по названию, проповеднику, книге и описанию
    * @minLength 1
+   * @maxLength 200
    */
   search?: string
   /**
    * Номер страницы для оффсетной пагинации; взаимоисключителен с take и cursor (одновременное использование → 400)
    * @minimum 1
+   * @maximum 100000
    */
   page?: number
   /**
@@ -650,6 +758,7 @@ export type UsersControllerFindAllParams = {
   /**
    * Номер страницы для оффсетной пагинации
    * @minimum 1
+   * @maximum 100000
    */
   page?: number
   /**

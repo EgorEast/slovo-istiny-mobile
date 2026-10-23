@@ -5,7 +5,7 @@
  * REST API сервиса «Слово.Проповеди».
  * Позволяет управлять проповедями, плейлистами, разделами, загружать файлы и работать с пользователями.
  *
- * OpenAPI spec version: 0.22.1
+ * OpenAPI spec version: 0.22.2
  */
 import * as zod from 'zod'
 
@@ -45,14 +45,18 @@ export const FeatureFlagsControllerFindAll200Response = zod.object({
  * Создаёт флаг в выключенном состоянии (enabled=false). Ключ — lowercase kebab-case (^[a-z][a-z0-9-]*$), уникален. Доступно только администраторам.
  * @summary Создать фича-флаг
  */
+export const featureFlagsControllerCreateBodyKeyMax = 100
+
 export const featureFlagsControllerCreateBodyKeyRegExp = new RegExp('^[a-z][a-z0-9-]*$')
+export const featureFlagsControllerCreateBodyTitleMax = 200
 
 export const FeatureFlagsControllerCreateBody = zod.object({
   key: zod
     .string()
+    .max(featureFlagsControllerCreateBodyKeyMax)
     .regex(featureFlagsControllerCreateBodyKeyRegExp)
     .describe('Уникальный ключ флага (lowercase kebab-case)'),
-  title: zod.string().min(1),
+  title: zod.string().min(1).max(featureFlagsControllerCreateBodyTitleMax),
 })
 
 export const FeatureFlagsControllerCreate201Response = zod.object({
@@ -72,11 +76,18 @@ export const FeatureFlagsControllerUpdateParams = zod.object({
   id: zod.uuid(),
 })
 
+export const featureFlagsControllerUpdateBodyKeyMax = 100
+
 export const featureFlagsControllerUpdateBodyKeyRegExp = new RegExp('^[a-z][a-z0-9-]*$')
+export const featureFlagsControllerUpdateBodyTitleMax = 200
 
 export const FeatureFlagsControllerUpdateBody = zod.object({
-  key: zod.string().regex(featureFlagsControllerUpdateBodyKeyRegExp).optional(),
-  title: zod.string().min(1).optional(),
+  key: zod
+    .string()
+    .max(featureFlagsControllerUpdateBodyKeyMax)
+    .regex(featureFlagsControllerUpdateBodyKeyRegExp)
+    .optional(),
+  title: zod.string().min(1).max(featureFlagsControllerUpdateBodyTitleMax).optional(),
   enabled: zod.boolean().optional(),
 })
 

@@ -5,18 +5,29 @@
  * REST API сервиса «Слово.Проповеди».
  * Позволяет управлять проповедями, плейлистами, разделами, загружать файлы и работать с пользователями.
  *
- * OpenAPI spec version: 0.22.1
+ * OpenAPI spec version: 0.22.2
  */
 import * as zod from 'zod'
 
 /**
  * @summary Создать раздел
  */
+export const sectionControllerCreateBodyTitleMax = 300
+
+export const sectionControllerCreateBodyDescriptionMax = 10000
+
+export const sectionControllerCreateBodyItemsRowsMin = 0
+export const sectionControllerCreateBodyItemsRowsMax = 100
+
 export const SectionControllerCreateBody = zod.object({
-  title: zod.string(),
-  description: zod.string().nullable(),
+  title: zod.string().max(sectionControllerCreateBodyTitleMax),
+  description: zod.string().max(sectionControllerCreateBodyDescriptionMax).nullable(),
   itemsSize: zod.enum(['small', 'middle', 'large', 'xLarge']),
-  itemsRows: zod.number().nullable(),
+  itemsRows: zod
+    .int()
+    .min(sectionControllerCreateBodyItemsRowsMin)
+    .max(sectionControllerCreateBodyItemsRowsMax)
+    .nullable(),
   transform: zod.enum(['high', 'middle', 'short']),
   isDescriptionTitleOnSlideLarge: zod.boolean().optional(),
   whereIsSlideTitleLocated: zod
@@ -256,8 +267,10 @@ export const SectionControllerFindAll200Response = zod.object({
  * Принимает список id разделов в новом порядке и обновляет позиции
  * @summary Изменить порядок разделов
  */
+export const reorderSectionsBodyIdsMax = 1000
+
 export const ReorderSectionsBody = zod.object({
-  ids: zod.array(zod.uuid()),
+  ids: zod.array(zod.uuid()).max(reorderSectionsBodyIdsMax),
 })
 
 export const ReorderSections200Response = zod.object({
@@ -380,12 +393,25 @@ export const SectionControllerUpdateParams = zod.object({
   id: zod.uuid(),
 })
 
+export const sectionControllerUpdateBodyTitleMax = 300
+
+export const sectionControllerUpdateBodyDescriptionMax = 10000
+
+export const sectionControllerUpdateBodyPlaylistsIdsMax = 1000
+
+export const sectionControllerUpdateBodyItemsRowsMin = 0
+export const sectionControllerUpdateBodyItemsRowsMax = 100
+
 export const SectionControllerUpdateBody = zod.object({
-  title: zod.string(),
-  description: zod.string().nullable(),
-  playlistsIds: zod.array(zod.string()),
+  title: zod.string().max(sectionControllerUpdateBodyTitleMax),
+  description: zod.string().max(sectionControllerUpdateBodyDescriptionMax).nullable(),
+  playlistsIds: zod.array(zod.string()).max(sectionControllerUpdateBodyPlaylistsIdsMax),
   itemsSize: zod.enum(['small', 'middle', 'large', 'xLarge']),
-  itemsRows: zod.number().nullable(),
+  itemsRows: zod
+    .int()
+    .min(sectionControllerUpdateBodyItemsRowsMin)
+    .max(sectionControllerUpdateBodyItemsRowsMax)
+    .nullable(),
   transform: zod.enum(['high', 'middle', 'short']),
   isDescriptionTitleOnSlideLarge: zod.boolean(),
   whereIsSlideTitleLocated: zod
@@ -517,8 +543,10 @@ export const ReorderPlaylistsInSectionParams = zod.object({
   id: zod.uuid(),
 })
 
+export const reorderPlaylistsInSectionBodyPlaylistIdsMax = 1000
+
 export const ReorderPlaylistsInSectionBody = zod.object({
-  playlistIds: zod.array(zod.uuid()),
+  playlistIds: zod.array(zod.uuid()).max(reorderPlaylistsInSectionBodyPlaylistIdsMax),
 })
 
 export const ReorderPlaylistsInSection200Response = zod.object({

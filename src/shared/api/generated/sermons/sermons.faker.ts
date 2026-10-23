@@ -5,7 +5,7 @@
  * REST API сервиса «Слово.Проповеди».
  * Позволяет управлять проповедями, плейлистами, разделами, загружать файлы и работать с пользователями.
  *
- * OpenAPI spec version: 0.22.1
+ * OpenAPI spec version: 0.22.2
  */
 import { faker } from '@faker-js/faker'
 
@@ -14,7 +14,6 @@ import type {
   SermonDistinctValuesResponse,
   SermonEntity,
   StatusSermonResponse,
-  StreamUrlResponse,
 } from '../api.schemas'
 
 export const getSermonControllerCreateResponseMock = (
@@ -900,20 +899,6 @@ export const getSermonControllerGetDistinctValuesResponseMock200 = (
   books: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() =>
     faker.string.alpha({ length: { min: 10, max: 20 } }),
   ),
-  ...overrideResponse,
-})
-
-export const getSermonControllerGetStreamUrlResponseMock = (
-  overrideResponse: Partial<Extract<StreamUrlResponse, object>> = {},
-): StreamUrlResponse => ({
-  url: faker.string.alpha({ length: { min: 10, max: 20 } }),
-  ...overrideResponse,
-})
-
-export const getSermonControllerGetStreamUrlResponseMock200 = (
-  overrideResponse: Partial<Extract<StreamUrlResponse, object>> = {},
-): StreamUrlResponse => ({
-  url: faker.string.alpha({ length: { min: 10, max: 20 } }),
   ...overrideResponse,
 })
 

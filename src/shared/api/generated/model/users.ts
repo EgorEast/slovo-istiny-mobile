@@ -5,14 +5,21 @@
  * REST API сервиса «Слово.Проповеди».
  * Позволяет управлять проповедями, плейлистами, разделами, загружать файлы и работать с пользователями.
  *
- * OpenAPI spec version: 0.22.1
+ * OpenAPI spec version: 0.22.2
  */
 import * as zod from 'zod'
+
+export const usersControllerFindAllQueryPageMax = 100000
 
 export const usersControllerFindAllQueryLimitMax = 100
 
 export const UsersControllerFindAllQueryParams = zod.object({
-  page: zod.int().min(1).optional().describe('Номер страницы для оффсетной пагинации'),
+  page: zod
+    .int()
+    .min(1)
+    .max(usersControllerFindAllQueryPageMax)
+    .optional()
+    .describe('Номер страницы для оффсетной пагинации'),
   limit: zod
     .int()
     .min(1)
@@ -34,11 +41,23 @@ export const UsersControllerFindAll200Response = zod.object({
   count: zod.int(),
 })
 
+export const usersControllerCreateBodyNameMax = 100
+
+export const usersControllerCreateBodyEmailMax = 254
+
+export const usersControllerCreateBodyUsernameMax = 50
+
+export const usersControllerCreateBodyPasswordMin = 8
+export const usersControllerCreateBodyPasswordMax = 200
+
 export const UsersControllerCreateBody = zod.object({
-  name: zod.string(),
-  email: zod.string(),
-  username: zod.string(),
-  password: zod.string(),
+  name: zod.string().max(usersControllerCreateBodyNameMax),
+  email: zod.string().max(usersControllerCreateBodyEmailMax),
+  username: zod.string().max(usersControllerCreateBodyUsernameMax),
+  password: zod
+    .string()
+    .min(usersControllerCreateBodyPasswordMin)
+    .max(usersControllerCreateBodyPasswordMax),
   role: zod.enum(['admin', 'moderator', 'user']).optional().describe('Роль пользователя в системе'),
 })
 
@@ -66,10 +85,16 @@ export const UsersControllerUpdateParams = zod.object({
   id: zod.uuid(),
 })
 
+export const usersControllerUpdateBodyNameMax = 100
+
+export const usersControllerUpdateBodyEmailMax = 254
+
+export const usersControllerUpdateBodyUsernameMax = 50
+
 export const UsersControllerUpdateBody = zod.object({
-  name: zod.string().optional(),
-  email: zod.string().optional(),
-  username: zod.string().optional(),
+  name: zod.string().max(usersControllerUpdateBodyNameMax).optional(),
+  email: zod.string().max(usersControllerUpdateBodyEmailMax).optional(),
+  username: zod.string().max(usersControllerUpdateBodyUsernameMax).optional(),
   role: zod.enum(['admin', 'moderator', 'user']).optional().describe('Роль пользователя в системе'),
 })
 
@@ -91,8 +116,14 @@ export const UsersControllerChangePasswordParams = zod.object({
   id: zod.uuid(),
 })
 
+export const usersControllerChangePasswordBodyPasswordMin = 8
+export const usersControllerChangePasswordBodyPasswordMax = 200
+
 export const UsersControllerChangePasswordBody = zod.object({
-  password: zod.string(),
+  password: zod
+    .string()
+    .min(usersControllerChangePasswordBodyPasswordMin)
+    .max(usersControllerChangePasswordBodyPasswordMax),
 })
 
 export const UsersControllerChangePassword204Response = zod.void()

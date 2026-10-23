@@ -5,7 +5,7 @@
  * REST API сервиса «Слово.Проповеди».
  * Позволяет управлять проповедями, плейлистами, разделами, загружать файлы и работать с пользователями.
  *
- * OpenAPI spec version: 0.22.1
+ * OpenAPI spec version: 0.22.2
  */
 import * as zod from 'zod'
 
@@ -25,9 +25,14 @@ export const InvidiousInstancesControllerFindAll200Response = zod.array(
  * Полностью заменяет сохранённый список: отсутствующие в запросе адреса удаляются, новые добавляются в порядке массива. Дубликаты запрещены, каждый адрес должен начинаться с https://. Доступно только администраторам.
  * @summary Заменить список Invidious-инстансов (полная замена)
  */
+export const invidiousInstancesControllerReplaceBodyUrlsItemMax = 2048
+
+export const invidiousInstancesControllerReplaceBodyUrlsMax = 100
+
 export const InvidiousInstancesControllerReplaceBody = zod.object({
   urls: zod
-    .array(zod.string())
+    .array(zod.string().max(invidiousInstancesControllerReplaceBodyUrlsItemMax))
+    .max(invidiousInstancesControllerReplaceBodyUrlsMax)
     .describe(
       'Полные https-адреса инстансов; порядок соответствует порядку в UI, дубликаты запрещены',
     ),

@@ -5,7 +5,7 @@
  * REST API сервиса «Слово.Проповеди».
  * Позволяет управлять проповедями, плейлистами, разделами, загружать файлы и работать с пользователями.
  *
- * OpenAPI spec version: 0.22.1
+ * OpenAPI spec version: 0.22.2
  */
 import type {
   AllFilesResponse,
@@ -15,7 +15,6 @@ import type {
   IFileResponseDto,
   OrphanedFilesResponse,
   StatusFileResponse,
-  StreamUrlResponse,
 } from '../api.schemas.ts'
 
 import { customInstance } from '../../axiosInstance.ts'
@@ -79,18 +78,6 @@ export const getFiles = () => {
     )
   }
   /**
-   * @summary Получить URL потока для файла
-   */
-  const appControllerGetStreamUrl = (
-    fileName: string,
-    options?: SecondParameter<typeof customInstance<StreamUrlResponse>>,
-  ) => {
-    return customInstance<StreamUrlResponse>(
-      { url: `/files/${fileName}/stream-url`, method: 'GET' },
-      options,
-    )
-  }
-  /**
    * @summary Получить публичный URL файла
    */
   const appControllerGetFile = (
@@ -117,7 +104,6 @@ export const getFiles = () => {
     getFiles,
     appControllerGetOrphanedFiles,
     appControllerCleanupOrphanedFiles,
-    appControllerGetStreamUrl,
     appControllerGetFile,
     appControllerRemoveFile,
   }
@@ -133,9 +119,6 @@ export type AppControllerGetOrphanedFilesResult = NonNullable<
 >
 export type AppControllerCleanupOrphanedFilesResult = NonNullable<
   Awaited<ReturnType<ReturnType<typeof getFiles>['appControllerCleanupOrphanedFiles']>>
->
-export type AppControllerGetStreamUrlResult = NonNullable<
-  Awaited<ReturnType<ReturnType<typeof getFiles>['appControllerGetStreamUrl']>>
 >
 export type AppControllerGetFileResult = NonNullable<
   Awaited<ReturnType<ReturnType<typeof getFiles>['appControllerGetFile']>>

@@ -5,7 +5,7 @@
  * REST API сервиса «Слово.Проповеди».
  * Позволяет управлять проповедями, плейлистами, разделами, загружать файлы и работать с пользователями.
  *
- * OpenAPI spec version: 0.22.1
+ * OpenAPI spec version: 0.22.2
  */
 import * as zod from 'zod'
 
@@ -13,9 +13,16 @@ import * as zod from 'zod'
  * Возвращает JWT токен для дальнейших запросов
  * @summary Вход в систему
  */
+export const authControllerSignInBodyUsernameMax = 100
+
+export const authControllerSignInBodyPasswordMax = 200
+
 export const AuthControllerSignInBody = zod.object({
-  username: zod.string().describe('Имя пользователя для входа'),
-  password: zod.string(),
+  username: zod
+    .string()
+    .max(authControllerSignInBodyUsernameMax)
+    .describe('Имя пользователя для входа'),
+  password: zod.string().max(authControllerSignInBodyPasswordMax),
 })
 
 export const AuthControllerSignIn200Response = zod.object({
