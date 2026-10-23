@@ -1,6 +1,7 @@
 import { requireNativeModule } from 'expo-modules-core'
 import {
   canRequestPackageInstalls,
+  computeSha256,
   installApk,
   isApkInstallerAvailable,
   openInstallPermissionSettings,
@@ -25,6 +26,7 @@ const NATIVE_UNAVAILABLE_MESSAGE = '[apk-installer] Native module is not availab
 
 const createNativeModule = () => ({
   canRequestPackageInstalls: jest.fn(async () => false),
+  computeSha256: jest.fn(async () => 'a'.repeat(64)),
   installApk: jest.fn(async () => ({ status: 'success' as const })),
   openInstallPermissionSettings: jest.fn(async () => {}),
 })
@@ -50,6 +52,8 @@ describe('apk-installer JS boundary', () => {
     expect(nativeModule.canRequestPackageInstalls).toHaveBeenCalledTimes(1)
     await expect(openInstallPermissionSettings()).resolves.toBeUndefined()
     expect(nativeModule.openInstallPermissionSettings).toHaveBeenCalledTimes(1)
+    await expect(computeSha256(APK_PATH)).resolves.toBe('a'.repeat(64))
+    expect(nativeModule.computeSha256).toHaveBeenCalledWith(APK_PATH)
   })
 
   test('reports the module as unavailable when the native lookup throws', () => {
@@ -74,5 +78,11 @@ describe('apk-installer JS boundary', () => {
     rejectNativeLookup()
 
     expect(() => installApk(APK_PATH)).toThrow(NATIVE_UNAVAILABLE_MESSAGE)
+  })
+
+  test('throws a descriptive error when hashing without the module', () => {
+    rejectNativeLookup()
+
+    expect(() => computeSha256(APK_PATH)).toThrow(NATIVE_UNAVAILABLE_MESSAGE)
   })
 })

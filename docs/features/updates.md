@@ -14,9 +14,9 @@
 
 `src/shared/lib/version-check/`:
 
-- `fetchLatestRelease.ts` — источник **Forgejo** (`git.lightnode.ru/api/v1/repos/Slovo_Propovedi/slovo-propovedi-mobile/releases/latest`), при провале — **fallback на GitHub** (`api.github.com/repos/Slovo-Propovedi/...`). Отбрасывает prerelease и теги с дефисом; извлекает `.zip`-ассет.
+- `fetchLatestRelease.ts` — источник **Forgejo** (`git.lightnode.ru/api/v1/repos/Slovo_Propovedi/slovo-propovedi-mobile/releases/latest`), при провале — **fallback на GitHub** (`api.github.com/repos/Slovo-Propovedi/...`). Отбрасывает prerelease и теги с дефисом; извлекает `.zip`-ассет и ассет `SHA256SUMS.txt` (точное имя, регистронезависимо).
 - `compareVersions.ts` — сем-вер сравнение (`a`/`b` → `-1 | 0 | 1`).
-- `types.ts` — `LatestReleaseInfo` (`version`, `htmlUrl`, `zipDownloadUrl`, `body`, ...).
+- `types.ts` — `LatestReleaseInfo` (`version`, `htmlUrl`, `zipDownloadUrl`, `sha256SumsDownloadUrl`, `body`, ...).
 
 ### Валидация ответа релиза
 
@@ -26,11 +26,22 @@
 - отклоняет теги, содержащие `-` (например, `v0.4.0-rc1`);
 - `version` берётся из `tag_name` с отрезанной ведущей `v`;
 - `zipDownloadUrl` — первый ассет с расширением `.zip` (может быть `null`). Релизный пайплайн (`.forgejo/workflows/release.yml`) загружает единственный ассет `slovo-propovedi-v<версия>.zip`, внутри которого лежит APK `Slovo.Propovedi v<версия>.apk`.
+- `sha256SumsDownloadUrl` — URL ассета `SHA256SUMS.txt` (точное имя, регистронезависимо; может быть `null`/отсутствовать у старых релизов). Используется для проверки целостности скачанного ZIP.
 - Сетевые ошибки логируются (`console.warn`) и не прерывают `checkForUpdateAction`.
+
+### Подпись и контроль целостности релиза (CI)
+
+`.forgejo/workflows/release.yml`, job `android`:
+
+- шаг **«Restore release keystore»** — жёсткий гейт: если секрет `ANDROID_KEYSTORE_BASE64` не задан, джоба падает (`::error::ANDROID_KEYSTORE_BASE64 is not configured — refusing to publish a debug-signed release`), а не публикует debug-подписанный APK. Debug-подпись ломает in-app обновление (`INSTALL_FAILED_UPDATE_INCOMPATIBLE`), поэтому релиз без release-keystore недопустим.
+- шаг **«Rename and zip APK»** вместе с ZIP генерирует `SHA256SUMS.txt` (`sha256sum` → стандартная строка `<hex>  <zip-filename>`).
+- шаг **«Upload APK to the Forgejo Release»** прикладывает к релизу оба ассета — ZIP и `SHA256SUMS.txt`; те же два ассета зеркалируются в GitHub и SourceCraft (см. ниже).
+
+**Контракт релиза:** любой релиз, который клиент может установить, обязан содержать `SHA256SUMS.txt` с digest'ом ZIP-ассета. Клиент проверяет его до распаковки и установки (см. «Целостность обновления (SHA-256)»); релиз без sums-ассета обновлением не устанавливается (fail-closed).
 
 ### Зеркалирование релиза в GitHub (CI)
 
-`.forgejo/workflows/release.yml` после публикации релиза в Forgejo выполняет шаг **«Mirror release to GitHub»** (опциональный): создаёт/обновляет релиз в `Slovo-Propovedi/slovo-propovedi-mobile` и загружает ZIP-ассет через GitHub REST API v3 (`Accept: application/vnd.github+json`, `X-GitHub-Api-Version: 2022-11-28`). Шаг пропускается (`exit 0`), если секрет `MIRROR_GITHUB_TOKEN` не задан — пайплайн остаётся зелёным без конфигурации. Любая ошибка GitHub API — `::warning::`, джоба не падает (релиз Forgejo уже опубликован). HTTP 422 при загрузке ассета (имя уже занято) трактуется как успех.
+`.forgejo/workflows/release.yml` после публикации релиза в Forgejo выполняет шаг **«Mirror release to GitHub»** (опциональный): создаёт/обновляет релиз в `Slovo-Propovedi/slovo-propovedi-mobile` и загружает ZIP-ассет и `SHA256SUMS.txt` через GitHub REST API v3 (`Accept: application/vnd.github+json`, `X-GitHub-Api-Version: 2022-11-28`). Шаг пропускается (`exit 0`), если секрет `MIRROR_GITHUB_TOKEN` не задан — пайплайн остаётся зелёным без конфигурации. Любая ошибка GitHub API — `::warning::`, джоба не падает (релиз Forgejo уже опубликован). HTTP 422 при загрузке ассета (имя уже занято) трактуется как успех.
 
 **Настройка:**
 
@@ -40,7 +51,7 @@
 
 ### Зеркалирование релиза в SourceCraft (CI)
 
-`.forgejo/workflows/release.yml` после GitHub-шага выполняет шаг **«Mirror release to SourceCraft»**: создаёт релиз в SourceCraft и прикладывает ZIP-ассет к тегу. Секрет `MIRROR_SOURCECRAFT_TOKEN` настроен в Forgejo-секретах репозитория, зеркалирование активно. Шаг сохраняет guard: без секрета он пропускается (`exit 0`), пайплайн остаётся зелёным. Любая ошибка SourceCraft API — `::warning::`, джоба не падает (релиз Forgejo — источник истины).
+`.forgejo/workflows/release.yml` после GitHub-шага выполняет шаг **«Mirror release to SourceCraft»**: создаёт релиз в SourceCraft и прикладывает ZIP-ассет и `SHA256SUMS.txt` к тегу. Секрет `MIRROR_SOURCECRAFT_TOKEN` настроен в Forgejo-секретах репозитория, зеркалирование активно. Шаг сохраняет guard: без секрета он пропускается (`exit 0`), пайплайн остаётся зелёным. Любая ошибка SourceCraft API — `::warning::`, джоба не падает (релиз Forgejo — источник истины).
 
 API base: `https://api.sourcecraft.tech/repos/slovo-propovedi/slovo-propovedi-mobile`. Используемые эндпоинты:
 
@@ -126,9 +137,9 @@ API base: `https://api.sourcecraft.tech/repos/slovo-propovedi/slovo-propovedi-mo
 4. нет `zipDownloadUrlAtom` → открыть страницу релизов в браузере;
 5. иначе: `updateDialogVisibleAtom = true`, `updateProgressAtom = 0`, `updateErrorAtom = null`, последовательно `downloading` → `extracting` → `installing`; любой шаг упал — состояние `error` с классифицированными `updateErrorKindAtom` + `updateErrorAtom`; сырая ошибка уходит в глобальный обработчик (`reportError`) **только для непредвиденных видов** (`unknown` / `install-generic`, см. «Диагностика ошибок обновления»), предвиденные виды показываются лишь человекочитаемым текстом в диалоге.
 
-**Тайминг очистки:** `cleanupUpdateFiles()` вызывается в **начале** потока (перед скачиванием — чистит остатки прошлого запуска), а НЕ в `finally`. Файлы никогда не удаляются, пока сессия `PackageInstaller` может их читать (раньше `finally` удалял APK сразу после старта интента установщика — причина «Возникла проблема с файлом приложения»).
+**Тайминг очистки:** `cleanupUpdateFiles()` вызывается в **начале** потока (перед скачиванием — чистит остатки прошлого запуска), а НЕ в `finally`. Файлы никогда не удаляются, пока сессия `PackageInstaller` может их читать (раньше `finally` удалял APK сразу после старта интента установщика — причина «Возникла проблема с файлом приложения»). Дополнительно при ошибке до установки (скачивание, проверка целостности, распаковка) каталог обновлений очищается в `catch` `performUpdate`; после перехода в `installing` очистка не выполняется.
 
-**Фолбэк скачивания (GitHub mirror):** если `downloadUpdateZip` упал (Forgejo ответил при проверке, но «умер» до тапа «Обновить»), `downloadUpdateZipWithFallback` (`src/shared/model/updateInstallFallback.ts`) один раз перезапрашивает `fetchLatestRelease()` и, если у свежего релиза `zipDownloadUrl` **отличается** от упавшего URL **и версия не старше** упавшей (`compareVersions(release.version, failedVersion) >= 0`, где `failedVersion` — `latestVersionAtom`), сбрасывает `updateProgressAtom` в 0, обновляет `latestVersionAtom`/`releaseUrlAtom`/`zipDownloadUrlAtom` (ссылка «Открыть в браузере» в диалоге ошибки ведёт на живую страницу) и повторяет скачивание с новым URL. Ретрай ровно один, без циклов. Если релиз недоступен, `zipDownloadUrl` пуст/совпадает с упавшим URL, версия фолбэка старше упавшей или повторное скачивание тоже упало — пробрасывается исходная ошибка (существующий поток `setErrorState`). Решение о ретрае — чистый хелпер `getFallbackDownloadUrl(failedUrl, failedVersion, release)` (тесты рядом, `updateInstallFallback.test.ts`). Фолбэк применяется **только** к шагу скачивания: ошибки распаковки/установки обрабатываются как раньше. Таймаут-ошибка скачивания — легитимный триггер ретрая: `downloadFileWithTimeout` бросает её после 10-минутного бюджета, и фолбэк перезапрашивает свежий релиз с GitHub-зеркала так же, как при любой другой ошибке скачивания.
+**Фолбэк скачивания (GitHub mirror):** если `downloadUpdateZip` упал (Forgejo ответил при проверке, но «умер» до тапа «Обновить»), `downloadUpdateZipWithFallback` (`src/shared/model/updateInstallFallback.ts`) один раз перезапрашивает `fetchLatestRelease()` и, если у свежего релиза `zipDownloadUrl` **отличается** от упавшего URL **и версия не старше** упавшей (`compareVersions(release.version, failedVersion) >= 0`, где `failedVersion` — `latestVersionAtom`), сбрасывает `updateProgressAtom` в 0, обновляет `latestVersionAtom`/`releaseUrlAtom`/`zipDownloadUrlAtom` (ссылка «Открыть в браузере» в диалоге ошибки ведёт на живую страницу) и повторяет скачивание с новым URL. Ретрай ровно один, без циклов. Если релиз недоступен, `zipDownloadUrl` пуст/совпадает с упавшим URL, версия фолбэка старше упавшей или повторное скачивание тоже упало — пробрасывается исходная ошибка (существующий поток `setErrorState`). Вместе с URL обновляется и `sha256SumsUrlAtom`: повторная попытка проверяет digest по sums-ассету свежего релиза. Решение о ретрае — чистый хелпер `getFallbackDownloadUrl(failedUrl, failedVersion, release)` (тесты рядом, `updateInstallFallback.test.ts`). Фолбэк применяется **только** к шагу скачивания: ошибки распаковки/установки обрабатываются как раньше. Таймаут-ошибка скачивания — легитимный триггер ретрая: `downloadFileWithTimeout` бросает её после 10-минутного бюджета, и фолбэк перезапрашивает свежий релиз с GitHub-зеркала так же, как при любой другой ошибке скачивания.
 
 ### Классификация ошибок обновления
 
@@ -201,17 +212,30 @@ API base: `https://api.sourcecraft.tech/repos/slovo-propovedi/slovo-propovedi-mo
 
 | Функция                                                                | Назначение                                                                                                                                                                                                                                                                                                                                                     |
 | ---------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `downloadUpdateZip(url, onProgress?, timeoutMs = DOWNLOAD_TIMEOUT_MS)` | Скачивание ZIP через `File.createDownloadTask` (expo-file-system) в `<cache>/updates/slovo-propovedi-update.zip`; прогресс в процентах через колбэк. Guard: URL только `https://`. Таймаут-семантика: бюджет `DOWNLOAD_TIMEOUT_MS` = 10 минут; по истечении `AbortController` отменяет нативную закачку; частичный файл удаляется при любой ошибке скачивания. |
-| `extractApkFromZip(zipPath)`                                           | Поиск первого `.apk` внутри архива (`listContents`), селективная распаковка (`unzip`, `react-native-zip-archive`) и переименование в `update.apk` — оригинальное имя `Slovo.Propovedi v<версия>.apk` содержит пробелы и небезопасно для shell.                                                                                                                 |
+| `downloadUpdateZip(url, onProgress?, timeoutMs = DOWNLOAD_TIMEOUT_MS, integrity?)` | Скачивание ZIP через `File.createDownloadTask` (expo-file-system) в `<cache>/updates/slovo-propovedi-update.zip`; прогресс в процентах через колбэк. Guard: URL только `https://` и хост из allowlist (`git.lightnode.ru`, `github.com`, `objects.githubusercontent.com`). Перед скачиванием обязателен `SHA256SUMS.txt` (URL передаётся в `integrity.sha256SumsDownloadUrl`); после скачивания digest ZIP сверяется с sums-файлом. Отсутствие sums, битый/несовпадающий digest — ошибка до распаковки (см. «Целостность обновления (SHA-256)»). Таймаут-семантика: бюджет `DOWNLOAD_TIMEOUT_MS` = 10 минут; по истечении `AbortController` отменяет нативную закачку; частичный файл удаляется при любой ошибке скачивания. |
+| `extractApkFromZip(zipPath)`                                           | Поиск первого `.apk` внутри архива (`listContents`) с проверкой пути на traversal (`..`/абсолютный путь → ошибка), селективная распаковка (`unzip`, `react-native-zip-archive`) и переименование в `update.apk` — оригинальное имя `Slovo.Propovedi v<версия>.apk` содержит пробелы и небезопасно для shell.                                                                                                                 |
 | `installApk(apkPath)`                                                  | Если доступен локальный модуль `apk-installer` — установка через `PackageInstaller` (сессия, стриминг APK, commit; результат приходит broadcast'ом). Иначе — фолбэк `IntentLauncher.startActivityAsync(VIEW_ACTION, ...)` (Expo Go / экзотика).                                                                                                                |
 | `canRequestPackageInstalls()`                                          | Обёртка над нативным `canRequestPackageInstalls()`; при недоступности модуля возвращает `true` (фолбэк-установщик сам решает).                                                                                                                                                                                                                                 |
 | `openInstallPermissionSettings()`                                      | Открывает системный экран «Разрешить установку из этого источника» (`Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES`).                                                                                                                                                                                                                                             |
-| `apkFileExists(apkPath)`                                               | Проверка существования APK на диске (`new File(path).exists`) — используется при возобновлении после разрешения.                                                                                                                                                                                                                                               |
+| `apkFileExists(apkPath)`                                               | Проверка существования APK на диске (`new File(path).exists`, `updateFiles.ts`) — используется при возобновлении после разрешения.                                                                                                                                                                                                                              |
 | `cleanupUpdateFiles()`                                                 | Удаление каталога `<cache>/updates` (вызывается в начале потока обновления); ошибки логируются, не бросаются. На не-Android — no-op.                                                                                                                                                                                                                           |
 
 Все функции установки бросают ошибку при вызове не на Android (`assertAndroid`) — Fail Fast.
 
 Утилита скачивания с таймаутом вынесена в `src/shared/lib/fs/downloadFileWithTimeout.ts` и стала общей: её использует и `downloadUpdateZip` (10-минутный бюджет), и импорт аудио из YouTube/Invidious (15 минут, отмена при размонтировании формы через внешний `AbortSignal`) — см. [features/admin.md](./admin.md) → «Импорт аудио из YouTube / Invidious». Сообщение таймаута намеренно нейтральное — `Download timed out after <Xs>`, без префикса `[updateService]`; классификатор ошибок обновления (`installErrorMessage.ts`, `DOWNLOAD_HINTS`) узнаёт его по подстроке `'Download timed out'`, поэтому вид `download` и его русский текст не изменились. Помимо абсолютного бюджета действует stall-guard: если 30 секунд (`DOWNLOAD_STALL_TIMEOUT_MS`) не приходит ни одного тика прогресса, закачка обрывается с сообщением `Download stalled: no progress for 30s` — `DOWNLOAD_HINTS` относит его к тому же виду `download` (прецедент — stall-guard в audio-cache, [features/audio-cache.md](./audio-cache.md)).
+
+### Целостность обновления (SHA-256)
+
+Контракт релиза: к релизу прикладывается `SHA256SUMS.txt` со стандартными строками `<hex>  <filename>` (регистр digest'а и имени файла сравнивается без учёта регистра; поддерживается бинарный маркер `*`). Строка должна покрывать именно ZIP-ассет, с которого скачивается обновление.
+
+Поток `downloadUpdateZip` (`src/shared/lib/update-service/updateService.ts`):
+
+1. `assertAllowedUpdateUrl` — только `https:` и хост из allowlist `ALLOWED_UPDATE_HOSTS` (`git.lightnode.ru`, `github.com`, `objects.githubusercontent.com`) — `downloadUrlPolicy.ts`. Любой другой хост → ошибка.
+2. `downloadChecksumText` (`checksumVerification.ts`) — скачивает текст `SHA256SUMS.txt` (таймаут 10 с). Если у релиза нет sums-ассета → ошибка **до** скачивания ZIP (fail-closed).
+3. Скачивается ZIP.
+4. `verifyDownloadedZipChecksum` — имя ассета берётся из URL ZIP, digest ищется в sums-файле, затем нативный `apk-installer.computeSha256` (стриминговый `MessageDigest`, lowercase hex) считает digest скачанного файла. Нет строки для ассета или digest не совпал → ошибка **до** распаковки, скачанный ZIP удаляется (`cleanupUpdateFiles`).
+
+Отсутствие/повреждение sums и несовпадение digest трактуются как непредвиденная ошибка (`install-generic`/`unknown`): диалог показывает общий текст, а сырая деталь уходит в глобальный обработчик для диагностики. Распаковка и `PackageInstaller` до успешной проверки не запускаются. Zip-slip дополнительно блокируется в `extractApkFromZip`: запись с `..`-сегментом или абсолютным путём отвергается (`zipEntrySafety.ts`).
 
 ### Локальный модуль apk-installer
 
@@ -219,6 +243,7 @@ API base: `https://api.sourcecraft.tech/repos/slovo-propovedi/slovo-propovedi-mo
 
 - `installApk(apkPath)` — создаёт `PackageInstaller.SessionParams(MODE_FULL_INSTALL)` с `setAppPackageName(context.packageName)` (self-update), стримит APK в сессию (`openWrite("base.apk", 0, -1)` → `fsync`), коммитит с `PendingIntent` broadcast (`FLAG_UPDATE_CURRENT | FLAG_MUTABLE`). Promise резолвится из `BroadcastReceiver` (`STATUS_SUCCESS` → `{ status: 'success' }`; `STATUS_PENDING_USER_ACTION` → запуск системного диалога подтверждения; failure-статусы → reject с описанием). При self-update процесс обычно убивается до `STATUS_SUCCESS` — JS трактует промис как fire-and-forget после commit.
 - `canRequestPackageInstalls()` — `packageManager.canRequestPackageInstalls()` (API 26+; ниже — `true`).
+- `computeSha256(fileUri)` — стриминговый SHA-256 (`java.security.MessageDigest`, буфер) по файлу; возвращает lowercase hex. Используется проверкой целостности ZIP перед распаковкой; при отсутствии нативного модуля бросает ошибку (веб/Expo Go не устанавливают APK).
 - `openInstallPermissionSettings()` — системный экран разрешения.
 - `isApkInstallerAvailable()` — безопасная проверка наличия нативного модуля (try/catch вокруг `requireNativeModule`; `false` в Expo Go / web).
 - Чистая логика статусов (`ApkInstallStatuses`) покрыта JVM-юнит-тестами (`modules/apk-installer/android/src/test/...`) — `yarn test:native` (см. [`../contracts/native-modules.md`](../contracts/native-modules.md) → «Unit-тесты нативного кода»).

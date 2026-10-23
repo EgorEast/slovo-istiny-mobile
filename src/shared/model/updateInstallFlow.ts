@@ -3,8 +3,8 @@ import {
   classifyUpdateError,
   isUnexpectedUpdateError,
 } from '../lib/update-service/installErrorMessage'
+import { apkFileExists } from '../lib/update-service/updateFiles'
 import {
-  apkFileExists,
   canRequestPackageInstalls,
   cleanupUpdateFiles,
   extractApkFromZip,
@@ -63,6 +63,9 @@ const performUpdate = async (ctx: Ctx, zipDownloadUrl: string): Promise<void> =>
     await ctx.schedule(() => updateStateAtom(ctx, 'installing'))
     await installApk(apkPath)
   } catch (installError) {
+    // Keep the extracted APK while the installer may still be reading it;
+    // failures before install (download/checksum/extract) leave no useful files.
+    if (ctx.get(updateStateAtom) !== 'installing') await cleanupUpdateFiles()
     await handleUpdateFailure(ctx, installError)
   }
 }

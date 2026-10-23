@@ -8,6 +8,7 @@ const FORGEJO_API_URL =
 const GITHUB_API_URL =
   'https://api.github.com/repos/Slovo-Propovedi/slovo-propovedi-mobile/releases/latest'
 const REQUEST_TIMEOUT = 10000
+const CHECKSUM_ASSET_NAME = 'SHA256SUMS.txt'
 
 const releaseAssetSchema = z.object({
   browser_download_url: z.string(),
@@ -37,12 +38,16 @@ const parseRelease = (data: unknown): LatestReleaseInfo | null => {
   if (release.tag_name.includes('-')) return null
 
   const zipAsset = release.assets.find(asset => asset.name.endsWith('.zip'))
+  const checksumAsset = release.assets.find(
+    asset => asset.name.toLowerCase() === CHECKSUM_ASSET_NAME.toLowerCase(),
+  )
 
   return {
     body: release.body.replace(/\r\n/g, '\n'),
     htmlUrl: release.html_url,
     name: release.name,
     publishedAt: release.published_at,
+    sha256SumsDownloadUrl: checksumAsset?.browser_download_url ?? null,
     tagName: release.tag_name,
     version: release.tag_name.replace(/^v/, ''),
     zipDownloadUrl: zipAsset?.browser_download_url ?? null,

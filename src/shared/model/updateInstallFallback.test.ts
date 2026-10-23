@@ -11,24 +11,31 @@ jest.mock('shared/lib/version-check/fetchLatestRelease', () => ({
 
 import { createCtx } from '@reatom/framework'
 import { type LatestReleaseInfo } from '../lib/version-check/types'
-import { latestVersionAtom, releaseUrlAtom, zipDownloadUrlAtom } from './update'
+import { latestVersionAtom, releaseUrlAtom, sha256SumsUrlAtom, zipDownloadUrlAtom } from './update'
 import { updateProgressAtom } from './updateInstall'
 import { downloadUpdateZipWithFallback, getFallbackDownloadUrl } from './updateInstallFallback'
 
 const FAILED_URL = 'https://forgejo.example.com/slovo-propovedi-v0.3.0.zip'
 const FALLBACK_URL =
   'https://github.com/Slovo-Propovedi/slovo-propovedi-mobile/releases/download/v0.3.0/slovo-propovedi-v0.3.0.zip'
+const FALLBACK_SUMS_URL =
+  'https://github.com/Slovo-Propovedi/slovo-propovedi-mobile/releases/download/v0.3.0/SHA256SUMS.txt'
 const RELEASE_HTML_URL =
   'https://github.com/Slovo-Propovedi/slovo-propovedi-mobile/releases/tag/v0.3.0'
 const DOWNLOADED_ZIP_PATH = '/cache/updates/slovo-propovedi-update.zip'
 const FORGEJO_ERROR_MESSAGE = 'forgejo dead'
 const GITHUB_ERROR_MESSAGE = 'github dead'
 
-const makeRelease = (zipDownloadUrl: null | string, version = '0.3.0'): LatestReleaseInfo => ({
+const makeRelease = (
+  zipDownloadUrl: null | string,
+  version = '0.3.0',
+  sha256SumsDownloadUrl: null | string = null,
+): LatestReleaseInfo => ({
   body: 'Release notes',
   htmlUrl: RELEASE_HTML_URL,
   name: 'Слово.Проповеди v0.3.0',
   publishedAt: '2026-08-01T00:00:00Z',
+  sha256SumsDownloadUrl,
   tagName: `v${version}`,
   version,
   zipDownloadUrl,
@@ -81,18 +88,34 @@ describe('downloadUpdateZipWithFallback', () => {
     mockDownloadUpdateZip
       .mockRejectedValueOnce(new Error(FORGEJO_ERROR_MESSAGE))
       .mockResolvedValueOnce(DOWNLOADED_ZIP_PATH)
-    mockFetchLatestRelease.mockResolvedValue(makeRelease(FALLBACK_URL))
+    mockFetchLatestRelease.mockResolvedValue(makeRelease(FALLBACK_URL, '0.3.0', FALLBACK_SUMS_URL))
     const ctx = createCtx()
+    sha256SumsUrlAtom(ctx, null)
 
     const zipPath = await downloadUpdateZipWithFallback(ctx, FAILED_URL)
 
     expect(zipPath).toBe(DOWNLOADED_ZIP_PATH)
     expect(mockDownloadUpdateZip).toHaveBeenCalledTimes(2)
-    expect(mockDownloadUpdateZip).toHaveBeenNthCalledWith(1, FAILED_URL, expect.any(Function))
-    expect(mockDownloadUpdateZip).toHaveBeenNthCalledWith(2, FALLBACK_URL, expect.any(Function))
+    expect(mockDownloadUpdateZip).toHaveBeenNthCalledWith(
+      1,
+      FAILED_URL,
+      expect.any(Function),
+      undefined,
+      {
+        sha256SumsDownloadUrl: null,
+      },
+    )
+    expect(mockDownloadUpdateZip).toHaveBeenNthCalledWith(
+      2,
+      FALLBACK_URL,
+      expect.any(Function),
+      undefined,
+      { sha256SumsDownloadUrl: FALLBACK_SUMS_URL },
+    )
     expect(ctx.get(updateProgressAtom)).toBe(0)
     expect(ctx.get(latestVersionAtom)).toBe('0.3.0')
     expect(ctx.get(releaseUrlAtom)).toBe(RELEASE_HTML_URL)
+    expect(ctx.get(sha256SumsUrlAtom)).toBe(FALLBACK_SUMS_URL)
     expect(ctx.get(zipDownloadUrlAtom)).toBe(FALLBACK_URL)
   })
 

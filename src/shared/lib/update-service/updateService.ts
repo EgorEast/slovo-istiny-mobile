@@ -1,16 +1,18 @@
 import * as ApkInstaller from 'apk-installer'
-import { Directory, File, Paths } from 'expo-file-system'
+import { File } from 'expo-file-system'
 import * as IntentLauncher from 'expo-intent-launcher'
 import { Platform } from 'react-native'
 import { listContents, unzip } from 'react-native-zip-archive'
 import { DOWNLOAD_TIMEOUT_MS, downloadFileWithTimeout } from '../fs/downloadFileWithTimeout'
+import { downloadChecksumText, verifyDownloadedZipChecksum } from './checksumVerification'
+import { assertAllowedUpdateUrl } from './downloadUrlPolicy'
+import { ensureUpdatesDirectoryExists, getUpdatesDirectory } from './updateFiles'
+import { assertSafeZipEntryPath } from './zipEntrySafety'
 
 const APK_SAFE_NAME = 'update.apk'
 const APK_EXTENSION = '.apk'
 const APK_MIME_TYPE = 'application/vnd.android.package-archive'
-const UPDATES_DIR_NAME = 'updates'
 const ZIP_FILE_NAME = 'slovo-propovedi-update.zip'
-const HTTPS_PREFIX = 'https://'
 
 // FLAG_ACTIVITY_NEW_TASK (0x10000000) | FLAG_GRANT_READ_URI_PERMISSION (0x00000001)
 const INSTALL_INTENT_FLAGS = 0x10000001
@@ -21,22 +23,22 @@ const assertAndroid = (operationName: string): void => {
     throw new Error(`[updateService] ${operationName} is only supported on Android`)
 }
 
-const getUpdatesDirectory = (): Directory => new Directory(Paths.cache, UPDATES_DIR_NAME)
-
-const ensureUpdatesDirectoryExists = (): Directory => {
-  const updatesDir = getUpdatesDirectory()
-  if (!updatesDir.exists) updatesDir.create({ intermediates: true })
-  return updatesDir
+interface UpdateZipIntegrity {
+  sha256SumsDownloadUrl: null | string
 }
 
 export const downloadUpdateZip = async (
   url: string,
   onProgress?: (progressPercent: number) => void,
   timeoutMs: number = DOWNLOAD_TIMEOUT_MS,
+  integrity?: UpdateZipIntegrity,
 ): Promise<string> => {
   assertAndroid('downloadUpdateZip')
-  if (!url.startsWith(HTTPS_PREFIX))
-    throw new Error(`[updateService] Download URL must be an https URL, got: ${url}`)
+  assertAllowedUpdateUrl(url)
+
+  // Checksums are fetched before the payload: a release without verifiable
+  // sums aborts without wasting bandwidth on an untrusted archive.
+  const sumsText = await downloadChecksumText(integrity?.sha256SumsDownloadUrl ?? null)
 
   const updatesDir = ensureUpdatesDirectoryExists()
   const zipFile = new File(updatesDir, ZIP_FILE_NAME)
@@ -44,6 +46,14 @@ export const downloadUpdateZip = async (
 
   const downloadedFile = await downloadFileWithTimeout(url, zipFile, onProgress, timeoutMs)
   if (!downloadedFile) throw new Error(`[updateService] Download failed or was cancelled: ${url}`)
+
+  try {
+    await verifyDownloadedZipChecksum(downloadedFile.uri, url, sumsText)
+  } catch (error) {
+    await cleanupUpdateFiles()
+    throw error
+  }
+
   return downloadedFile.uri
 }
 
@@ -51,6 +61,7 @@ const findApkEntryPath = async (zipPath: string): Promise<string> => {
   const entries = await listContents(zipPath)
   const apkEntry = entries.find(entry => !entry.isDirectory && entry.path.endsWith(APK_EXTENSION))
   if (!apkEntry) throw new Error('[updateService] No .apk file found inside the update archive')
+  assertSafeZipEntryPath(apkEntry.path)
   return apkEntry.path
 }
 
@@ -75,8 +86,6 @@ export const extractApkFromZip = async (zipPath: string): Promise<string> => {
 
   return safeApk.uri
 }
-
-export const apkFileExists = (apkPath: string): boolean => new File(apkPath).exists
 
 export const installApk = async (apkPath: string): Promise<void> => {
   assertAndroid('installApk')

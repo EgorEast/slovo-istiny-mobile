@@ -6,6 +6,7 @@ export interface InstallResult {
 
 interface ApkInstallerNativeModule {
   canRequestPackageInstalls: () => Promise<boolean>
+  computeSha256: (fileUri: string) => Promise<string>
   installApk: (apkPath: string) => Promise<InstallResult>
   openInstallPermissionSettings: () => Promise<void>
 }
@@ -30,6 +31,12 @@ export const canRequestPackageInstalls = (): Promise<boolean> => {
   const nativeModule = getNativeModule()
   if (!nativeModule) return Promise.resolve(true)
   return nativeModule.canRequestPackageInstalls()
+}
+
+export const computeSha256 = (fileUri: string): Promise<string> => {
+  const nativeModule = getNativeModule()
+  if (!nativeModule) throw new Error('[apk-installer] Native module is not available')
+  return nativeModule.computeSha256(fileUri)
 }
 
 export const openInstallPermissionSettings = (): Promise<void> => {

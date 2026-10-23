@@ -12,6 +12,7 @@ const FORGEJO_API_URL =
 const GITHUB_API_URL =
   'https://api.github.com/repos/Slovo-Propovedi/slovo-propovedi-mobile/releases/latest'
 const ZIP_DOWNLOAD_URL = 'https://example.com/releases/download/v0.3.0/slovo-propovedi-v0.3.0.zip'
+const SUMS_DOWNLOAD_URL = 'https://example.com/releases/download/v0.3.0/SHA256SUMS.txt'
 const RELEASE_BODY = 'Release notes\r\nSecond line'
 const RELEASE_HTML_URL = 'https://example.com/releases/tag/v0.3.0'
 const RELEASE_NAME = 'Слово.Проповеди v0.3.0'
@@ -19,7 +20,10 @@ const RELEASE_PUBLISHED_AT = '2026-08-01T00:00:00Z'
 const RELEASE_TAG = 'v0.3.0'
 
 const validRelease = {
-  assets: [{ browser_download_url: ZIP_DOWNLOAD_URL, name: 'slovo-propovedi-v0.3.0.zip' }],
+  assets: [
+    { browser_download_url: ZIP_DOWNLOAD_URL, name: 'slovo-propovedi-v0.3.0.zip' },
+    { browser_download_url: SUMS_DOWNLOAD_URL, name: 'SHA256SUMS.txt' },
+  ],
   body: RELEASE_BODY,
   draft: false,
   html_url: RELEASE_HTML_URL,
@@ -34,6 +38,7 @@ const expectedRelease: LatestReleaseInfo = {
   htmlUrl: RELEASE_HTML_URL,
   name: RELEASE_NAME,
   publishedAt: RELEASE_PUBLISHED_AT,
+  sha256SumsDownloadUrl: SUMS_DOWNLOAD_URL,
   tagName: RELEASE_TAG,
   version: '0.3.0',
   zipDownloadUrl: ZIP_DOWNLOAD_URL,
@@ -97,5 +102,29 @@ describe('fetchLatestRelease', () => {
     const result = await fetchLatestRelease()
 
     expect(result).toBeNull()
+  })
+
+  test('finds the checksum asset case-insensitively', async () => {
+    const release = {
+      ...validRelease,
+      assets: [{ browser_download_url: SUMS_DOWNLOAD_URL, name: 'sha256sums.TXT' }],
+    }
+    mockedAxios.get.mockResolvedValueOnce({ data: release })
+
+    const result = await fetchLatestRelease()
+
+    expect(result?.sha256SumsDownloadUrl).toBe(SUMS_DOWNLOAD_URL)
+  })
+
+  test('returns a null checksum URL for a legacy release without the sums asset', async () => {
+    const release = {
+      ...validRelease,
+      assets: [{ browser_download_url: ZIP_DOWNLOAD_URL, name: 'slovo-propovedi-v0.3.0.zip' }],
+    }
+    mockedAxios.get.mockResolvedValueOnce({ data: release })
+
+    const result = await fetchLatestRelease()
+
+    expect(result?.sha256SumsDownloadUrl).toBeNull()
   })
 })

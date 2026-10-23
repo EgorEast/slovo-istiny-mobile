@@ -15,6 +15,7 @@ import expo.modules.kotlin.exception.Exceptions
 import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
 import java.io.File
+import java.security.MessageDigest
 
 private const val INSTALL_ACTION = "ru.slovopropovedi.apkinstaller.INSTALL_COMPLETE"
 
@@ -103,6 +104,10 @@ class ApkInstallerModule : Module() {
     AsyncFunction("openInstallPermissionSettings") { promise: Promise ->
       openInstallPermissionSettings(promise)
     }
+
+    AsyncFunction("computeSha256") { fileUri: String, promise: Promise ->
+      computeSha256(fileUri, promise)
+    }
   }
 
   private fun installApk(apkPath: String, promise: Promise) {
@@ -190,6 +195,35 @@ class ApkInstallerModule : Module() {
   private fun canRequestPackageInstalls(): Boolean {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return true
     return context.packageManager.canRequestPackageInstalls()
+  }
+
+  private fun computeSha256(fileUri: String, promise: Promise) {
+    val realPath = Uri.parse(fileUri).path
+    if (realPath == null) {
+      promise.reject("ERR_APK_HASH_INVALID_PATH", "Invalid file path: $fileUri", null)
+      return
+    }
+
+    val file = File(realPath)
+    if (!file.exists()) {
+      promise.reject("ERR_APK_HASH_FILE_NOT_FOUND", "File not found at: $realPath", null)
+      return
+    }
+
+    try {
+      val digest = MessageDigest.getInstance("SHA-256")
+      file.inputStream().buffered().use { input ->
+        val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+        while (true) {
+          val read = input.read(buffer)
+          if (read < 0) break
+          digest.update(buffer, 0, read)
+        }
+      }
+      promise.resolve(digest.digest().joinToString("") { byte -> "%02x".format(byte.toInt() and 0xFF) })
+    } catch (error: Exception) {
+      promise.reject("ERR_APK_HASH", "Failed to compute SHA-256: ${error.message}", error)
+    }
   }
 
   private fun openInstallPermissionSettings(promise: Promise) {

@@ -17,6 +17,7 @@ const UPDATE_NOTIFICATION_GROUP = 'app-update'
 
 export const latestVersionAtom = atom<null | string>(null, 'latestVersionAtom')
 export const releaseUrlAtom = atom<null | string>(null, 'releaseUrlAtom')
+export const sha256SumsUrlAtom = atom<null | string>(null, 'sha256SumsUrlAtom')
 export const zipDownloadUrlAtom = atom<null | string>(null, 'zipDownloadUrlAtom')
 
 const readLastNotifiedVersion = async (): Promise<null | string> => {
@@ -72,6 +73,7 @@ export const checkForUpdateAction = action(async ctx => {
   await ctx.schedule(() => {
     latestVersionAtom(ctx, release.version)
     releaseUrlAtom(ctx, release.htmlUrl)
+    sha256SumsUrlAtom(ctx, release.sha256SumsDownloadUrl ?? null)
     zipDownloadUrlAtom(ctx, release.zipDownloadUrl)
   })
 

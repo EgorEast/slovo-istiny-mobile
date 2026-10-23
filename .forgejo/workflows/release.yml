@@ -453,10 +453,9 @@ jobs:
 
       - name: Restore release keystore
         # prebuild --clean wipes android/; the keystore must land here (before the
-        # build) and the RELEASE_* env vars are exported to later steps only when
-        # the secret is present. With RELEASE_STORE_FILE unset the Gradle release
-        # buildType falls back to the debug key, so a missing secret keeps the
-        # build green (debug-signed, dev-only).
+        # build) and the RELEASE_* env vars are exported to later steps. A prod
+        # release MUST be signed with the release key: publishing a debug-signed
+        # APK makes in-app updates fail (signature mismatch) and is refused here.
         env:
           ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
@@ -464,9 +463,9 @@ jobs:
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
           if [ -z "${ANDROID_KEYSTORE_BASE64:-}" ]; then
-            echo "::warning::ANDROID_KEYSTORE_BASE64 is not configured — building a debug-signed release (dev-only)"
-            printf '%s\n' "- APK signing: ⚠️ debug-signed fallback (ANDROID_KEYSTORE_BASE64 not set)" | scripts/ci/step-summary.sh
-            exit 0
+            echo "::error::ANDROID_KEYSTORE_BASE64 is not configured — refusing to publish a debug-signed release"
+            printf '%s\n' "- APK signing: ❌ ANDROID_KEYSTORE_BASE64 is not configured — release aborted" | scripts/ci/step-summary.sh
+            exit 1
           fi
           echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > android/app/release.keystore
           {
@@ -574,9 +573,13 @@ jobs:
           RENAMED="Slovo.Propovedi v${VERSION}.apk"
           cp "$APK_PATH" "$APK_DIR/$RENAMED"
           zip -j "slovo-propovedi-v${VERSION}.zip" "$APK_DIR/$RENAMED"
+          # Integrity contract: the client verifies this digest before unpacking.
+          # `sha256sum` writes the standard "<hex>  <filename>" line.
+          sha256sum "slovo-propovedi-v${VERSION}.zip" > SHA256SUMS.txt
           {
             echo "- APK: \`$RENAMED\`"
             echo "- Artifact: \`slovo-propovedi-v${VERSION}.zip\` ($(du -h "slovo-propovedi-v${VERSION}.zip" | cut -f1))"
+            echo "- Checksums: \`SHA256SUMS.txt\` ($(cat SHA256SUMS.txt))"
           } | scripts/ci/step-summary.sh
 
       - name: Extract changelog section
@@ -608,6 +611,11 @@ jobs:
             -H "Authorization: token $GITHUB_TOKEN" \
             -H "Content-Type: application/zip" \
             --data-binary @slovo-propovedi-v${VERSION}.zip
+          curl -s -X POST \
+            "${{ github.server_url }}/api/v1/repos/${{ github.repository }}/releases/$RELEASE_ID/assets?name=SHA256SUMS.txt" \
+            -H "Authorization: token $GITHUB_TOKEN" \
+            -H "Content-Type: text/plain" \
+            --data-binary @SHA256SUMS.txt
           summary_row "- Uploaded to the release: ✅ [$TAG](${{ github.server_url }}/${{ github.repository }}/releases/tag/$TAG)"
 
       - name: Mirror release to GitHub
@@ -691,6 +699,20 @@ jobs:
             summary_row "- GitHub mirror: ⚠️ failed (asset status $UPLOAD_STATUS)"
           fi
 
+          # Checksum asset rides alongside the zip (422 = already uploaded).
+          SUMS_UPLOAD_STATUS=$(curl -s -o /tmp/gh-sums-upload.json -w "%{http_code}" -X POST \
+            -H "$AUTH_HEADER" -H "$ACCEPT_HEADER" -H "$API_VERSION_HEADER" \
+            -H "Content-Type: text/plain" \
+            --data-binary @SHA256SUMS.txt \
+            "$UPLOAD_BASE/releases/$RELEASE_ID/assets?name=SHA256SUMS.txt" || true)
+
+          if [ "$SUMS_UPLOAD_STATUS" = "201" ] || [ "$SUMS_UPLOAD_STATUS" = "422" ]; then
+            echo "SHA256SUMS.txt is attached to GitHub release $RELEASE_ID (status $SUMS_UPLOAD_STATUS)"
+          else
+            echo "::warning::GitHub mirror failed: checksum upload returned status $SUMS_UPLOAD_STATUS - $(jq -r .message /tmp/gh-sums-upload.json 2>/dev/null || true)"
+            summary_row "- GitHub mirror: ⚠️ failed (checksum status $SUMS_UPLOAD_STATUS)"
+          fi
+
       - name: Mirror release to SourceCraft
         env:
           # SourceCraft PAT is passed via the MIRROR_SOURCECRAFT_TOKEN secret;
@@ -772,6 +794,19 @@ jobs:
           else
             echo "::warning::SourceCraft mirror failed: asset upload returned status $UPLOAD_STATUS - $(jq -r .message /tmp/sc-upload.json 2>/dev/null || true)"
             summary_row "- SourceCraft mirror: ⚠️ failed (asset upload status $UPLOAD_STATUS)"
+          fi
+
+          SUMS_UPLOAD_STATUS=$(curl -s -o /tmp/sc-sums-upload.json -w "%{http_code}" -X POST \
+            -H "$AUTH_HEADER" \
+            -F "name=SHA256SUMS.txt" \
+            -F "file=@SHA256SUMS.txt" \
+            "$API_BASE/releases/tag/$TAG/attachments" || true)
+
+          if [ "$SUMS_UPLOAD_STATUS" = "201" ]; then
+            echo "Uploaded SHA256SUMS.txt to SourceCraft release $TAG"
+          else
+            echo "::warning::SourceCraft mirror failed: checksum upload returned status $SUMS_UPLOAD_STATUS - $(jq -r .message /tmp/sc-sums-upload.json 2>/dev/null || true)"
+            summary_row "- SourceCraft mirror: ⚠️ failed (checksum upload status $SUMS_UPLOAD_STATUS)"
           fi
 
       - name: Cleanup workspace
