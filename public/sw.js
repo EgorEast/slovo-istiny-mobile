@@ -209,6 +209,33 @@ async function navigationStrategy(request) {
   return fetch(request)
 }
 
+/** Cache-Control directives that forbid persisting a response. */
+const UNCACHEABLE_DIRECTIVES = ['no-store', 'private']
+
+/**
+ * Whether a same-origin response may be written to the runtime precache.
+ * Authenticated (`Authorization` header) and explicitly non-storable
+ * (`Cache-Control: no-store` / `private`) responses are never persisted — the
+ * page still receives them from the network, only the cache write is skipped.
+ * @param {Request} request
+ * @param {Response} response
+ * @returns {boolean}
+ */
+function isCacheable(request, response) {
+  if (request.headers.has('authorization')) return false
+
+  const cacheControl = response.headers.get('cache-control')
+  if (!cacheControl) return true
+
+  return !cacheControl
+    .toLowerCase()
+    .split(',')
+    .some((directive) => {
+      const name = directive.split('=')[0].trim()
+      return UNCACHEABLE_DIRECTIVES.indexOf(name) !== -1
+    })
+}
+
 /**
  * Cache-first for same-origin static assets, with a runtime-fill safety net
  * for anything not in the manifest.
@@ -216,11 +243,17 @@ async function navigationStrategy(request) {
  * @returns {Promise<Response>}
  */
 async function cacheFirst(request) {
+  // Authenticated requests always go to the network: a stale or poisoned cached
+  // copy must never be served in place of the per-user server response.
+  if (request.headers.has('authorization')) return fetch(request)
+
   const cache = await caches.open(PRECACHE)
   const cached = await cache.match(request)
   if (cached) return cached
   const response = await fetch(request)
-  if (response && response.ok) cache.put(request, response.clone()).catch(() => { })
+  if (response && response.ok && isCacheable(request, response)) {
+    cache.put(request, response.clone()).catch(() => { })
+  }
   return response
 }
 
