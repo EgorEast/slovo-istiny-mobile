@@ -10,6 +10,9 @@ export const LEGACY_REFRESH_TOKEN_KEY = '@refresh_token'
 export const SECURE_ACCESS_TOKEN_KEY = 'slovo_access_token'
 export const SECURE_REFRESH_TOKEN_KEY = 'slovo_refresh_token'
 export const SECURE_USER_KEY = 'slovo_auth_user'
+// Basic-auth учётные данные инстанса Invidious (`user:pass`) для импорта аудио.
+// В отличие от токенов, это не сессия пользователя, но такой же секрет.
+export const SECURE_INVIDIOUS_AUTH_KEY = 'slovo_invidious_auth'
 
 // Android maps `keychainService` to a scoped SharedPreferences file; keep it
 // stable so write/read/delete address the same entry.

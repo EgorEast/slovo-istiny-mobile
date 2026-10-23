@@ -6,6 +6,7 @@ import {
   LEGACY_REFRESH_TOKEN_KEY,
   parseCachedUser,
   SECURE_ACCESS_TOKEN_KEY,
+  SECURE_INVIDIOUS_AUTH_KEY,
   SECURE_REFRESH_TOKEN_KEY,
   SECURE_STORE_SERVICE,
   SECURE_USER_KEY,
@@ -13,6 +14,10 @@ import {
 } from './secureTokenStorageShared'
 
 const SECURE_STORE_OPTIONS: SecureStore.SecureStoreOptions = {
+  // iOS only: keep items out of encrypted backups and device-to-device migration.
+  // The default (`AFTER_FIRST_UNLOCK`) is restored on a new device, so tokens would
+  // travel with a backup. Android ignores this keychain-only option.
+  keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
   keychainService: SECURE_STORE_SERVICE,
 }
 
@@ -39,6 +44,10 @@ export const secureTokenStorage = {
     await SecureStore.deleteItemAsync(SECURE_USER_KEY, SECURE_STORE_OPTIONS)
   },
 
+  clearInvidiousAuth: async () => {
+    await SecureStore.deleteItemAsync(SECURE_INVIDIOUS_AUTH_KEY, SECURE_STORE_OPTIONS)
+  },
+
   clearTokens: async () => {
     await Promise.all([
       SecureStore.deleteItemAsync(SECURE_ACCESS_TOKEN_KEY, SECURE_STORE_OPTIONS),
@@ -53,11 +62,17 @@ export const secureTokenStorage = {
   getCachedUser: async () =>
     parseCachedUser(await SecureStore.getItemAsync(SECURE_USER_KEY, SECURE_STORE_OPTIONS)),
 
+  getInvidiousAuth: async () => readSecure(SECURE_INVIDIOUS_AUTH_KEY),
+
   getRefreshToken: async () =>
     readWithLegacyMigration(SECURE_REFRESH_TOKEN_KEY, LEGACY_REFRESH_TOKEN_KEY),
 
   setCachedUser: async (user: UserResponse) => {
     await SecureStore.setItemAsync(SECURE_USER_KEY, JSON.stringify(user), SECURE_STORE_OPTIONS)
+  },
+
+  setInvidiousAuth: async (credentials: string) => {
+    await SecureStore.setItemAsync(SECURE_INVIDIOUS_AUTH_KEY, credentials, SECURE_STORE_OPTIONS)
   },
 
   setTokens: async (accessToken: string, refreshToken: string) => {
