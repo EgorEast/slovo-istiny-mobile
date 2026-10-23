@@ -3,6 +3,7 @@ import z from 'zod'
 import { sectionSchema } from 'entities/section/@x/playlist'
 import { type SectionShape, type SermonShape } from 'shared/model'
 import { readStoredMyPlaylists } from './lib/readStoredMyPlaylists'
+import { shareInflightLoad } from './lib/shareInflightLoad'
 import { FAVORITES_PLAYLIST, type LocalPlaylistData, withFavoritesFirst } from './localPlaylists'
 import { persistMyPlaylists } from './localPlaylistStorage'
 
@@ -60,7 +61,8 @@ export const myPlaylistsAtom = atom<LocalPlaylistData[]>([FAVORITES_PLAYLIST], '
  * Экран «Слушать» размонтирует слайдеры, пока активен поиск; без этого флага
  * каждый возврат к секциям перечитывал бы AsyncStorage. Флаг поднимает сам
  * `loadMyPlaylists` (единственный путь гидратации), а pull-to-refresh вызывает
- * экшен напрямую и потому по-прежнему форсирует чтение.
+ * экшен напрямую и потому по-прежнему форсирует чтение. Конкурентные вызовы на одном
+ * контексте делят одно чтение — гидратация не перезаписывает `createLocalPlaylist`.
  */
 export const myPlaylistsLoadedAtom = atom(false, 'myPlaylistsLoadedAtom')
 
@@ -68,19 +70,27 @@ export const myPlaylistsLoadedAtom = atom(false, 'myPlaylistsLoadedAtom')
  * Гидратация локальных плейлистов из AsyncStorage.
  *
  * Хранилище недоверенное: читается через zod (`myPlaylistsArraySchema`),
- * невалидные данные трактуются как отсутствующие. При первом чтении
- * (ключ отсутствует) засеивается `FAVORITES_PLAYLIST`. Отказ самого
- * хранилища (reject) логируется и трактуется так же — как отсутствие данных.
- * По завершении поднимает `myPlaylistsLoadedAtom`.
+ * невалидные данные трактуются как отсутствующие; при первом чтении
+ * (ключа нет) засеивается `FAVORITES_PLAYLIST`, отказ хранилища логируется
+ * и трактуется так же. По завершении поднимает `myPlaylistsLoadedAtom`.
+ *
+ * Конкурентные вызовы на одном контексте делят одно чтение (per-ctx in-flight
+ * dedupe): чтение, запущенное до `createLocalPlaylist`, не перезаписывает его
+ * коммит. После завершения запись снимается — pull-to-refresh читает снова.
+ * @param ctx - Reatom action context.
  */
-export const loadMyPlaylists = action(async ctx => {
-  const playlists = await readStoredMyPlaylists()
-  await ctx.schedule(() => {
-    myPlaylistsAtom(ctx, playlists)
-    myPlaylistsLoadedAtom(ctx, true)
-  })
-  return playlists
-}, 'loadMyPlaylists')
+export const loadMyPlaylists = action(
+  ctx =>
+    shareInflightLoad(ctx, async () => {
+      const playlists = await readStoredMyPlaylists()
+      await ctx.schedule(() => {
+        myPlaylistsAtom(ctx, playlists)
+        myPlaylistsLoadedAtom(ctx, true)
+      })
+      return playlists
+    }),
+  'loadMyPlaylists',
+)
 
 /**
  * Переупорядочивание локальных плейлистов (drag-and-drop на экране «Мои плейлисты»).

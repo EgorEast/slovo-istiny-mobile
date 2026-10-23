@@ -127,3 +127,50 @@ describe('loadMyPlaylists parse failure', () => {
     expect(await AsyncStorage.getItem(MY_PLAYLISTS)).toBe(corrupt)
   })
 })
+
+describe('loadMyPlaylists in-flight dedupe', () => {
+  const countMyPlaylistsReads = () =>
+    (AsyncStorage.getItem as jest.Mock).mock.calls.filter(call => call[0] === MY_PLAYLISTS).length
+
+  const seedStoredPlaylist = () =>
+    AsyncStorage.setItem(
+      MY_PLAYLISTS,
+      JSON.stringify([{ id: 'plain', sermonIds: [], sermons: [], title: 'Plain' }]),
+    )
+
+  beforeEach(async () => {
+    jest.clearAllMocks()
+    await AsyncStorage.clear()
+    await seedStoredPlaylist()
+  })
+
+  test('shares one storage read between concurrent calls', async () => {
+    const ctx = createCtx()
+
+    const first = loadMyPlaylists(ctx)
+    const second = loadMyPlaylists(ctx)
+    const [firstResult, secondResult] = await Promise.all([first, second])
+
+    expect(countMyPlaylistsReads()).toBe(1)
+    expect(firstResult).toBe(secondResult)
+    expect(firstResult).toEqual(ctx.get(myPlaylistsAtom))
+  })
+
+  test('re-reads storage for sequential calls', async () => {
+    const ctx = createCtx()
+
+    await loadMyPlaylists(ctx)
+    await loadMyPlaylists(ctx)
+
+    expect(countMyPlaylistsReads()).toBe(2)
+  })
+
+  test('does not share reads between contexts', async () => {
+    const firstCtx = createCtx()
+    const secondCtx = createCtx()
+
+    await Promise.all([loadMyPlaylists(firstCtx), loadMyPlaylists(secondCtx)])
+
+    expect(countMyPlaylistsReads()).toBe(2)
+  })
+})
