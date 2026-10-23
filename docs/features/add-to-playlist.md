@@ -176,7 +176,10 @@
 (`playlist.add-modal-favorites` / `playlist.add-modal-create` /
 `playlist.add-modal-save`) и регистрирует действие тура
 `check-add-modal-favorites`; с самой модалкой эту обвязку связывает
-`usePlaylistAddToPlaylist`. См. [features/onboarding.md](./onboarding.md).
+`usePlaylistAddToPlaylist`. Реализация `renderSaveWrapper` обязана сохранить
+геометрию кнопки (`flex: 1` на обёртке), иначе `OnboardingTarget`-View сожмёт
+«Сохранить» (пример — `useAddToPlaylistTour`). См.
+[features/onboarding.md](./onboarding.md).
 
 ## Батч-режим «Добавить все проповеди в плейлист»
 

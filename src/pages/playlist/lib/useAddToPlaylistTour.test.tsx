@@ -18,6 +18,8 @@ const registeredAction = () =>
   jest.mocked(useTourActionRegistrar).mock.calls.find(([id]) => id === CHECK_ACTION_ID)?.[1]
 
 const targetIdOf = (element: ReactElement) => (element as ReactElement<{ id?: string }>).props.id
+const styleOf = (element: ReactElement) =>
+  (element as ReactElement<{ style?: unknown }>).props.style
 
 describe('useAddToPlaylistTour', () => {
   beforeEach(() => {
@@ -54,7 +56,7 @@ describe('useAddToPlaylistTour', () => {
     expect(setPlaylistChecked).not.toHaveBeenCalled()
   })
 
-  test('wraps the favorites row, the create button and the save button in onboarding targets', async () => {
+  test('wraps the favorites row, the create button and the save button in onboarding targets, keeping the save button full-width', async () => {
     const { result } = await renderHook(() => useAddToPlaylistTour())
     const row = <></>
 
@@ -64,5 +66,8 @@ describe('useAddToPlaylistTour', () => {
     expect(result.current.renderRowWrapper(row, 'other-playlist')).toBe(row)
     expect(targetIdOf(result.current.renderCreateWrapper(row))).toBe(CREATE_TARGET_ID)
     expect(targetIdOf(result.current.renderSaveWrapper(row))).toBe(SAVE_TARGET_ID)
+    expect(styleOf(result.current.renderSaveWrapper(row))).toEqual(
+      expect.objectContaining({ flex: 1 }),
+    )
   })
 })

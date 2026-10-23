@@ -1,4 +1,5 @@
 import { type ReactElement, useCallback, useRef } from 'react'
+import { StyleSheet } from 'react-native'
 import { type AddToPlaylistControls } from 'features/add-to-playlist'
 import { OnboardingTarget, useTourActionRegistrar } from 'features/onboarding'
 import { FAVORITES_PLAYLIST } from 'entities/playlist'
@@ -39,8 +40,14 @@ export const useAddToPlaylistTour = () => {
     [],
   )
 
+  // Обёртка обязана воспроизвести геометрию кнопки (flex: 1): измерительный View
+  // OnboardingTarget иначе сжимает «Сохранить» до ширины контента в строке футера.
   const renderSaveWrapper = useCallback(
-    (save: ReactElement) => <OnboardingTarget id={SAVE_TARGET_ID}>{save}</OnboardingTarget>,
+    (save: ReactElement) => (
+      <OnboardingTarget id={SAVE_TARGET_ID} style={styles.saveTarget}>
+        {save}
+      </OnboardingTarget>
+    ),
     [],
   )
 
@@ -51,3 +58,9 @@ export const useAddToPlaylistTour = () => {
 
   return { bindControls, renderCreateWrapper, renderRowWrapper, renderSaveWrapper }
 }
+
+const styles = StyleSheet.create({
+  saveTarget: {
+    flex: 1,
+  },
+})
