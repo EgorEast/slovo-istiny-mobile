@@ -154,11 +154,5 @@
 
 ## Security hardening (аудит 2026-10-23)
 
-- [ ] Signature pre-check APK перед установкой (сравнение сертификата подписи через PackageManager.getPackageArchiveInfo) — src/shared/lib/update-service/, modules/apk-installer — опциональный defense-in-depth поверх SHA-256
-- [ ] `allowBackup="false"` (или dataExtractionRules) через config-плагин — `app.config.ts`, `plugins/` — харденинг
-- [ ] Миграция xml-js → fast-xml-parser (или препроцессинг-гард DOCTYPE/ENTITY + лимит размера) — `src/pages/book-reader/lib/parseFb2BookToObject.ts` — когда book-reader выйдет из статуса заглушки
+- [ ] Перевести читалку на книги в формате Markdown (рендер проще, вес меньше; удалить FB2-путь и зависимость xml-js) — src/pages/book-reader/ — при реработке читалки (решение продукта, 2026-10-23)
 - [ ] `max()` на title кастомного плейлиста в share-схеме — `src/entities/playlist/lib/customPlaylistShare.ts`
-- [ ] `requireAuthentication`/`keychainAccessible` для SecureStore — `src/shared/api/secureTokenStorage.native.ts`
-- [ ] Вынести basic-auth Invidious из plaintext AsyncStorage/бэкапа — `src/shared/model/importSettings.ts`
-- [ ] Service worker: не кэшировать ответы с Authorization / no-store — `public/sw.js`
-- [ ] Убрать SYSTEM_ALERT_WINDOW из release-манифеста, если не используется — `plugins/withAndroidManifestCleanup.ts`

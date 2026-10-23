@@ -30,6 +30,8 @@
 
 ## Чтение FB2
 
+> **Решение продукта (2026-10-23):** переходим на книги в формате Markdown (проще рендерить, меньше вес); FB2-парсинг (xml-js) будет удалён при реработке читалки. Текущий раздел описывает существующий FB2-путь до этой реработки.
+
 Парсинг — `xml-js` (`xml2js`). Библиотека утилит — `src/pages/book-reader/lib/`:
 
 - `parseFb2BookToObject.ts` — `parseFb2BookToObject(xml)` → `xml2js(...)` с `nativeType`, `ignoreAttributes` и пр.; возвращает корневой `XMLElementElement`;
