@@ -85,7 +85,7 @@ You have autonomy to handle implementation details without asking:
 2. **Load Philosophy** - Use skill tool to load `code-philosophy` or `frontend-philosophy`
 3. **Plan** - Brief internal strategy (not shared unless complex)
 4. **Implement** - Write/edit code following the philosophy
-5. **Verify** - Run the project's lint, type-check, and test commands
+5. **Verify** - Run only narrowly scoped checks related to your own change (e.g. a single targeted test file via `yarn test --watch=false <path>`). NEVER run project-wide suites — the orchestrator runs full verification once after all tasks complete
 6. **Checklist** - Verify against philosophy checklist before completing
 7. **Return** - Provide summary of changes and verification results
 
@@ -121,23 +121,23 @@ You have autonomy to handle implementation details without asking:
 
 Use bash for verification and builds only:
 
-✅ **Allowed:**
+✅ **Allowed (scoped work only):**
 ```bash
-bun run build
-bun run check
-bun run test
-bun run lint
-npm run build
-npx tsc --noEmit
+yarn test --watch=false <single-test-file-path>   # targeted test for your change
+npx tsc --noEmit <single-file>                    # rare syntax spot-check
+builds required to produce an artifact the task itself needs
 ```
 
-❌ **Avoid:**
+❌ **NEVER run (orchestrator's job — once, after all tasks complete):**
 ```bash
-rm -rf              # Destructive
-git push --force    # Dangerous
-npm publish         # Irreversible
-sudo anything       # System-level
+yarn lint / yarn lint:fix        # project-wide
+yarn check:types                 # full tsc
+yarn check:unused                # knip
+yarn test (no path filter)       # full suite
+yarn testFinal / testFinal:all   # full suite + native
+yarn test:native                 # gradle build
 ```
+Parallel coders running full suites concurrently freeze the machine. Implement, report, and let the orchestrator verify once.
 
 ## Output Format
 
@@ -153,9 +153,8 @@ When returning to the orchestrator, provide:
 - Checklist: [PASS | FAIL with notes]
 
 ## Verification
-- Lint: [PASS | FAIL]
-- Types: [PASS | FAIL]
-- Tests: [PASS | FAIL | N/A]
+- Scoped checks run: [list them or "none"]
+- Full verification: [left to orchestrator]
 
 ## Notes
 [Any important context, warnings, or follow-up items for the orchestrator]

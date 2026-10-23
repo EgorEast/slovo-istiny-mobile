@@ -48,6 +48,8 @@ npm run build:all            # Build all platforms
 
 **Running tests (agents):** run tests only via `yarn test` (add `--watch=false` for a single terminating run). Never call `yarn jest <paths>` or `yarn testFinal` directly — the dedicated script carries test optimizations, and raw full jest runs overload the machine and can hang it.
 
+**Centralized verification:** agents working on delegated tasks must NOT run project-wide checks on their own (`yarn lint`, `yarn lint:fix`, `yarn check:types`, `yarn check:unused`, full `yarn test`, `yarn testFinal*`, `yarn test:native`, gradle builds). When several agents work in parallel, concurrent full runs overload the machine. The orchestrator runs the whole verification suite ONCE after all delegated tasks are complete (via a single dedicated task) and routes any failures back to the responsible agent. Delegated tasks implement code and may run only narrowly scoped checks (e.g. a single targeted test file via `yarn test --watch=false <path>` when the task is test-focused).
+
 ## Project Architecture
 
 This project follows Feature-Sliced Design (FSD) architecture with Expo Router for navigation.
