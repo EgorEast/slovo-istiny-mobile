@@ -11,12 +11,13 @@ const NAME_PLACEHOLDER = 'Например: Проповеди недели'
 const SUBMIT_LABEL = 'Создать'
 
 // Тело формы создания локального плейлиста: поле названия и «Создать».
-// «Создать» недоступна, пока название пустое/пробельное. Enter в поле названия
-// отправляет форму — `FormSubmitContext` включает в `FormField` `returnKeyType`
-// и `onSubmitEditing`, ведущие на тот же `submit`, что и кнопка.
+// «Создать» недоступна, пока название пустое/пробельное или пока создание
+// в полёте (`submitting`). Enter в поле названия отправляет форму —
+// `FormSubmitContext` включает в `FormField` `returnKeyType` и `onSubmitEditing`,
+// ведущие на тот же `submit`, что и кнопка.
 export const CreateLocalPlaylistForm = ({ onClose }: { onClose: () => void }) => {
   const { currentTheme } = useTheme()
-  const { canSubmit, setTitle, submit, title } = useCreateLocalPlaylistForm(onClose)
+  const { canSubmit, setTitle, submit, submitting, title } = useCreateLocalPlaylistForm(onClose)
 
   return (
     <FormSubmitContext.Provider value={() => void submit()}>
@@ -31,12 +32,12 @@ export const CreateLocalPlaylistForm = ({ onClose }: { onClose: () => void }) =>
           />
         </View>
         <PressableButton
-          disabled={!canSubmit}
           onPress={() => void submit()}
+          disabled={!canSubmit || submitting}
           style={[
             styles.submit,
             { borderTopColor: currentTheme.skeleton },
-            !canSubmit && styles.submitDisabled,
+            (!canSubmit || submitting) && styles.submitDisabled,
           ]}
         >
           <Text style={[styles.submitText, { color: currentTheme.primary }]}>{SUBMIT_LABEL}</Text>

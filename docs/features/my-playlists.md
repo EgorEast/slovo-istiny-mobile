@@ -383,13 +383,14 @@ drag-to-reorder, кнопки удаления и живые настройки 
 `shared/ui/modal`, как у «Добавить в плейлист»):
 
 - `CreateLocalPlaylistModal` — поле «Название» (`FormField`) + кнопка «Создать»,
-  недоступная, пока название пустое/пробельное. Состояние формы живёт в общем хуке
+  недоступная, пока название пустое/пробельное или пока создание в полёте
+  (`submitting`). Состояние формы живёт в общем хуке
   `useCreateLocalPlaylist` (`entities/playlist`), а `useCreateLocalPlaylistForm`
   (`src/features/local-playlist-form/lib/useCreateLocalPlaylistForm.ts`) добавляет к
-  нему закрытие модалки и переход на созданный плейлист. Поведение модалки не
-  изменилось; тот же хук переиспользует встроенная форма в модалке «Добавить в
-  плейлист» (см. [add-to-playlist.md](./add-to-playlist.md) → «Создание плейлиста
-  из модалки»). По отправке (кнопка или Enter в поле):
+  нему закрытие модалки и переход на созданный плейлист. Тот же хук переиспользует
+  встроенная форма в модалке «Добавить в плейлист» (см.
+  [add-to-playlist.md](./add-to-playlist.md) → «Создание плейлиста из модалки»).
+  По отправке (кнопка или Enter в поле):
   гидратация `myPlaylistsAtom` (`loadMyPlaylists`, если он ещё не загружен по
   `myPlaylistsLoadedAtom`), затем `createLocalPlaylist({ title: trimmed, sermonIds: [] })`,
   закрытие и переход на созданный плейлист (`/listen/playlist?playlist=<id>`). Гидратация
