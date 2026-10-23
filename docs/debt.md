@@ -155,4 +155,3 @@
 ## Security hardening (аудит 2026-10-23)
 
 - [ ] Перевести читалку на книги в формате Markdown (рендер проще, вес меньше; удалить FB2-путь и зависимость xml-js) — src/pages/book-reader/ — при реработке читалки (решение продукта, 2026-10-23)
-- [ ] `max()` на title кастомного плейлиста в share-схеме — `src/entities/playlist/lib/customPlaylistShare.ts`
