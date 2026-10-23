@@ -152,4 +152,15 @@
 - [ ] **Миграция на TypeScript 7 и Babel 8 отложена до поддержки в тулчейне.** `package.json` (сейчас `typescript` 6.x и `@babel/core` 7.x) — TS 7 удаляет классический JS API компилятора: `typescript-estree` внутри ESLint-плагинов `react-hooks`/`react-hooks-extra` падает при загрузке конфига ESLint (crash на `ts.Extension`), а dependency-cruiser поддерживает `typescript <7` (`yarn check:circular` молча проезжает 0 модулей); Babel 8 несовместим с `babel-preset-expo` и `@react-native/jest-preset` (их плагины требуют `^7`, jest падает на ассерте `^7.0.0-0`). — `package.json`, `yarn.lock` — вернуться при появлении поддержки TS 7 в `typescript-estree`/ESLint-плагинах и dependency-cruiser, а Babel 8 — в `babel-preset-expo` и `@react-native/jest-preset`; прецедент 2026-10-22: до этого апгрейды ломают `yarn lint` и `yarn test`.
 - [ ] **Нестабильный прогон набора `AdminSermonsScreen` под высокой параллельностью jest.** `src/pages/admin-sermons/ui/AdminSermonsScreen.test.tsx` — под 6 воркерами (12-ядерная машина, `--maxWorkers=50%`) два теста («navigates to the detail screen on row press», «navigates to the create screen from the header button») выходили за дефолтный таймаут 5 с на тест, а асинхронное продолжение упавшего по таймауту теста успевало нажать строку и утекло вызов навигации в соседний тест (`mockPush` получал detail-маршрут вместо `/admin/sermons/create`); в изоляции набор проходит 8/8 примерно за 5,4 с. Найдено 2026-10-22 при полном прогоне после обновления зависимостей — не регрессия кода (`src/` побайтово совпадал с HEAD). Варианты фикса: поднять per-test таймаут, закрыть утечку в teardown (сопровождается предупреждением worker force-exit) или ограничить число воркеров в CI. Вернуться при правках тестов admin-sermons или конфига jest.
 
+## Security hardening (аудит 2026-10-23)
 
+- [ ] Проверка целостности APK перед установкой (SHA-256 в метаданных релиза + валидация до PackageInstaller commit; сравнение сертификата подписи) — `src/shared/lib/update-service/`, `modules/apk-installer` — до следующего релиза с self-update
+- [ ] `allowBackup="false"` (или dataExtractionRules) через config-плагин — `app.config.ts`, `plugins/` — харденинг
+- [ ] Миграция xml-js → fast-xml-parser (или препроцессинг-гард DOCTYPE/ENTITY + лимит размера) — `src/pages/book-reader/lib/parseFb2BookToObject.ts` — когда book-reader выйдет из статуса заглушки
+- [ ] Явный запрет `../` и абсолютных путей в zip-энтриях распаковки обновления — `src/shared/lib/update-service/updateService.ts`
+- [ ] `max()` на title кастомного плейлиста в share-схеме — `src/entities/playlist/lib/customPlaylistShare.ts`
+- [ ] `requireAuthentication`/`keychainAccessible` для SecureStore — `src/shared/api/secureTokenStorage.native.ts`
+- [ ] Вынести basic-auth Invidious из plaintext AsyncStorage/бэкапа — `src/shared/model/importSettings.ts`
+- [ ] Service worker: не кэшировать ответы с Authorization / no-store — `public/sw.js`
+- [ ] Убрать SYSTEM_ALERT_WINDOW из release-манифеста, если не используется — `plugins/withAndroidManifestCleanup.ts`
+- [ ] CI: падать (а не warning) при отсутствии keystore для prod-релиза — `.forgejo/workflows/release.yml`

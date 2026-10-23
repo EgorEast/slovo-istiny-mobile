@@ -1,3 +1,5 @@
+import { type AxiosError, isAxiosError } from 'axios'
+
 export const getErrorMessage = (error: unknown): string => {
   if (error instanceof Error) return error.message
   if (typeof error === 'string') return error
@@ -17,7 +19,20 @@ export const getHttpStatus = (error: unknown): number | undefined => {
   return typeof status === 'number' ? status : undefined
 }
 
+// Axios hangs the whole request on the error — including the Authorization
+// header with the bearer token. Serializing it into the (copyable) error dialog
+// leaks credentials, so an axios failure is reduced to status + code + message.
+const describeAxiosError = (error: AxiosError): string => {
+  const status = getHttpStatus(error)
+  const statusLabel = status === undefined ? 'Network error' : `${status}`
+  const codeLabel = error.code ? ` (${error.code})` : ''
+  const messageLabel = error.message ? `: ${error.message}` : ''
+
+  return `${statusLabel}${codeLabel}${messageLabel}`
+}
+
 export const getErrorDetail = (error: unknown): string => {
+  if (isAxiosError(error)) return describeAxiosError(error)
   if (error instanceof Error) return error.stack || error.message
   if (typeof error === 'string') return error
   if (error && typeof error === 'object')

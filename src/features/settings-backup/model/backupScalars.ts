@@ -16,8 +16,8 @@ export const AUTO_BACKUP_FILE_NAME = 'slovo-backup-auto.json'
 export const MANUAL_BACKUP_PREFIX = 'slovo-backup-'
 export const MANUAL_BACKUP_EXTENSION = '.json'
 
-/** Паттерн допустимого http(s)-адреса (единый источник для схем и чтения). */
-export const HTTP_URL_PATTERN = /^https?:\/\/.+/
+/** Паттерн допустимого https-адреса (единый источник для схем и чтения). */
+export const HTTP_URL_PATTERN = /^https:\/\/.+/
 
 /** Режим темы: значения совпадают с `ThemeMode` из `shared/ui/theme`. */
 export const themeModeBackupSchema = z.enum(['system', 'light', 'dark'])

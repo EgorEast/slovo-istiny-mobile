@@ -72,7 +72,7 @@
 - `kind` = `'slovo-propovedi-backup'`, `version` = `1` (`BACKUP_KIND` / `BACKUP_VERSION`).
 - `exportedAt` — ISO-строка момента экспорта.
 - `listeningHistory`, `myPlaylists`, `myPlaylistsSectionSettings` — валидируются **владельческими** схемами (`listeningHistorySchema`, `myPlaylistsArraySchema`, `sectionSettingsDraftSchema`), а не копиями.
-- `settings` — подмножество скаляров: `themeMode` (`'system' | 'light' | 'dark'`), `dynamicColors`, `hapticsEnabled`, `serverUrl` (только `http(s)://`), `sermonCachingEnabled`, `toursDisabled`, `toursSeenVersion` (строка). Все поля опциональны.
+- `settings` — подмножество скаляров: `themeMode` (`'system' | 'light' | 'dark'`), `dynamicColors`, `hapticsEnabled`, `serverUrl` (только `https://`), `sermonCachingEnabled`, `toursDisabled`, `toursSeenVersion` (строка). Все поля опциональны. `serverUrl` валидируется `HTTP_URL_PATTERN` (`/^https:\/\/.+/`): значение с `http://` делает файл невалидным (ветка `invalid`, тост «Файл резервной копии не удалось прочитать»).
 - `player` — `playbackRate`, `repeatMode`, `balance`, `pitch`, `equalizerEnabled`, `equalizerGains` (те же схемы плеера, что и при восстановлении).
 - `youtubeImport` — `source`, `invidiousBaseUrl`: ослабленная до partial `importSettingsSchema` из `shared/model` (см. [Общий контракт с импортом аудио](#общий-контракт-с-импортом-аудио)).
 - Пустые скалярные секции не пишутся вовсе (`dropEmpty` в `buildPayload`): секция без единого определённого поля в файл не попадает.

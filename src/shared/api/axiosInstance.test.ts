@@ -120,4 +120,49 @@ describe('axiosInstance refresh-failure handling', () => {
 
     expect(mockClearTokens).toHaveBeenCalledTimes(1)
   })
+
+  // Ротация refresh-токенов: параллельные 401 обязаны делить один refresh-запрос.
+  // Иначе каждый запрос обновляет пару отдельно, проигравшие получают 401 и
+  // очищают сессию — молчаливый разлогин.
+  test('shares a single refresh request between concurrent 401s', async () => {
+    const refreshCalls: string[] = []
+    let originalAttempts = 0
+
+    mockAdapter.mockImplementation(async (config: InternalAxiosRequestConfig) => {
+      if (config.url === REFRESH_ENDPOINT) {
+        refreshCalls.push(config.url)
+        // Держим refresh в полёте, чтобы второй 401 успел присоединиться к нему.
+        await new Promise(resolve => setTimeout(resolve, 0))
+
+        return {
+          config,
+          data: { accessToken: 'fresh-access-token', refreshToken: 'fresh-refresh-token' },
+          headers: {},
+          status: 200,
+          statusText: 'OK',
+        }
+      }
+
+      originalAttempts += 1
+      if (originalAttempts <= 2) throw createAxiosError(config, 401)
+
+      return {
+        config,
+        data: { ok: true, url: config.url },
+        headers: {},
+        status: 200,
+        statusText: 'OK',
+      }
+    })
+
+    const [first, second] = await Promise.all([
+      axiosInstance.get('/sermons/first'),
+      axiosInstance.get('/sermons/second'),
+    ])
+
+    expect(refreshCalls).toHaveLength(1)
+    expect(mockSetTokens).toHaveBeenCalledTimes(1)
+    expect(first.data).toEqual({ ok: true, url: '/sermons/first' })
+    expect(second.data).toEqual({ ok: true, url: '/sermons/second' })
+  })
 })

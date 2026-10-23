@@ -2,9 +2,11 @@ import axios, { type AxiosRequestConfig, isAxiosError } from 'axios'
 import { DEFAULT_API_URL } from '../config/api-url'
 import { ctx } from '../lib/reatom-ctx/ctx'
 import { reportServerReachable, reportServerUnreachable } from '../model/network'
-import { type RefreshResponse } from './generated/api.schemas'
 import { dropBoundarylessMultipartHeader } from './multipartHeaders'
 import { secureTokenStorage } from './secureTokenStorage'
+// ВАЖНО: никаких runtime-импортов из ./generated/** (только type-only выше и в
+// tokenRefresh.ts) — иначе require cycle axiosInstance ⇄ generated/auth/auth.
+import { performTokenRefresh, REFRESH_ENDPOINT } from './tokenRefresh'
 
 // Динамический base URL: инициализируется DEFAULT_API_URL и обновляется
 // экшенами shared/model (setServerUrlAction, initServerUrlAction),
@@ -12,29 +14,6 @@ import { secureTokenStorage } from './secureTokenStorage'
 export const axiosInstance = axios.create({
   baseURL: DEFAULT_API_URL,
 })
-
-// Единственный источник правды об эндпоинте refresh: используется и в guard'ах
-// интерцепторов, и в самом запросе обновления токенов (performTokenRefresh).
-// ВАЖНО: этот файл не должен иметь runtime-импортов из ./generated/** —
-// только type-only (стираются на этапе сборки). Иначе возникает require cycle
-// axiosInstance ⇄ generated/auth/auth (generated импортирует customInstance отсюда).
-const REFRESH_ENDPOINT = '/auth/refresh'
-
-// Обновление пары токенов: запрос идёт через тот же axiosInstance,
-// поэтому проходит через оба интерцептора (guard isRefreshRequest
-// пропускает его без Authorization и без повторного refresh при 401)
-const performTokenRefresh = async () => {
-  const storedRefreshToken = await secureTokenStorage.getRefreshToken()
-  if (!storedRefreshToken) throw new Error('No refresh token available')
-
-  const { data } = await axiosInstance.post<RefreshResponse>(REFRESH_ENDPOINT, {
-    refreshToken: storedRefreshToken,
-  })
-
-  await tokenStorage.setTokens(data.accessToken, data.refreshToken)
-
-  return data.accessToken
-}
 
 // Refresh-токен мёртв только когда сервер его явно отверг: сетевой сбой во время
 // refresh — случай временный, токены остаются, чтобы следующая попытка восстановила
@@ -81,7 +60,7 @@ axiosInstance.interceptors.response.use(
 
       try {
         // Пытаемся обновить токен
-        const newToken = await performTokenRefresh()
+        const newToken = await performTokenRefresh(axiosInstance)
 
         // Повторяем оригинальный запрос с новым токеном
         originalRequest.headers.Authorization = `Bearer ${newToken}`

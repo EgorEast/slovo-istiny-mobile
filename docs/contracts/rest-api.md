@@ -6,7 +6,7 @@
 
 - По умолчанию: `https://api.slovo-propovedi.ru` — константа `DEFAULT_API_URL` в `src/shared/config/config.ts`.
 - `axiosInstance` создаётся с этим base URL в `src/shared/api/axiosInstance.ts` (`axios.create({ baseURL: DEFAULT_API_URL })`).
-- **Можно менять в Настройках**: атом `serverUrlAtom` (`src/shared/model/settings.ts`). Экшены `setServerUrlAction` / `initServerUrlAction` синхронизируют `axiosInstance.defaults.baseURL` с выбранным URL и персистят его в AsyncStorage (ключ `SERVER_URL`, см. [storage.md](./storage.md)).
+- **Можно менять в Настройках**: атом `serverUrlAtom` (`src/shared/model/settings.ts`). Экшены `setServerUrlAction` / `initServerUrlAction` синхронизируют `axiosInstance.defaults.baseURL` с выбранным URL и персистят его в AsyncStorage (ключ `SERVER_URL`, см. [storage.md](./storage.md)). Допустим только `https://`: на этот адрес уходят токены администратора; при старте сохранённое значение без `https://` игнорируется (остаётся `DEFAULT_API_URL`).
 
 ## Аутентификация — Bearer JWT
 

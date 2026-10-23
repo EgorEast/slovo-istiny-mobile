@@ -7,18 +7,33 @@ import { useTheme } from 'shared/ui/theme'
 import { TouchableItem } from 'shared/ui/touchable-item'
 import { styles } from './ServerUrlSettings.styles'
 
-const isValidUrl = (url: string) => /^https?:\/\/.+/.test(url)
+const INVALID_PROTOCOL_MESSAGE = 'Адрес сервера должен начинаться с https://'
+
+// Только https: на этот адрес уходят токены администратора, plain http отдал бы
+// их в открытом виде.
+const isValidUrl = (url: string) => /^https:\/\/.+/.test(url)
 
 export const ServerUrlForm = () => {
   const [currentUrl] = useAtom(serverUrlAtom)
   const [inputValue, setInputValue] = useState(currentUrl)
   const [saved, setSaved] = useState(false)
+  const [validationError, setValidationError] = useState<null | string>(null)
   const setServerUrl = useAction(setServerUrlAction)
   const { currentTheme } = useTheme()
 
+  const handleChangeText = (value: string) => {
+    setInputValue(value)
+    setValidationError(null)
+  }
+
   const handleSave = () => {
     const trimmed = inputValue.trim()
-    if (!isValidUrl(trimmed)) return
+    if (!isValidUrl(trimmed)) {
+      setValidationError(INVALID_PROTOCOL_MESSAGE)
+      return
+    }
+
+    setValidationError(null)
     void setServerUrl(trimmed).then(() => {
       setSaved(true)
       setTimeout(() => setSaved(false), 2000)
@@ -27,6 +42,7 @@ export const ServerUrlForm = () => {
 
   const handleReset = () => {
     setInputValue(DEFAULT_API_URL)
+    setValidationError(null)
     void setServerUrl(DEFAULT_API_URL)
   }
 
@@ -40,7 +56,7 @@ export const ServerUrlForm = () => {
         keyboardType='url'
         autoCorrect={false}
         autoCapitalize='none'
-        onChangeText={setInputValue}
+        onChangeText={handleChangeText}
         placeholder='https://api.example.com'
         placeholderTextColor={currentTheme.textMuted}
         style={[
@@ -51,6 +67,11 @@ export const ServerUrlForm = () => {
           },
         ]}
       />
+      {validationError ? (
+        <Text style={styles.errorText} accessibilityRole='alert'>
+          {validationError}
+        </Text>
+      ) : null}
       <View style={styles.buttons}>
         <TouchableItem
           onPress={handleSave}

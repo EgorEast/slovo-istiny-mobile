@@ -54,7 +54,7 @@ export const readJson = async <T>(key: string, schema: z.ZodType<T>): Promise<T 
 }
 
 /**
- * Читает http(s)-адрес из хранилища (без протокола/отсутствие → `undefined`).
+ * Читает https-адрес из хранилища (без протокола/не https → `undefined`).
  * @param key - Ключ AsyncStorage.
  */
 export const readHttpUrl = async (key: string): Promise<string | undefined> => {

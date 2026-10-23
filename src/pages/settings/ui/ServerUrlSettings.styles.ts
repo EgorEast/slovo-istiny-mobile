@@ -17,6 +17,11 @@ export const styles = StyleSheet.create({
     fontSize: FONT_SIZES.base,
     fontWeight: '600',
   },
+  errorText: {
+    color: COLORS.error,
+    fontSize: FONT_SIZES.sm,
+    marginTop: INDENTS.low,
+  },
   input: {
     borderRadius: 8,
     borderWidth: 1,

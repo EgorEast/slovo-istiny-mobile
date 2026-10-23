@@ -87,14 +87,25 @@ export const setServerUrlAction = action(async (ctx, url: string) => {
   return url
 }, 'setServerUrl')
 
+// Адрес сервера обязан быть https: на него уходят токены администратора.
+const isHttpsUrl = (url: string) => /^https:\/\/.+/.test(url)
+
 export const initServerUrlAction = action(async ctx => {
   try {
     const stored = await AsyncStorage.getItem(SERVER_URL)
-    if (stored)
-      await ctx.schedule(() => {
-        syncAxiosBaseUrl(stored)
-        serverUrlAtom(ctx, stored)
-      })
+    if (!stored) return
+
+    // Legacy/испорченное значение без https игнорируем: остаёмся на дефолтном
+    // адресе, чтобы не отправлять токены по открытому каналу.
+    if (!isHttpsUrl(stored)) {
+      console.warn('Ignoring stored server URL without https://:', stored)
+      return
+    }
+
+    await ctx.schedule(() => {
+      syncAxiosBaseUrl(stored)
+      serverUrlAtom(ctx, stored)
+    })
   } catch (error) {
     console.error('Error loading server URL:', error)
   }
