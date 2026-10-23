@@ -5,7 +5,10 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.content.pm.PackageInfo
 import android.content.pm.PackageInstaller
+import android.content.pm.PackageManager
+import android.content.pm.Signature
 import android.net.Uri
 import android.os.Build
 import android.provider.Settings
@@ -128,6 +131,17 @@ class ApkInstallerModule : Module() {
       return
     }
 
+    // Defense-in-depth before any session exists: an APK signed by a different
+    // key can never replace this app, so fail early with the classifier's code.
+    if (!hasMatchingSignature(realPath)) {
+      promise.reject(
+        ApkInstallStatuses.SIGNATURE_MISMATCH_CODE,
+        ApkInstallStatuses.signatureMismatchMessage(),
+        null,
+      )
+      return
+    }
+
     val sessionParams = PackageInstaller.SessionParams(PackageInstaller.SessionParams.MODE_FULL_INSTALL)
     sessionParams.setAppPackageName(context.packageName)
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -191,6 +205,41 @@ class ApkInstallerModule : Module() {
       promise.reject("ERR_APK_INSTALL_COMMIT", "Failed to commit install session: ${error.message}", error)
     }
   }
+
+  private fun hasMatchingSignature(apkPath: String): Boolean {
+    val packageManager = context.packageManager
+    val flags = signingInfoFlags()
+    val archiveInfo = packageManager.getPackageArchiveInfo(apkPath, flags) ?: return false
+    val installedInfo = try {
+      packageManager.getPackageInfo(context.packageName, flags)
+    } catch (_: PackageManager.NameNotFoundException) {
+      return false
+    }
+
+    return ApkSignatureVerifier.digestsMatch(
+      firstCertificateDigest(archiveInfo),
+      firstCertificateDigest(installedInfo),
+    )
+  }
+
+  private fun firstCertificateDigest(packageInfo: PackageInfo): String? {
+    val signatures: Array<Signature>? = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+      packageInfo.signingInfo?.apkContentsSigners
+    } else {
+      @Suppress("DEPRECATION")
+      packageInfo.signatures
+    }
+    val certificate = signatures?.firstOrNull() ?: return null
+    return ApkSignatureVerifier.sha256Hex(certificate.toByteArray())
+  }
+
+  private fun signingInfoFlags(): Int =
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+      PackageManager.GET_SIGNING_CERTIFICATES
+    } else {
+      @Suppress("DEPRECATION")
+      PackageManager.GET_SIGNATURES
+    }
 
   private fun canRequestPackageInstalls(): Boolean {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return true

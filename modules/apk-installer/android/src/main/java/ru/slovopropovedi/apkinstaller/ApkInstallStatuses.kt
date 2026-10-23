@@ -3,13 +3,23 @@ package ru.slovopropovedi.apkinstaller
 import android.content.pm.PackageInstaller
 
 private const val SIGNATURE_MISMATCH_HINT = "INSTALL_FAILED_UPDATE_INCOMPATIBLE"
-private const val SIGNATURE_MISMATCH_CODE = "INSTALL_SIGNATURE_MISMATCH"
+private const val SIGNATURE_MISMATCH_STATUS = "SIGNATURE_MISMATCH"
 
 /**
  * Pure status mapping for the install broadcast: no Android calls, only
  * compile-time SDK int constants, so it is unit-testable on the JVM.
  */
 internal object ApkInstallStatuses {
+  /**
+   * Rejection code shared by the pre-install signature check and the broadcast
+   * classifier, so the JS side has a single machine-readable code to map.
+   */
+  const val SIGNATURE_MISMATCH_CODE = "INSTALL_SIGNATURE_MISMATCH"
+
+  /** Message for the pre-install check, which never reaches a PackageInstaller status. */
+  fun signatureMismatchMessage(): String =
+    "Install failed: $SIGNATURE_MISMATCH_STATUS, message=APK signing certificate does not match the installed app"
+
   fun statusName(status: Int): String = when (status) {
     PackageInstaller.STATUS_FAILURE -> "STATUS_FAILURE"
     PackageInstaller.STATUS_FAILURE_ABORTED -> "STATUS_FAILURE_ABORTED"
