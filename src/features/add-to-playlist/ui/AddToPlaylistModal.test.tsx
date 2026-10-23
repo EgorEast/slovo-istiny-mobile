@@ -40,6 +40,8 @@ const SAVE_LABEL = 'Сохранить'
 const CANCEL_LABEL = 'Отмена'
 const NAME_LABEL = 'Название'
 const CREATE_PLAYLIST_LABEL = 'Создать плейлист'
+const RETURN_LABEL = 'Вернуться к списку плейлистов'
+const MODAL_TITLE = 'Добавить в плейлист'
 const CREATE_LABEL = 'Создать'
 const NEW_PLAYLIST_TITLE = 'Проповеди на неделю'
 
@@ -422,6 +424,29 @@ describe('<AddToPlaylistModal> create playlist', () => {
     await renderAllModal(ctx)
 
     expect(getCreateButton()).toBeTruthy()
+  })
+
+  test('swaps the create icon for a back-to-list icon while the form is open', async () => {
+    const ctx = createCtx()
+    seedPlaylists(ctx, [])
+    markPlaylistsLoaded(ctx)
+
+    await renderModal(ctx)
+    expect(screen.getByText(MODAL_TITLE)).toBeTruthy()
+
+    await pressCreatePlaylist()
+
+    expect(screen.getByText(MODAL_TITLE)).toBeTruthy()
+    expect(screen.queryByRole('button', { name: CREATE_PLAYLIST_LABEL })).toBeNull()
+
+    const returnButton = screen.getByRole('button', { name: RETURN_LABEL })
+    await act(async () => {
+      fireEvent.press(returnButton)
+    })
+
+    expect(screen.queryByRole('button', { name: RETURN_LABEL })).toBeNull()
+    expect(getCreateButton()).toBeTruthy()
+    expect(screen.getAllByRole('checkbox').length).toBeGreaterThan(0)
   })
 
   test('switches to the inline form and back, keeping submit disabled until a title', async () => {
