@@ -7,12 +7,14 @@ const ORIGINAL_ENDPOINT = '/sermons'
 const mockGetAccessToken = jest.fn()
 const mockGetRefreshToken = jest.fn()
 const mockClearTokens = jest.fn()
+const mockClearCachedUser = jest.fn()
 const mockSetTokens = jest.fn()
+const mockMarkSessionExpired = jest.fn()
 const mockAdapter = jest.fn()
 
 jest.mock('./secureTokenStorage', () => ({
   secureTokenStorage: {
-    clearCachedUser: jest.fn(),
+    clearCachedUser: (...args: unknown[]) => mockClearCachedUser(...args),
     clearTokens: (...args: unknown[]) => mockClearTokens(...args),
     getAccessToken: (...args: unknown[]) => mockGetAccessToken(...args),
     getCachedUser: jest.fn(),
@@ -23,6 +25,10 @@ jest.mock('./secureTokenStorage', () => ({
 }))
 
 jest.mock('../lib/reatom-ctx/ctx', () => ({ ctx: {} }))
+
+jest.mock('../model/sessionExpiry', () => ({
+  markSessionExpired: (...args: unknown[]) => mockMarkSessionExpired(...args),
+}))
 
 jest.mock('../model/network', () => ({
   reportServerReachable: jest.fn(),
@@ -69,9 +75,11 @@ describe('axiosInstance refresh-failure handling', () => {
 
     expect(mockGetRefreshToken).toHaveBeenCalled()
     expect(mockClearTokens).not.toHaveBeenCalled()
+    expect(mockClearCachedUser).not.toHaveBeenCalled()
+    expect(mockMarkSessionExpired).not.toHaveBeenCalled()
   })
 
-  test('clears tokens when the refresh endpoint rejects authentication', async () => {
+  test('clears tokens and cached profile when the refresh endpoint rejects authentication', async () => {
     mockAdapter.mockImplementation((config: InternalAxiosRequestConfig) =>
       Promise.reject(createAxiosError(config, 401)),
     )
@@ -79,6 +87,24 @@ describe('axiosInstance refresh-failure handling', () => {
     await expect(axiosInstance.post(ORIGINAL_ENDPOINT)).rejects.toBeInstanceOf(AxiosError)
 
     expect(mockClearTokens).toHaveBeenCalledTimes(1)
+    expect(mockClearCachedUser).toHaveBeenCalledTimes(1)
+    expect(mockMarkSessionExpired).toHaveBeenCalledTimes(1)
+  })
+
+  // 429 на refresh — временный отказ (rate limit 30/мин): токены обязаны
+  // остаться, иначе администратора вылогинивает всплеск запросов.
+  test('keeps the session when the refresh endpoint is rate limited', async () => {
+    mockAdapter.mockImplementation((config: InternalAxiosRequestConfig) =>
+      config.url === REFRESH_ENDPOINT
+        ? Promise.reject(createAxiosError(config, 429))
+        : Promise.reject(createAxiosError(config, 401)),
+    )
+
+    await expect(axiosInstance.post(ORIGINAL_ENDPOINT)).rejects.toBeInstanceOf(AxiosError)
+
+    expect(mockClearTokens).not.toHaveBeenCalled()
+    expect(mockClearCachedUser).not.toHaveBeenCalled()
+    expect(mockMarkSessionExpired).not.toHaveBeenCalled()
   })
 
   // Не-axios сбой refresh: токены не трогаем — иначе любой неожиданный сбой
@@ -93,6 +119,7 @@ describe('axiosInstance refresh-failure handling', () => {
     await expect(axiosInstance.post(ORIGINAL_ENDPOINT)).rejects.toBeDefined()
 
     expect(mockClearTokens).not.toHaveBeenCalled()
+    expect(mockMarkSessionExpired).not.toHaveBeenCalled()
   })
 
   // 500 на refresh — временная серверная проблема: сессию не разрушаем.
@@ -119,6 +146,8 @@ describe('axiosInstance refresh-failure handling', () => {
     await expect(axiosInstance.post(ORIGINAL_ENDPOINT)).rejects.toBeInstanceOf(AxiosError)
 
     expect(mockClearTokens).toHaveBeenCalledTimes(1)
+    expect(mockClearCachedUser).toHaveBeenCalledTimes(1)
+    expect(mockMarkSessionExpired).toHaveBeenCalledTimes(1)
   })
 
   // Ротация refresh-токенов: параллельные 401 обязаны делить один refresh-запрос.

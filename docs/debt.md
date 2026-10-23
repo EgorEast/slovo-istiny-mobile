@@ -7,7 +7,7 @@
 
 ## Auth flow
 
-- [ ] **Отсутствует публичный пользовательский экран логина.** Токены работают только на уровне axios-интерцептора; токены очищаются только при ответе `/auth/refresh` с 401/403 (сетевая ошибка refresh их сохраняет), но перехода на публичный экран логина нет — `src/shared/api/axiosInstance.ts` (комментарий «перейти на экран логина»). Интерфейс администратора уже имеет вход (`/admin/login`, `entities/auth`); вернуться при внедрении пользовательской авторизации.
+- [ ] **Отсутствует публичный пользовательский экран логина.** Пользовательской авторизации и личного кабинета в приложении нет — токены обслуживают только админку. Истёкшая админ-сессия теперь централизованно чистится и ведёт на `/admin/login` (`entities/auth`, `shared/model/sessionExpiry.ts`), но публичного входа по-прежнему нет; вернуться при внедрении пользовательской авторизации.
 - [ ] **Обход бага react-native-screens#3130 (Android autofill) — удалить после апстрим-фикса.** `src/pages/admin-login/lib/useAndroidAutofillRemountKey.ts`, `src/pages/admin-login/ui/AdminLoginScreen.tsx` — на Fabric сфокусированный `EditText` пропадает из `AssistStructure` после навигации, из-за чего системное автозаполнение (KeePassDX и др.) не срабатывает на экране входа администратора; поля перемонтируются по смене `key` при возврате фокуса. Затронуты react-native-screens ~4.30, issue [software-mansion/react-native-screens#3130](https://github.com/software-mansion/react-native-screens/issues/3130) открыт. Вернуться при обновлении react-native-screens: если фикс вошёл — удалить хук и обёртки `<View key>` в `AdminLoginScreen.tsx`, обновив `docs/screens/admin-login.md`.
 
 ## Audio player
@@ -65,7 +65,6 @@
 - [ ] **Колонки multi-row слайдеров выравниваются по натуральной высоте элементов** — `src/shared/ui/slider/slider-flat-list.tsx`, `src/shared/ui/slider/slider-item/description-on-card.tsx` — при `itemsRows > 1` карточки с описанием на карточке (`description`, 1–3 строки) разной высоты визуально рассинхронизируют строки: колонка выравнивается по самому высокому элементу. Заголовок карточки (`Text` с одной строкой) однострочный, поэтому неоднородность даёт именно блок описания. Вернуться, если появятся multi-row секции с разнородными описаниями (варианты: фиксированная высота плашки описания или раскладка с учётом `itemsRows`).
 ## Прочее (найдено через grep TODO/FIXME/HACK/XXX в src/ и app/)
 
-- [ ] `src/shared/api/axiosInstance.ts` — TODO перехода на экран логина (см. Auth flow).
 - [ ] `src/shared/api/books.ts` — TODO заменить на реальный вызов (см. Local DB → API migration).
 - [ ] **Require-циклы book-reader (pre-existing, warn-уровень).** `getParagraphElement.tsx` → `getElementsInBlockElement.ts` → `parseObjectToStylizedElements.ts` → `getParagraphElement.tsx` и `getBlockElement.tsx` → та же цепочка — `src/pages/book-reader/lib/*` — зафиксированы как warn в `.dependency-cruiser.cjs` (`no-circular-legacy-book-reader`); вернуться при рефакторинге book-reader (вынести общие хелперы).
 

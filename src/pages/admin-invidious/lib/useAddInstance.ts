@@ -3,13 +3,21 @@ import { useState } from 'react'
 import { InvidiousInstanceError, validateInvidiousInstance } from 'features/sermon-audio-import'
 import { showToast } from 'shared/model'
 import { reportError } from 'shared/model/error-dialog'
-import { type AddInstanceResult, INSTANCE_URL_PREFIX, validateInstanceUrl } from './instanceUrl'
+import {
+  type AddInstanceResult,
+  INSTANCE_LIMIT_MESSAGE,
+  INSTANCE_TOO_LONG_MESSAGE,
+  INSTANCE_URL_PREFIX,
+  validateInstanceUrl,
+} from './instanceUrl'
 
 const PROBE_ERROR_MESSAGE = 'Не удалось проверить доступ по API к инстансу'
 
 const ADD_ERRORS: Record<Exclude<AddInstanceResult, 'ok'>, string> = {
   duplicate: 'Такой инстанс уже добавлен',
   invalid: `Адрес должен начинаться с ${INSTANCE_URL_PREFIX}`,
+  limit: INSTANCE_LIMIT_MESSAGE,
+  tooLong: INSTANCE_TOO_LONG_MESSAGE,
 }
 
 /**

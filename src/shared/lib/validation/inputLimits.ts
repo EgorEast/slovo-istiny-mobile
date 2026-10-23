@@ -6,6 +6,10 @@ import {
   featureFlagsControllerCreateBodyTitleMax,
 } from '../../api/generated/model/feature-flags'
 import {
+  invidiousInstancesControllerReplaceBodyUrlsItemMax,
+  invidiousInstancesControllerReplaceBodyUrlsMax,
+} from '../../api/generated/model/invidious'
+import {
   playlistControllerCreateBodyArtworkMax,
   playlistControllerCreateBodyDescriptionMax,
   playlistControllerCreateBodySectionsIdsMax,
@@ -43,6 +47,10 @@ export const INPUT_LIMITS = {
   featureFlag: {
     key: featureFlagsControllerCreateBodyKeyMax,
     title: featureFlagsControllerCreateBodyTitleMax,
+  },
+  invidious: {
+    url: invidiousInstancesControllerReplaceBodyUrlsItemMax,
+    urls: invidiousInstancesControllerReplaceBodyUrlsMax,
   },
   playlist: {
     artwork: playlistControllerCreateBodyArtworkMax,

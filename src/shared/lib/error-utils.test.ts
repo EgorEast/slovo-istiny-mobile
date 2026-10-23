@@ -4,10 +4,10 @@ const AXIOS_MESSAGE = 'Request failed with status code 400'
 
 // Minimal axios-shaped failure: `isAxiosError` only checks the flag, and the
 // helper reads `response.data.message` — no need to build a real AxiosError.
-const axiosErrorWith = (data: unknown) =>
+const axiosErrorWith = (data: unknown, status = 400) =>
   Object.assign(new Error(AXIOS_MESSAGE), {
     isAxiosError: true,
-    response: { data, status: 400 },
+    response: { data, status },
   })
 
 describe('getErrorMessage', () => {
@@ -34,6 +34,12 @@ describe('getErrorMessage', () => {
       'Request failed with status code 400',
     )
     expect(getErrorMessage(axiosErrorWith({ message: [42, 'valid'] }))).toBe('valid')
+  })
+
+  test('maps 429 to a friendly temporary-refusal message', () => {
+    const error = axiosErrorWith({ message: 'ThrottlerException: Too Many Requests' }, 429)
+
+    expect(getErrorMessage(error)).toBe('Слишком много попыток. Попробуйте через минуту')
   })
 
   test('keeps plain errors and strings working', () => {

@@ -11,22 +11,32 @@ const PROFILE_LOAD_ERROR_MESSAGE = 'Не удалось проверить се�
 const NETWORK_ERROR_MESSAGE = 'Нет соединения: не удалось проверить сессию'
 
 export const restoreSession = action(async ctx => {
-  // Idempotent: a resolved ('authenticated'/'unauthenticated') or in-flight
-  // ('loading') session must not be re-restored. Repeated calls (e.g. the
-  // admin area guard firing while a restore is already running) would flap
-  // the status back to 'loading' and force a re-render loop.
-  if (ctx.get(authStatusAtom) !== 'idle') return ctx.get(authUserAtom)
+  // Idempotent: an in-flight restore must not be re-entered. Repeated calls
+  // (e.g. the admin area guard firing while a restore is already running) would
+  // flap the status back to 'loading' and force a re-render loop.
+  if (ctx.get(authStatusAtom) === 'loading') return ctx.get(authUserAtom)
 
-  await ctx.schedule(() => {
-    authStatusAtom(ctx, 'loading')
-  })
+  const wasIdle = ctx.get(authStatusAtom) === 'idle'
+
+  if (wasIdle)
+    await ctx.schedule(() => {
+      authStatusAtom(ctx, 'loading')
+    })
 
   const [accessToken, refreshToken] = await Promise.all([
     secureTokenStorage.getAccessToken(),
     secureTokenStorage.getRefreshToken(),
   ])
 
+  // Missing tokens mean the session is gone: either the user signed out or the
+  // server revoked it (the axios interceptor clears storage and signals
+  // expiry). The reactive status may still be a stale 'authenticated' — reach
+  // a clean unauthenticated state so the admin guard redirects to login instead
+  // of keeping a broken shell. No branch may return silently here.
   if (!accessToken || !refreshToken) {
+    await secureTokenStorage.clearTokens()
+    await secureTokenStorage.clearCachedUser()
+
     await ctx.schedule(() => {
       authUserAtom(ctx, null)
       authStatusAtom(ctx, 'unauthenticated')
@@ -34,6 +44,9 @@ export const restoreSession = action(async ctx => {
 
     return null
   }
+
+  // A session restored by a parallel call: keep its result, do not refetch.
+  if (!wasIdle) return ctx.get(authUserAtom)
 
   // Optimistic fill from cache so the UI has a user while the profile verifies.
   const cachedUser = await secureTokenStorage.getCachedUser()

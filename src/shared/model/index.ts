@@ -11,6 +11,7 @@ export {
 } from './importSettings'
 export { importSettingsSchema, legacyImportSettingsSchema } from './importSettingsSchema'
 export { isOnlineAtom, serverUnreachableAtom } from './network'
+export { markSessionExpired, sessionExpiredAtom } from './sessionExpiry'
 export {
   hapticsEnabledAtom,
   initServerUrlAction,

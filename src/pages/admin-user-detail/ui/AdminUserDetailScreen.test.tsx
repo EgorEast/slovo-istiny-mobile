@@ -8,6 +8,7 @@ import { AdminUserDetailScreen } from './AdminUserDetailScreen'
 const mockFindOne = jest.fn()
 const mockRemove = jest.fn()
 const mockChangePassword = jest.fn()
+const mockSignOut = jest.fn()
 const mockBack = jest.fn()
 const mockPush = jest.fn()
 
@@ -57,6 +58,7 @@ jest.mock('entities/auth', () => {
       moderator: 'Модератор',
       user: 'Пользователь',
     },
+    signOut: (...args: unknown[]) => mockSignOut(...args),
     useRequireAdminRole: () => undefined,
   }
 })
@@ -138,6 +140,30 @@ describe('<AdminUserDetailScreen>', () => {
     await waitFor(() =>
       expect(mockChangePassword).toHaveBeenCalledWith('u1', { password: 'secret123' }),
     )
+    expect(mockSignOut).not.toHaveBeenCalled()
+  })
+
+  test('signs out after changing the own password', async () => {
+    const own = createUser()
+    mockFindOne.mockResolvedValue(own)
+    mockSignOut.mockResolvedValue(undefined)
+    const ctx = createCtx()
+    authUserAtom(ctx, own)
+
+    const { findByText, getByLabelText } = await renderWithProviders(<AdminUserDetailScreen />, {
+      ctx,
+    })
+    fireEvent.press(await findByText(CHANGE_PASSWORD_LABEL))
+    await waitFor(() =>
+      expect(getByLabelText(NEW_PASSWORD_LABEL, { includeHiddenElements: true })).toBeTruthy(),
+    )
+    fireEvent.changeText(
+      getByLabelText(NEW_PASSWORD_LABEL, { includeHiddenElements: true }),
+      'secret123',
+    )
+    fireEvent.press(await findByText(SAVE_LABEL))
+
+    await waitFor(() => expect(mockSignOut).toHaveBeenCalledTimes(1))
   })
 
   test('blocks an empty password on the client', async () => {

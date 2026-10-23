@@ -16,7 +16,12 @@ const getResponseMessage = (error: AxiosError): string | undefined => {
   return parts.length > 0 ? parts.join('; ') : undefined
 }
 
+// 429 — временный отказ сервера (ThrottlerGuard: вход 10/мин, refresh 30/мин),
+// а не неверные данные: английское сообщение Nest/axios пользователю не годится.
+const RATE_LIMIT_MESSAGE = 'Слишком много попыток. Попробуйте через минуту'
+
 export const getErrorMessage = (error: unknown): string => {
+  if (isAxiosError(error) && error.response?.status === 429) return RATE_LIMIT_MESSAGE
   if (isAxiosError(error)) {
     const responseMessage = getResponseMessage(error)
     if (responseMessage !== undefined) return responseMessage

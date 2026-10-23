@@ -2,6 +2,7 @@ import { reatomContext } from '@reatom/npm-react'
 import { type SuspenseFallbackProps } from 'expo-router'
 import { ActivityIndicator, View } from 'react-native'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
+import { watchSessionExpiry } from 'entities/auth'
 import { fetchMyFeatureFlags, hydrateCachedFeatureFlags } from 'entities/feature-flags'
 import { loadHistoryAction } from 'entities/listening-history'
 import {
@@ -72,6 +73,9 @@ void cleanupOrphanedDownloads()
     reportError(error, 'Ошибка при инициализации приложения')
   })
 scheduleStartupGuardReset()
+// The watcher lives for the whole process: a revoked session (refresh rejected)
+// must drop the stale authenticated shell even before /admin is opened.
+watchSessionExpiry(ctx)
 void initServerUrlAction(ctx)
 void loadHapticsEnabled(ctx)
 void loadToursDisabled(ctx)

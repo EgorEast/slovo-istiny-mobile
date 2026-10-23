@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { invidiousApi } from 'shared/api'
 import { showToast } from 'shared/model'
 import { reportError } from 'shared/model/error-dialog'
+import { instanceLimitError } from './instanceUrl'
 
 const LOAD_ERROR_MESSAGE = 'Не удалось загрузить источники импорта'
 const SAVE_ERROR_MESSAGE = 'Не удалось сохранить источники импорта'
@@ -89,13 +90,22 @@ export const useInvidiousInstancesAdmin = (): InvidiousInstancesAdminState => {
 
   // Добавление сразу сохраняет список: админ не должен забыть нажать
   // «Сохранить», а неудачный PUT оставляет локальную правку (isDirty).
+  // Серверные границы (длина адреса, число адресов) проверяются и здесь:
+  // `PUT` полной заменой не должен получить заведомо невалидный запрос.
   const addAndSave = useCallback(
     async (url: string): Promise<void> => {
+      const limitError = instanceLimitError(url, instances)
+
+      if (limitError !== null) {
+        showToastAction(limitError)
+        return
+      }
+
       const next = [...instances, url.trim()]
       setInstances(next)
       await putInstances(next)
     },
-    [instances, putInstances],
+    [instances, putInstances, showToastAction],
   )
 
   const removeUrl = useCallback((url: string) => {

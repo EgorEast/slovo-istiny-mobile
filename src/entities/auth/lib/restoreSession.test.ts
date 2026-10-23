@@ -132,14 +132,34 @@ describe('restoreSession', () => {
     expect(ctx.get(authStatusAtom)).toBe('unauthenticated')
   })
 
-  test('treats missing tokens as unauthenticated without clearing', async () => {
+  test('clears the cached profile and signs out when tokens are missing', async () => {
     mockGetAccessToken.mockResolvedValue(null)
 
     const { ctx, result } = await runRestore()
 
     expect(result).toBeNull()
-    expect(mockClearTokens).not.toHaveBeenCalled()
+    expect(mockClearTokens).toHaveBeenCalledTimes(1)
+    expect(mockClearCachedUser).toHaveBeenCalledTimes(1)
     expect(mockGetProfile).not.toHaveBeenCalled()
+    expect(ctx.get(authStatusAtom)).toBe('unauthenticated')
+  })
+
+  // The global session-expiry handler may have already cleared the tokens while
+  // authStatusAtom still says 'authenticated'; a later restore must still reach
+  // a clean unauthenticated state instead of silently returning the stale user.
+  test('recovers from a stale authenticated status when tokens are gone', async () => {
+    const ctx = createCtx()
+    authUserAtom(ctx, ADMIN_USER())
+    authStatusAtom(ctx, 'authenticated')
+    mockGetAccessToken.mockResolvedValue(null)
+
+    const result = await restoreSession(ctx)
+
+    expect(result).toBeNull()
+    expect(mockClearTokens).toHaveBeenCalledTimes(1)
+    expect(mockClearCachedUser).toHaveBeenCalledTimes(1)
+    expect(mockGetProfile).not.toHaveBeenCalled()
+    expect(ctx.get(authUserAtom)).toBeNull()
     expect(ctx.get(authStatusAtom)).toBe('unauthenticated')
   })
 

@@ -2,6 +2,7 @@ import axios, { type AxiosRequestConfig, isAxiosError } from 'axios'
 import { DEFAULT_API_URL } from '../config/api-url'
 import { ctx } from '../lib/reatom-ctx/ctx'
 import { reportServerReachable, reportServerUnreachable } from '../model/network'
+import { markSessionExpired } from '../model/sessionExpiry'
 import { dropBoundarylessMultipartHeader } from './multipartHeaders'
 import { secureTokenStorage } from './secureTokenStorage'
 // ВАЖНО: никаких runtime-импортов из ./generated/** (только type-only выше и в
@@ -66,13 +67,17 @@ axiosInstance.interceptors.response.use(
         originalRequest.headers.Authorization = `Bearer ${newToken}`
         return axiosInstance(originalRequest)
       } catch (refreshError) {
-        // Хранилище чистим только при явном отказе в авторизации: сетевой сбой
-        // во время refresh токены не трогает (см. isAuthRejection).
-        if (isAuthRejection(refreshError)) await secureTokenStorage.clearTokens()
+        // Хранилище и реактивное состояние сессии чистим только при явном
+        // отказе в авторизации: сетевой сбой или 429 во время refresh сессию
+        // не трогают (см. isAuthRejection).
+        if (isAuthRejection(refreshError)) {
+          await secureTokenStorage.clearTokens()
+          await secureTokenStorage.clearCachedUser()
 
-        // TODO: Здесь можно вызвать действие для перехода на публичный экран логина
-        // (интерфейс администратора имеет собственный вход /admin/login).
-        // Например: navigationRef.navigate('Login')
+          // entities/auth слушает сигнал: гасит authUserAtom и статус,
+          // после чего /admin уводит на /admin/login.
+          markSessionExpired(ctx)
+        }
 
         return Promise.reject(refreshError)
       }

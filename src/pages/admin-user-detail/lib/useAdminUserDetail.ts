@@ -1,6 +1,6 @@
 import { useAction, useAtom } from '@reatom/npm-react'
 import { useCallback, useEffect, useState } from 'react'
-import { authUserAtom } from 'entities/auth'
+import { authUserAtom, signOut } from 'entities/auth'
 import { type APITypes, usersApi } from 'shared/api'
 import { getErrorMessage } from 'shared/lib/error-utils'
 import { useSilentRefetchOnFocus } from 'shared/lib/hooks/useSilentRefetchOnFocus'
@@ -18,6 +18,7 @@ export interface AdminUserDetailState {
 }
 
 const PASSWORD_CHANGED_MESSAGE = 'Пароль изменён'
+const SELF_PASSWORD_CHANGED_MESSAGE = 'Пароль изменён, войдите заново'
 const LOAD_ERROR_MESSAGE = 'Не удалось загрузить пользователя'
 
 /**
@@ -27,11 +28,13 @@ const LOAD_ERROR_MESSAGE = 'Не удалось загрузить пользо�
  */
 export const useAdminUserDetail = (id: string): AdminUserDetailState => {
   const showToastAction = useAction(showToast)
+  const signOutAction = useAction(signOut)
   const [currentUser] = useAtom(authUserAtom)
   const [user, setUser] = useState<APITypes.UserResponse | null>(null)
   const [isNotFound, setIsNotFound] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [isChangingPassword, setIsChangingPassword] = useState(false)
+  const isOwnAccount = currentUser?.id === id
 
   const fetchUser = useCallback(() => usersApi.getUsers().usersControllerFindOne(id), [id])
 
@@ -92,7 +95,15 @@ export const useAdminUserDetail = (id: string): AdminUserDetailState => {
       setIsChangingPassword(true)
       try {
         await usersApi.getUsers().usersControllerChangePassword(id, { password })
-        showToastAction(PASSWORD_CHANGED_MESSAGE)
+
+        if (isOwnAccount) {
+          // The backend bumped tokenVersion: every session of this user is dead,
+          // including the current one. signOut owns local cleanup; the admin
+          // layout redirects to /admin/login once authUserAtom is null.
+          await signOutAction()
+          showToastAction(SELF_PASSWORD_CHANGED_MESSAGE)
+        } else showToastAction(PASSWORD_CHANGED_MESSAGE)
+
         return true
       } catch (error) {
         showToastAction(getErrorMessage(error))
@@ -101,7 +112,7 @@ export const useAdminUserDetail = (id: string): AdminUserDetailState => {
         setIsChangingPassword(false)
       }
     },
-    [id, showToastAction],
+    [id, isOwnAccount, showToastAction, signOutAction],
   )
 
   return {
@@ -109,7 +120,7 @@ export const useAdminUserDetail = (id: string): AdminUserDetailState => {
     isChangingPassword,
     isDeleting,
     isNotFound,
-    isOwnAccount: currentUser?.id === id,
+    isOwnAccount,
     remove,
     user,
   }
