@@ -10,7 +10,7 @@ export interface WebDirectoryHandle {
 
 interface WebFileHandle {
   createWritable: () => Promise<WebFileWritable>
-  getFile: () => Promise<{ text: () => Promise<string> }>
+  getFile: () => Promise<{ size: number; text: () => Promise<string> }>
   kind: 'file'
   name: string
 }

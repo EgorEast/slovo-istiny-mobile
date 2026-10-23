@@ -2,6 +2,7 @@ import { Directory, File } from 'expo-file-system'
 import { Platform } from 'react-native'
 import { hasUriProtocol } from 'shared/lib/app-icon'
 import { reportError } from 'shared/model/error-dialog'
+import { assertBackupFileSize } from './backupSizeLimit'
 import { findExistingFile } from './findExistingFile'
 import { decodeFolderLabel } from './folderLabel'
 import { writeBackupFile } from './writeBackupFile'
@@ -56,6 +57,7 @@ export const readFile = async (folderUri: null | string, name: string): Promise<
     )
     if (!file) throw new Error('Файл резервной копии не найден')
 
+    assertBackupFileSize(file.size)
     return await file.text()
   } catch (error) {
     reportError(error, 'Не удалось прочитать резервную копию')

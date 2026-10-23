@@ -4,6 +4,7 @@ import * as Sharing from 'expo-sharing'
 import { Platform } from 'react-native'
 import { hasUriProtocol } from 'shared/lib/app-icon'
 import { reportError } from 'shared/model/error-dialog'
+import { assertBackupFileSize } from './backupSizeLimit'
 
 const SHARE_MIME_TYPE = 'application/json'
 const JSON_UTI = 'public.json'
@@ -54,7 +55,9 @@ export const importViaFilePicker = async (): Promise<null | string> => {
   if (!hasUriProtocol(uri)) throw new Error('Некорректный путь выбранного файла')
 
   try {
-    return await new File(uri).text()
+    const file = new File(uri)
+    assertBackupFileSize(file.size)
+    return await file.text()
   } catch (error) {
     reportError(error, 'Не удалось прочитать резервную копию')
     throw error

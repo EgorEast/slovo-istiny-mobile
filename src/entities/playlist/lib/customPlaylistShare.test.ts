@@ -1,4 +1,4 @@
-import { MAX_CUSTOM_PLAYLIST_SERMONS } from '../localPlaylists'
+import { MAX_CUSTOM_PLAYLIST_SERMONS, MAX_CUSTOM_PLAYLIST_TITLE } from '../localPlaylists'
 import {
   buildCustomPlaylistSearchParams,
   deriveCustomPlaylistId,
@@ -83,6 +83,16 @@ describe('customPlaylistShare', () => {
   test('returns null for a missing or blank title', () => {
     expect(parseCustomPlaylistParams({ sermons: 'a', title: undefined })).toBeNull()
     expect(parseCustomPlaylistParams({ sermons: 'a', title: '   ' })).toBeNull()
+  })
+
+  test('accepts a title at the maximum length and rejects a longer one', () => {
+    const maxTitle = 'я'.repeat(MAX_CUSTOM_PLAYLIST_TITLE)
+
+    expect(parseCustomPlaylistParams({ sermons: 'a', title: maxTitle })).toEqual({
+      sermonIds: ['a'],
+      title: maxTitle,
+    })
+    expect(parseCustomPlaylistParams({ sermons: 'a', title: `${maxTitle}я` })).toBeNull()
   })
 
   test('returns null for an empty sermon list', () => {

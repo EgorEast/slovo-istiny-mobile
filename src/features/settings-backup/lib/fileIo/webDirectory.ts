@@ -1,3 +1,4 @@
+import { assertBackupFileSize } from './backupSizeLimit'
 import { FolderPermissionLostError } from './folderErrors'
 import { type WebDirectoryHandle } from './webFsTypes'
 import { loadDirectoryHandle, saveDirectoryHandle } from './webIdb'
@@ -52,6 +53,7 @@ export const readWebFile = async (_folderUri: string, name: string): Promise<str
     const handle = await requireHandle()
     const fileHandle = await handle.getFileHandle(name)
     const file = await fileHandle.getFile()
+    assertBackupFileSize(file.size)
 
     return file.text()
   } catch (error) {

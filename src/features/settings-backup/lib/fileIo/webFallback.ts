@@ -4,6 +4,8 @@
  * (Firefox/Safari) или папка не выбрана.
  */
 
+import { BACKUP_FILE_TOO_LARGE_MESSAGE, MAX_BACKUP_FILE_BYTES } from './backupSizeLimit'
+
 /**
  * Скачивает JSON как файл через временную `<a download>`.
  * @param name - Имя сохраняемого файла.
@@ -24,9 +26,10 @@ export const downloadBackupFile = (name: string, json: string): void => {
 /**
  * Открывает системный выбор файла и читает его текстом.
  * @returns Содержимое файла или `null`, если выбор отменён/не удался.
+ * @throws Ошибка, если выбранный файл превышает `MAX_BACKUP_FILE_BYTES`.
  */
 export const pickBackupFileText = (): Promise<null | string> =>
-  new Promise(resolve => {
+  new Promise((resolve, reject) => {
     const input = document.createElement('input')
 
     input.type = 'file'
@@ -35,6 +38,11 @@ export const pickBackupFileText = (): Promise<null | string> =>
       const file = input.files?.[0]
       if (!file) {
         resolve(null)
+        return
+      }
+
+      if (file.size > MAX_BACKUP_FILE_BYTES) {
+        reject(new Error(BACKUP_FILE_TOO_LARGE_MESSAGE))
         return
       }
 

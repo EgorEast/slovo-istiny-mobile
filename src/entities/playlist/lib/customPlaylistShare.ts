@@ -1,5 +1,5 @@
 import z from 'zod'
-import { MAX_CUSTOM_PLAYLIST_SERMONS } from '../localPlaylists'
+import { MAX_CUSTOM_PLAYLIST_SERMONS, MAX_CUSTOM_PLAYLIST_TITLE } from '../localPlaylists'
 import { packSermonIds, unpackSermonIds } from './sermonIdPacking'
 
 /** Payload carried by a custom local-playlist share link. */
@@ -17,7 +17,7 @@ interface CustomPlaylistParams {
 
 const customPlaylistPayloadSchema = z.object({
   sermonIds: z.array(z.string().min(1)).min(1).max(MAX_CUSTOM_PLAYLIST_SERMONS),
-  title: z.string().trim().min(1),
+  title: z.string().trim().min(1).max(MAX_CUSTOM_PLAYLIST_TITLE),
 })
 
 const firstValue = (value: string | string[] | undefined): string | undefined =>
@@ -108,7 +108,8 @@ export const buildCustomPlaylistSearchParams = ({ sermonIds, title }: CustomPlay
 
 /**
  * Parses the `title`/`sermons` route params of a custom share link, rejecting
- * malformed input: a blank title, an empty sermon list, or more than
+ * malformed input: a blank or over-long title (more than
+ * `MAX_CUSTOM_PLAYLIST_TITLE` characters), an empty sermon list, or more than
  * `MAX_CUSTOM_PLAYLIST_SERMONS` ids yields `null`. Both the packed base64url form
  * and the readable csv form are accepted for `sermons`.
  * @param params - Raw route params (each may be a string or a string array).
