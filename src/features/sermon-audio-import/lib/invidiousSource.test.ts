@@ -2,6 +2,14 @@ import { type ImportErrorCode } from './importTypes'
 import { resolveInvidiousAudio } from './invidiousSource'
 import { getImportErrorMessage, ImportSourceError } from './sourceErrors'
 
+const mockGetInvidiousAuth = jest.fn()
+
+jest.mock('shared/api', () => ({
+  secureTokenStorage: {
+    getInvidiousAuth: (...args: unknown[]) => mockGetInvidiousAuth(...args),
+  },
+}))
+
 const VIDEO_ID = 'lV6YkF7ytxs'
 const BASE_URL = 'https://inv.phobos.observer'
 const CREDENTIALS_BASE_URL = 'https://admin:secret@inv.phobos.observer'
@@ -80,6 +88,11 @@ const captureFailureMessage = async (importPromise: Promise<unknown>): Promise<s
 }
 
 describe('resolveInvidiousAudio', () => {
+  beforeEach(() => {
+    mockGetInvidiousAuth.mockReset()
+    mockGetInvidiousAuth.mockResolvedValue(null)
+  })
+
   afterEach(() => {
     jest.restoreAllMocks()
   })
@@ -147,6 +160,30 @@ describe('resolveInvidiousAudio', () => {
         headers: expect.objectContaining({ Authorization: BASIC_AUTH_HEADER }),
       }),
     )
+  })
+
+  test('reads basic auth from secure storage when the instance url is bare', async () => {
+    mockGetInvidiousAuth.mockResolvedValue('admin:secret')
+    const fetchMock = jest.spyOn(global, 'fetch').mockResolvedValue(jsonResponse(VIDEO_FIXTURE))
+
+    await resolveInvidiousAudio(BASE_URL, VIDEO_ID)
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      `${BASE_URL}/api/v1/videos/${VIDEO_ID}?local=true`,
+      expect.objectContaining({
+        headers: expect.objectContaining({ Authorization: BASIC_AUTH_HEADER }),
+      }),
+    )
+  })
+
+  test('sends no authorization header without a stored secret', async () => {
+    const fetchMock = jest.spyOn(global, 'fetch').mockResolvedValue(jsonResponse(VIDEO_FIXTURE))
+
+    await resolveInvidiousAudio(BASE_URL, VIDEO_ID)
+
+    const [, request] = fetchMock.mock.calls[0]
+
+    expect(request?.headers).not.toHaveProperty('Authorization')
   })
 
   test('falls back to the highest bitrate audio format', async () => {

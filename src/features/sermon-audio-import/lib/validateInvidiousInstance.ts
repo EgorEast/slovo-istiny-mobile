@@ -63,7 +63,7 @@ export const validateInvidiousInstance = async (
   url: string,
   signal?: AbortSignal,
 ): Promise<void> => {
-  const { authHeader, requestBase } = parseInvidiousBasicAuth(normalizeBaseUrl(url))
+  const { authHeader, requestBase } = await parseInvidiousBasicAuth(normalizeBaseUrl(url))
   const headers: Record<string, string> = {
     Accept: 'application/json',
     'User-Agent': INVIDIOUS_USER_AGENT,

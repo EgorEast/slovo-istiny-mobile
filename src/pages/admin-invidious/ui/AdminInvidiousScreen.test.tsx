@@ -40,6 +40,9 @@ jest.mock('shared/api', () => ({
       invidiousInstancesControllerReplace: mockReplace,
     }),
   },
+  secureTokenStorage: {
+    getInvidiousAuth: jest.fn(async () => null),
+  },
 }))
 
 jest.mock('entities/auth', () => ({

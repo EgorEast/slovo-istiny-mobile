@@ -1,8 +1,17 @@
 import { Platform } from 'react-native'
 import { InvidiousInstanceError, validateInvidiousInstance } from './validateInvidiousInstance'
 
+const mockGetInvidiousAuth = jest.fn()
+
+jest.mock('shared/api', () => ({
+  secureTokenStorage: {
+    getInvidiousAuth: (...args: unknown[]) => mockGetInvidiousAuth(...args),
+  },
+}))
+
 const BASE_URL = 'https://inv.phobos.observer'
 const CREDENTIALS_BASE_URL = 'https://admin:secret@inv.phobos.observer//'
+const BASIC_AUTH_HEADER = `Basic ${btoa('admin:secret')}`
 const AUDIO_URL = 'https://inv.phobos.observer/videoplayback?audio=140'
 const VIDEO_ID = 'dQw4w9WgXcQ'
 
@@ -44,6 +53,11 @@ const binaryResponse = () =>
   }) as unknown as Response
 
 describe('validateInvidiousInstance', () => {
+  beforeEach(() => {
+    mockGetInvidiousAuth.mockReset()
+    mockGetInvidiousAuth.mockResolvedValue(null)
+  })
+
   afterEach(() => {
     jest.restoreAllMocks()
   })
@@ -71,7 +85,21 @@ describe('validateInvidiousInstance', () => {
     expect(fetchMock).toHaveBeenCalledWith(
       `${BASE_URL}/api/v1/videos/${VIDEO_ID}?local=true`,
       expect.objectContaining({
-        headers: expect.objectContaining({ Authorization: `Basic ${btoa('admin:secret')}` }),
+        headers: expect.objectContaining({ Authorization: BASIC_AUTH_HEADER }),
+      }),
+    )
+  })
+
+  test('sends the stored basic auth header for a bare instance url', async () => {
+    mockGetInvidiousAuth.mockResolvedValue('admin:secret')
+    const fetchMock = jest.spyOn(global, 'fetch').mockResolvedValue(jsonResponse(AUDIO_FIXTURE))
+
+    await validateInvidiousInstance(BASE_URL)
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      `${BASE_URL}/api/v1/videos/${VIDEO_ID}?local=true`,
+      expect.objectContaining({
+        headers: expect.objectContaining({ Authorization: BASIC_AUTH_HEADER }),
       }),
     )
   })

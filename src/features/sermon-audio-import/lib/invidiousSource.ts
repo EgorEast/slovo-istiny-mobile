@@ -84,8 +84,8 @@ const toResolvedAudio = (
  * Invidious. Недоступность/сетевой сбой — «Сервис недоступен»; 401 —
  * «требует авторизацию», 403 или HTML-ответ (антибот) — «закрыт антиботом»;
  * сам инстанс сообщил об ошибке (видео удалено, приватное) — «Видео недоступно».
- * Учётные данные из адреса (`user:pass@host`, basic auth) уходят заголовком
- * `Authorization`, а не в URL; в текстах ошибок остаётся только хост.
+ * Basic-auth инстанса (если настроен) уходит заголовком `Authorization` из
+ * защищённого хранилища, а не в URL; в текстах ошибок остаётся только хост.
  * @param invidiousBaseUrl - Адрес инстанса (с хвостовыми слэшами допустим).
  * @param videoId - ID видео YouTube.
  */
@@ -99,7 +99,7 @@ export const resolveInvidiousAudio = async (
   const timeout = setTimeout(() => abortController.abort(), REQUEST_TIMEOUT_MS)
 
   try {
-    const { authHeader, requestBase } = parseInvidiousBasicAuth(base)
+    const { authHeader, requestBase } = await parseInvidiousBasicAuth(base)
     const headers: Record<string, string> = {
       Accept: 'application/json',
       'User-Agent': INVIDIOUS_USER_AGENT,

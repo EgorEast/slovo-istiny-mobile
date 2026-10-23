@@ -1,7 +1,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { act, waitFor } from '@testing-library/react-native'
+import { secureTokenStorage } from 'shared/api'
 import { renderHookWithProviders } from 'shared/mocks/renderWithProviders'
-import { type ImportSettings, loadImportSettings } from 'shared/model'
+import { type ImportSettings, importSettingsSchema, loadImportSettings } from 'shared/model'
 import { normalizeInvidiousBaseUrl, useImportSettings } from './importSettings'
 
 const YOUTUBE_IMPORT_SETTINGS = 'youtube_import_settings'
@@ -9,6 +10,7 @@ const DEFAULT_INSTANCE = 'https://inv.phobos.observer'
 const ALT_INSTANCE = 'https://invidious.f5.si'
 const LOCAL_INSTANCE = 'http://192.168.1.10:8080'
 const CREDENTIALS_INSTANCE = 'https://admin:secret@inv.phobos.observer'
+const CREDENTIALS = 'admin:secret'
 
 const DEFAULT_SETTINGS: ImportSettings = {
   invidiousBaseUrl: DEFAULT_INSTANCE,
@@ -22,6 +24,7 @@ const writeStored = async (value: unknown) => {
 describe('loadImportSettings', () => {
   beforeEach(async () => {
     await AsyncStorage.clear()
+    await secureTokenStorage.clearInvidiousAuth()
     jest.spyOn(console, 'warn').mockImplementation(() => {})
   })
 
@@ -69,13 +72,38 @@ describe('loadImportSettings', () => {
     })
   })
 
-  test('reads an instance behind basic auth with credentials kept', async () => {
+  test('migrates inline credentials into secure storage and rewrites the stored url', async () => {
     await writeStored({ invidiousBaseUrl: CREDENTIALS_INSTANCE, source: 'invidious' })
 
     await expect(loadImportSettings()).resolves.toEqual({
+      invidiousBaseUrl: DEFAULT_INSTANCE,
+      source: 'invidious',
+    })
+    await expect(secureTokenStorage.getInvidiousAuth()).resolves.toBe(CREDENTIALS)
+
+    const rewritten = JSON.parse((await AsyncStorage.getItem(YOUTUBE_IMPORT_SETTINGS)) ?? 'null')
+
+    expect(rewritten).toEqual({ invidiousBaseUrl: DEFAULT_INSTANCE, source: 'invidious' })
+  })
+})
+
+describe('importSettingsSchema', () => {
+  test('rejects an instance url that carries basic-auth credentials', () => {
+    const result = importSettingsSchema.safeParse({
       invidiousBaseUrl: CREDENTIALS_INSTANCE,
       source: 'invidious',
     })
+
+    expect(result.success).toBe(false)
+  })
+
+  test('accepts a plain http instance from the local network', () => {
+    const result = importSettingsSchema.safeParse({
+      invidiousBaseUrl: LOCAL_INSTANCE,
+      source: 'invidious',
+    })
+
+    expect(result.success).toBe(true)
   })
 })
 
@@ -111,6 +139,7 @@ describe('normalizeInvidiousBaseUrl', () => {
 describe('useImportSettings', () => {
   beforeEach(async () => {
     await AsyncStorage.clear()
+    await secureTokenStorage.clearInvidiousAuth()
   })
 
   test('reads the stored settings on mount', async () => {
@@ -153,7 +182,7 @@ describe('useImportSettings', () => {
     expect(result.current.settings.invidiousBaseUrl).toBe(LOCAL_INSTANCE)
   })
 
-  test('round-trips an instance with basic auth credentials', async () => {
+  test('keeps credentials out of the stored settings', async () => {
     const { result } = await renderHookWithProviders(() => useImportSettings())
 
     await act(async () => {
@@ -161,13 +190,31 @@ describe('useImportSettings', () => {
     })
 
     expect(result.current.settings.invidiousBaseUrl).toBe(CREDENTIALS_INSTANCE)
-    // Креды остаются в хранилище: без них запрос к инстансу за nginx basic auth упадёт.
+    await waitFor(async () => {
+      const raw = JSON.parse((await AsyncStorage.getItem(YOUTUBE_IMPORT_SETTINGS)) ?? 'null')
+
+      expect(raw).toEqual({ invidiousBaseUrl: DEFAULT_INSTANCE, source: 'invidious' })
+    })
+    await expect(secureTokenStorage.getInvidiousAuth()).resolves.toBe(CREDENTIALS)
+  })
+
+  test('clears the secret when the instance moves to another host', async () => {
+    await secureTokenStorage.setInvidiousAuth(CREDENTIALS)
+    await writeStored({ invidiousBaseUrl: DEFAULT_INSTANCE, source: 'invidious' })
+
+    const { result } = await renderHookWithProviders(() => useImportSettings())
+
+    await act(async () => {
+      result.current.updateSettings({ invidiousBaseUrl: ALT_INSTANCE })
+    })
+
     await waitFor(async () => {
       await expect(loadImportSettings()).resolves.toEqual({
         ...DEFAULT_SETTINGS,
-        invidiousBaseUrl: CREDENTIALS_INSTANCE,
+        invidiousBaseUrl: ALT_INSTANCE,
       })
     })
+    await expect(secureTokenStorage.getInvidiousAuth()).resolves.toBeNull()
   })
 
   test('persists an update to storage', async () => {

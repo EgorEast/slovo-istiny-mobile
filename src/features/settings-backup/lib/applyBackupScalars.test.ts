@@ -168,6 +168,20 @@ describe('applyYouTubeImport', () => {
     })
   })
 
+  test('strips credentials from an old backup instance url', async () => {
+    mockReadImportSettings.mockResolvedValue(undefined)
+
+    await applyYouTubeImport({
+      invidiousBaseUrl: 'https://admin:secret@inv.phobos.observer',
+      source: INVIDIOUS,
+    })
+
+    expect(mockPersistImportSettings).toHaveBeenCalledWith({
+      invidiousBaseUrl: 'https://inv.phobos.observer',
+      source: INVIDIOUS,
+    })
+  })
+
   test('does nothing when the file has no import settings', async () => {
     await applyYouTubeImport(undefined)
 

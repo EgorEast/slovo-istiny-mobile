@@ -6,7 +6,7 @@ import {
   playbackRateSchema,
   repeatModeSchema,
 } from 'entities/player'
-import { importSettingsSchema } from 'shared/model'
+import { legacyImportSettingsSchema } from 'shared/model'
 
 /** Маркер и версия формата резервной копии — недоверенный ввод проверяется по ним. */
 export const BACKUP_KIND = 'slovo-propovedi-backup'
@@ -46,8 +46,10 @@ export const playerBackupSchema = z.object({
 /**
  * Опциональные поля настроек импорта аудио в резервной копии.
  *
- * Схема не дублируется: берётся `importSettingsSchema` из `shared/model`
+ * Схема не дублируется: берётся `legacyImportSettingsSchema` из `shared/model`
  * (общий контракт хранения настроек импорта) и ослабляется до partial — в файле
  * поле может отсутствовать, а дефолты применяются только на стороне потребителя.
+ * Legacy-схема терпит userinfo в адресе: старые бэкапы могли его содержать, а
+ * учётные данные срезаются при применении (`applyYouTubeImport`) и не сохраняются.
  */
-export const youtubeImportBackupSchema = importSettingsSchema.partial()
+export const youtubeImportBackupSchema = legacyImportSettingsSchema.partial()

@@ -5,11 +5,11 @@ export {
   DEFAULT_INVIDIOUS_BASE_URL,
   DEFAULT_SETTINGS,
   type ImportSettings,
-  importSettingsSchema,
   loadImportSettings,
   persistImportSettings,
   readImportSettings,
 } from './importSettings'
+export { importSettingsSchema, legacyImportSettingsSchema } from './importSettingsSchema'
 export { isOnlineAtom, serverUnreachableAtom } from './network'
 export {
   hapticsEnabledAtom,

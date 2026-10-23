@@ -1,5 +1,7 @@
-import z from 'zod'
+import { secureTokenStorage } from '../api/secureTokenStorage'
+import { splitBasicAuthUrl } from '../lib/basicAuthUrl'
 import { getCachedJson, setCachedJson } from '../lib/cache'
+import { importSettingsSchema, legacyImportSettingsSchema } from './importSettingsSchema'
 
 // Настройки импорта живут в одном ключе: при смене источника или адреса
 // инстанса перезаписывается весь объект. Ключ объявлен здесь, а не в
@@ -22,33 +24,89 @@ export const DEFAULT_SETTINGS: ImportSettings = {
   source: 'invidious',
 }
 
-// Значение из хранилища — недоверенный ввод (оно переживает обновления
-// приложения), поэтому читаем его через схему, а не доверяя форме. http://
-// разрешён: инстанс часто поднимают локально в своей сети. `z.url()` принимает
-// и userinfo (basic auth: `https://user:pass@host`) — учётные данные легальны,
-// запрос уйдёт с заголовком Authorization.
-export const importSettingsSchema = z.object({
-  invidiousBaseUrl: z.url().refine(url => url.startsWith('http://') || url.startsWith('https://')),
-  source: z.enum(['invidious', 'youtube']),
-})
+/**
+ * Выносит учётные данные из сохранённого адреса в защищённое хранилище и
+ * перезаписывает адрес без userinfo. Одноразовость обеспечивает сама перезапись:
+ * после неё userinfo в хранилище нет, поэтому повторное чтение миграцию не запустит.
+ * @param stored - Сохранённые настройки, возможно с userinfo в адресе.
+ */
+const migrateInvidiousCredentials = async (
+  stored: ImportSettings,
+): Promise<ImportSettings | undefined> => {
+  const { credentials, requestBase } = splitBasicAuthUrl(stored.invidiousBaseUrl)
+
+  if (!credentials) {
+    const parsed = importSettingsSchema.safeParse(stored)
+    return parsed.success ? parsed.data : undefined
+  }
+
+  const migrated = importSettingsSchema.safeParse({
+    ...stored,
+    invidiousBaseUrl: requestBase,
+  })
+  if (!migrated.success) return undefined
+
+  // Секрет пишется до перезаписи адреса: сбой на любом шаге оставит в хранилище
+  // адрес с userinfo, и миграция просто повторится при следующем чтении.
+  await secureTokenStorage.setInvidiousAuth(credentials)
+  await setCachedJson(YOUTUBE_IMPORT_SETTINGS, migrated.data)
+
+  return migrated.data
+}
 
 /** Читает настройки импорта как есть: отсутствие/невалидность → `undefined`. */
 export const readImportSettings = async (): Promise<ImportSettings | undefined> => {
   try {
-    return await getCachedJson(YOUTUBE_IMPORT_SETTINGS, importSettingsSchema)
+    const stored = await getCachedJson(YOUTUBE_IMPORT_SETTINGS, legacyImportSettingsSchema)
+
+    return stored ? await migrateInvidiousCredentials(stored) : undefined
   } catch (error) {
     console.warn('Failed to read youtube import settings', error)
     return undefined
   }
 }
 
+const isSameOrigin = (first: string, second: string): boolean => {
+  try {
+    return new URL(first).origin === new URL(second).origin
+  } catch {
+    return false
+  }
+}
+
+// Смена хоста инстанса делает сохранённый basic-auth неактуальным: старый
+// секрет не должен уйти на другой адрес. Смена пути в пределах origin секрет
+// сохраняет.
+const clearStaleInvidiousAuth = async (nextBaseUrl: string): Promise<void> => {
+  const stored = await readImportSettings()
+  if (!stored || isSameOrigin(stored.invidiousBaseUrl, nextBaseUrl)) return
+
+  await secureTokenStorage.clearInvidiousAuth()
+}
+
 /**
  * Единственный путь записи настроек импорта в AsyncStorage (владелец ключа).
+ * Учётные данные из адреса пишутся только в защищённое хранилище, а в ключ
+ * попадает адрес без userinfo.
  * @param settings - Настройки для записи в хранилище.
  */
 export const persistImportSettings = async (settings: ImportSettings): Promise<void> => {
   try {
-    await setCachedJson(YOUTUBE_IMPORT_SETTINGS, settings)
+    const { credentials, requestBase } = splitBasicAuthUrl(settings.invidiousBaseUrl)
+    const parsed = importSettingsSchema.safeParse({
+      ...settings,
+      invidiousBaseUrl: requestBase,
+    })
+
+    if (!parsed.success) {
+      console.warn('Failed to save youtube import settings', parsed.error)
+      return
+    }
+
+    if (credentials) await secureTokenStorage.setInvidiousAuth(credentials)
+    else await clearStaleInvidiousAuth(requestBase)
+
+    await setCachedJson(YOUTUBE_IMPORT_SETTINGS, parsed.data)
   } catch (error) {
     console.warn('Failed to save youtube import settings', error)
   }

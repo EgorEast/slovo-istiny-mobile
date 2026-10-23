@@ -58,4 +58,20 @@ describe('parseBackupFile', () => {
 
     expect(parseBackupFile(badData)).toEqual({ status: 'invalid' })
   })
+
+  test('accepts an old backup that keeps basic-auth credentials in the instance url', () => {
+    const oldBackup = JSON.stringify({
+      data: {
+        youtubeImport: {
+          invidiousBaseUrl: 'https://admin:secret@inv.phobos.observer',
+          source: 'invidious',
+        },
+      },
+      exportedAt: '2026-01-01T00:00:00.000Z',
+      kind: BACKUP_KIND,
+      version: BACKUP_VERSION,
+    })
+
+    expect(parseBackupFile(oldBackup).status).toBe('ok')
+  })
 })

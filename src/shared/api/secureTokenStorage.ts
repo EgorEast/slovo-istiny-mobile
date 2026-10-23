@@ -5,6 +5,7 @@ import {
   LEGACY_REFRESH_TOKEN_KEY,
   parseCachedUser,
   SECURE_ACCESS_TOKEN_KEY,
+  SECURE_INVIDIOUS_AUTH_KEY,
   SECURE_REFRESH_TOKEN_KEY,
   SECURE_USER_KEY,
   toValidToken,
@@ -32,6 +33,10 @@ export const secureTokenStorage = {
     await AsyncStorage.removeItem(SECURE_USER_KEY)
   },
 
+  clearInvidiousAuth: async () => {
+    await AsyncStorage.removeItem(SECURE_INVIDIOUS_AUTH_KEY)
+  },
+
   clearTokens: async () => {
     await AsyncStorage.multiRemove([
       SECURE_ACCESS_TOKEN_KEY,
@@ -46,11 +51,17 @@ export const secureTokenStorage = {
 
   getCachedUser: async () => parseCachedUser(await AsyncStorage.getItem(SECURE_USER_KEY)),
 
+  getInvidiousAuth: async () => toValidToken(await AsyncStorage.getItem(SECURE_INVIDIOUS_AUTH_KEY)),
+
   getRefreshToken: async () =>
     readWithLegacyMigration(SECURE_REFRESH_TOKEN_KEY, LEGACY_REFRESH_TOKEN_KEY),
 
   setCachedUser: async (user: UserResponse) => {
     await AsyncStorage.setItem(SECURE_USER_KEY, JSON.stringify(user))
+  },
+
+  setInvidiousAuth: async (credentials: string) => {
+    await AsyncStorage.setItem(SECURE_INVIDIOUS_AUTH_KEY, credentials)
   },
 
   setTokens: async (accessToken: string, refreshToken: string) => {

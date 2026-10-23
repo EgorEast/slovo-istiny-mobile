@@ -2,6 +2,7 @@ import { type UserResponse } from './generated/api.schemas'
 import {
   parseCachedUser,
   SECURE_ACCESS_TOKEN_KEY,
+  SECURE_INVIDIOUS_AUTH_KEY,
   SECURE_REFRESH_TOKEN_KEY,
   SECURE_USER_KEY,
   toValidToken,
@@ -18,6 +19,10 @@ export const secureTokenStorage = {
     await removeEncryptedValue(SECURE_USER_KEY)
   },
 
+  clearInvidiousAuth: async () => {
+    await removeEncryptedValue(SECURE_INVIDIOUS_AUTH_KEY)
+  },
+
   clearTokens: async () => {
     await Promise.all([
       removeEncryptedValue(SECURE_ACCESS_TOKEN_KEY),
@@ -29,10 +34,16 @@ export const secureTokenStorage = {
 
   getCachedUser: async () => parseCachedUser(await readEncryptedValue(SECURE_USER_KEY)),
 
+  getInvidiousAuth: async () => readToken(SECURE_INVIDIOUS_AUTH_KEY),
+
   getRefreshToken: async () => readToken(SECURE_REFRESH_TOKEN_KEY),
 
   setCachedUser: async (user: UserResponse) => {
     await writeEncryptedValue(SECURE_USER_KEY, JSON.stringify(user))
+  },
+
+  setInvidiousAuth: async (credentials: string) => {
+    await writeEncryptedValue(SECURE_INVIDIOUS_AUTH_KEY, credentials)
   },
 
   setTokens: async (accessToken: string, refreshToken: string) => {

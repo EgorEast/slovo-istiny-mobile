@@ -9,6 +9,7 @@ import {
   setPlaybackRateAction,
   setRepeatModeAction,
 } from 'entities/player'
+import { splitBasicAuthUrl } from 'shared/lib/basicAuthUrl'
 import {
   importSettingsSchema,
   persistImportSettings,
@@ -77,8 +78,13 @@ export const applyYouTubeImport = async (
   if (!imported) return
 
   const stored = await readImportSettings()
+  // Старый бэкап мог нести basic-auth прямо в адресе: импортируем адрес без
+  // userinfo, сами учётные данные не сохраняем.
+  const importedBaseUrl = imported.invidiousBaseUrl
+    ? splitBasicAuthUrl(imported.invidiousBaseUrl).requestBase
+    : undefined
   const merged = importSettingsSchema.safeParse({
-    invidiousBaseUrl: imported.invidiousBaseUrl ?? stored?.invidiousBaseUrl,
+    invidiousBaseUrl: importedBaseUrl ?? stored?.invidiousBaseUrl,
     source: imported.source ?? stored?.source,
   })
 
