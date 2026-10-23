@@ -252,7 +252,7 @@ API base: `https://api.sourcecraft.tech/repos/slovo-propovedi/slovo-propovedi-mo
 
 - **`REQUEST_INSTALL_PACKAGES`** объявлен в `app.config.ts` (`android.permissions`) и в закоммиченном `android/app/src/main/AndroidManifest.xml` (CI `prebuild --clean` регенерирует манифест из `app.config.ts`, локальные gradle-сборки используют закоммиченный).
 - **Android auto-backup включён** (`android.allowBackup: true` в `app.config.ts`, правила — `plugins/withBackupRules.ts`): данные приложения (плейлисты, история, настройки) намеренно попадают в системный бэкап/Seedvault и переносятся между устройствами; чувствительное исключено через `dataExtractionRules`/`fullBackupContent` — prefs-файл `expo-secure-store` (`SecureStore.xml`) в бэкап не попадает (токены на Android запечатаны Keystore).
-- **`SYSTEM_ALERT_WINDOW` заблокирован** (`android.blockedPermissions` в `app.config.ts`, `tools:node="remove"` в манифесте): приложение не запрашивает «поверх других приложений» в рантайме, разрешение осталось от debug-тулинга.
+- **`SYSTEM_ALERT_WINDOW` заблокирован** (`android.blockedPermissions` в `app.config.ts`, `tools:node="remove"` в манифесте): приложение не запрашивает «поверх других приложений» в рантайме, разрешение осталось от debug-тулинга (release-манифест чист — проверено по merged prodRelease manifest; debug-сборки добавляют её обратно для dev-оверлеев RN — это ожидаемо).
 - **`react-native-zip-archive`** — распаковка ZIP-ассета (см. [`../decisions.md`](../decisions.md) → Approved stack → Обновления).
 - **`modules/apk-installer`** — локальный модуль для `PackageInstaller` (см. [`../decisions.md`](../decisions.md) → Approved stack → Обновления).
 

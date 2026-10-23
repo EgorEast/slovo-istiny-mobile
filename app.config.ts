@@ -47,8 +47,9 @@ export default ({ config }: ConfigContext): AppConfig => ({
     allowBackup: true,
     // RECORD_AUDIO (microphone) is unused — playback-only via expo-audio. Stripped from the final
     // manifest even if a library/plugin re-adds it (expo-audio plugin injects it by default).
-    // SYSTEM_ALERT_WINDOW (draw over other apps) is added by debug tooling; the app never
-    // requests it at runtime, so it is stripped from the final manifest.
+    // SYSTEM_ALERT_WINDOW (draw over other apps) is added by debug tooling; the app never requests
+    // it at runtime: stripped from release manifests (verified via merged prodRelease manifest);
+    // debug/debugOptimized re-add it for React Native dev overlays — expected in devDebug builds.
     blockedPermissions: [
       'android.permission.RECORD_AUDIO',
       'android.permission.SYSTEM_ALERT_WINDOW',
@@ -86,9 +87,8 @@ export default ({ config }: ConfigContext): AppConfig => ({
   orientation: 'portrait',
   owner: 'egoreast',
   plugins: [
-    // Runs last at mod-compile time: Expo executes manifest mods in reverse
-    // registration order, so registering first makes the cleanup the final pass
-    // (after expo-notifications injects the Firebase meta-data).
+    // Runs last at mod-compile time: Expo executes manifest mods in reverse registration order, so
+    // registering first makes the cleanup the final pass (after expo-notifications injects meta-data).
     withAndroidManifestCleanup,
     withBackupRules,
     withDevClientScheme,
