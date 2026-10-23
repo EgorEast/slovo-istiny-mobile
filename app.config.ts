@@ -4,6 +4,7 @@ import pkg from './package.json'
 import { withAndroidBuildMaintenance } from './plugins/withAndroidBuildMaintenance.ts'
 import { withAndroidFlavors } from './plugins/withAndroidFlavors.ts'
 import { withAndroidManifestCleanup } from './plugins/withAndroidManifestCleanup.ts'
+import { withBackupRules } from './plugins/withBackupRules.ts'
 import { withDebugKeystore } from './plugins/withDebugKeystore.ts'
 import { withDevClientScheme } from './plugins/withDevClientScheme.ts'
 import { withMavenCentralMirror } from './plugins/withMavenCentralMirror.ts'
@@ -40,9 +41,18 @@ export default ({ config }: ConfigContext): AppConfig => ({
   ...config,
   android: {
     adaptiveIcon: { backgroundColor: '#f16031', foregroundImage: './assets/adaptive-icon.png' },
+    // Auto-backup stays ENABLED for Seedvault / device-to-device migration (playlists,
+    // history, settings). Sensitive material is kept out by withBackupRules: it excludes
+    // the expo-secure-store prefs file via dataExtractionRules / fullBackupContent.
+    allowBackup: true,
     // RECORD_AUDIO (microphone) is unused — playback-only via expo-audio. Stripped from the final
     // manifest even if a library/plugin re-adds it (expo-audio plugin injects it by default).
-    blockedPermissions: ['android.permission.RECORD_AUDIO'],
+    // SYSTEM_ALERT_WINDOW (draw over other apps) is added by debug tooling; the app never
+    // requests it at runtime, so it is stripped from the final manifest.
+    blockedPermissions: [
+      'android.permission.RECORD_AUDIO',
+      'android.permission.SYSTEM_ALERT_WINDOW',
+    ],
     intentFilters: [
       {
         action: 'VIEW',
@@ -80,6 +90,7 @@ export default ({ config }: ConfigContext): AppConfig => ({
     // registration order, so registering first makes the cleanup the final pass
     // (after expo-notifications injects the Firebase meta-data).
     withAndroidManifestCleanup,
+    withBackupRules,
     withDevClientScheme,
     ['expo-audio', { enableBackgroundPlayback: true, recordAudioAndroid: false }],
     'expo-asset',
