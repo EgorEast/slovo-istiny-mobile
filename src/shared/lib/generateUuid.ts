@@ -1,27 +1,43 @@
-const UUID_TEMPLATE = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'
+import { v7 } from 'uuid'
 
-// Hermes has no `crypto.getRandomValues`, and the `uuid` package's `v4` relies on
-// it. Runtime-only crypto is not guaranteed either, so an absent/blank generator
-// degrades to a v4-shaped Math.random id instead of throwing — local playlist ids
-// only need uniqueness, not cryptographic strength (same policy as
-// `offline-cache/lib/webDownloadJournal`).
-const fallbackUuid = (): string =>
-  UUID_TEMPLATE.replace(/[xy]/g, placeholder => {
-    const random = Math.floor(Math.random() * 16)
-    const value = placeholder === 'x' ? random : (random & 0x3) | 0x8
-    return value.toString(16)
-  })
+const UUID_BYTE_LENGTH = 16
+const BYTE_MAX = 256
+
+// Local playlist ids are UUIDv7: the creation timestamp sits in the leading
+// bytes, so ids can be ordered by creation time, and the format matches the
+// server-wide uuidv7 migration. `crypto.randomUUID()` is v4-only, so it is no
+// longer used.
+//
+// Hermes does not guarantee `crypto.getRandomValues`, and runtime-only crypto can
+// be missing entirely. Local ids need uniqueness, not cryptographic strength, so
+// an unusable generator degrades to Math.random bytes instead of throwing (same
+// policy as `offline-cache/lib/webDownloadJournal`). `v7` still stamps the
+// timestamp, version and variant bits, so the degraded result remains a valid v7.
+const canUseSecureRandom = (): boolean => typeof globalThis.crypto?.getRandomValues === 'function'
+
+/** @returns 16 secure random bytes, or `null` when runtime crypto is unusable. */
+const tryReadSecureRandomBytes = (): null | Uint8Array => {
+  if (!canUseSecureRandom()) return null
+  try {
+    return globalThis.crypto.getRandomValues(new Uint8Array(UUID_BYTE_LENGTH))
+  } catch {
+    return null
+  }
+}
+
+const fillPseudoRandomBytes = (): Uint8Array => {
+  const bytes = new Uint8Array(UUID_BYTE_LENGTH)
+
+  for (let index = 0; index < bytes.length; index += 1)
+    bytes[index] = Math.floor(Math.random() * BYTE_MAX)
+
+  return bytes
+}
+
+const fillRandomBytes = (): Uint8Array => tryReadSecureRandomBytes() ?? fillPseudoRandomBytes()
 
 /**
- * Generates a v4-shaped UUID, preferring the runtime secure generator.
+ * Generates a time-ordered UUIDv7 for a local entity.
  * @returns A UUID string that passes `uuid.validate`.
  */
-export const generateUuid = (): string => {
-  try {
-    const candidate = globalThis.crypto?.randomUUID?.()
-    if (typeof candidate === 'string' && candidate.length > 0) return candidate
-  } catch {
-    // Runtime crypto unavailable — fall through to the JS fallback.
-  }
-  return fallbackUuid()
-}
+export const generateUuid = (): string => v7({ rng: fillRandomBytes })

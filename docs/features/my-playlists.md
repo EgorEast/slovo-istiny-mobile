@@ -170,7 +170,10 @@ reorder, персист принадлежности при toggle и CRUD-му�
 
 `createLocalPlaylist(ctx, { id?, title, sermonIds })` создаёт плейлист и **пинит его
 сразу после «Избранных»** (`withFavoritesFirst`). Без `id` генерируется
-`generateUuid`; импорт из ссылки передаёт детерминированный
+`generateUuid` — **UUIDv7** (`v7` из `uuid`): таймстамп в старших битах (id сортируются
+по времени создания) и единый формат с серверными id; `rng` — `crypto.getRandomValues`,
+а при его отсутствии под Hermes — `Math.random` (уникальность важнее криптостойкости,
+генератор не бросает). Импорт из ссылки передаёт детерминированный
 `deriveCustomPlaylistId` (см. [deep-links.md](./deep-links.md)). Дедуп импорта идёт
 **по содержимому**, а не по производному id: `useCustomPlaylistImport` переиспользует
 локальный плейлист только при совпадении `title` и **порядка** `sermonIds`
