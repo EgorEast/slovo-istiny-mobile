@@ -1,6 +1,5 @@
 import { useAction, useAtom } from '@reatom/npm-react'
 import { useEffect } from 'react'
-import { StyleSheet } from 'react-native'
 import { OnboardingTarget } from 'features/onboarding'
 import { type BookData } from 'entities/sermon'
 import {
@@ -10,7 +9,6 @@ import {
   SliderItemTransform,
   WhereIsSlideTitleLocated,
 } from 'shared/ui'
-import { INDENTS } from 'shared/ui/theme'
 import { useReadNavigation } from '../lib/useReadNavigation'
 import { getVerseByVerseBooksSlider, verseByVerseBooksSliderAtom } from '../model-verseByVerse'
 
@@ -42,7 +40,6 @@ export const VerseByVerseBooksSlider = ({
     <OnboardingTarget id={onboardingTargetId}>
       <Slider
         title={title}
-        style={styles.slider}
         titleTextAlign='center'
         onPressItem={onItemPress}
         itemsSize={SliderItemSize.Large}
@@ -61,9 +58,3 @@ export const VerseByVerseBooksSlider = ({
     </OnboardingTarget>
   )
 }
-
-const styles = StyleSheet.create({
-  slider: {
-    paddingHorizontal: INDENTS.middle,
-  },
-})

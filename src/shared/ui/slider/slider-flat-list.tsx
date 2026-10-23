@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { FlatList, type GestureResponderEvent, Platform, StyleSheet } from 'react-native'
-import { INDENTS } from '../theme/themed'
+import { SCREEN_WIDTH } from '../../config/screen-dimensions'
 import { useWebSliderScroll } from './lib/useWebSliderScroll'
 import { SliderColumn } from './slider-column'
 import {
@@ -16,7 +16,9 @@ import {
 import {
   buildSliderSnapOffsets,
   getSliderCardLayout,
+  getSliderContentWidth,
   getSliderLayoutViewport,
+  SLIDER_REST_INSET,
 } from './slider-layout.lib'
 
 const MAX_FLING_TRAVEL_VIEWPORT_RATIO = 1.2 // потолок инерции — как decelerationRate='fast' на нативе
@@ -53,23 +55,22 @@ export const SliderFlatList = <D extends object>({
 
   const [measuredWidth, setMeasuredWidth] = useState<number | undefined>(undefined)
   const layoutViewport = getSliderLayoutViewport(measuredWidth)
-  const layout = useMemo(
+  const { cardWidth, stride } = useMemo(
     () => getSliderCardLayout(itemsSize, layoutViewport),
     [itemsSize, layoutViewport],
   )
   // maxOffset must use the real measured width: the card layout stays capped
   // so proportions survive on wide screens, but the scrollable run does not.
-  const snapOffsets = useMemo(
-    () =>
-      buildSliderSnapOffsets({
-        columnCount,
-        contentWidth: (columnCount - 1) * layout.stride + layout.cardWidth,
-        peekInset: layout.visiblePeek + INDENTS.middle,
-        stride: layout.stride,
-        viewportWidth: measuredWidth ?? layoutViewport,
-      }),
-    [columnCount, layout, layoutViewport, measuredWidth],
-  )
+  const snapOffsets = useMemo(() => {
+    const contentWidth = getSliderContentWidth({ cardWidth, columnCount, stride })
+
+    return buildSliderSnapOffsets({
+      columnCount,
+      contentWidth,
+      stride,
+      viewportWidth: measuredWidth ?? SCREEN_WIDTH,
+    })
+  }, [cardWidth, columnCount, measuredWidth, stride])
   const maxTravelPx = MAX_FLING_TRAVEL_VIEWPORT_RATIO * (measuredWidth ?? layoutViewport)
   const { onScroll, scrollRef } = useWebSliderScroll(snapOffsets, maxTravelPx)
 
@@ -84,8 +85,7 @@ export const SliderFlatList = <D extends object>({
   )
 
   // The last column has no trailing gap, so its width differs from the stride.
-  const getColumnWidth = (index: number) =>
-    index === columnCount - 1 ? layout.cardWidth : layout.stride
+  const getColumnWidth = (index: number) => (index === columnCount - 1 ? cardWidth : stride)
 
   return (
     <FlatList
@@ -98,22 +98,23 @@ export const SliderFlatList = <D extends object>({
       snapToOffsets={snapOffsets}
       showsHorizontalScrollIndicator={false}
       keyExtractor={(_, index) => String(index)}
-      initialNumToRender={Math.ceil(layoutViewport / layout.stride) + 1}
+      initialNumToRender={Math.ceil(layoutViewport / stride) + 1}
+      contentContainerStyle={{ paddingHorizontal: SLIDER_REST_INSET }}
       onLayout={event => setMeasuredWidth(event.nativeEvent.layout.width)}
       {...(onScroll === undefined ? {} : { onScroll, scrollEventThrottle: 16 })}
       getItemLayout={(_, index) => ({
         index,
         length: getColumnWidth(index),
-        offset: layout.stride * index,
+        offset: SLIDER_REST_INSET + stride * index,
       })}
       renderItem={({ index, item: column }) => (
         <SliderColumn
           column={column}
           itemsSize={itemsSize}
           transform={transform}
+          cardWidth={cardWidth}
           onPressItem={onPressItem}
           borderRadius={borderRadius}
-          cardWidth={layout.cardWidth}
           titleTextAlign={titleTextAlign}
           cellWidth={getColumnWidth(index)}
           whereIsSlideTitleLocated={whereIsSlideTitleLocated}

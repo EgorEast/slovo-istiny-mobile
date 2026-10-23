@@ -1,6 +1,7 @@
 import { StyleSheet } from 'react-native'
 import { INDENTS } from '../theme/themed'
 import { type ThemeColors } from '../theme/types'
+import { SLIDER_REST_INSET } from './slider-layout.lib'
 
 export const createSliderStyles = (theme: ThemeColors) =>
   StyleSheet.create({
@@ -10,6 +11,6 @@ export const createSliderStyles = (theme: ThemeColors) =>
       color: theme.text,
       fontWeight: 'bold',
       paddingBottom: INDENTS.middle,
-      paddingLeft: INDENTS.lowest,
+      paddingLeft: SLIDER_REST_INSET,
     },
   })

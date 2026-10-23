@@ -1,7 +1,6 @@
 import { Ionicons } from '@expo/vector-icons'
 import { useAction, useAtom } from '@reatom/npm-react'
 import { useEffect, useState } from 'react'
-import { StyleSheet } from 'react-native'
 import { CreateLocalPlaylistModal } from 'features/local-playlist-form'
 import { OnboardingTarget } from 'features/onboarding'
 import {
@@ -19,7 +18,7 @@ import {
   getSliderLayoutViewport,
   Slider,
 } from 'shared/ui'
-import { INDENTS, useTheme } from 'shared/ui/theme'
+import { useTheme } from 'shared/ui/theme'
 import { useListenNavigation } from '../lib/useListenNavigation'
 import { buildMyPlaylistsItems, type MyPlaylistsItem } from './myPlaylistsSliderItems'
 
@@ -83,7 +82,6 @@ export const MyPlaylistsSlider = ({
     <OnboardingTarget id={onboardingTargetId}>
       <Slider
         items={items}
-        style={styles.slider}
         title={SECTION_TITLE}
         onPressItem={onPressItem}
         onPressTitle={navigateToMyPlaylists}
@@ -103,7 +101,3 @@ export const MyPlaylistsSlider = ({
     </OnboardingTarget>
   )
 }
-
-const styles = StyleSheet.create({
-  slider: { paddingHorizontal: INDENTS.middle },
-})

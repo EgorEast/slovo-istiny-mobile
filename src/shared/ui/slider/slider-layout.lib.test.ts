@@ -3,12 +3,15 @@ import { SliderItemSize } from './slider-item/slider-item.types'
 import {
   buildSliderSnapOffsets,
   getSliderCardLayout,
+  getSliderContentWidth,
   getSliderLayoutViewport,
-  MAX_SLIDER_LAYOUT_VIEWPORT,
+  MAX_SLIDER_LAYOUT_BASIS,
+  SLIDER_PEEK,
+  SLIDER_REST_INSET,
 } from './slider-layout.lib'
 
 const MOCK_SCREEN_WIDTH = 390
-const DEFAULT_VIEWPORT = MOCK_SCREEN_WIDTH - 2 * INDENTS.middle
+const DEFAULT_VIEWPORT = MOCK_SCREEN_WIDTH
 
 // The default layout viewport is derived from SCREEN_WIDTH at call time; the
 // width is inlined because hoisted jest.mock factories cannot reference
@@ -18,63 +21,56 @@ jest.mock('../../config/screen-dimensions', () => {
   return { ...actual, SCREEN_WIDTH: 390 }
 })
 
-const getContentWidth = (layout: { cardWidth: number; stride: number }, columnCount: number) =>
-  (columnCount - 1) * layout.stride + layout.cardWidth
-
 describe('getSliderCardLayout', () => {
-  test('defaults to the screen-derived viewport', () => {
+  test('defaults to the full screen width', () => {
     expect(getSliderLayoutViewport()).toBe(DEFAULT_VIEWPORT)
   })
 
   test.each([
-    [SliderItemSize.Small, 93.52941176470588, 105.52941176470588, 18.705882352941178],
-    [SliderItemSize.Middle, 137.5, 149.5, 27.5],
-    [SliderItemSize.Large, 244.28571428571428, 256.28571428571428, 48.857142857142854],
-    [SliderItemSize.XLarge, 275.80645161290323, 287.80645161290323, 33.096774193548384],
-  ])('%s card keeps the peek geometry at the default viewport', (size, width, stride, peek) => {
+    [SliderItemSize.Small, 93.52941176470588, 105.52941176470588],
+    [SliderItemSize.Middle, 137.5, 149.5],
+    [SliderItemSize.Large, 117, 129],
+    [SliderItemSize.XLarge, 300.3, 312.3],
+  ])('%s card keeps the geometry at the default basis', (size, width, stride) => {
     const layout = getSliderCardLayout(size, DEFAULT_VIEWPORT)
 
     expect(layout.cardWidth).toBeCloseTo(width, 5)
     expect(layout.stride).toBeCloseTo(stride, 5)
-    expect(layout.visiblePeek).toBeCloseTo(peek, 5)
   })
 
-  test('caps the layout viewport at the biggest-phone reference', () => {
-    expect(getSliderLayoutViewport(1000)).toBe(MAX_SLIDER_LAYOUT_VIEWPORT)
+  test('caps the layout basis at the biggest-phone reference', () => {
+    expect(getSliderLayoutViewport(1000)).toBe(MAX_SLIDER_LAYOUT_BASIS)
     expect(getSliderCardLayout(SliderItemSize.Small, 1000)).toEqual(
-      getSliderCardLayout(SliderItemSize.Small, MAX_SLIDER_LAYOUT_VIEWPORT),
+      getSliderCardLayout(SliderItemSize.Small, MAX_SLIDER_LAYOUT_BASIS),
     )
   })
 
-  test('floors the card width on a degenerate viewport', () => {
+  test('floors the card width on a degenerate basis', () => {
     expect(getSliderCardLayout(SliderItemSize.Small, 40).cardWidth).toBe(48)
   })
 })
 
 describe('buildSliderSnapOffsets', () => {
   const layout = getSliderCardLayout(SliderItemSize.Small, DEFAULT_VIEWPORT)
-  const peekInset = layout.visiblePeek + INDENTS.middle
 
-  test('peeks on both edges for a ten-column row', () => {
+  test('lands every column on the shared rest line for a ten-column row', () => {
     const columnCount = 10
-    const contentWidth = getContentWidth(layout, columnCount)
+    const contentWidth = getSliderContentWidth({
+      cardWidth: layout.cardWidth,
+      columnCount,
+      stride: layout.stride,
+    })
     const offsets = buildSliderSnapOffsets({
       columnCount,
       contentWidth,
-      peekInset,
       stride: layout.stride,
       viewportWidth: DEFAULT_VIEWPORT,
     })
 
-    expect(offsets).toHaveLength(8)
     expect(offsets[0]).toBe(0)
     expect(offsets.at(-1)).toBeCloseTo(contentWidth - DEFAULT_VIEWPORT, 5)
     offsets.slice(1, -1).forEach((offset, index) => {
-      const expected = [
-        74.82352941176471, 180.35294117647058, 285.88235294117646, 391.4117647058823,
-        496.94117647058823, 602.4705882352941,
-      ][index]
-      expect(offset).toBeCloseTo(expected, 5)
+      expect(offset).toBeCloseTo((index + 1) * layout.stride, 5)
     })
     const isStrictlyIncreasing = offsets.every(
       (offset, index) => index === 0 || offset > offsets[index - 1],
@@ -83,13 +79,16 @@ describe('buildSliderSnapOffsets', () => {
   })
 
   test('returns no offsets when the content fits the viewport', () => {
-    const contentWidth = layout.cardWidth
+    const contentWidth = getSliderContentWidth({
+      cardWidth: layout.cardWidth,
+      columnCount: 1,
+      stride: layout.stride,
+    })
 
     expect(
       buildSliderSnapOffsets({
         columnCount: 1,
         contentWidth,
-        peekInset,
         stride: layout.stride,
         viewportWidth: DEFAULT_VIEWPORT,
       }),
@@ -98,47 +97,51 @@ describe('buildSliderSnapOffsets', () => {
       buildSliderSnapOffsets({
         columnCount: 1,
         contentWidth,
-        peekInset,
         stride: layout.stride,
         viewportWidth: 10_000,
       }),
     ).toEqual([])
   })
 
-  // The requirement spec: whatever the size, screen width or column count,
-  // every intermediate rest position must cut a card on BOTH edges.
+  test('keeps a fixed left peek regardless of the card size', () => {
+    expect(SLIDER_PEEK).toBe(12)
+    expect(SLIDER_REST_INSET - INDENTS.middle).toBe(SLIDER_PEEK)
+  })
+
   test.each([
     SliderItemSize.Small,
     SliderItemSize.Middle,
     SliderItemSize.Large,
     SliderItemSize.XLarge,
-  ])('%s offsets always cut a card on both edges', size => {
+  ])('%s offsets keep every column on the rest line at any width', size => {
     const widths = [320, 360, 390, 412, 430]
     const columnCount = 7
 
-    widths.forEach(width => {
-      const viewportWidth = Math.min(width - 2 * INDENTS.middle, MAX_SLIDER_LAYOUT_VIEWPORT)
+    widths.forEach(viewportWidth => {
       const sizeLayout = getSliderCardLayout(size, viewportWidth)
-      const contentWidth = getContentWidth(sizeLayout, columnCount)
+      const contentWidth = getSliderContentWidth({
+        cardWidth: sizeLayout.cardWidth,
+        columnCount,
+        stride: sizeLayout.stride,
+      })
       const offsets = buildSliderSnapOffsets({
         columnCount,
         contentWidth,
-        peekInset: sizeLayout.visiblePeek + INDENTS.middle,
         stride: sizeLayout.stride,
         viewportWidth,
       })
 
       expect(offsets[0]).toBe(0)
       expect(offsets.at(-1)).toBeCloseTo(contentWidth - viewportWidth, 5)
+      expect(SLIDER_REST_INSET - INDENTS.middle).toBe(SLIDER_PEEK)
+      expect(SLIDER_PEEK).toBe(12)
 
       offsets.slice(1, -1).forEach(offset => {
-        const leftCut = offset % sizeLayout.stride
-        const rightCut = (offset + viewportWidth) % sizeLayout.stride
+        // Floating-point sums can land a hair below the next stride, so the
+        // remainder is normalised against the stride instead of compared to 0.
+        const remainder = offset % sizeLayout.stride
 
-        expect(leftCut).toBeGreaterThan(0)
-        expect(leftCut).toBeLessThan(sizeLayout.cardWidth)
-        expect(rightCut).toBeGreaterThan(0)
-        expect(rightCut).toBeLessThan(sizeLayout.cardWidth)
+        expect(Math.min(remainder, sizeLayout.stride - remainder)).toBeCloseTo(0, 5)
       })
     })
   })

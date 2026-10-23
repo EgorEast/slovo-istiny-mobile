@@ -6,7 +6,6 @@ import {
   type SectionData,
 } from 'entities/section'
 import { Slider } from 'shared/ui'
-import { INDENTS } from 'shared/ui/theme'
 
 export interface RenderSectionProps {
   index: number
@@ -22,11 +21,9 @@ export const renderSection = ({
   section,
 }: RenderSectionProps) => {
   const playlists = section.playlists ?? []
-  const sliderStyle = { paddingHorizontal: INDENTS.middle }
 
   return (
     <Slider
-      style={sliderStyle}
       title={section.title}
       onPressItem={onItemPress}
       borderRadius={section.borderRadius}

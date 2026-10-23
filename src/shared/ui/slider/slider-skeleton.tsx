@@ -11,6 +11,7 @@ import {
   type SliderItemTransform,
   WhereIsSlideTitleLocated,
 } from './slider-item/slider-item.types'
+import { SLIDER_REST_INSET } from './slider-layout.lib'
 import { getItemsByRows, getMarginBottom } from './slider-skeleton.lib'
 
 export const SliderSkeleton = ({
@@ -36,18 +37,9 @@ export const SliderSkeleton = ({
   const { pulseStyle } = useSkeletonPulse()
   const marginBottom = getMarginBottom(itemsSize, titleFontSize)
   const itemsByRows = getItemsByRows(itemsCount, itemsRows)
-  const sectionStyle = { paddingHorizontal: INDENTS.middle }
 
   return (
-    <View
-      style={[
-        styles.slider,
-        { marginTop: titleFontSize / 2 },
-        { marginBottom },
-        sectionStyle,
-        style,
-      ]}
-    >
+    <View style={[styles.slider, { marginTop: titleFontSize / 2 }, { marginBottom }, style]}>
       <View testID='title' style={styles.title}>
         <Animated.View
           style={[
@@ -85,6 +77,8 @@ const styles = StyleSheet.create({
   contentContainer: {
     flexDirection: 'column-reverse',
     gap: INDENTS.middle,
+    paddingLeft: SLIDER_REST_INSET,
+    paddingRight: SLIDER_REST_INSET,
   },
   row: {
     flexDirection: 'row',
@@ -98,7 +92,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     fontWeight: 'bold',
     paddingBottom: INDENTS.middle,
-    paddingLeft: INDENTS.lowest,
+    paddingLeft: SLIDER_REST_INSET,
     paddingTop: INDENTS.lowest,
   },
   titleBar: {
