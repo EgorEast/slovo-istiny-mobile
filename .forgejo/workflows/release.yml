@@ -718,6 +718,8 @@ jobs:
           # Codeberg runs Forgejo, so auth uses the `token` scheme - NOT the
           # `Bearer` scheme the GitHub step needs.
           MIRROR_CODEBERG_TOKEN: ${{ secrets.MIRROR_CODEBERG_TOKEN }}
+          # Used only to trigger the local push-mirror sync below.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           summary_row() { printf '%s\n' "$1" | scripts/ci/step-summary.sh; }
           if [ -z "${MIRROR_CODEBERG_TOKEN:-}" ]; then
@@ -732,10 +734,15 @@ jobs:
           API_BASE="https://codeberg.org/api/v1/repos/Slovo_Propovedi/slovo-propovedi-mobile"
           AUTH_HEADER="Authorization: token ${MIRROR_CODEBERG_TOKEN}"
 
-          # The repo is git-mirrored, so the tag should already exist on Codeberg.
-          # target_commitish (set on creation below) creates the tag at the mirrored
-          # commit if the tag push has not landed yet; if that commit is not mirrored
-          # either, release creation fails and the step degrades to a warning - the
+          # The repo is git-mirrored to Codeberg, but the mirror can lag behind
+          # the tag push: at release time the tag (and often its commit) may not
+          # exist there yet. Sequence in the 404 branch (release not created yet):
+          #   1. best-effort POST push_mirrors-sync - ask Forgejo to sync now;
+          #   2. poll GET /tags/{tag} for up to ~5 min;
+          #   3. create the release WITHOUT target_commitish - the tag exists by
+          #      then, so Forgejo attaches the release to it instead of trying to
+          #      create the tag at a commit Codeberg has not received yet.
+          # If the tag never arrives the step degrades to a warning - the
           # Forgejo release (source of truth) is already out.
           RELEASE_STATUS=$(curl -s -o /tmp/cb-release.json -w "%{http_code}" \
             -H "$AUTH_HEADER" \
@@ -765,12 +772,43 @@ jobs:
             echo "Codeberg release for $TAG already exists (id: $RELEASE_ID)"
             summary_row "- Codeberg mirror: ✅ release already exists"
           elif [ "$RELEASE_STATUS" = "404" ]; then
+            # ~5 min tag budget: the android job holds a runner slot while this
+            # step waits, so the poll is bounded.
+            TAG_POLL_ATTEMPTS=10
+            TAG_POLL_INTERVAL=30
+
+            # Best-effort: syncs ALL push mirrors of this repo now, so Codeberg
+            # receives the tag without waiting for the scheduled mirror run.
+            # A no-op/404 when push mirrors are not configured - ignored.
+            curl -s -X POST -H "Authorization: token $GITHUB_TOKEN" \
+              "${{ github.server_url }}/api/v1/repos/${{ github.repository }}/push_mirrors-sync" || true
+
+            TAG_FOUND=false
+            for attempt in $(seq 1 "$TAG_POLL_ATTEMPTS"); do
+              TAG_STATUS=$(curl -s -o /tmp/cb-tag.json -w "%{http_code}" \
+                -H "$AUTH_HEADER" \
+                "$API_BASE/tags/$TAG" || true)
+              if [ "$TAG_STATUS" = "200" ]; then
+                TAG_FOUND=true
+                break
+              fi
+              echo "Waiting for tag $TAG on Codeberg (attempt $attempt/$TAG_POLL_ATTEMPTS, status $TAG_STATUS)..."
+              if [ "$attempt" -lt "$TAG_POLL_ATTEMPTS" ]; then
+                sleep "$TAG_POLL_INTERVAL"
+              fi
+            done
+
+            if [ "$TAG_FOUND" != "true" ]; then
+              echo "::warning::Codeberg mirror failed: tag $TAG not found on Codeberg after ~5 min — check the Codeberg git mirror (push mirror on Forgejo or pull mirror on Codeberg) and re-run this step after it syncs"
+              summary_row "- Codeberg mirror: ⚠️ failed (tag not mirrored)"
+              exit 0
+            fi
+
             jq -n \
               --arg tag "$TAG" \
               --arg name "$TAG" \
               --arg body "$(cat release-body.md)" \
-              --arg commit "${{ github.sha }}" \
-              '{tag_name: $tag, name: $name, body: $body, target_commitish: $commit}' > /tmp/cb-release-body.json
+              '{tag_name: $tag, name: $name, body: $body}' > /tmp/cb-release-body.json
             CREATE_STATUS=$(curl -s -o /tmp/cb-create.json -w "%{http_code}" -X POST \
               -H "$AUTH_HEADER" -H "Content-Type: application/json" \
               --data @/tmp/cb-release-body.json \
