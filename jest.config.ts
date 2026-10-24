@@ -21,6 +21,11 @@ const config: Config = {
   // (checked between test files). Primary OOM cap is --maxWorkers=2 in CI;
   // this prevents RSS accumulation across heavy jest-expo/RN suites.
   workerIdleMemoryLimit: '1GB',
+  // CI runner (2 workers on a shared arm64 host) can exceed the 5s jest
+  // default on heavy jest-expo suites: AdminSermonsScreen flaked on three
+  // different tests. 15s keeps real hangs failing fast while removing the
+  // flake; full CI run (~190s) has headroom for it.
+  testTimeout: 15000,
   setupFiles: [
     // Must stay first: src/shared/config/env.ts validates EXPO_PUBLIC_* at module
     // load, and jest does not load .env.
