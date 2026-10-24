@@ -96,6 +96,10 @@ class LockScreenControls {
     try {
       player.setActiveForLockScreen(true, prepareMetadataPayload(metadata), {
         isLiveStream: false,
+        // Explicit intervals: an omitted optimized-record field arrives as 0.0 natively
+        // and degrades to the 100 ms minimum instead of the documented 10 s default.
+        seekBackwardIntervalSeconds: 10,
+        seekForwardIntervalSeconds: 10,
         showSeekBackward: true,
         showSeekForward: true,
       })
