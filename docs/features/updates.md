@@ -14,9 +14,11 @@
 
 `src/shared/lib/version-check/`:
 
-- `fetchLatestRelease.ts` — источник **Forgejo** (`git.lightnode.ru/api/v1/repos/Slovo_Propovedi/slovo-propovedi-mobile/releases/latest`), при провале — **fallback на GitHub** (`api.github.com/repos/Slovo-Propovedi/...`). Отбрасывает prerelease и теги с дефисом; извлекает `.zip`-ассет и ассет `SHA256SUMS.txt` (точное имя, регистронезависимо).
+- `fetchLatestRelease.ts` — цепочка источников **Forgejo → Codeberg → GitHub**: `git.lightnode.ru/api/v1/repos/Slovo_Propovedi/slovo-propovedi-mobile/releases/latest`, при провале — `codeberg.org/api/v1/repos/Slovo_Propovedi/slovo-propovedi-mobile/releases/latest`, при провале — `api.github.com/repos/Slovo-Propovedi/...`. Отбрасывает prerelease и теги с дефисом; извлекает `.zip`-ассет и ассет `SHA256SUMS.txt` (точное имя, регистронезависимо).
 - `compareVersions.ts` — сем-вер сравнение (`a`/`b` → `-1 | 0 | 1`).
 - `types.ts` — `LatestReleaseInfo` (`version`, `htmlUrl`, `zipDownloadUrl`, `sha256SumsDownloadUrl`, `body`, ...).
+
+Ссылки «Открыть в браузере» (диалог обновления, push-уведомление, экран «Поделиться») ведут на страницу релиза того источника, который ответил на проверку версии (`release.htmlUrl`): обычно это git.lightnode.ru, а страницы codeberg/github открываются только если ответил соответствующий fallback-источник. Цепочка источников и скачивания остаётся **Forgejo → Codeberg → GitHub**; URL самих ZIP/sums также берутся из ответившего источника.
 
 ### Валидация ответа релиза
 
@@ -35,7 +37,7 @@
 
 - шаг **«Restore release keystore»** — жёсткий гейт: если секрет `ANDROID_KEYSTORE_BASE64` не задан, джоба падает (`::error::ANDROID_KEYSTORE_BASE64 is not configured — refusing to publish a debug-signed release`), а не публикует debug-подписанный APK. Debug-подпись ломает in-app обновление (`INSTALL_FAILED_UPDATE_INCOMPATIBLE`), поэтому релиз без release-keystore недопустим.
 - шаг **«Rename and zip APK»** вместе с ZIP генерирует `SHA256SUMS.txt` (`sha256sum` → стандартная строка `<hex>  <zip-filename>`).
-- шаг **«Upload APK to the Forgejo Release»** прикладывает к релизу оба ассета — ZIP и `SHA256SUMS.txt`; те же два ассета зеркалируются в GitHub и SourceCraft (см. ниже).
+- шаг **«Upload APK to the Forgejo Release»** прикладывает к релизу оба ассета — ZIP и `SHA256SUMS.txt`; те же два ассета зеркалируются в GitHub и Codeberg (см. ниже).
 
 **Контракт релиза:** любой релиз, который клиент может установить, обязан содержать `SHA256SUMS.txt` с digest'ом ZIP-ассета. Клиент проверяет его до распаковки и установки (см. «Целостность обновления (SHA-256)»); релиз без sums-ассета обновлением не устанавливается (fail-closed).
 
@@ -49,32 +51,32 @@
 2. В настройках Forgejo-репозитория (`Settings → Actions → Secrets`) добавить секрет `MIRROR_GITHUB_TOKEN` со значением PAT.
 3. Тег `v*` должен быть запушен в GitHub (репозиторий зеркалируется) — если тега ещё нет, создание релиза упадёт с предупреждением, джоба продолжит работу.
 
-### Зеркалирование релиза в SourceCraft (CI)
+### Зеркалирование релиза в Codeberg (CI)
 
-`.forgejo/workflows/release.yml` после GitHub-шага выполняет шаг **«Mirror release to SourceCraft»**: создаёт релиз в SourceCraft и прикладывает ZIP-ассет и `SHA256SUMS.txt` к тегу. Секрет `MIRROR_SOURCECRAFT_TOKEN` настроен в Forgejo-секретах репозитория, зеркалирование активно. Шаг сохраняет guard: без секрета он пропускается (`exit 0`), пайплайн остаётся зелёным. Любая ошибка SourceCraft API — `::warning::`, джоба не падает (релиз Forgejo — источник истины).
+`.forgejo/workflows/release.yml` после GitHub-шага выполняет шаг **«Mirror release to Codeberg»**: создаёт релиз в Codeberg и прикладывает ZIP-ассет и `SHA256SUMS.txt` к тегу. Секрет `MIRROR_CODEBERG_TOKEN` настраивается в Forgejo-секретах репозитория; без него шаг пропускается (`exit 0`), пайплайн остаётся зелёным. Любая ошибка Codeberg API — `::warning::`, джоба не падает (релиз Forgejo — источник истины).
 
-API base: `https://api.sourcecraft.tech/repos/slovo-propovedi/slovo-propovedi-mobile`. Используемые эндпоинты:
+API base: `https://codeberg.org/api/v1/repos/Slovo_Propovedi/slovo-propovedi-mobile` (Codeberg работает на Forgejo, API совместим с Gitea 1.22). Используемые эндпоинты:
 
-- `GET /releases/tag/{tag}` — проверка существования релиза и его ассетов (dedup загрузки; до загрузки проверяется, нет ли уже ассета с тем же именем);
-- `POST /releases` — создание релиза (тело `{tag, title, release_notes, publish: true}`; `target_branch` не задаётся — тег уже существует через git-зеркалирование);
-- `POST /releases/tag/{tag}/attachments` — загрузка ассета multipart-формой (`name`, `file`).
+- `GET /releases/tags/{tag}` — проверка существования релиза и dedup: Forgejo **не** отвергает ассеты с повторяющимся именем, поэтому перед загрузкой шаг читает `.assets[]` и загружает только отсутствующие (`ZIP_FILE`, `SHA256SUMS.txt`); если оба уже приложены — загрузка пропускается;
+- `POST /releases` — создание релиза (тело `{tag_name, name, body, target_commitish: <github.sha>}`). `target_commitish` создаёт тег на зеркалированном коммите, если тег ещё не доехал через git-зеркалирование; если не зеркалирован и коммит — создание упадёт с предупреждением, джоба продолжит работу;
+- `POST /releases/{id}/assets?name=<filename>` — загрузка ассета сырым телом (`--data-binary`, `Content-Type: application/zip` для ZIP и `text/plain` для sums). Query-параметр `name` в raw-режиме обязателен; `201` — успех, `413` — превышен лимит.
 
-Лимит ассета — 100 MB. Аутентификация обязательна даже для GET: заголовок `Authorization: Bearer <PAT>`.
+Аутентификация — заголовок `Authorization: token <PAT>` (схема Forgejo, как у шага загрузки в сам Forgejo; **не** `Bearer` из GitHub-шага). Анонимные GET-запросы к Codeberg работают, поэтому клиент использует `releases/latest` как один из источников обновлений (см. ниже).
 
-**SourceCraft — только CI-зеркало.** Приложение **не читает** релизы с SourceCraft: REST API (`api.sourcecraft.tech`) отвечает `401` на любой запрос без `Bearer`-токена, включая публичные репозитории (проверено 2026-10-01); анонимно доступна только HTML-страница релизов (SPA). Цепочка источников обновлений клиента остаётся **Forgejo → GitHub** (см. `src/shared/lib/version-check/fetchLatestRelease.ts`). Если в будущем понадобится третий источник — потребуется прокси на бэкенде с PAT.
+**Квота.** У Codeberg действует мягкая квота на вложения репозитория ~1.5 GiB (релизные ZIP — десятки мегабайт), поэтому старые релизы стоит периодически чистить; при исчерпании квоты загрузка вернёт `413`, а шаг деградирует в предупреждение.
 
 **Настройка:**
 
-1. Создать PAT на `sourcecraft.dev` → Home → Доступ → Персональные токены доступа; выдать права репозитория (роль repo) с write-доступом к релизам.
-2. В настройках Forgejo-репозитория (`Settings → Actions → Secrets`) добавить секрет `MIRROR_SOURCECRAFT_TOKEN` со значением PAT.
-3. Тег `v*` должен быть запушен в SourceCraft (репозиторий зеркалируется) — если тега ещё нет, создание релиза упадёт с предупреждением, джоба продолжит работу.
+1. Создать PAT в Codeberg (`Settings → Applications`) с правами на запись в репозиторий (включая релизы).
+2. В настройках Forgejo-репозитория (`Settings → Actions → Secrets`) добавить секрет `MIRROR_CODEBERG_TOKEN` со значением PAT (по аналогии с `MIRROR_GITHUB_TOKEN`).
+3. Тег `v*` должен быть запушен в Codeberg (репозиторий зеркалируется) — если тега ещё нет, `target_commitish` попробует создать его на зеркалированном коммите; при неудаче создание релиза упадёт с предупреждением, джоба продолжит работу.
 
 ## Состояние
 
 `src/shared/model/update.ts`:
 
 - `latestVersionAtom` (строка версии);
-- `releaseUrlAtom` (URL страницы релиза);
+- `releaseUrlAtom` (URL страницы релиза ответившего источника — `release.htmlUrl`);
 - `zipDownloadUrlAtom` (URL скачивания ZIP-ассета с APK, используется самообновлением).
 
 При обнаружении новой версии `checkForUpdateAction` открывает диалог (`updateDialogVisibleAtom = true`) — при каждом запуске приложения, пока доступна новая версия (без гейта «показывать раз на версию»). Диалог открывается **в конце** экшена: сначала устанавливаются атомы версии/URL, затем выполняется необязательная секция push-уведомления (запрос разрешений через `requestPermissions()` и планирование), и только потом — `updateDialogVisibleAtom = true`. Такой порядок нужен, чтобы системный промпт разрешений не появлялся поверх модалки обновления.
@@ -113,7 +115,7 @@ API base: `https://api.sourcecraft.tech/repos/slovo-propovedi/slovo-propovedi-mo
 
 - «Обновить» → `startUpdate()`; во время загрузки закрытие диалога заблокировано (`onRequestClose` — no-op).
 - Закрытие («Не обновлять», «Закрыть», «Не сейчас», back) вызывает `reset()` хука и `onClose`.
-- Ссылки открывают `releaseUrlAtom` через `openReleaseUrl` (`lib/openReleaseUrl.ts`) с защитой: только `https://`.
+- Ссылки открывают `releaseUrlAtom` (страница релиза ответившего источника) через `openReleaseUrl` (`lib/openReleaseUrl.ts`) с защитой: только `https://`.
 
 Составные части: `UpdateDialogConfirm.tsx`, `UpdateDialogProgress.tsx`, `UpdateDialogPermission.tsx`, `UpdateDialogError.tsx`, общие стили — `updateDialogStyles.ts`. Кнопки переиспользуют `shared/ui/confirm-dialog/ConfirmDialogButton`.
 
@@ -139,7 +141,7 @@ API base: `https://api.sourcecraft.tech/repos/slovo-propovedi/slovo-propovedi-mo
 
 **Тайминг очистки:** `cleanupUpdateFiles()` вызывается в **начале** потока (перед скачиванием — чистит остатки прошлого запуска), а НЕ в `finally`. Файлы никогда не удаляются, пока сессия `PackageInstaller` может их читать (раньше `finally` удалял APK сразу после старта интента установщика — причина «Возникла проблема с файлом приложения»). Дополнительно при ошибке до установки (скачивание, проверка целостности, распаковка) каталог обновлений очищается в `catch` `performUpdate`; после перехода в `installing` очистка не выполняется.
 
-**Фолбэк скачивания (GitHub mirror):** если `downloadUpdateZip` упал (Forgejo ответил при проверке, но «умер» до тапа «Обновить»), `downloadUpdateZipWithFallback` (`src/shared/model/updateInstallFallback.ts`) один раз перезапрашивает `fetchLatestRelease()` и, если у свежего релиза `zipDownloadUrl` **отличается** от упавшего URL **и версия не старше** упавшей (`compareVersions(release.version, failedVersion) >= 0`, где `failedVersion` — `latestVersionAtom`), сбрасывает `updateProgressAtom` в 0, обновляет `latestVersionAtom`/`releaseUrlAtom`/`zipDownloadUrlAtom` (ссылка «Открыть в браузере» в диалоге ошибки ведёт на живую страницу) и повторяет скачивание с новым URL. Ретрай ровно один, без циклов. Если релиз недоступен, `zipDownloadUrl` пуст/совпадает с упавшим URL, версия фолбэка старше упавшей или повторное скачивание тоже упало — пробрасывается исходная ошибка (существующий поток `setErrorState`). Вместе с URL обновляется и `sha256SumsUrlAtom`: повторная попытка проверяет digest по sums-ассету свежего релиза. Решение о ретрае — чистый хелпер `getFallbackDownloadUrl(failedUrl, failedVersion, release)` (тесты рядом, `updateInstallFallback.test.ts`). Фолбэк применяется **только** к шагу скачивания: ошибки распаковки/установки обрабатываются как раньше. Таймаут-ошибка скачивания — легитимный триггер ретрая: `downloadFileWithTimeout` бросает её после 10-минутного бюджета, и фолбэк перезапрашивает свежий релиз с GitHub-зеркала так же, как при любой другой ошибке скачивания.
+**Фолбэк скачивания (зеркала):** если `downloadUpdateZip` упал (Forgejo ответил при проверке, но «умер» до тапа «Обновить»), `downloadUpdateZipWithFallback` (`src/shared/model/updateInstallFallback.ts`) один раз перезапрашивает `fetchLatestRelease()` и, если у свежего релиза `zipDownloadUrl` **отличается** от упавшего URL **и версия не старше** упавшей (`compareVersions(release.version, failedVersion) >= 0`, где `failedVersion` — `latestVersionAtom`), сбрасывает `updateProgressAtom` в 0, обновляет `latestVersionAtom`/`releaseUrlAtom`/`zipDownloadUrlAtom` (ссылка «Открыть в браузере» в диалоге ошибки ведёт на живую страницу) и повторяет скачивание с новым URL. Ретрай ровно один, без циклов. Если релиз недоступен, `zipDownloadUrl` пуст/совпадает с упавшим URL, версия фолбэка старше упавшей или повторное скачивание тоже упало — пробрасывается исходная ошибка (существующий поток `setErrorState`). Вместе с URL обновляется и `sha256SumsUrlAtom`: повторная попытка проверяет digest по sums-ассету свежего релиза. Решение о ретрае — чистый хелпер `getFallbackDownloadUrl(failedUrl, failedVersion, release)` (тесты рядом, `updateInstallFallback.test.ts`). Фолбэк применяется **только** к шагу скачивания: ошибки распаковки/установки обрабатываются как раньше. Таймаут-ошибка скачивания — легитимный триггер ретрая: `downloadFileWithTimeout` бросает её после 10-минутного бюджета, и фолбэк перезапрашивает свежий релиз с зеркал (Forgejo → Codeberg → GitHub) так же, как при любой другой ошибке скачивания.
 
 ### Классификация ошибок обновления
 
@@ -230,7 +232,7 @@ API base: `https://api.sourcecraft.tech/repos/slovo-propovedi/slovo-propovedi-mo
 
 Поток `downloadUpdateZip` (`src/shared/lib/update-service/updateService.ts`):
 
-1. `assertAllowedUpdateUrl` — только `https:` и хост из allowlist `ALLOWED_UPDATE_HOSTS` (`git.lightnode.ru`, `github.com`, `objects.githubusercontent.com`) — `downloadUrlPolicy.ts`. Любой другой хост → ошибка.
+1. `assertAllowedUpdateUrl` — только `https:` и хост из allowlist `ALLOWED_UPDATE_HOSTS` (`codeberg.org`, `git.lightnode.ru`, `github.com`, `objects.githubusercontent.com`) — `downloadUrlPolicy.ts`. Любой другой хост → ошибка.
 2. `downloadChecksumText` (`checksumVerification.ts`) — скачивает текст `SHA256SUMS.txt` (таймаут 10 с). Если у релиза нет sums-ассета → ошибка **до** скачивания ZIP (fail-closed).
 3. Скачивается ZIP.
 4. `verifyDownloadedZipChecksum` — имя ассета берётся из URL ZIP, digest ищется в sums-файле, затем нативный `apk-installer.computeSha256` (стриминговый `MessageDigest`, lowercase hex) считает digest скачанного файла. Нет строки для ассета или digest не совпал → ошибка **до** распаковки, скачанный ZIP удаляется (`cleanupUpdateFiles`).

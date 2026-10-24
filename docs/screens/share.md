@@ -17,7 +17,7 @@
 - **«Приложение»** — свёрнута по умолчанию. Содержимое зависит от `useLatestReleaseUrl`:
   - Загрузка: центрированный `ActivityIndicator`;
   - Ошибка: текст «Не удалось загрузить информацию о релизе» + кнопка «Повторить» (повторный запрос);
-  - Готово: название релиза (`release.name`), версия («Версия {release.version}»), `ShareLinkCard` со ссылкой `release.htmlUrl`.
+  - Готово: название релиза (`release.name`), версия («Версия {release.version}»), `ShareLinkCard` со ссылкой `release.htmlUrl` — страница релиза того источника, который ответил на проверку версии (обычно git.lightnode.ru; codeberg/github — только если ответил fallback).
   - Хук вызывается независимо от того, открыта ли секция — данные о релизе подгружаются сразу при монтировании экрана, а не при первом раскрытии.
 
 `ShareLinkCard` — общий блок для всех трёх секций: QR-код на белой карточке (QR всегда рендерится с тёмными модулями на светлом фоне, независимо от темы), текст ссылки (подчёркнутый, цвета `primary`, selectable), кнопка «Скопировать ссылку» (`CopyLinkButton`, иконка `copy-outline`); после успешного копирования на ~2 секунды меняется на «Скопировано» с иконкой `checkmark-circle-outline`. В буфер обмена кладётся не голая ссылка, а сообщение с описанием приложения — `SHARE_MESSAGE` (`src/pages/share/lib/constants.ts`) + перевод строки + сама ссылка, поэтому скопированный текст можно сразу пересылать в мессенджер. QR-код и текст ссылки обёрнуты в отдельные `Pressable` и открывают ссылку в браузере по тапу (`Linking.openURL`) — обычный `TouchableItem` не подошёл, у него зашита `width: '100%'`, из-за которой QR-карточка растягивалась на всю ширину строки.
@@ -29,7 +29,7 @@
 ## Откуда данные
 
 - Хук `useLatestReleaseUrl` (`src/pages/share/lib/useLatestReleaseUrl.ts`) — дискриминированное объединение `LatestReleaseState` (`loading` / `error` / `ready`);
-- Данные релиза — `fetchLatestRelease()` из `shared/lib/version-check` (Forgejo API с фолбэком на GitHub API);
+- Данные релиза — `fetchLatestRelease()` из `shared/lib/version-check` (Forgejo API → Codeberg API → GitHub API);
 - Ссылка на лендинг — константа `LANDING_URL` (`src/pages/share/lib/constants.ts`), не запрашивается.
 
 ## Куда можно перейти

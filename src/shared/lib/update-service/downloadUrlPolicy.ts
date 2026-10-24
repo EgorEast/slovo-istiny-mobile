@@ -1,5 +1,6 @@
 export const ALLOWED_UPDATE_HOSTS = [
   'git.lightnode.ru',
+  'codeberg.org',
   'github.com',
   'objects.githubusercontent.com',
 ] as const

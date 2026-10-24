@@ -8,7 +8,7 @@ on:
 # Three jobs:
 #   create-release  — gate on CI, verify versions, cut the Forgejo Release
 #   web             — needs: create-release — export + deploy the web PWA + attach zip
-#   android         — needs: create-release — build APK + attach zip + mirror to GitHub and SourceCraft
+#   android         — needs: create-release — build APK + attach zip + mirror to GitHub and Codeberg
 # `web` and `android` depend only on `create-release`, never on each other, so
 # they run in whichever order the runner picks them up. Both are memory-heavy,
 # so they share the `memory-heavy-jobs` concurrency group (also on ci.yml's
@@ -713,100 +713,111 @@ jobs:
             summary_row "- GitHub mirror: ⚠️ failed (checksum status $SUMS_UPLOAD_STATUS)"
           fi
 
-      - name: Mirror release to SourceCraft
+      - name: Mirror release to Codeberg
         env:
-          # SourceCraft PAT is passed via the MIRROR_SOURCECRAFT_TOKEN secret;
-          # auth is required even for GET requests.
-          MIRROR_SOURCECRAFT_TOKEN: ${{ secrets.MIRROR_SOURCECRAFT_TOKEN }}
+          # Codeberg runs Forgejo, so auth uses the `token` scheme - NOT the
+          # `Bearer` scheme the GitHub step needs.
+          MIRROR_CODEBERG_TOKEN: ${{ secrets.MIRROR_CODEBERG_TOKEN }}
         run: |
           summary_row() { printf '%s\n' "$1" | scripts/ci/step-summary.sh; }
-          if [ -z "${MIRROR_SOURCECRAFT_TOKEN:-}" ]; then
-            echo "MIRROR_SOURCECRAFT_TOKEN is not configured - skipping SourceCraft mirror"
-            summary_row "- SourceCraft mirror: ⏭️ skipped (MIRROR_SOURCECRAFT_TOKEN not set)"
+          if [ -z "${MIRROR_CODEBERG_TOKEN:-}" ]; then
+            echo "MIRROR_CODEBERG_TOKEN is not configured - skipping Codeberg mirror"
+            summary_row "- Codeberg mirror: ⏭️ skipped (MIRROR_CODEBERG_TOKEN not set)"
             exit 0
           fi
 
           TAG="${{ github.ref_name }}"
           VERSION="${{ needs.create-release.outputs.version }}"
           ZIP_FILE="slovo-propovedi-v${VERSION}.zip"
-          API_BASE="https://api.sourcecraft.tech/repos/slovo-propovedi/slovo-propovedi-mobile"
-          AUTH_HEADER="Authorization: Bearer ${MIRROR_SOURCECRAFT_TOKEN}"
+          API_BASE="https://codeberg.org/api/v1/repos/Slovo_Propovedi/slovo-propovedi-mobile"
+          AUTH_HEADER="Authorization: token ${MIRROR_CODEBERG_TOKEN}"
 
-          # The repo is git-mirrored, so the tag should already exist on SourceCraft
-          # (same assumption as the GitHub step). If the tag push has not landed yet,
-          # release creation fails below and the step degrades to a warning - the
+          # The repo is git-mirrored, so the tag should already exist on Codeberg.
+          # target_commitish (set on creation below) creates the tag at the mirrored
+          # commit if the tag push has not landed yet; if that commit is not mirrored
+          # either, release creation fails and the step degrades to a warning - the
           # Forgejo release (source of truth) is already out.
-          SKIP_UPLOAD=false
-          RELEASE_STATUS=$(curl -s -o /tmp/sc-release.json -w "%{http_code}" \
+          RELEASE_STATUS=$(curl -s -o /tmp/cb-release.json -w "%{http_code}" \
             -H "$AUTH_HEADER" \
-            "$API_BASE/releases/tag/$TAG" || true)
+            "$API_BASE/releases/tags/$TAG" || true)
+
+          UPLOAD_ZIP=true
+          UPLOAD_SUMS=true
 
           if [ "$RELEASE_STATUS" = "200" ]; then
-            ASSET_EXISTS=$(jq -r --arg n "$ZIP_FILE" '[.assets[]? | select(.name == $n)] | length > 0' /tmp/sc-release.json 2>/dev/null || echo false)
-            if [ "$ASSET_EXISTS" = "true" ]; then
-              echo "Asset $ZIP_FILE already attached to SourceCraft release $TAG - skipping upload"
-              summary_row "- SourceCraft mirror: ✅ asset already attached"
-              SKIP_UPLOAD=true
-            else
-              echo "SourceCraft release for $TAG already exists - uploading asset"
-              summary_row "- SourceCraft mirror: ✅ release exists, uploading asset"
-            fi
-          elif [ "$RELEASE_STATUS" = "404" ]; then
-            # The tag already exists via git mirroring, so target_branch is not set.
-            jq -n \
-              --arg tag "$TAG" \
-              --arg title "$TAG" \
-              --arg notes "$(cat release-body.md)" \
-              '{tag: $tag, title: $title, release_notes: $notes, publish: true}' > /tmp/sc-release-body.json
-            CREATE_STATUS=$(curl -s -o /tmp/sc-create.json -w "%{http_code}" -X POST \
-              -H "$AUTH_HEADER" -H "Content-Type: application/json" \
-              --data @/tmp/sc-release-body.json \
-              "$API_BASE/releases" || true)
-            CREATED_TAG=$(jq -r '.tag // .id' /tmp/sc-create.json 2>/dev/null || true)
-            if [ -z "$CREATED_TAG" ] || [ "$CREATED_TAG" = "null" ]; then
-              echo "::warning::SourceCraft mirror failed: could not create release for $TAG (status $CREATE_STATUS) - $(jq -r .message /tmp/sc-create.json 2>/dev/null || true)"
-              summary_row "- SourceCraft mirror: ⚠️ failed (create release, status $CREATE_STATUS)"
+            RELEASE_ID=$(jq -r .id /tmp/cb-release.json 2>/dev/null || echo null)
+            if [ -z "$RELEASE_ID" ] || [ "$RELEASE_ID" = "null" ]; then
+              echo "::warning::Codeberg mirror failed: could not read release id for $TAG"
+              summary_row "- Codeberg mirror: ⚠️ failed (could not read release id)"
               exit 0
             fi
-            echo "Created SourceCraft release for $TAG (status $CREATE_STATUS)"
-            summary_row "- SourceCraft mirror: ✅ release created (status $CREATE_STATUS)"
+            # Forgejo does not reject duplicate attachment names, so the existing
+            # assets are the dedup mechanism: upload only what is missing.
+            ZIP_EXISTS=$(jq -r --arg n "$ZIP_FILE" '[.assets[]? | select(.name == $n)] | length > 0' /tmp/cb-release.json 2>/dev/null || echo false)
+            SUMS_EXISTS=$(jq -r --arg n "SHA256SUMS.txt" '[.assets[]? | select(.name == $n)] | length > 0' /tmp/cb-release.json 2>/dev/null || echo false)
+            if [ "$ZIP_EXISTS" = "true" ]; then UPLOAD_ZIP=false; fi
+            if [ "$SUMS_EXISTS" = "true" ]; then UPLOAD_SUMS=false; fi
+            if [ "$UPLOAD_ZIP" = "false" ] && [ "$UPLOAD_SUMS" = "false" ]; then
+              echo "Assets already attached to Codeberg release $TAG - skipping upload"
+              summary_row "- Codeberg mirror: ✅ asset already attached"
+              exit 0
+            fi
+            echo "Codeberg release for $TAG already exists (id: $RELEASE_ID)"
+            summary_row "- Codeberg mirror: ✅ release already exists"
+          elif [ "$RELEASE_STATUS" = "404" ]; then
+            jq -n \
+              --arg tag "$TAG" \
+              --arg name "$TAG" \
+              --arg body "$(cat release-body.md)" \
+              --arg commit "${{ github.sha }}" \
+              '{tag_name: $tag, name: $name, body: $body, target_commitish: $commit}' > /tmp/cb-release-body.json
+            CREATE_STATUS=$(curl -s -o /tmp/cb-create.json -w "%{http_code}" -X POST \
+              -H "$AUTH_HEADER" -H "Content-Type: application/json" \
+              --data @/tmp/cb-release-body.json \
+              "$API_BASE/releases" || true)
+            RELEASE_ID=$(jq -r .id /tmp/cb-create.json 2>/dev/null || echo null)
+            if [ -z "$RELEASE_ID" ] || [ "$RELEASE_ID" = "null" ]; then
+              echo "::warning::Codeberg mirror failed: could not create release for $TAG (status $CREATE_STATUS) - $(jq -r .message /tmp/cb-create.json 2>/dev/null || true)"
+              summary_row "- Codeberg mirror: ⚠️ failed (create release, status $CREATE_STATUS)"
+              exit 0
+            fi
+            echo "Created Codeberg release for $TAG (id: $RELEASE_ID)"
+            summary_row "- Codeberg mirror: ✅ release created"
           else
-            echo "::warning::SourceCraft mirror failed: unexpected status $RELEASE_STATUS for releases/tag/$TAG"
-            summary_row "- SourceCraft mirror: ⚠️ failed (status $RELEASE_STATUS)"
+            echo "::warning::Codeberg mirror failed: unexpected status $RELEASE_STATUS for releases/tags/$TAG"
+            summary_row "- Codeberg mirror: ⚠️ failed (status $RELEASE_STATUS)"
             exit 0
           fi
 
-          if [ "$SKIP_UPLOAD" = "true" ]; then
-            exit 0
+          if [ "$UPLOAD_ZIP" = "true" ]; then
+            # Raw body upload: the ?name= query param is mandatory in this mode.
+            UPLOAD_STATUS=$(curl -s -o /tmp/cb-upload.json -w "%{http_code}" -X POST \
+              -H "$AUTH_HEADER" -H "Content-Type: application/zip" \
+              --data-binary @"$ZIP_FILE" \
+              "$API_BASE/releases/$RELEASE_ID/assets?name=$ZIP_FILE" || true)
+
+            if [ "$UPLOAD_STATUS" = "201" ]; then
+              echo "Uploaded $ZIP_FILE to Codeberg release $RELEASE_ID"
+              summary_row "- Codeberg mirror: ✅ asset uploaded"
+            else
+              echo "::warning::Codeberg mirror failed: asset upload returned status $UPLOAD_STATUS - $(jq -r .message /tmp/cb-upload.json 2>/dev/null || true)"
+              summary_row "- Codeberg mirror: ⚠️ failed (asset upload status $UPLOAD_STATUS)"
+            fi
           fi
 
-          # Asset names are not documented as unique server-side, so the pre-check
-          # above is the dedup mechanism.
-          UPLOAD_STATUS=$(curl -s -o /tmp/sc-upload.json -w "%{http_code}" -X POST \
-            -H "$AUTH_HEADER" \
-            -F "name=$ZIP_FILE" \
-            -F "file=@$ZIP_FILE" \
-            "$API_BASE/releases/tag/$TAG/attachments" || true)
+          if [ "$UPLOAD_SUMS" = "true" ]; then
+            SUMS_UPLOAD_STATUS=$(curl -s -o /tmp/cb-sums-upload.json -w "%{http_code}" -X POST \
+              -H "$AUTH_HEADER" -H "Content-Type: text/plain" \
+              --data-binary @SHA256SUMS.txt \
+              "$API_BASE/releases/$RELEASE_ID/assets?name=SHA256SUMS.txt" || true)
 
-          if [ "$UPLOAD_STATUS" = "201" ]; then
-            echo "Uploaded $ZIP_FILE to SourceCraft release $TAG"
-            summary_row "- SourceCraft mirror: ✅ asset uploaded"
-          else
-            echo "::warning::SourceCraft mirror failed: asset upload returned status $UPLOAD_STATUS - $(jq -r .message /tmp/sc-upload.json 2>/dev/null || true)"
-            summary_row "- SourceCraft mirror: ⚠️ failed (asset upload status $UPLOAD_STATUS)"
-          fi
-
-          SUMS_UPLOAD_STATUS=$(curl -s -o /tmp/sc-sums-upload.json -w "%{http_code}" -X POST \
-            -H "$AUTH_HEADER" \
-            -F "name=SHA256SUMS.txt" \
-            -F "file=@SHA256SUMS.txt" \
-            "$API_BASE/releases/tag/$TAG/attachments" || true)
-
-          if [ "$SUMS_UPLOAD_STATUS" = "201" ]; then
-            echo "Uploaded SHA256SUMS.txt to SourceCraft release $TAG"
-          else
-            echo "::warning::SourceCraft mirror failed: checksum upload returned status $SUMS_UPLOAD_STATUS - $(jq -r .message /tmp/sc-sums-upload.json 2>/dev/null || true)"
-            summary_row "- SourceCraft mirror: ⚠️ failed (checksum upload status $SUMS_UPLOAD_STATUS)"
+            if [ "$SUMS_UPLOAD_STATUS" = "201" ]; then
+              echo "Uploaded SHA256SUMS.txt to Codeberg release $RELEASE_ID"
+              summary_row "- Codeberg mirror: ✅ checksum uploaded"
+            else
+              echo "::warning::Codeberg mirror failed: checksum upload returned status $SUMS_UPLOAD_STATUS - $(jq -r .message /tmp/cb-sums-upload.json 2>/dev/null || true)"
+              summary_row "- Codeberg mirror: ⚠️ failed (checksum upload status $SUMS_UPLOAD_STATUS)"
+            fi
           fi
 
       - name: Cleanup workspace

@@ -5,6 +5,8 @@ import { type LatestReleaseInfo } from './types'
 
 const FORGEJO_API_URL =
   'https://git.lightnode.ru/api/v1/repos/Slovo_Propovedi/slovo-propovedi-mobile/releases/latest'
+const CODEBERG_API_URL =
+  'https://codeberg.org/api/v1/repos/Slovo_Propovedi/slovo-propovedi-mobile/releases/latest'
 const GITHUB_API_URL =
   'https://api.github.com/repos/Slovo-Propovedi/slovo-propovedi-mobile/releases/latest'
 const REQUEST_TIMEOUT = 10000
@@ -64,6 +66,16 @@ const fetchFromForgejo = async (): Promise<LatestReleaseInfo | null> => {
   }
 }
 
+const fetchFromCodeberg = async (): Promise<LatestReleaseInfo | null> => {
+  try {
+    const { data } = await axios.get<unknown>(CODEBERG_API_URL, { timeout: REQUEST_TIMEOUT })
+    return parseRelease(data)
+  } catch (error) {
+    console.warn('[version-check] Failed to fetch release from Codeberg:', error)
+    return null
+  }
+}
+
 const fetchFromGitHub = async (): Promise<LatestReleaseInfo | null> => {
   try {
     const { data } = await axios.get<unknown>(GITHUB_API_URL, { timeout: REQUEST_TIMEOUT })
@@ -77,6 +89,9 @@ const fetchFromGitHub = async (): Promise<LatestReleaseInfo | null> => {
 export const fetchLatestRelease = async (): Promise<LatestReleaseInfo | null> => {
   const forgejoResult = await fetchFromForgejo()
   if (forgejoResult) return forgejoResult
+
+  const codebergResult = await fetchFromCodeberg()
+  if (codebergResult) return codebergResult
 
   return fetchFromGitHub()
 }

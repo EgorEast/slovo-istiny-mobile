@@ -9,12 +9,19 @@ const mockedAxios = axios as jest.Mocked<typeof axios>
 
 const FORGEJO_API_URL =
   'https://git.lightnode.ru/api/v1/repos/Slovo_Propovedi/slovo-propovedi-mobile/releases/latest'
+const CODEBERG_API_URL =
+  'https://codeberg.org/api/v1/repos/Slovo_Propovedi/slovo-propovedi-mobile/releases/latest'
 const GITHUB_API_URL =
   'https://api.github.com/repos/Slovo-Propovedi/slovo-propovedi-mobile/releases/latest'
 const ZIP_DOWNLOAD_URL = 'https://example.com/releases/download/v0.3.0/slovo-propovedi-v0.3.0.zip'
 const SUMS_DOWNLOAD_URL = 'https://example.com/releases/download/v0.3.0/SHA256SUMS.txt'
 const RELEASE_BODY = 'Release notes\r\nSecond line'
-const RELEASE_HTML_URL = 'https://example.com/releases/tag/v0.3.0'
+const FORGEJO_RELEASE_HTML_URL =
+  'https://git.lightnode.ru/Slovo_Propovedi/slovo-propovedi-mobile/releases/tag/v0.3.0'
+const CODEBERG_RELEASE_HTML_URL =
+  'https://codeberg.org/Slovo_Propovedi/slovo-propovedi-mobile/releases/tag/v0.3.0'
+const GITHUB_RELEASE_HTML_URL =
+  'https://github.com/Slovo-Propovedi/slovo-propovedi-mobile/releases/tag/v0.3.0'
 const RELEASE_NAME = 'Слово.Проповеди v0.3.0'
 const RELEASE_PUBLISHED_AT = '2026-08-01T00:00:00Z'
 const RELEASE_TAG = 'v0.3.0'
@@ -26,23 +33,23 @@ const validRelease = {
   ],
   body: RELEASE_BODY,
   draft: false,
-  html_url: RELEASE_HTML_URL,
+  html_url: FORGEJO_RELEASE_HTML_URL,
   name: RELEASE_NAME,
   prerelease: false,
   published_at: RELEASE_PUBLISHED_AT,
   tag_name: RELEASE_TAG,
 }
 
-const expectedRelease: LatestReleaseInfo = {
+const makeExpectedRelease = (htmlUrl: string): LatestReleaseInfo => ({
   body: 'Release notes\nSecond line',
-  htmlUrl: RELEASE_HTML_URL,
+  htmlUrl,
   name: RELEASE_NAME,
   publishedAt: RELEASE_PUBLISHED_AT,
   sha256SumsDownloadUrl: SUMS_DOWNLOAD_URL,
   tagName: RELEASE_TAG,
   version: '0.3.0',
   zipDownloadUrl: ZIP_DOWNLOAD_URL,
-}
+})
 
 describe('fetchLatestRelease', () => {
   beforeEach(() => {
@@ -56,28 +63,45 @@ describe('fetchLatestRelease', () => {
 
     const result = await fetchLatestRelease()
 
-    expect(result).toEqual(expectedRelease)
+    expect(result).toEqual(makeExpectedRelease(FORGEJO_RELEASE_HTML_URL))
     expect(mockedAxios.get).toHaveBeenCalledTimes(1)
     expect(mockedAxios.get).toHaveBeenCalledWith(FORGEJO_API_URL, { timeout: 10000 })
   })
 
-  test('falls back to GitHub when Forgejo fails', async () => {
+  test('falls back to Codeberg when Forgejo fails', async () => {
     mockedAxios.get.mockRejectedValueOnce(new Error('Forgejo unavailable'))
-    mockedAxios.get.mockResolvedValueOnce({ data: validRelease })
+    mockedAxios.get.mockResolvedValueOnce({
+      data: { ...validRelease, html_url: CODEBERG_RELEASE_HTML_URL },
+    })
 
     const result = await fetchLatestRelease()
 
-    expect(result).toEqual(expectedRelease)
+    expect(result).toEqual(makeExpectedRelease(CODEBERG_RELEASE_HTML_URL))
     expect(mockedAxios.get).toHaveBeenCalledTimes(2)
-    expect(mockedAxios.get).toHaveBeenNthCalledWith(2, GITHUB_API_URL, { timeout: 10000 })
+    expect(mockedAxios.get).toHaveBeenNthCalledWith(2, CODEBERG_API_URL, { timeout: 10000 })
   })
 
-  test('returns null when both sources fail', async () => {
+  test('falls back to GitHub when Forgejo and Codeberg fail', async () => {
+    mockedAxios.get.mockRejectedValueOnce(new Error('Forgejo unavailable'))
+    mockedAxios.get.mockRejectedValueOnce(new Error('Codeberg unavailable'))
+    mockedAxios.get.mockResolvedValueOnce({
+      data: { ...validRelease, html_url: GITHUB_RELEASE_HTML_URL },
+    })
+
+    const result = await fetchLatestRelease()
+
+    expect(result).toEqual(makeExpectedRelease(GITHUB_RELEASE_HTML_URL))
+    expect(mockedAxios.get).toHaveBeenCalledTimes(3)
+    expect(mockedAxios.get).toHaveBeenNthCalledWith(3, GITHUB_API_URL, { timeout: 10000 })
+  })
+
+  test('returns null when all sources fail', async () => {
     mockedAxios.get.mockRejectedValue(new Error('network down'))
 
     const result = await fetchLatestRelease()
 
     expect(result).toBeNull()
+    expect(mockedAxios.get).toHaveBeenCalledTimes(3)
   })
 
   test('returns null for a prerelease', async () => {
