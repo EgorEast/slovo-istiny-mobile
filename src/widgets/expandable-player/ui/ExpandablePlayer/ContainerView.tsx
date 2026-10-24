@@ -80,7 +80,7 @@ export const ContainerView = ({
         ]}
       >
         <Animated.View style={[styles.backgroundContainer, backgroundImageStyle]}>
-          <CoverImage eager uri={audio.artwork} style={styles.backgroundImage} />
+          <CoverImage eager transition={0} uri={audio.artwork} style={styles.backgroundImage} />
         </Animated.View>
         <Animated.View style={[miniOverlay, miniOverlayStyle, { pointerEvents: 'none' }]} />
         {expanded && <StatusBar style='light' />}

@@ -14,9 +14,6 @@ export const useOpacityStyles = (progress: SharedValue<number>) => {
   const backdropStyle = useAnimatedStyle(() => ({
     opacity: interpolate(progress.value, [0, 0.5], [0, 0.5]),
   }))
-  const blurStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(progress.value, [0, 0.5], [0, 1]),
-  }))
   const miniStyle = useAnimatedStyle(() => ({
     opacity: interpolate(progress.value, [0, 0.3], [1, 0]),
   }))
@@ -27,7 +24,6 @@ export const useOpacityStyles = (progress: SharedValue<number>) => {
   return {
     backdropStyle,
     backgroundImageStyle,
-    blurStyle,
     fullStyle,
     miniOverlayStyle,
     miniStyle,

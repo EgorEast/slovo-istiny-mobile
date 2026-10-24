@@ -26,6 +26,7 @@ export const CoverImage = ({
   imageStyle,
   style,
   testID,
+  transition = 200,
   uri,
 }: {
   children?: ReactNode
@@ -33,6 +34,7 @@ export const CoverImage = ({
   imageStyle?: StyleProp<ImageStyle>
   style?: StyleProp<ViewStyle>
   testID?: string
+  transition?: number
   uri?: null | string
 }) => {
   const { currentTheme } = useTheme()
@@ -41,8 +43,8 @@ export const CoverImage = ({
     <View style={[styles.container, { backgroundColor: currentTheme.skeleton }, style]}>
       <Image
         testID={testID}
-        transition={200}
         contentFit='cover'
+        transition={transition}
         cachePolicy='memory-disk'
         recyclingKey={uri || undefined}
         loading={getLoadingMode(eager)}

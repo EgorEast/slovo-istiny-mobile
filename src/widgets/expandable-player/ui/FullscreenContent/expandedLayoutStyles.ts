@@ -11,10 +11,6 @@ export const expandedLayoutStyles = StyleSheet.create({
     ...StyleSheet.absoluteFill,
   },
 
-  blurOverlay: {
-    ...StyleSheet.absoluteFill,
-  },
-
   bottomContentContainer: {
     paddingBottom: INDENTS.high * 2,
     paddingHorizontal: INDENTS.medium,

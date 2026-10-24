@@ -18,6 +18,12 @@ describe('<CoverImage>', () => {
     expect(image.props.transition).toBe(200)
   })
 
+  test('forwards an explicit transition override', async () => {
+    await renderWithProviders(<CoverImage transition={0} uri={URI_STUB} testID='cover' />)
+
+    expect(screen.getByTestId('cover').props.transition).toBe(0)
+  })
+
   test('falls back to IMAGE_PLACEHOLDER when uri is undefined', async () => {
     await renderWithProviders(<CoverImage testID='cover' />)
 

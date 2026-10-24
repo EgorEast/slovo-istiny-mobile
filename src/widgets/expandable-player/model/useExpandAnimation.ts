@@ -20,7 +20,6 @@ const MINI_H = PLAYER_SIZES.miniPlayerHeight
 interface UseExpandAnimationResult {
   backdropStyle: ReturnType<typeof useAnimatedStyle>
   backgroundImageStyle: ReturnType<typeof useAnimatedStyle>
-  blurStyle: ReturnType<typeof useAnimatedStyle>
   collapsedRestingContainerStyle: ReturnType<typeof getRestingContainerStyle>
   containerStyle: ReturnType<typeof useAnimatedStyle>
   /** Stable reference — forces containerStyle worklet to re-run on the UI thread. */
@@ -94,7 +93,7 @@ export const useExpandAnimation = (
       width: w,
     }
   })
-  const { backdropStyle, backgroundImageStyle, blurStyle, fullStyle, miniOverlayStyle, miniStyle } =
+  const { backdropStyle, backgroundImageStyle, fullStyle, miniOverlayStyle, miniStyle } =
     useOpacityStyles(progress)
 
   /**
@@ -112,7 +111,6 @@ export const useExpandAnimation = (
   return {
     backdropStyle,
     backgroundImageStyle,
-    blurStyle,
     collapsedRestingContainerStyle,
     containerStyle,
     forceGeometryReapply,
