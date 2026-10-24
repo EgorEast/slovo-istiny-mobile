@@ -1,0 +1,10 @@
+Generate local playlist ids as uuidv7
+Handle session revocation and login throttling
+Mirror api input bounds in admin forms
+Increase Large card ratio to 50% of the layout basis
+Fixed left peek, rest-line snapping, XL/L width ratios
+Move Invidious basic-auth to secure storage
+Verify update APK signature before install
+Cap backup import size and playlist share title
+
+Полный список изменений: https://git.lightnode.ru/Slovo_Propovedi/slovo-propovedi-mobile/src/branch/main/CHANGELOG.md

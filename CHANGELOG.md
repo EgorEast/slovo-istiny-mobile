@@ -5,6 +5,92 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.29.0] - 2026-10-24
+
+### Added
+
+- Generate local playlist ids as uuidv7
+- Handle session revocation and login throttling
+- Mirror api input bounds in admin forms
+- Increase Large card ratio to 50% of the layout basis
+- Fixed left peek, rest-line snapping, XL/L width ratios
+- Verify update APK signature before install
+- Verify update APK integrity, gate CI release signing
+- Create playlists from the add-to-playlist modal
+- Favorites and player-actions tours
+- Heart and add-to-playlist buttons in fullscreen player
+- Favorites heart on sermon rows
+- Add useFavoriteSermon toggle hook
+- Early press haptic with scroll cancellation
+- Vibrate on long-press actions via shared pressable primitives
+- Halo text shadow for on-artwork card titles
+- Native-like slider touch physics and eased snap on web
+- Snap sliders to peek positions showing partial neighbour cards
+- Scale slider title font by card size and cap lines (#133)
+- Resurrect bothOnAndUnder as bottom title+description placement (#133)
+- Tri-state patch relevance guard in check-patches
+- Migrate playlist playback to native audio queue
+
+### Changed
+
+- Relocate create-playlist button to the add-modal header
+- Extract useCreateLocalPlaylist hook into entities/playlist
+- Fire press haptics on completed taps instead of press-in
+- Drop write-only player transitioning mirror (#133)
+
+### Fixed
+
+- Regenerate client from OpenAPI 0.23.0
+- Regenerate client from spec 0.22.2 and update docs
+- Move Invidious basic-auth to secure storage
+- Cap backup import size and playlist share title
+- Device-only keychain access for stored tokens
+- Never cache authenticated requests in service worker
+- Block SYSTEM_ALERT_WINDOW, manage backup rules via plugin
+- Complete delegations via session.wait, bind caller agent spelling
+- Sanitize reported axios errors, single-flight refresh, https-only server URL
+- Repair agent delegation pipeline
+- Keep the save button full-width inside its onboarding wrapper
+- Dedupe in-flight loadMyPlaylists per context
+- Disable standalone playlist create submit while in flight
+- Guard useCreateLocalPlaylist against same-frame double submit
+- Forward create-playlist onboarding wrapper on the playlist screen
+- Intro card for player-actions tour
+- Favorites heart on listen search rows
+- Fullscreen action buttons in a row at dots icon size
+- Never reset the player when un-favoriting from the heart
+- Settle pending press pulse inside onPress handler
+- Arm long-press haptic only for real long-press actions
+- Merge same-gesture press pulses into one vibration
+- Cancel early press haptic on touch movement
+- Ignore drag presses on fullscreen tap-to-toggle surface
+- Recreate expo-audio patch for 58.0.10
+- Update expo sdk packages
+- Cancel pending web snap on touch start and harden slider touch listeners
+- Lock slider touch gesture to its initial direction on web
+- Keep web pull-to-refresh from capturing slider drag touches
+- Bold the centered on-card title (#133)
+- Merge bottom title and description into one scrim container (#133)
+- Put bottom-stacked title on the description scrim plate (#133)
+- Regenerate client after spec redeploy (#133)
+- Cap tab bar and mini player width on large screens (#133)
+- Make slider card titles static one-line ellipsis (#133)
+- Reduce slider card radius to 9px (#133)
+- Scale slider cards from clamped mobile reference side (#133)
+- Shape first skeleton section as high middle on-card (#133)
+- Render first skeleton section full width (#133)
+- Fix on-card text overlay rendering on web and native (#133)
+- Cap slider card sizes on large screens (#133)
+- Use fixed 16px radius for slider cards (#133)
+- Remove continue-listening play button (#133)
+- Resolve expo/tsconfig.base via relative path for steiger/tsconfck
+- Patch expo-audio loop getter, build expo-audio from source
+- Avoid unsafe AudioPlaylist.loop getter, restore seek buttons, exact sheet scroll
+- Migrate codebase to react-native 0.88 types, add expo-asset jest mock
+- Refresh patches for sdk 58, genericize check-patches guard
+- Migrate audio mode to doNotMixPersistent, drop expo-audio patch
+- Regenerate android project for expo sdk 58
+
 ## [0.28.1] - 2026-10-17
 
 ### Fixed
@@ -1331,6 +1417,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add AGENTS.md
 - Remove old packages and notifications for correct app running
 
+[0.29.0]: https://git.lightnode.ru/Slovo_Propovedi/slovo-propovedi-mobile/src/tag/v0.29.0
 [0.28.1]: https://git.lightnode.ru/Slovo_Propovedi/slovo-propovedi-mobile/src/tag/v0.28.1
 [0.28.0]: https://git.lightnode.ru/Slovo_Propovedi/slovo-propovedi-mobile/src/tag/v0.28.0
 [0.27.0]: https://git.lightnode.ru/Slovo_Propovedi/slovo-propovedi-mobile/src/tag/v0.27.0
