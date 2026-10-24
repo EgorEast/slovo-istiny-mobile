@@ -49,6 +49,14 @@ const PLAYER_AND_UNPATCHED_PLAYLIST = `
   }.set { playlist, mode -> playlist.loopMode = mode }
 `
 
+const PATCHED_SEEK_INTERVAL_SOURCE = `
+  internal fun seekIntervalMs(seconds: Double?): Long {
+    // ${PATCH_MARKER}: non-positive values must fall back to the default too
+    val resolved = seconds?.takeIf { it.isFinite() && it > 0.0 } ?: DEFAULT_SEEK_INTERVAL_SECONDS
+    return (resolved * 1000).toLong().coerceAtLeast(MIN_SEEK_INTERVAL_MS)
+  }
+`
+
 describe('parsePatchFileName', () => {
   test('splits an unscoped package name and version', () => {
     expect(parsePatchFileName(MATCHING_PATCH)).toEqual({
@@ -137,9 +145,16 @@ describe('collectFileProblems', () => {
 })
 
 describe('collectExpoAudioProblems', () => {
+  const collect = ({ audioModuleSource, packageJson }) =>
+    collectExpoAudioProblems({
+      audioModuleSource,
+      seekIntervalSource: PATCHED_SEEK_INTERVAL_SOURCE,
+      packageJson,
+    })
+
   test('accepts a patched source built from source', () => {
     expect(
-      collectExpoAudioProblems({
+      collect({
         audioModuleSource: PATCHED_SOURCE,
         packageJson: PACKAGE_JSON_WITH_SOURCE_BUILD,
       }),
@@ -147,7 +162,7 @@ describe('collectExpoAudioProblems', () => {
   })
 
   test('reports a loop getter that is not wrapped in runOnMain', () => {
-    const problems = collectExpoAudioProblems({
+    const problems = collect({
       audioModuleSource: UNWRAPPED_LOOP_GETTER,
       packageJson: PACKAGE_JSON_WITH_SOURCE_BUILD,
     })
@@ -157,7 +172,7 @@ describe('collectExpoAudioProblems', () => {
   })
 
   test('targets the patched playlist getter when an earlier loop property exists', () => {
-    const problems = collectExpoAudioProblems({
+    const problems = collect({
       audioModuleSource: PLAYER_AND_UNPATCHED_PLAYLIST,
       packageJson: PACKAGE_JSON_WITH_SOURCE_BUILD,
     })
@@ -167,7 +182,7 @@ describe('collectExpoAudioProblems', () => {
   })
 
   test('reports a missing patch marker', () => {
-    const problems = collectExpoAudioProblems({
+    const problems = collect({
       audioModuleSource: PATCHED_SOURCE.replace(PATCH_MARKER, ''),
       packageJson: PACKAGE_JSON_WITH_SOURCE_BUILD,
     })
@@ -177,7 +192,7 @@ describe('collectExpoAudioProblems', () => {
   })
 
   test('reports a missing buildFromSource list', () => {
-    const problems = collectExpoAudioProblems({
+    const problems = collect({
       audioModuleSource: PATCHED_SOURCE,
       packageJson: { expo: { autolinking: {} } },
     })
@@ -187,7 +202,7 @@ describe('collectExpoAudioProblems', () => {
   })
 
   test('reports a buildFromSource list without expo-audio', () => {
-    const problems = collectExpoAudioProblems({
+    const problems = collect({
       audioModuleSource: PATCHED_SOURCE,
       packageJson: { expo: { autolinking: { buildFromSource: ['expo-font'] } } },
     })
@@ -197,7 +212,7 @@ describe('collectExpoAudioProblems', () => {
   })
 
   test('reports an unreadable package.json', () => {
-    const problems = collectExpoAudioProblems({
+    const problems = collect({
       audioModuleSource: PATCHED_SOURCE,
       packageJson: null,
     })
@@ -208,10 +223,43 @@ describe('collectExpoAudioProblems', () => {
 
   test('reports a missing AudioModule.kt', () => {
     expect(
-      collectExpoAudioProblems({
+      collect({
         audioModuleSource: '',
         packageJson: PACKAGE_JSON_WITH_SOURCE_BUILD,
       }),
     ).toEqual(['expo-audio AudioModule.kt not found — cannot verify the loop-getter patch'])
+  })
+
+  test('reports a missing SeekInterval.kt', () => {
+    expect(
+      collectExpoAudioProblems({
+        audioModuleSource: PATCHED_SOURCE,
+        seekIntervalSource: '',
+        packageJson: PACKAGE_JSON_WITH_SOURCE_BUILD,
+      }),
+    ).toEqual([
+      'expo-audio SeekInterval.kt not found — cannot verify the seek-interval patch',
+    ])
+  })
+
+  test('reports a missing patch marker in SeekInterval.kt', () => {
+    expect(
+      collectExpoAudioProblems({
+        audioModuleSource: PATCHED_SOURCE,
+        seekIntervalSource: PATCHED_SEEK_INTERVAL_SOURCE.replace(PATCH_MARKER, ''),
+        packageJson: PACKAGE_JSON_WITH_SOURCE_BUILD,
+      }),
+    ).toEqual(['patch marker PATCH(patch-package) missing in SeekInterval.kt'])
+  })
+
+  test('reports a seekIntervalMs without the non-positive fallback', () => {
+    const problems = collectExpoAudioProblems({
+      audioModuleSource: PATCHED_SOURCE,
+      seekIntervalSource: PATCHED_SEEK_INTERVAL_SOURCE.replace(' && it > 0.0', ''),
+      packageJson: PACKAGE_JSON_WITH_SOURCE_BUILD,
+    })
+
+    expect(problems).toHaveLength(1)
+    expect(problems[0]).toContain('does not fall back to the default on non-positive input')
   })
 })

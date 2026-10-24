@@ -8,9 +8,12 @@ const PATCHES_DIR = 'patches'
 const EXPO_AUDIO = 'expo-audio'
 const EXPO_AUDIO_MODULE_PATH =
   'node_modules/expo-audio/android/src/main/java/expo/modules/audio/AudioModule.kt'
+const EXPO_AUDIO_SEEK_INTERVAL_PATH =
+  'node_modules/expo-audio/android/src/main/java/expo/modules/audio/service/SeekInterval.kt'
 const PACKAGE_JSON_PATH = 'package.json'
 const PATCH_MARKER = 'PATCH(patch-package)'
 const LOOP_PROPERTY = 'Property("loop")'
+const SEEK_INTERVAL_HARDENING_SIGNATURE = 'it > 0.0'
 
 // Per-package probes for the tri-state check. `fixSignature` is the upstream
 // equivalent of the patched code: seeing it without the marker means the
@@ -129,7 +132,28 @@ export const collectFileProblems = ({ filePath, source, fixSignature }) => {
   ]
 }
 
-export const collectExpoAudioProblems = ({ audioModuleSource, packageJson }) => {
+const collectSeekIntervalProblems = seekIntervalSource => {
+  if (!seekIntervalSource) {
+    return ['expo-audio SeekInterval.kt not found — cannot verify the seek-interval patch']
+  }
+
+  const problems = []
+
+  if (!seekIntervalSource.includes(PATCH_MARKER)) {
+    problems.push('patch marker PATCH(patch-package) missing in SeekInterval.kt')
+  }
+
+  if (!seekIntervalSource.includes(SEEK_INTERVAL_HARDENING_SIGNATURE)) {
+    problems.push(
+      'seekIntervalMs does not fall back to the default on non-positive input — ' +
+        'the patch did not apply',
+    )
+  }
+
+  return problems
+}
+
+export const collectExpoAudioProblems = ({ audioModuleSource, seekIntervalSource, packageJson }) => {
   if (!audioModuleSource) {
     return ['expo-audio AudioModule.kt not found — cannot verify the loop-getter patch']
   }
@@ -147,6 +171,8 @@ export const collectExpoAudioProblems = ({ audioModuleSource, packageJson }) => 
   if (!loopGetter?.includes('runOnMain')) {
     problems.push('Property("loop") getter is not wrapped in runOnMain — the patch did not apply')
   }
+
+  problems.push(...collectSeekIntervalProblems(seekIntervalSource))
 
   if (!packageJson) {
     problems.push('cannot read package.json — cannot verify the source-build invariant')
@@ -208,6 +234,7 @@ export const verifyPatch = file => {
 
   return collectExpoAudioProblems({
     audioModuleSource: readFileOrNull(EXPO_AUDIO_MODULE_PATH),
+    seekIntervalSource: readFileOrNull(EXPO_AUDIO_SEEK_INTERVAL_PATH),
     packageJson: readJsonOrNull(PACKAGE_JSON_PATH),
   }).map(problem => `${file}: ${problem}`)
 }
