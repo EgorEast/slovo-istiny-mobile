@@ -838,6 +838,10 @@ jobs:
           KEEP_COUNT="${RELEASE_KEEP_COUNT:-10}"
           case "$KEEP_COUNT" in
             ''|*[!0-9]*) KEEP_COUNT=10 ;;
+            # Values beyond bash/CI sanity reset to the default: a count this
+            # large overflows the integer comparison below and would prune
+            # everything outside the current tag.
+            ?????????*) KEEP_COUNT=10 ;;
           esac
 
           TAG="${{ github.ref_name }}"
@@ -867,7 +871,11 @@ jobs:
           # keep window does not depend on server ordering). One release per
           # line with its first .zip asset resolved up front.
           jq -c 'sort_by([(.created_at // ""), .id]) | reverse | .[] | {id, tag: (.tag_name // ""), zip: ([.assets[]? | select(.name | endswith(".zip")) | {id, name}][0] // null)}' \
-            /tmp/cb-releases.json > /tmp/cb-releases-sorted.jsonl
+            /tmp/cb-releases.json > /tmp/cb-releases-sorted.jsonl || {
+            echo "::warning::Codeberg prune failed: releases payload transform failed"
+            summary_row "- Codeberg prune: ⚠️ failed (payload transform)"
+            exit 0
+          }
 
           KEPT=0
           PRUNED=0
