@@ -820,6 +820,107 @@ jobs:
             fi
           fi
 
+      - name: Prune old Codeberg release assets
+        env:
+          MIRROR_CODEBERG_TOKEN: ${{ secrets.MIRROR_CODEBERG_TOKEN }}
+          # Retention window: keep this many newest release zips. 10 zips of
+          # 60-100MB stay well under Codeberg's ~1.5 GiB attachment soft quota.
+          # Empty (variable not set) falls back to 10 in the script below.
+          RELEASE_KEEP_COUNT: ${{ vars.RELEASE_KEEP_COUNT }}
+        run: |
+          summary_row() { printf '%s\n' "$1" | scripts/ci/step-summary.sh; }
+          if [ -z "${MIRROR_CODEBERG_TOKEN:-}" ]; then
+            echo "MIRROR_CODEBERG_TOKEN is not configured - skipping Codeberg prune"
+            summary_row "- Codeberg prune: ⏭️ skipped (MIRROR_CODEBERG_TOKEN not set)"
+            exit 0
+          fi
+
+          KEEP_COUNT="${RELEASE_KEEP_COUNT:-10}"
+          case "$KEEP_COUNT" in
+            ''|*[!0-9]*) KEEP_COUNT=10 ;;
+          esac
+
+          TAG="${{ github.ref_name }}"
+          API_BASE="https://codeberg.org/api/v1/repos/Slovo_Propovedi/slovo-propovedi-mobile"
+          AUTH_HEADER="Authorization: token ${MIRROR_CODEBERG_TOKEN}"
+
+          # One page of 50 is far above the keep window; anything older was
+          # already pruned by a previous run.
+          RELEASES_STATUS=$(curl -s -o /tmp/cb-releases.json -w "%{http_code}" \
+            -H "$AUTH_HEADER" \
+            "$API_BASE/releases?limit=50" || true)
+
+          if [ "$RELEASES_STATUS" != "200" ]; then
+            echo "::warning::Codeberg prune failed: releases list returned status $RELEASES_STATUS"
+            summary_row "- Codeberg prune: ⚠️ failed (releases status $RELEASES_STATUS)"
+            exit 0
+          fi
+
+          if ! jq -e 'type == "array"' /tmp/cb-releases.json >/dev/null 2>&1; then
+            echo "::warning::Codeberg prune failed: unexpected releases payload"
+            summary_row "- Codeberg prune: ⚠️ failed (unexpected releases payload)"
+            exit 0
+          fi
+
+          # Newest first: created_at is the primary key, id breaks ties (the
+          # endpoint already returns newest-first, but sort explicitly so the
+          # keep window does not depend on server ordering). One release per
+          # line with its first .zip asset resolved up front.
+          jq -c 'sort_by([(.created_at // ""), .id]) | reverse | .[] | {id, tag: (.tag_name // ""), zip: ([.assets[]? | select(.name | endswith(".zip")) | {id, name}][0] // null)}' \
+            /tmp/cb-releases.json > /tmp/cb-releases-sorted.jsonl
+
+          KEPT=0
+          PRUNED=0
+          INDEX=0
+
+          while IFS= read -r RELEASE; do
+            [ -n "$RELEASE" ] || continue
+            INDEX=$((INDEX + 1))
+
+            RELEASE_ID=$(jq -r '.id' <<<"$RELEASE")
+            RELEASE_TAG=$(jq -r '.tag' <<<"$RELEASE")
+            ASSET_ID=$(jq -r '.zip.id // empty' <<<"$RELEASE")
+            ASSET_NAME=$(jq -r '.zip.name // empty' <<<"$RELEASE")
+
+            WITHIN_WINDOW=false
+            if [ "$INDEX" -le "$KEEP_COUNT" ]; then
+              WITHIN_WINDOW=true
+            fi
+            # Defensive: never prune the release being published, even if it
+            # falls outside the keep window.
+            if [ "$RELEASE_TAG" = "$TAG" ]; then
+              if [ "$WITHIN_WINDOW" = "false" ]; then
+                echo "Keeping current release $RELEASE_TAG outside the keep window"
+              fi
+              WITHIN_WINDOW=true
+            fi
+
+            if [ "$WITHIN_WINDOW" = "true" ]; then
+              if [ -n "$ASSET_ID" ]; then KEPT=$((KEPT + 1)); fi
+              continue
+            fi
+
+            if [ -z "$ASSET_ID" ]; then
+              continue
+            fi
+
+            # Only .zip attachments are pruned: SHA256SUMS.txt is tiny and
+            # keeping it leaves old release pages self-consistent.
+            DELETE_STATUS=$(curl -s -o /tmp/cb-delete.json -w "%{http_code}" -X DELETE \
+              -H "$AUTH_HEADER" \
+              "$API_BASE/releases/$RELEASE_ID/assets/$ASSET_ID" || true)
+
+            if [ "$DELETE_STATUS" = "204" ]; then
+              echo "Pruned $ASSET_NAME from Codeberg release $RELEASE_TAG"
+              summary_row "- Codeberg prune: ✅ pruned $RELEASE_TAG ($ASSET_NAME)"
+              PRUNED=$((PRUNED + 1))
+            else
+              echo "::warning::Codeberg prune failed for $RELEASE_TAG ($ASSET_NAME): status $DELETE_STATUS - $(jq -r .message /tmp/cb-delete.json 2>/dev/null || true)"
+            fi
+          done < /tmp/cb-releases-sorted.jsonl
+
+          summary_row "- Codeberg prune: kept newest $KEPT zips, pruned $PRUNED"
+
       - name: Cleanup workspace
         if: always()
         run: |
