@@ -1,0 +1,7 @@
+Clamp prune keep-count and check jq status
+Prune old Codeberg release zips
+Mirror releases to Codeberg, add update fallback
+Pass explicit 10s lock-screen seek intervals
+Stop fullscreen artwork flicker on expand
+
+Полный список изменений: https://git.lightnode.ru/Slovo_Propovedi/slovo-propovedi-mobile/src/branch/main/CHANGELOG.md

@@ -92,8 +92,8 @@ android {
         applicationId 'ru.slovopropovedi'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 2900
-        versionName "0.29.0"
+        versionCode 2901
+        versionName "0.29.1"
 
         buildConfigField "String", "REACT_NATIVE_RELEASE_LEVEL", "\"${findProperty('reactNativeReleaseLevel') ?: 'stable'}\""
     }

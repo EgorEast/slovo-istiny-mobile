@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.29.1] - 2026-10-24
+
+### Added
+
+- Prune old Codeberg release zips
+- Mirror releases to Codeberg, add update fallback
+
+### Fixed
+
+- Clamp prune keep-count and check jq status
+- Probe the seek-interval hunk in check-patches
+- Pass explicit 10s lock-screen seek intervals
+- Stop fullscreen artwork flicker on expand
+
 ## [0.29.0] - 2026-10-24
 
 ### Added
@@ -1417,6 +1431,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add AGENTS.md
 - Remove old packages and notifications for correct app running
 
+[0.29.1]: https://git.lightnode.ru/Slovo_Propovedi/slovo-propovedi-mobile/src/tag/v0.29.1
 [0.29.0]: https://git.lightnode.ru/Slovo_Propovedi/slovo-propovedi-mobile/src/tag/v0.29.0
 [0.28.1]: https://git.lightnode.ru/Slovo_Propovedi/slovo-propovedi-mobile/src/tag/v0.28.1
 [0.28.0]: https://git.lightnode.ru/Slovo_Propovedi/slovo-propovedi-mobile/src/tag/v0.28.0
